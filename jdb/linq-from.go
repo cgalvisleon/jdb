@@ -1,11 +1,11 @@
 package jdb
 
-func From(m Model) *Linq {
+func From(m *Model) *Linq {
 	result := &Linq{
 		TypeLinq: TypeLinqSelect,
 		Froms:    make([]*LinqFrom, 0),
 		Joins:    make([]*LinqJoin, 0),
-		Wheres:   make([]*LinqWhere, 0),
+		Wheres:   &LinqWheres{},
 		GroupBys: make([]*LinqSelect, 0),
 		Havings:  make([]*LinqWhere, 0),
 		Selects:  make([]*LinqSelect, 0),
@@ -17,20 +17,20 @@ func From(m Model) *Linq {
 		page:     1,
 	}
 
-	result.addFrom(m)
+	result.addFrom(*m)
 
 	return result
 }
 
 func (s *Model) Select(fields ...interface{}) *Linq {
-	linq := From(*s)
+	linq := From(s)
 	linq.Select(fields...)
 
 	return linq
 }
 
 func (s *Model) Data(fields ...interface{}) *Linq {
-	linq := From(*s)
+	linq := From(s)
 	linq.Data(fields...)
 
 	return linq

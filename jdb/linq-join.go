@@ -1,10 +1,77 @@
 package jdb
 
+type TypeJoin int
+
+const (
+	TypeJoinInner TypeJoin = iota
+	TypeJoinLeft
+	TypeJoinRight
+	TypeJoinFull
+)
+
 type LinqJoin struct {
-	Linq  *Linq
-	A     *LinqFrom
-	B     *LinqFrom
-	Where *LinqWhere
+	Linq     *Linq
+	TypeJoin TypeJoin
+	From     *LinqFrom
+	Wheres   []*LinqWhere
+}
+
+/**
+* LinqJoin
+* @param m *Model
+* @return *Linq
+**/
+func (s *Linq) Join(m *Model) *LinqJoin {
+	from := s.addFrom(*m)
+	if from == nil {
+		return nil
+	}
+
+	result := &LinqJoin{
+		Linq:     s,
+		TypeJoin: TypeJoinInner,
+		From:     from,
+		Wheres:   make([]*LinqWhere, 0),
+	}
+	s.Joins = append(s.Joins, result)
+
+	return result
+}
+
+/**
+* LeftJoin
+* @param m *Model
+* @return *Linq
+**/
+func (s *Linq) LeftJoin(m *Model) *LinqJoin {
+	result := s.Join(m)
+	result.TypeJoin = TypeJoinLeft
+
+	return result
+}
+
+/**
+* RightJoin
+* @param m *Model
+* @return *Linq
+**/
+func (s *Linq) RightJoin(m *Model) *LinqJoin {
+	result := s.Join(m)
+	result.TypeJoin = TypeJoinRight
+
+	return result
+}
+
+/**
+* FullJoin
+* @param m *Model
+* @return *Linq
+**/
+func (s *Linq) FullJoin(m *Model) *LinqJoin {
+	result := s.Join(m)
+	result.TypeJoin = TypeJoinFull
+
+	return result
 }
 
 /**
@@ -12,46 +79,12 @@ type LinqJoin struct {
 * @param col interface{}
 * @return *Linq
 **/
-func (s *LinqJoin) On(col interface{}) *LinqJoin {
-	return s
-}
+func (s *LinqJoin) On(col interface{}) *LinqFilter {
+	result := &LinqFilter{
+		Linq:   s.Linq,
+		Wheres: s.Wheres,
+		where:  &LinqWhere{},
+	}
 
-func (s *LinqJoin) Eq(val interface{}) *Linq {
-	return s.Linq
-}
-
-func (s *LinqJoin) Neg(val interface{}) *Linq {
-	return s.Linq
-}
-
-func (s *LinqJoin) In(val ...interface{}) *Linq {
-	return s.Linq
-}
-
-func (s *LinqJoin) Like(val interface{}) *Linq {
-	return s.Linq
-}
-
-func (s *LinqJoin) More(val interface{}) *Linq {
-	return s.Linq
-}
-
-func (s *LinqJoin) Less(val interface{}) *Linq {
-	return s.Linq
-}
-
-func (s *LinqJoin) MoreEq(val interface{}) *Linq {
-	return s.Linq
-}
-
-func (s *LinqJoin) LessEs(val interface{}) *Linq {
-	return s.Linq
-}
-
-func (s *LinqJoin) Between(val1, val2 interface{}) *Linq {
-	return s.Linq
-}
-
-func (s *LinqJoin) IsNull() *Linq {
-	return s.Linq
+	return result
 }
