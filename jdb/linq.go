@@ -18,9 +18,20 @@ type LinqFrom struct {
 	As string
 }
 
+type TypeFuntion int
+
+const (
+	Sum TypeFuntion = iota
+	Count
+	Avg
+	Max
+	Min
+)
+
 type LinqSelect struct {
-	From  *LinqFrom
-	Field string
+	From     *LinqFrom
+	Field    string
+	Function TypeFuntion
 }
 
 func (s *LinqSelect) As() string {
@@ -33,6 +44,7 @@ type LinqOrder struct {
 }
 
 type Linq struct {
+	Db       *Database
 	TypeLinq TypeLinq
 	Froms    []*LinqFrom
 	Joins    []*LinqJoin

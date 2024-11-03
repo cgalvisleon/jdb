@@ -16,13 +16,13 @@ const (
 type TypeData int
 
 const (
-	TypeDataString TypeData = iota
+	TypeDataText TypeData = iota
+	TypeDataMemo
 	TypeDataInt
 	TypeDataFloat
 	TypeDataNumber
 	TypeDataBool
 	TypeDataTime
-	TypeDataText
 	// Special
 	TypeDataSource
 	TypeDataObject
@@ -40,6 +40,7 @@ type Column struct {
 	Default    interface{}
 	Max        float64
 	Min        float64
+	Hidden     bool
 }
 
 func NewColumn(model *Model, name string, describe string, typeColumn TypeColumn, typeData TypeData, def interface{}) *Column {
@@ -54,5 +55,18 @@ func NewColumn(model *Model, name string, describe string, typeColumn TypeColumn
 		Default:    def,
 		Max:        0,
 		Min:        0,
+		Hidden:     false,
 	}
+}
+
+func (s *Model) DefineColumn(name, describe string, typeData TypeData, def interface{}) *Model {
+	col := NewColumn(s, name, describe, TpColumn, typeData, def)
+	s.Columns[col.Name] = col
+	return s
+}
+
+func (s *Model) DefineAtribute(name, describe string, typeData TypeData, def interface{}) *Model {
+	col := NewColumn(s, name, describe, TpAtribute, typeData, def)
+	s.Columns[col.Name] = col
+	return s
 }

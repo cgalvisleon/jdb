@@ -8,22 +8,27 @@ import (
 	"github.com/cgalvisleon/et/utility"
 )
 
+var (
+	IndexField     = "index"
+	DataField      = "_data"
+	ProjectField   = "project_id"
+	CreatedAtField = "created_at"
+	UpdateAtField  = "update_at"
+	StateField     = "_state"
+	KeyField       = "_idt"
+	CreatedTo      = "created_to"
+	UpdatedTo      = "updated_to"
+)
+
 type Database struct {
-	CreatedAt      time.Time          `json:"created_date"`
-	UpdateAt       time.Time          `json:"update_date"`
-	Id             string             `json:"id"`
-	Name           string             `json:"name"`
-	Description    string             `json:"description"`
-	Schemas        map[string]*Schema `json:"schemas"`
-	Driver         *Driver            `json:"driver"`
-	IndexField     string             `json:"index_field"`
-	DataField      string             `json:"data_field"`
-	ProjectField   string             `json:"project_field"`
-	CreatedAtField string             `json:"created_at_field"`
-	UpdateAtField  string             `json:"update_at_field"`
-	StateField     string             `json:"state_field"`
-	KeyField       string             `json:"key_field"`
-	Main           *Database
+	CreatedAt   time.Time          `json:"created_date"`
+	UpdateAt    time.Time          `json:"update_date"`
+	Id          string             `json:"id"`
+	Name        string             `json:"name"`
+	Description string             `json:"description"`
+	Schemas     map[string]*Schema `json:"schemas"`
+	Driver      *Driver            `json:"driver"`
+	Main        *Database
 }
 
 /**
@@ -34,19 +39,12 @@ func NewDatabase(name, description string) *Database {
 	now := time.Now()
 
 	return &Database{
-		CreatedAt:      now,
-		UpdateAt:       now,
-		Id:             utility.UUID(),
-		Name:           name,
-		Description:    description,
-		Schemas:        map[string]*Schema{},
-		IndexField:     "_id",
-		DataField:      "data",
-		ProjectField:   "project_id",
-		CreatedAtField: "created_at",
-		UpdateAtField:  "update_at",
-		StateField:     "_state",
-		KeyField:       "_idt",
+		CreatedAt:   now,
+		UpdateAt:    now,
+		Id:          utility.UUID(),
+		Name:        name,
+		Description: description,
+		Schemas:     map[string]*Schema{},
 	}
 }
 

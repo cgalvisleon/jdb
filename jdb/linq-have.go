@@ -6,9 +6,7 @@ package jdb
 * @return *LinqWhere
 **/
 func (s *Linq) Having(col interface{}) *LinqWhere {
-	result := &LinqWhere{
-		Linq: s,
-	}
+	result := &LinqWhere{}
 
 	return result
 }

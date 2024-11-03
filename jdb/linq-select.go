@@ -7,10 +7,10 @@ package jdb
 **/
 func (s *Linq) Select(columns ...interface{}) *Linq {
 	s.TypeLinq = TypeLinqSelect
-	for _, col := range columns {
-		c := s.getColumn(col)
-		if c != nil {
-			s.Selects = append(s.Selects, c)
+	for _, column := range columns {
+		col := s.getColumn(column)
+		if col != nil {
+			s.Selects = append(s.Selects, col)
 		}
 	}
 
@@ -24,10 +24,10 @@ func (s *Linq) Select(columns ...interface{}) *Linq {
 **/
 func (s *Linq) Data(columns ...interface{}) *Linq {
 	s.TypeLinq = TypeLinqData
-	for _, col := range columns {
-		c := s.getColumn(col)
-		if c != nil {
-			s.Selects = append(s.Selects, c)
+	for _, column := range columns {
+		col := s.getColumn(column)
+		if col != nil {
+			s.Selects = append(s.Selects, col)
 		}
 	}
 
@@ -35,23 +35,76 @@ func (s *Linq) Data(columns ...interface{}) *Linq {
 }
 
 /**
-* Offset
-* @param offset int
+* Sum
+* @param column interface{}
 * @return *Linq
 **/
-func (s *Linq) Page(val int) *Linq {
-	s.page = val
-	s.Offset = s.Limit * (s.page - 1)
+func (s *Linq) Sum(column interface{}) *Linq {
+	col := s.getColumn(column)
+	col.Function = Sum
+	if col != nil {
+		s.Selects = append(s.Selects, col)
+	}
+
 	return s
 }
 
 /**
-* Limit
-* @param limit int
+* Count
+* @param column interface{}
 * @return *Linq
 **/
-func (s *Linq) Rows(val int) *Linq {
-	s.Limit = val
-	s.Offset = s.Limit * (s.page - 1)
+func (s *Linq) Count(column interface{}) *Linq {
+	col := s.getColumn(column)
+	col.Function = Count
+	if col != nil {
+		s.Selects = append(s.Selects, col)
+	}
+
+	return s
+}
+
+/**
+* Avg
+* @param column interface{}
+* @return *Linq
+**/
+func (s *Linq) Avg(column interface{}) *Linq {
+	col := s.getColumn(column)
+	col.Function = Avg
+	if col != nil {
+		s.Selects = append(s.Selects, col)
+	}
+
+	return s
+}
+
+/**
+* Max
+* @param column interface{}
+* @return *Linq
+**/
+func (s *Linq) Max(column interface{}) *Linq {
+	col := s.getColumn(column)
+	col.Function = Max
+	if col != nil {
+		s.Selects = append(s.Selects, col)
+	}
+
+	return s
+}
+
+/**
+* Min
+* @param column interface{}
+* @return *Linq
+**/
+func (s *Linq) Min(column interface{}) *Linq {
+	col := s.getColumn(column)
+	col.Function = Min
+	if col != nil {
+		s.Selects = append(s.Selects, col)
+	}
+
 	return s
 }

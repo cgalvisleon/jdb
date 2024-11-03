@@ -99,26 +99,6 @@ func (s *LinqFilter) IsNull() *Linq {
 }
 
 /**
-* And
-* @param col interface{}
-* @return *LinqWheres
-**/
-func (s *LinqFilter) And(col interface{}) *LinqFilter {
-	s.where.Conector = And
-	return s
-}
-
-/**
-* And
-* @param col interface{}
-* @return *LinqWhere
-**/
-func (s *LinqFilter) Or(col interface{}) *LinqFilter {
-	s.where.Conector = Or
-	return s
-}
-
-/**
 * Select
 * @param columns ...interface{}
 * @return *Linq
@@ -138,8 +118,30 @@ func (s *Linq) Where(col interface{}) *LinqFilter {
 	result := &LinqFilter{
 		Linq:   s,
 		Wheres: s.Wheres,
-		where:  &LinqWhere{},
+		where:  where,
 	}
 
+	return result
+}
+
+/**
+* And
+* @param col interface{}
+* @return *LinqWheres
+**/
+func (s *Linq) And(col interface{}) *LinqFilter {
+	result := s.Where(col)
+	result.where.Conector = And
+	return result
+}
+
+/**
+* And
+* @param col interface{}
+* @return *LinqWhere
+**/
+func (s *Linq) Or(col interface{}) *LinqFilter {
+	result := s.Where(col)
+	result.where.Conector = Or
 	return result
 }

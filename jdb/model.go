@@ -24,7 +24,7 @@ type Model struct {
 	Keys         map[string]*Key        `json:"keys"`
 	Relations    map[string]*Relation   `json:"relations"`
 	Dictionaries map[string]*Dictionary `json:"dictionaries"`
-	DataField    *Column                `json:"data_field"`
+	SourceField  *Column                `json:"data_field"`
 	BeforeInsert Trigger                `json:"before_insert"`
 	AfterInsert  Trigger                `json:"after_insert"`
 	BeforeUpdate Trigger                `json:"before_update"`
