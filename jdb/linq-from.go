@@ -13,9 +13,10 @@ func From(m *Model) *Linq {
 		Returns:  make([]*LinqSelect, 0),
 		Orders:   make([]*LinqOrder, 0),
 		Offset:   0,
-		Limit:    10,
+		Limit:    0,
+		Show:     false,
 		index:    65,
-		page:     1,
+		page:     0,
 	}
 
 	result.addFrom(*m)

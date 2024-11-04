@@ -37,6 +37,12 @@ type LinqFilter struct {
 	where  *LinqWhere
 }
 
+/**
+* NewLinqFilter
+* @param l *Linq
+* @param wheres []*LinqWhere
+* @return *LinqFilter
+**/
 func NewLinqFilter(l *Linq, whers []*LinqWhere) *LinqFilter {
 	return &LinqFilter{
 		Linq:   l,
@@ -58,42 +64,91 @@ func (s *LinqFilter) add(operator Operator, val ...interface{}) *Linq {
 	return s.Linq
 }
 
+/**
+* Eq
+* @param val interface{}
+* @return *Linq
+**/
 func (s *LinqFilter) Eq(val interface{}) *Linq {
 	return s.add(Equal, val)
 }
 
+/**
+* Neg
+* @param val interface{}
+* @return *Linq
+**/
 func (s *LinqFilter) Neg(val interface{}) *Linq {
 	return s.add(Neg, val)
 }
 
+/**
+* In
+* @param val ...interface{}
+* @return *Linq
+**/
 func (s *LinqFilter) In(val ...interface{}) *Linq {
 	return s.add(In, val)
 }
 
+/**
+* Like
+* @param val interface{}
+* @return *Linq
+**/
 func (s *LinqFilter) Like(val interface{}) *Linq {
 	return s.add(Like, val)
 }
 
+/**
+* More
+* @param val interface{}
+* @return *Linq
+**/
 func (s *LinqFilter) More(val interface{}) *Linq {
 	return s.add(More, val)
 }
 
+/**
+* Less
+* @param val interface{}
+* @return *Linq
+**/
 func (s *LinqFilter) Less(val interface{}) *Linq {
 	return s.add(Less, val)
 }
 
+/**
+* MoreEq
+* @param val interface{}
+* @return *Linq
+**/
 func (s *LinqFilter) MoreEq(val interface{}) *Linq {
 	return s.add(MoreEq, val)
 }
 
+/**
+* LessEq
+* @param val interface{}
+* @return *Linq
+**/
 func (s *LinqFilter) LessEs(val interface{}) *Linq {
 	return s.add(LessEq, val)
 }
 
+/**
+* Between
+* @param val1, val2 interface{}
+* @return *Linq
+**/
 func (s *LinqFilter) Between(val1, val2 interface{}) *Linq {
 	return s.add(Between, val1, val2)
 }
 
+/**
+* IsNull
+* @return *Linq
+**/
 func (s *LinqFilter) IsNull() *Linq {
 	return s.add(IsNull, nil)
 }

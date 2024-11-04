@@ -1,6 +1,9 @@
 package main
 
-import "github.com/cgalvisl/jdb/jdb"
+import (
+	"github.com/cgalvisl/jdb/jdb"
+	"github.com/cgalvisleon/et/logs"
+)
 
 func main() {
 
@@ -11,13 +14,15 @@ func main() {
 	users.DefineColumn("age", "", jdb.TypeDataInt, 0)
 	users.DefineColumn("email", "", jdb.TypeDataText, "")
 
-	jdb.From(users).
-		Where("name").
-		Eq("Carlos").
-		And("age").
-		More(18).
-		Or("email").
-		Like("*gmail.com").
+	items, err := jdb.From(users).
+		Where("name").Eq("Carlos").
+		And("age").More(18).
+		Or("email").Like("*gmail.com").
 		Select().
 		All()
+	if err != nil {
+		panic(err)
+	}
+
+	logs.Debug(items.ToString())
 }

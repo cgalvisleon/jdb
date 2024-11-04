@@ -13,12 +13,12 @@ type Driver interface {
 	DeleteUser(username string) error
 	SetParams(data et.Json) error
 	// Query
+	SQL(sql string, params ...interface{}) (et.Items, error)
 	Query(linq *Linq) (et.Items, error)
-	One(linq *Linq) (et.Item, error)
+	Count(linq *Linq) (int, error)
+	Last(linq *Linq) (et.Items, error)
 	// Command
-	Insert(command *Command) (et.Item, error)
-	Update(command *Command) (et.Item, error)
-	Delete(command *Command) (et.Item, error)
+	Command(command *Command) (et.Items, error)
 	// Series
 	GetIndex(tag string) int64
 	SetIndex(tag string, val int) int64

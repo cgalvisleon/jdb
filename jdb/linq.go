@@ -3,6 +3,7 @@ package jdb
 import (
 	"strings"
 
+	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/strs"
 )
 
@@ -56,8 +57,20 @@ type Linq struct {
 	Orders   []*LinqOrder
 	Offset   int
 	Limit    int
+	Show     bool
+	Sql      string
+	Result   et.Items
 	index    int
 	page     int
+}
+
+func (s *Linq) Describe() et.Json {
+	result, err := et.Object(s)
+	if err != nil {
+		return et.Json{}
+	}
+
+	return result
 }
 
 func (s *Linq) addFrom(m Model) *LinqFrom {
@@ -191,4 +204,14 @@ func (s *Linq) getColumn(col interface{}) *LinqSelect {
 	default:
 		return nil
 	}
+}
+
+/**
+* Debug
+* @return *Linq
+**/
+func (s *Linq) Debug() *Linq {
+	s.Show = true
+
+	return s
 }
