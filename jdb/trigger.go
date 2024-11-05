@@ -2,4 +2,15 @@ package jdb
 
 import "github.com/cgalvisleon/et/et"
 
-type Trigger func(model *Model, old, new, data *et.Json) error
+type TypeTrigger int
+
+const (
+	BeforeInsert TypeTrigger = iota
+	AfterInsert
+	BeforeUpdate
+	AfterUpdate
+	BeforeDelete
+	AfterDelete
+)
+
+type Trigger func(model *Model, old et.Json, new *et.Json, data et.Json) error

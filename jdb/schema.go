@@ -13,23 +13,25 @@ func schemaName(name string) string {
 
 type Schema struct {
 	Db          *Database
-	CreatedAt   time.Time         `json:"created_date"`
-	UpdateAt    time.Time         `json:"update_date"`
-	Name        string            `json:"name"`
-	Description string            `json:"description"`
-	Models      map[string]*Model `json:"models"`
+	CreatedAt   time.Time            `json:"created_date"`
+	UpdateAt    time.Time            `json:"update_date"`
+	Name        string               `json:"name"`
+	Description string               `json:"description"`
+	Models      map[string]*Model    `json:"models"`
+	Function    map[string]*Function `json:"functions"`
 }
 
-func NewSchema(database *Database, name, description string) *Schema {
+func NewSchema(database *Database, name string) *Schema {
 	now := time.Now()
 
 	result := &Schema{
 		Db:          database,
 		CreatedAt:   now,
 		UpdateAt:    now,
-		Name:        name,
-		Description: description,
+		Name:        strs.Lowcase(name),
+		Description: "",
 		Models:      map[string]*Model{},
+		Function:    map[string]*Function{},
 	}
 
 	database.Schemas[name] = result
@@ -55,5 +57,5 @@ func (s *Schema) Describe() et.Json {
 * @return error
 **/
 func (s *Schema) Init() error {
-	return nil
+	return (*s.Db.Driver).CreateSchema(s.Name)
 }

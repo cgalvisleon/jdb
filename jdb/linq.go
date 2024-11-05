@@ -53,7 +53,6 @@ type Linq struct {
 	GroupBys []*LinqSelect
 	Havings  []*LinqWhere
 	Selects  []*LinqSelect
-	Returns  []*LinqSelect
 	Orders   []*LinqOrder
 	Offset   int
 	Limit    int

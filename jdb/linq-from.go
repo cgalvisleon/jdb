@@ -10,7 +10,6 @@ func From(m *Model) *Linq {
 		GroupBys: make([]*LinqSelect, 0),
 		Havings:  make([]*LinqWhere, 0),
 		Selects:  make([]*LinqSelect, 0),
-		Returns:  make([]*LinqSelect, 0),
 		Orders:   make([]*LinqOrder, 0),
 		Offset:   0,
 		Limit:    0,

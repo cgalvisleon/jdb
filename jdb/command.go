@@ -20,8 +20,13 @@ type Command struct {
 	Db      *Database
 	Model   *Model
 	Data    []et.Json
-	Wheres  []*LinqWhere
 	Command TypeCommand
+	Columns et.Json
+	Atribs  et.Json
+	New     *et.Json
+	Key     string
+	Wheres  []*LinqWhere
+	Returns []*LinqSelect
 	Show    bool
 	Sql     string
 	Result  et.Items
@@ -39,8 +44,12 @@ func NewCommand(model *Model, data []et.Json, command TypeCommand) *Command {
 		Db:      model.Db,
 		Model:   model,
 		Data:    data,
-		Wheres:  make([]*LinqWhere, 0),
 		Command: command,
+		Columns: et.Json{},
+		Atribs:  et.Json{},
+		New:     &et.Json{},
+		Wheres:  make([]*LinqWhere, 0),
+		Returns: make([]*LinqSelect, 0),
 		Show:    false,
 		Sql:     "",
 		Result:  et.Items{},
@@ -111,13 +120,155 @@ func (s *Command) getColumn(col interface{}) *LinqSelect {
 	}
 }
 
+func (s *Command) consolidate(data et.Json) et.Json {
+	if s.Model.Integrity {
+		for k, v := range data {
+			if col := s.Model.GetColumn(k); col != nil {
+				(*s.New)[k] = v
+				switch col.TypeColumn {
+				case TpAtribute:
+					s.Atribs[k] = v
+				case TpColumn:
+					s.Columns[k] = v
+				}
+			}
+		}
+	} else {
+		for k, v := range data {
+			(*s.New)[k] = v
+			if col := s.Model.GetColumn(k); col != nil {
+				switch col.TypeColumn {
+				case TpAtribute:
+					s.Atribs[k] = v
+				case TpColumn:
+					s.Columns[k] = v
+				}
+			} else {
+				s.Atribs[k] = v
+			}
+		}
+	}
+
+	return (*s.New)
+}
+
+func (s *Command) command() (et.Item, error) {
+	result, err := (*s.Db.Driver).Command(s)
+	if s.Show {
+		logs.Debug(s.Describe().ToString())
+	}
+	if err != nil {
+		return et.Item{}, err
+	}
+
+	return result, nil
+}
+
+func (s *Command) inserted(data et.Json) (et.Item, error) {
+	s.consolidate(data)
+	for _, trigger := range s.Model.BeforeInsert {
+		err := trigger(s.Model, nil, s.New, data)
+		if err != nil {
+			return et.Item{}, err
+		}
+	}
+
+	result, err := s.command()
+	if err != nil {
+		return et.Item{}, err
+	}
+
+	if result.Ok {
+		s.New = &result.Result
+	}
+
+	for _, trigger := range s.Model.AfterInsert {
+		err := trigger(s.Model, nil, s.New, data)
+		if err != nil {
+			return et.Item{}, err
+		}
+	}
+
+	err = s.Model.ExecDetails(s.New)
+	if err != nil {
+		return et.Item{}, err
+	}
+
+	return result, nil
+}
+
+func (s *Command) updated(old, data et.Json) (et.Item, error) {
+	s.consolidate(data)
+	for _, trigger := range s.Model.BeforeInsert {
+		err := trigger(s.Model, old, s.New, data)
+		if err != nil {
+			return et.Item{}, err
+		}
+	}
+
+	result, err := s.command()
+	if err != nil {
+		return et.Item{}, err
+	}
+
+	if result.Ok {
+		s.New = &result.Result
+	}
+
+	for _, trigger := range s.Model.AfterInsert {
+		err := trigger(s.Model, old, s.New, data)
+		if err != nil {
+			return et.Item{}, err
+		}
+	}
+
+	err = s.Model.ExecDetails(s.New)
+	if err != nil {
+		return et.Item{}, err
+	}
+
+	return result, nil
+}
+
+func (s *Command) delete(old et.Json) (et.Item, error) {
+	for _, trigger := range s.Model.BeforeInsert {
+		err := trigger(s.Model, old, nil, nil)
+		if err != nil {
+			return et.Item{}, err
+		}
+	}
+
+	result, err := s.command()
+	if err != nil {
+		return et.Item{}, err
+	}
+
+	if result.Ok {
+		s.New = &result.Result
+	}
+
+	for _, trigger := range s.Model.AfterInsert {
+		err := trigger(s.Model, old, nil, nil)
+		if err != nil {
+			return et.Item{}, err
+		}
+	}
+
+	err = s.Model.ExecDetails(s.New)
+	if err != nil {
+		return et.Item{}, err
+	}
+
+	return result, nil
+}
+
 /**
 * Insert
 * @param data []et.Json
 * @return *Command
 **/
-func (s *Model) Insert(data []et.Json) *Command {
-	return NewCommand(s, data, Insert)
+func (s *Model) Insert(data et.Json) *Command {
+	return NewCommand(s, []et.Json{data}, Insert)
 }
 
 /**
@@ -125,8 +276,8 @@ func (s *Model) Insert(data []et.Json) *Command {
 * @param data []et.Json
 * @return *Command
 **/
-func (s *Model) Update(data []et.Json) *Command {
-	return NewCommand(s, data, Update)
+func (s *Model) Update(data et.Json) *Command {
+	return NewCommand(s, []et.Json{data}, Update)
 }
 
 /**
@@ -135,6 +286,15 @@ func (s *Model) Update(data []et.Json) *Command {
 **/
 func (s *Model) Delete() *Command {
 	return NewCommand(s, []et.Json{}, Delete)
+}
+
+/**
+* Bulk
+* @param data []et.Json
+* @return *Command
+**/
+func (s *Model) Bulk(data []et.Json) *Command {
+	return NewCommand(s, data, Insert)
 }
 
 /**
@@ -151,15 +311,62 @@ func (s *Command) Debug() *Command {
 * @return et.Items, error
 **/
 func (s *Command) Exec() (et.Items, error) {
-	result, err := (*s.Db.Driver).Command(s)
-	if s.Show {
-		logs.Debug(s.Describe().ToString())
-	}
-	if err != nil {
-		return et.Items{}, err
+	switch s.Command {
+	case Insert:
+		if len(s.Data) == 0 {
+			return et.Items{}, logs.NewError("Data not found")
+		}
+		for _, data := range s.Data {
+			result, err := s.inserted(data)
+			if err != nil {
+				return et.Items{}, err
+			}
+			s.Result.Result = append(s.Result.Result, result.Result)
+			s.Result.Count++
+			s.Result.Ok = true
+		}
+	case Update:
+		if len(s.Data) == 0 {
+			return et.Items{}, logs.NewError("Data not found")
+		}
+		current, err := (*s.Db.Driver).Current(s)
+		if err != nil {
+			return et.Items{}, err
+		}
+		for _, old := range current.Result {
+			s.Key = old.ValStr("", SystemKeyField)
+			if s.Key == "" {
+				continue
+			}
+			result, err := s.updated(old, s.Data[0])
+			if err != nil {
+				return et.Items{}, err
+			}
+			s.Result.Result = append(s.Result.Result, result.Result)
+			s.Result.Count++
+			s.Result.Ok = true
+		}
+	case Delete:
+		current, err := (*s.Db.Driver).Current(s)
+		if err != nil {
+			return et.Items{}, err
+		}
+		for _, old := range current.Result {
+			s.Key = old.ValStr("", SystemKeyField)
+			if s.Key == "" {
+				continue
+			}
+			result, err := s.delete(old)
+			if err != nil {
+				return et.Items{}, err
+			}
+			s.Result.Result = append(s.Result.Result, result.Result)
+			s.Result.Count++
+			s.Result.Ok = true
+		}
 	}
 
-	return result, nil
+	return s.Result, nil
 }
 
 /**

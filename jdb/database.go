@@ -8,18 +8,6 @@ import (
 	"github.com/cgalvisleon/et/utility"
 )
 
-var (
-	IndexField     = "index"
-	DataField      = "_data"
-	ProjectField   = "project_id"
-	CreatedAtField = "created_at"
-	UpdateAtField  = "update_at"
-	StateField     = "_state"
-	KeyField       = "_idt"
-	CreatedTo      = "created_to"
-	UpdatedTo      = "updated_to"
-)
-
 type Database struct {
 	CreatedAt   time.Time          `json:"created_date"`
 	UpdateAt    time.Time          `json:"update_date"`
@@ -35,7 +23,7 @@ type Database struct {
 * NewDatabase
 * @return *Database
 **/
-func NewDatabase(name, description string) *Database {
+func NewDatabase(name string) *Database {
 	now := time.Now()
 
 	return &Database{
@@ -43,7 +31,7 @@ func NewDatabase(name, description string) *Database {
 		UpdateAt:    now,
 		Id:          utility.UUID(),
 		Name:        name,
-		Description: description,
+		Description: "",
 		Schemas:     map[string]*Schema{},
 	}
 }
