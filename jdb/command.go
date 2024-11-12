@@ -178,28 +178,21 @@ func (s *Command) inserted(data et.Json) (et.Item, error) {
 		return et.Item{}, err
 	}
 
-	if result.Ok {
-		s.New = &result.Result
-	}
-
 	for _, trigger := range s.Model.AfterInsert {
-		err := trigger(s.Model, nil, s.New, data)
+		err := trigger(s.Model, nil, &result.Result, data)
 		if err != nil {
 			return et.Item{}, err
 		}
 	}
 
-	err = s.Model.ExecDetails(s.New)
-	if err != nil {
-		return et.Item{}, err
-	}
+	s.Model.GetDetails(&result.Result)
 
 	return result, nil
 }
 
 func (s *Command) updated(old, data et.Json) (et.Item, error) {
 	s.consolidate(data)
-	for _, trigger := range s.Model.BeforeInsert {
+	for _, trigger := range s.Model.BeforeUpdate {
 		err := trigger(s.Model, old, s.New, data)
 		if err != nil {
 			return et.Item{}, err
@@ -215,23 +208,20 @@ func (s *Command) updated(old, data et.Json) (et.Item, error) {
 		s.New = &result.Result
 	}
 
-	for _, trigger := range s.Model.AfterInsert {
-		err := trigger(s.Model, old, s.New, data)
+	for _, trigger := range s.Model.AfterUpdate {
+		err := trigger(s.Model, old, &result.Result, data)
 		if err != nil {
 			return et.Item{}, err
 		}
 	}
 
-	err = s.Model.ExecDetails(s.New)
-	if err != nil {
-		return et.Item{}, err
-	}
+	s.Model.GetDetails(&result.Result)
 
 	return result, nil
 }
 
 func (s *Command) delete(old et.Json) (et.Item, error) {
-	for _, trigger := range s.Model.BeforeInsert {
+	for _, trigger := range s.Model.BeforeDelete {
 		err := trigger(s.Model, old, nil, nil)
 		if err != nil {
 			return et.Item{}, err
@@ -247,17 +237,14 @@ func (s *Command) delete(old et.Json) (et.Item, error) {
 		s.New = &result.Result
 	}
 
-	for _, trigger := range s.Model.AfterInsert {
+	for _, trigger := range s.Model.AfterDelete {
 		err := trigger(s.Model, old, nil, nil)
 		if err != nil {
 			return et.Item{}, err
 		}
 	}
 
-	err = s.Model.ExecDetails(s.New)
-	if err != nil {
-		return et.Item{}, err
-	}
+	s.Model.GetDetails(&result.Result)
 
 	return result, nil
 }

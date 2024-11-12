@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/cgalvisleon/et/et"
+	"github.com/cgalvisleon/et/logs"
 	"github.com/cgalvisleon/et/strs"
 )
 
@@ -19,8 +20,8 @@ type Model struct {
 	Name         string                 `json:"name"`
 	Table        string                 `json:"table"`
 	Description  string                 `json:"description"`
-	Columns      map[string]*Column     `json:"columns"`
-	Details      map[string]*Column     `json:"details"`
+	Columns      []*Column              `json:"columns"`
+	Details      map[string]Detail      `json:"details"`
 	Indices      map[string]*Index      `json:"indices"`
 	Uniques      map[string]*Index      `json:"uniques"`
 	Keys         map[string]*Column     `json:"keys"`
@@ -48,8 +49,8 @@ func NewModel(schema *Schema, name string) *Model {
 		Name:         strs.Titlecase(name),
 		Description:  "",
 		Table:        TableName(schema.Name, name),
-		Columns:      make(map[string]*Column),
-		Details:      make(map[string]*Column),
+		Columns:      make([]*Column, 0),
+		Details:      make(map[string]Detail, 0),
 		Indices:      make(map[string]*Index),
 		Uniques:      make(map[string]*Index),
 		Keys:         make(map[string]*Column),
@@ -99,8 +100,10 @@ func (s *Model) Init() error {
 **/
 func (s *Model) GetColumn(name string) *Column {
 	field := fieldName(name)
-	if col, ok := s.Columns[field]; ok {
-		return col
+	for _, col := range s.Columns {
+		if col.Field == field {
+			return col
+		}
 	}
 
 	return nil
@@ -122,7 +125,16 @@ func (s *Model) GetColumns(names ...string) []*Column {
 	return result
 }
 
-func (s *Model) ExecDetails(data *et.Json) error {
-
-	return nil
+/**
+* GetDetails
+* @param data *et.Json
+* @return error
+**/
+func (s *Model) GetDetails(data *et.Json) {
+	for col, detail := range s.Details {
+		err := detail(col, data)
+		if err != nil {
+			logs.Alert(err)
+		}
+	}
 }

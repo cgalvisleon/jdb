@@ -13,7 +13,7 @@ import (
 **/
 func (s *Model) DefineColumn(name string, typeData TypeData, def interface{}) *Column {
 	col := newColumn(s, name, "", TpColumn, typeData, def)
-	s.Columns[col.Field] = col
+	s.Columns = append(s.Columns, col)
 	if slices.Contains([]string{IndexField, ProjectField, CreatedAtField, UpdatedAtField, StateField, SystemKeyField, FullTextField}, name) {
 		s.DefineIndex(true, name)
 	}
@@ -30,7 +30,7 @@ func (s *Model) DefineColumn(name string, typeData TypeData, def interface{}) *C
 **/
 func (s *Model) DefineAtribute(name string, typeData TypeData, def interface{}) *Column {
 	col := newColumn(s, name, "", TpAtribute, typeData, def)
-	s.Columns[col.Field] = col
+	s.Columns = append(s.Columns, col)
 
 	return col
 }
@@ -121,10 +121,36 @@ func (s *Model) DefineTrigger(tp TypeTrigger, trigger Trigger) *Model {
 * @param function string
 * @return *Model
 **/
-func (s *Model) DefineFunction(name string, tp TypeFunction, definition string) *Function {
+func (s *Model) DefineFunction(name string, tp TypeFunction, definition string) *Model {
 	f := NewFunction(name, tp)
 	f.Definition = definition
 	s.Functions[f.Key] = f
 
-	return f
+	return s
+}
+
+/**
+* DefineDetail
+* @param name string
+* @param detail Detail
+* @return *Model
+**/
+func (s *Model) DefineDetail(name string, detail Detail) *Model {
+	s.Details[name] = detail
+
+	return s
+}
+
+/**
+* DefineDictionary
+* @param name string
+* @param key string
+* @param value interface{}
+* @return *Dictionary
+**/
+func (s *Model) DefineDictionary(name, key string, value interface{}) *Dictionary {
+	result := NewDictionary(s, key, value)
+	s.Dictionaries[name] = result
+
+	return result
 }

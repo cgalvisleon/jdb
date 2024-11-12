@@ -82,14 +82,6 @@ func (s *Database) DeleteUser(username string) error {
 }
 
 /**
-* SetParams
-* @return error
-**/
-func (s *Database) SetParams(data et.Json) error {
-	return (*s.Driver).SetParams(data)
-}
-
-/**
 * SetMain
 **/
 func (s *Database) SetMain(db *Database) {
@@ -97,27 +89,27 @@ func (s *Database) SetMain(db *Database) {
 }
 
 /**
-* SetIndex
+* SetSerie
 * @return int64
 **/
-func (s *Database) SetIndex(tag string, val int) int64 {
+func (s *Database) SetSerie(tag string, val int) int64 {
 	if s.Main == nil {
-		return (*s.Driver).SetIndex(tag, val)
+		return (*s.Driver).SetSerie(tag, val)
 	}
 
-	return s.Main.SetIndex(tag, val)
+	return s.Main.SetSerie(tag, val)
 }
 
 /**
-* GetIndex
+* GetSerie
 * @return int64
 **/
-func (s *Database) GetIndex(tag string) int64 {
+func (s *Database) GetSerie(tag string) int64 {
 	if s.Main == nil {
-		return (*s.Driver).GetIndex(tag)
+		return (*s.Driver).GetSerie(tag)
 	}
 
-	return s.Main.GetIndex(tag)
+	return s.Main.GetSerie(tag)
 }
 
 /**
@@ -127,7 +119,7 @@ func (s *Database) GetIndex(tag string) int64 {
 * @return string
 **/
 func (s *Database) GetCode(tag, format string) string {
-	val := s.GetIndex(tag)
+	val := s.GetSerie(tag)
 
 	if len(format) == 0 {
 		return strs.Format("%08v", val)

@@ -25,13 +25,11 @@ const (
 	TypeDataShort
 	TypeDataKey
 	TypeDataInt
-	TypeDataFloat
 	TypeDataNumber
 	TypeDataSerie
 	TypeDataBool
 	TypeDataTime
 	// Special
-	TypeDataSource
 	TypeDataObject
 	TypeDataArray
 	TypeFullText

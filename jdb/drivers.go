@@ -11,15 +11,20 @@ type Driver interface {
 	// Database
 	CreateDatabase(name string) error
 	DropDatabase(name string) error
+	RenameDatabase(name, newname string) error
+	SetParams(data et.Json) error
+	// Core
+	CreateCore() error
+	MutateCore() error
 	// User
 	SetUser(username, password, confirmation string) error
 	DeleteUser(username string) error
-	SetParams(data et.Json) error
 	// Schema
 	CreateSchema(name string) error
 	DropSchema(name string) error
 	// Model
 	CreateModel(model *Model) error
+	MutateModel(model *Model) error
 	// Query
 	SQL(sql string, params ...interface{}) (et.Items, error)
 	Query(linq *Linq) (et.Items, error)
@@ -29,8 +34,8 @@ type Driver interface {
 	Current(command *Command) (et.Items, error)
 	Command(command *Command) (et.Item, error)
 	// Series
-	GetIndex(tag string) int64
-	SetIndex(tag string, val int) int64
+	GetSerie(tag string) int64
+	SetSerie(tag string, val int) int64
 }
 
 var Drivers map[string]*Driver
