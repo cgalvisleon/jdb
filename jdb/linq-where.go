@@ -137,6 +137,15 @@ func (s *LinqFilter) LessEs(val interface{}) *Linq {
 }
 
 /**
+* Search
+* @param val interface{}
+* @return *Linq
+**/
+func (s *LinqFilter) Search(val interface{}) *Linq {
+	return s.add(Search, val)
+}
+
+/**
 * Between
 * @param val1, val2 interface{}
 * @return *Linq

@@ -26,7 +26,9 @@ type Driver interface {
 	CreateModel(model *Model) error
 	MutateModel(model *Model) error
 	// Query
+	Exec(sql string, params ...interface{}) error
 	SQL(sql string, params ...interface{}) (et.Items, error)
+	One(sql string, params ...interface{}) (et.Item, error)
 	Query(linq *Linq) (et.Items, error)
 	Count(linq *Linq) (int, error)
 	Last(linq *Linq) (et.Items, error)
@@ -43,10 +45,6 @@ var Drivers map[string]*Driver
 /**
 * SetDriver
 **/
-func SetDriver(d *Driver) {
-	Drivers[(*d).Name()] = d
-}
-
-func init() {
-	Drivers = map[string]*Driver{}
+func Register(name string, driver func() Driver) {
+	drivers[name] = driver
 }

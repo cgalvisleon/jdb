@@ -13,29 +13,30 @@ func TableName(schema, name string) string {
 }
 
 type Model struct {
-	Db           *Database
-	Schema       *Schema
-	CreatedAt    time.Time              `json:"created_date"`
-	UpdateAt     time.Time              `json:"update_date"`
-	Name         string                 `json:"name"`
-	Table        string                 `json:"table"`
-	Description  string                 `json:"description"`
-	Columns      []*Column              `json:"columns"`
-	Details      map[string]Detail      `json:"details"`
-	Indices      map[string]*Index      `json:"indices"`
-	Uniques      map[string]*Index      `json:"uniques"`
-	Keys         map[string]*Column     `json:"keys"`
-	Relations    map[string]*Relation   `json:"relations"`
-	Dictionaries map[string]*Dictionary `json:"dictionaries"`
-	SourceField  *Column                `json:"data_field"`
-	BeforeInsert []Trigger              `json:"before_insert"`
-	AfterInsert  []Trigger              `json:"after_insert"`
-	BeforeUpdate []Trigger              `json:"before_update"`
-	AfterUpdate  []Trigger              `json:"after_update"`
-	BeforeDelete []Trigger              `json:"before_delete"`
-	AfterDelete  []Trigger              `json:"after_delete"`
-	Functions    map[string]*Function   `json:"functions"`
-	Integrity    bool                   `json:"integrity"`
+	Db            *Database
+	Schema        *Schema
+	CreatedAt     time.Time              `json:"created_date"`
+	UpdateAt      time.Time              `json:"update_date"`
+	Name          string                 `json:"name"`
+	Table         string                 `json:"table"`
+	Description   string                 `json:"description"`
+	Columns       []*Column              `json:"columns"`
+	Details       map[string]Detail      `json:"details"`
+	Indices       map[string]*Index      `json:"indices"`
+	Uniques       map[string]*Index      `json:"uniques"`
+	Keys          map[string]*Column     `json:"keys"`
+	Relations     map[string]*Relation   `json:"relations"`
+	Dictionaries  map[string]*Dictionary `json:"dictionaries"`
+	SourceField   *Column                `json:"data_field"`
+	FullTextField *Column                `json:"full_text"`
+	BeforeInsert  []Trigger              `json:"before_insert"`
+	AfterInsert   []Trigger              `json:"after_insert"`
+	BeforeUpdate  []Trigger              `json:"before_update"`
+	AfterUpdate   []Trigger              `json:"after_update"`
+	BeforeDelete  []Trigger              `json:"before_delete"`
+	AfterDelete   []Trigger              `json:"after_delete"`
+	Functions     map[string]*Function   `json:"functions"`
+	Integrity     bool                   `json:"integrity"`
 }
 
 func NewModel(schema *Schema, name string) *Model {
@@ -137,4 +138,31 @@ func (s *Model) GetDetails(data *et.Json) {
 			logs.Alert(err)
 		}
 	}
+}
+
+/**
+* Column
+* @param name string
+* @return *Column
+**/
+func (s *Model) Column(name string) *Column {
+	return s.GetColumn(name)
+}
+
+/**
+* Col
+* @param name string
+* @return *Column
+**/
+func (s *Model) Col(name string) *Column {
+	return s.GetColumn(name)
+}
+
+/**
+* Col
+* @param name string
+* @return *Column
+**/
+func (s *Model) FullText() *Column {
+	return s.FullTextField
 }

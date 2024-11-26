@@ -5,12 +5,32 @@ import (
 	"github.com/cgalvisleon/et/logs"
 )
 
+func (s *Linq) prebuild() {
+	result := et.Json{}
+
+	for _, val := range s.Froms {
+		result.Set([]string{val.Table}, val.As)
+	}
+
+	for _, val := range s.Selects {
+		result.Set([]string{val.From.As}, val.Field)
+	}
+
+	logs.Debug(result.ToString())
+}
+
 /**
 * First
 * @param n int
 * @return et.Items, error
 **/
 func (s *Linq) First(n int) (et.Items, error) {
+	s.prebuild()
+
+	if s.Db.Driver == nil {
+		return et.Items{}, logs.NewError(MSG_DRIVER_NOT_FOUND)
+	}
+
 	s.Limit = n
 	result, err := (*s.Db.Driver).Query(s)
 	if s.Show {
@@ -37,6 +57,10 @@ func (s *Linq) All() (et.Items, error) {
 * @return et.Items, error
 **/
 func (s *Linq) Last(n int) (et.Items, error) {
+	if s.Db.Driver == nil {
+		return et.Items{}, logs.NewError(MSG_DRIVER_NOT_FOUND)
+	}
+
 	s.Limit = n
 	result, err := (*s.Db.Driver).Last(s)
 	if s.Show {
@@ -86,6 +110,10 @@ func (s *Linq) Page(val int) *Linq {
 * @return *Linq
 **/
 func (s *Linq) Rows(val int) (et.List, error) {
+	if s.Db.Driver == nil {
+		return et.List{}, logs.NewError(MSG_DRIVER_NOT_FOUND)
+	}
+
 	all, err := (*s.Db.Driver).Count(s)
 	if s.Show {
 		logs.Debug(s.Describe().ToString())

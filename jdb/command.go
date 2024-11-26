@@ -98,7 +98,7 @@ func (s *Command) getColumn(col interface{}) *LinqSelect {
 		}
 	case string:
 		list := strings.Split(v, ".")
-		if len(list[0]) == 0 {
+		if len(list) == 0 {
 			return nil
 		}
 
@@ -107,7 +107,7 @@ func (s *Command) getColumn(col interface{}) *LinqSelect {
 			As:    s.Model.Table,
 		}
 
-		if len(list[1]) == 0 {
+		if len(list) == 1 {
 			return &LinqSelect{
 				From:  from,
 				Field: strs.Uppcase(list[0]),

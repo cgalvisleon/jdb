@@ -163,11 +163,11 @@ func (s *Linq) getColumn(col interface{}) *LinqSelect {
 		}
 	case string:
 		list := strings.Split(v, ".")
-		if len(list[0]) == 0 {
+		if len(list) == 0 {
 			return nil
 		}
 
-		if len(list[1]) == 0 {
+		if len(list) == 1 {
 			from := s.Froms[0]
 			return &LinqSelect{
 				From:  from,
@@ -175,7 +175,7 @@ func (s *Linq) getColumn(col interface{}) *LinqSelect {
 			}
 		}
 
-		if len(list[2]) == 0 {
+		if len(list) == 2 {
 			from := s.getFrom(list[0])
 			if from == nil {
 				return nil
