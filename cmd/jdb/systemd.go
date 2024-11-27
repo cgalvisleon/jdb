@@ -10,6 +10,7 @@ import (
 	"sync"
 	"syscall"
 
+	"github.com/cgalvisleon/et/envar"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/logs"
 	"github.com/cgalvisleon/et/strs"
@@ -69,7 +70,19 @@ func (s *Systemd) SetConfig(cfg string) {
 		return
 	}
 
-	s.port = config.Int("port")
+	for k, v := range config {
+		k = strs.Uppcase(k)
+		switch val := v.(type) {
+		case string:
+			envar.UpSetStr(k, val)
+		case int:
+			envar.UpSetInt(k, val)
+		case bool:
+			envar.UpSetBool(k, val)
+		case float64:
+			envar.UpSetFloat(k, val)
+		}
+	}
 }
 
 func (s *Systemd) Status() et.Item {

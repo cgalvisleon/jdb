@@ -11,3 +11,15 @@ gofmt -w . && go build --race -a -v -o ./jdb ./cmd/jdb
 ps aux | grep jdb | grep -v grep
 
 ```
+
+## Library
+
+```
+go get github.com/cgalvisleon/et/@v0.0.4
+```
+
+## Go work
+
+```
+go work init ../et
+```
