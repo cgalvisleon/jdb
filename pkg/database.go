@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/cgalvisleon/et/et"
-	"github.com/cgalvisleon/et/strs"
+	"github.com/cgalvisleon/et/logs"
 	"github.com/cgalvisleon/et/utility"
 )
 
@@ -16,7 +16,6 @@ type Database struct {
 	Description string             `json:"description"`
 	Schemas     map[string]*Schema `json:"schemas"`
 	Driver      *Driver            `json:"driver"`
-	Main        *Database
 }
 
 /**
@@ -84,8 +83,12 @@ func (s *Database) DeleteUser(username string) error {
 /**
 * SetMain
 **/
-func (s *Database) SetMain(db *Database) {
-	s.Main = db
+func (s *Database) SetMain(db *Database) error {
+	if s.Driver == nil {
+		return logs.NewError(MSG_DRIVER_NOT_DEFINED)
+	}
+
+	return nil
 }
 
 /**
@@ -93,11 +96,11 @@ func (s *Database) SetMain(db *Database) {
 * @return int64
 **/
 func (s *Database) SetSerie(tag string, val int) int64 {
-	if s.Main == nil {
-		return (*s.Driver).SetSerie(tag, val)
+	if s.Driver == nil {
+		return 0
 	}
 
-	return s.Main.SetSerie(tag, val)
+	return (*s.Driver).SetSerie(tag, val)
 }
 
 /**
@@ -105,25 +108,23 @@ func (s *Database) SetSerie(tag string, val int) int64 {
 * @return int64
 **/
 func (s *Database) GetSerie(tag string) int64 {
-	if s.Main == nil {
-		return (*s.Driver).GetSerie(tag)
+	if s.Driver == nil {
+		return 0
 	}
 
-	return s.Main.GetSerie(tag)
+	return (*s.Driver).GetSerie(tag)
 }
 
 /**
-* GetCode
+* NextCode
 * @param tag string
 * @param format string "%08v" "PREFIX-%08v-SUFFIX"
 * @return string
 **/
-func (s *Database) GetCode(tag, format string) string {
-	val := s.GetSerie(tag)
-
-	if len(format) == 0 {
-		return strs.Format("%08v", val)
+func (s *Database) NextCode(tag, format string) string {
+	if s.Driver == nil {
+		return ""
 	}
 
-	return strs.Format(format, val)
+	return (*s.Driver).NextCode(tag, format)
 }

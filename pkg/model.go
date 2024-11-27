@@ -91,6 +91,7 @@ func (s *Model) Describe() et.Json {
 * @return error
 **/
 func (s *Model) Init() error {
+	if s.Db == nil {
 	return nil
 }
 
