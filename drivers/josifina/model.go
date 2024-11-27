@@ -1,6 +1,6 @@
 package josefina
 
-import "github.com/cgalvisl/jdb/jdb"
+import jdb "github.com/cgalvisl/jdb/pkg"
 
 func (s *Josefina) CreateModel(model *jdb.Model) error {
 	return nil

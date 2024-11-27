@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/cgalvisl/jdb/jdb"
+	jdb "github.com/cgalvisl/jdb/pkg"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/logs"
 )

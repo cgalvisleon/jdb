@@ -1,16 +1,19 @@
 package postgres
 
 import (
-	"github.com/cgalvisl/jdb/jdb"
-	"github.com/cgalvisleon/et/et"
+	jdb "github.com/cgalvisl/jdb/pkg"
 	"github.com/cgalvisleon/et/logs"
 	"github.com/cgalvisleon/et/msg"
 	"github.com/cgalvisleon/et/strs"
 )
 
 func (s *Postgres) existDatabase(name string) (bool, error) {
-	sql := strs.Format(`SELECT 1 FROM pg_database WHERE datname = %s;`, name)
-	items, err := s.SQL(sql)
+	sql := `
+	SELECT EXISTS(
+	SELECT 1
+	FROM pg_database
+	WHERE UPPER(datname) = UPPER($1));`
+	items, err := s.SQL(sql, name)
 	if err != nil {
 		return false, err
 	}
@@ -36,8 +39,8 @@ func (s *Postgres) CreateDatabase(name string) error {
 		return nil
 	}
 
-	sql := strs.Format(`CREATE DATABASE `, name)
-	err = s.Exec(sql)
+	sql := `CREATE DATABASE $1`
+	err = s.Exec(sql, name)
 	if err != nil {
 		return logs.Alertf(jdb.MSG_QUERY_FAILED, err.Error())
 	}
@@ -59,19 +62,11 @@ func (s *Postgres) DropDatabase(name string) error {
 		return nil
 	}
 
-	sql := strs.Format(`DROP DATABASE `, name)
+	sql := strs.Format(`DROP DATABASE %s`, name)
 	err = s.Exec(sql)
 	if err != nil {
 		return logs.Alertf(jdb.MSG_QUERY_FAILED, err.Error())
 	}
 
-	return nil
-}
-
-func (s *Postgres) RenameDatabase(name, newname string) error {
-	return nil
-}
-
-func (s *Postgres) SetParams(data et.Json) error {
 	return nil
 }
