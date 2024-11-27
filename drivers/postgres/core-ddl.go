@@ -65,26 +65,17 @@ func (s *Postgres) defineDDL() error {
 **/
 func (s *Postgres) upsertDDL(id string, query string) error {
 	sql := `
-	SELECT INDEX
-	FROM core.DDL
-	WHERE _ID = $1;`
+	UPDATE core.DDL SET
+	SQL = $2
+	WHERE _ID = $1
+	RETURNING _ID;`
 
-	item, err := s.One(sql, id)
+	item, err := s.One(sql, id, []byte(query))
 	if err != nil {
 		return err
 	}
 
 	if item.Ok {
-		sql = `
-		UPDATE core.DDL SET
-		SQL = $2
-		WHERE _ID = $1;`
-
-		err = s.Exec(sql, id, []byte(query))
-		if err != nil {
-			return err
-		}
-
 		return nil
 	}
 

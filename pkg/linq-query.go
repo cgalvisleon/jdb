@@ -9,11 +9,11 @@ func (s *Linq) prebuild() {
 	result := et.Json{}
 
 	for _, val := range s.Froms {
-		result.Set([]string{val.Table}, val.As)
+		result.Set(val.Table, val.As)
 	}
 
 	for _, val := range s.Selects {
-		result.Set([]string{val.From.As}, val.Field)
+		result.Set(val.From.As, val.Field)
 	}
 
 	logs.Debug(result.ToString())

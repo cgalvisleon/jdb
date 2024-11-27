@@ -12,6 +12,10 @@ var driver Base
 type Base struct {
 }
 
+func NewDriver() jdb.Driver {
+	return &Base{}
+}
+
 func (s *Base) Name() string {
 	return DriverName
 }
@@ -24,8 +28,9 @@ func (s *Base) Disconnect() error {
 	return nil
 }
 
-func NewDriver() jdb.Driver {
-	return &Base{}
+func (s *Base) SetMain(params et.Json) error {
+
+	return nil
 }
 
 func init() {

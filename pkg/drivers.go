@@ -8,6 +8,7 @@ type Driver interface {
 	Name() string
 	Connect(params et.Json) error
 	Disconnect() error
+	SetMain(params et.Json) error
 	// Database
 	CreateDatabase(name string) error
 	DropDatabase(name string) error

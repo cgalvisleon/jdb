@@ -22,7 +22,11 @@ type Database struct {
 * NewDatabase
 * @return *Database
 **/
-func NewDatabase(name string) *Database {
+func NewDatabase(name, driver string) (*Database, error) {
+	if driver == "" {
+		return nil, logs.NewError(MSG_DRIVER_NOT_DEFINED)
+	}
+
 	now := time.Now()
 
 	return &Database{
@@ -32,7 +36,8 @@ func NewDatabase(name string) *Database {
 		Name:        name,
 		Description: "",
 		Schemas:     map[string]*Schema{},
-	}
+		Driver:      Drivers[driver],
+	}, nil
 }
 
 /**
@@ -52,16 +57,37 @@ func (s *Database) Describe() et.Json {
 * Conected
 * @return bool
 **/
-func (s *Database) Conected(params et.Json) bool {
-	return (*s.Driver).Connect(params) == nil
+func (s *Database) Conected(params et.Json) error {
+	if s.Driver == nil {
+		return logs.NewError(MSG_DRIVER_NOT_DEFINED)
+	}
+
+	return (*s.Driver).Connect(params)
 }
 
 /**
-* Init
+* Disconected
 * @return error
 **/
-func (s *Database) Init() error {
-	return nil
+func (s *Database) Disconected() error {
+	if s.Driver == nil {
+		return logs.NewError(MSG_DRIVER_NOT_DEFINED)
+	}
+
+	return (*s.Driver).Disconnect()
+}
+
+/**
+* SetMain
+* @param params et.Json
+* @return error
+**/
+func (s *Database) SetMain(params et.Json) error {
+	if s.Driver == nil {
+		return logs.NewError(MSG_DRIVER_NOT_DEFINED)
+	}
+
+	return (*s.Driver).SetMain(params)
 }
 
 /**
@@ -69,6 +95,10 @@ func (s *Database) Init() error {
 * @return error
 **/
 func (s *Database) SetUser(username, password, confirmation string) error {
+	if s.Driver == nil {
+		return logs.NewError(MSG_DRIVER_NOT_DEFINED)
+	}
+
 	return (*s.Driver).SetUser(username, password, confirmation)
 }
 
@@ -77,18 +107,11 @@ func (s *Database) SetUser(username, password, confirmation string) error {
 * @return error
 **/
 func (s *Database) DeleteUser(username string) error {
-	return (*s.Driver).DeleteUser(username)
-}
-
-/**
-* SetMain
-**/
-func (s *Database) SetMain(db *Database) error {
 	if s.Driver == nil {
 		return logs.NewError(MSG_DRIVER_NOT_DEFINED)
 	}
 
-	return nil
+	return (*s.Driver).DeleteUser(username)
 }
 
 /**
@@ -127,4 +150,17 @@ func (s *Database) NextCode(tag, format string) string {
 	}
 
 	return (*s.Driver).NextCode(tag, format)
+}
+
+/**
+* CreateModel
+* @param model *Model
+* @return error
+**/
+func (s *Database) CreateModel(model *Model) error {
+	if s.Driver == nil {
+		return logs.NewError(MSG_DRIVER_NOT_DEFINED)
+	}
+
+	return (*s.Driver).CreateModel(model)
 }

@@ -1,13 +1,18 @@
 package main
 
 import (
+	_ "github.com/cgalvisl/jdb/drivers/postgres"
 	jdb "github.com/cgalvisl/jdb/pkg"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/logs"
 )
 
 func test() {
-	db := jdb.NewDatabase("test")
+	db, err := jdb.NewDatabase("test", "postgres")
+	if err != nil {
+		panic(err)
+	}
+
 	model := jdb.NewSchema(db, "test")
 	users := jdb.NewModel(model, "users")
 	users.DefineColumn("name", jdb.TypeDataText, "")

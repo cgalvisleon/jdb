@@ -92,7 +92,10 @@ func (s *Model) Describe() et.Json {
 **/
 func (s *Model) Init() error {
 	if s.Db == nil {
-	return nil
+		return logs.NewError(MSG_DATABASE_IS_REQUIRED)
+	}
+
+	return s.Db.CreateModel(s)
 }
 
 /**
