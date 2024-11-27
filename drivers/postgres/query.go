@@ -8,12 +8,8 @@ import (
 	"github.com/cgalvisleon/et/logs"
 )
 
-func (s *Postgres) query(sql string, params ...interface{}) (*sql.Rows, error) {
-	if s.db == nil {
-		return nil, logs.Alertf(jdb.MSG_DRIVER_NOT_FOUND)
-	}
-
-	rows, err := s.db.Query(sql, params...)
+func (s *Postgres) query(db *sql.DB, sql string, params ...interface{}) (*sql.Rows, error) {
+	rows, err := db.Query(sql, params...)
 	if err != nil {
 		return nil, logs.Alertf(jdb.MSG_QUERY_FAILED, err.Error())
 	}
@@ -22,7 +18,7 @@ func (s *Postgres) query(sql string, params ...interface{}) (*sql.Rows, error) {
 }
 
 func (s *Postgres) Exec(sql string, params ...interface{}) error {
-	_, err := s.query(sql, params...)
+	_, err := s.query(s.db, sql, params...)
 	if err != nil {
 		return err
 	}
@@ -32,7 +28,7 @@ func (s *Postgres) Exec(sql string, params ...interface{}) error {
 }
 
 func (s *Postgres) SQL(sql string, params ...interface{}) (et.Items, error) {
-	rows, err := s.query(sql, params...)
+	rows, err := s.query(s.db, sql, params...)
 	if err != nil {
 		return et.Items{}, err
 	}
@@ -44,7 +40,7 @@ func (s *Postgres) SQL(sql string, params ...interface{}) (et.Items, error) {
 }
 
 func (s *Postgres) One(sql string, params ...interface{}) (et.Item, error) {
-	rows, err := s.query(sql, params...)
+	rows, err := s.query(s.db, sql, params...)
 	if err != nil {
 		return et.Item{}, err
 	}

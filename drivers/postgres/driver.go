@@ -71,6 +71,10 @@ func (s *Postgres) Connect(params et.Json) error {
 		return err
 	}
 
+	if err := db.Ping(); err != nil {
+		return err
+	}
+
 	s.params = params
 	s.connStr = connStr
 	s.db = db

@@ -13,7 +13,6 @@ type Driver interface {
 	DropDatabase(name string) error
 	// Core
 	CreateCore() error
-	MutateCore() error
 	// User
 	SetUser(username, password, confirmation string) error
 	DeleteUser(username string) error
@@ -35,7 +34,9 @@ type Driver interface {
 	Command(command *Command) (et.Item, error)
 	// Series
 	GetSerie(tag string) int64
+	NextCode(tag, prefix string) string
 	SetSerie(tag string, val int) int64
+	CurrentSerie(tag string) int64
 }
 
 var Drivers map[string]*Driver
