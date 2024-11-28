@@ -1,10 +1,10 @@
 package main
 
 import (
-	_ "github.com/cgalvisl/jdb/drivers/postgres"
-	jdb "github.com/cgalvisl/jdb/pkg"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/logs"
+	_ "github.com/cgalvisleon/jdb/drivers/postgres"
+	jdb "github.com/cgalvisleon/jdb/pkg"
 )
 
 func test() {

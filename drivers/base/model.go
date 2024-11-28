@@ -1,6 +1,6 @@
 package base
 
-import jdb "github.com/cgalvisl/jdb/pkg"
+import jdb "github.com/cgalvisleon/jdb/pkg"
 
 func (s *Base) CreateModel(model *jdb.Model) error {
 	return nil

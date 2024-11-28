@@ -3,9 +3,9 @@ package postgres
 import (
 	"database/sql"
 
-	jdb "github.com/cgalvisl/jdb/pkg"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/logs"
+	jdb "github.com/cgalvisleon/jdb/pkg"
 )
 
 func (s *Postgres) query(db *sql.DB, sql string, params ...interface{}) (*sql.Rows, error) {

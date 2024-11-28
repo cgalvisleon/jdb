@@ -1,9 +1,9 @@
 package postgres
 
 import (
-	jdb "github.com/cgalvisl/jdb/pkg"
 	"github.com/cgalvisleon/et/logs"
 	"github.com/cgalvisleon/et/strs"
+	jdb "github.com/cgalvisleon/jdb/pkg"
 )
 
 func (s *Postgres) defineSeries() error {

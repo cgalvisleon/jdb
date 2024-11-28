@@ -3,11 +3,11 @@ package postgres
 import (
 	"database/sql"
 
-	jdb "github.com/cgalvisl/jdb/pkg"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/logs"
 	"github.com/cgalvisleon/et/strs"
 	"github.com/cgalvisleon/et/ws"
+	jdb "github.com/cgalvisleon/jdb/pkg"
 	_ "github.com/lib/pq"
 )
 

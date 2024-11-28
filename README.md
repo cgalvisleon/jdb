@@ -16,6 +16,7 @@ ps aux | grep jdb | grep -v grep
 
 ```
 go get github.com/cgalvisleon/et/@v0.0.4
+go get github.com/cgalvisl/jdb/@v1.0.0
 ```
 
 ## Go work

@@ -1,8 +1,8 @@
 package postgres
 
 import (
-	jdb "github.com/cgalvisl/jdb/pkg"
 	"github.com/cgalvisleon/et/et"
+	jdb "github.com/cgalvisleon/jdb/pkg"
 )
 
 func (s *Postgres) Current(command *jdb.Command) (et.Items, error) {

@@ -1,8 +1,8 @@
 package base
 
 import (
-	jdb "github.com/cgalvisl/jdb/pkg"
 	"github.com/cgalvisleon/et/et"
+	jdb "github.com/cgalvisleon/jdb/pkg"
 )
 
 func (s *Base) Current(command *jdb.Command) (et.Items, error) {
