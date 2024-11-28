@@ -5,7 +5,7 @@ import (
 
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/logs"
-	jdb "github.com/cgalvisleon/jdb/pkg"
+	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
 func (s *Postgres) query(db *sql.DB, sql string, params ...interface{}) (*sql.Rows, error) {

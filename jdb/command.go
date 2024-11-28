@@ -153,7 +153,7 @@ func (s *Command) consolidate(data et.Json) et.Json {
 }
 
 func (s *Command) command() (et.Item, error) {
-	result, err := (*s.Db.Driver).Command(s)
+	result, err := s.Db.Command(s)
 	if s.Show {
 		logs.Debug(s.Describe().ToString())
 	}
@@ -316,7 +316,7 @@ func (s *Command) Exec() (et.Items, error) {
 		if len(s.Data) == 0 {
 			return et.Items{}, logs.NewError("Data not found")
 		}
-		current, err := (*s.Db.Driver).Current(s)
+		current, err := s.Db.Current(s)
 		if err != nil {
 			return et.Items{}, err
 		}
@@ -334,7 +334,7 @@ func (s *Command) Exec() (et.Items, error) {
 			s.Result.Ok = true
 		}
 	case Delete:
-		current, err := (*s.Db.Driver).Current(s)
+		current, err := s.Db.Current(s)
 		if err != nil {
 			return et.Items{}, err
 		}

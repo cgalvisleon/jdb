@@ -4,11 +4,11 @@ import (
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/logs"
 	_ "github.com/cgalvisleon/jdb/drivers/postgres"
-	jdb "github.com/cgalvisleon/jdb/pkg"
+	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
 func test() {
-	db, err := jdb.NewDatabase("test", "postgres")
+	db, err := jdb.Load()
 	if err != nil {
 		panic(err)
 	}

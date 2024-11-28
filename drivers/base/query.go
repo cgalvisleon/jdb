@@ -2,7 +2,7 @@ package base
 
 import (
 	"github.com/cgalvisleon/et/et"
-	jdb "github.com/cgalvisleon/jdb/pkg"
+	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
 func (s *Base) Exec(sql string, params ...interface{}) error {

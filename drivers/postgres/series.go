@@ -3,7 +3,7 @@ package postgres
 import (
 	"github.com/cgalvisleon/et/logs"
 	"github.com/cgalvisleon/et/strs"
-	jdb "github.com/cgalvisleon/jdb/pkg"
+	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
 func (s *Postgres) defineSeries() error {

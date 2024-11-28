@@ -4,7 +4,7 @@ import (
 	"github.com/cgalvisleon/et/logs"
 	"github.com/cgalvisleon/et/msg"
 	"github.com/cgalvisleon/et/strs"
-	jdb "github.com/cgalvisleon/jdb/pkg"
+	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
 func (s *Postgres) existDatabase(name string) (bool, error) {

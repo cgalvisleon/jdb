@@ -6,30 +6,29 @@ import (
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/logs"
 	"github.com/cgalvisleon/et/strs"
-	"github.com/cgalvisleon/et/ws"
-	jdb "github.com/cgalvisleon/jdb/pkg"
+	jdb "github.com/cgalvisleon/jdb/jdb"
 	_ "github.com/lib/pq"
 )
-
-const DriverName = "postgres"
 
 var driver Postgres
 
 type Postgres struct {
-	db        *sql.DB
-	master    *sql.DB
-	ws        *ws.Hub
 	params    et.Json
 	connStr   string
+	db        *sql.DB
+	master    *sql.DB
 	connected bool
 }
 
 func NewDriver() jdb.Driver {
-	return &Postgres{}
+	return &Postgres{
+		params:    et.Json{},
+		connected: false,
+	}
 }
 
 func (s *Postgres) Name() string {
-	return DriverName
+	return jdb.Postgres
 }
 
 func (s *Postgres) chain(params et.Json) (string, error) {
@@ -57,7 +56,7 @@ func (s *Postgres) chain(params et.Json) (string, error) {
 		return "", logs.Alertf(jdb.MSS_PARAM_REQUIRED, "app")
 	}
 
-	driver := DriverName
+	driver := jdb.Postgres
 	user := params.Str("user")
 	password := params.Str("password")
 	host := params.Str("host")
@@ -70,7 +69,7 @@ func (s *Postgres) chain(params et.Json) (string, error) {
 }
 
 func (s *Postgres) connectTo(connStr string) (*sql.DB, error) {
-	db, err := sql.Open(DriverName, connStr)
+	db, err := sql.Open(jdb.Postgres, connStr)
 	if err != nil {
 		return nil, err
 	}
@@ -119,5 +118,5 @@ func (s *Postgres) SetMain(params et.Json) error {
 }
 
 func init() {
-	jdb.Register(DriverName, NewDriver)
+	jdb.Register(jdb.Postgres, NewDriver)
 }

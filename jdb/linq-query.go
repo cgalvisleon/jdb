@@ -27,12 +27,12 @@ func (s *Linq) prebuild() {
 func (s *Linq) First(n int) (et.Items, error) {
 	s.prebuild()
 
-	if s.Db.Driver == nil {
-		return et.Items{}, logs.NewError(MSG_DRIVER_NOT_FOUND)
+	if s.Db == nil {
+		return et.Items{}, logs.NewError(MSG_DATABASE_NOT_FOUND)
 	}
 
 	s.Limit = n
-	result, err := (*s.Db.Driver).Query(s)
+	result, err := s.Db.Query(s)
 	if s.Show {
 		logs.Debug(s.Describe().ToString())
 	}
@@ -57,12 +57,12 @@ func (s *Linq) All() (et.Items, error) {
 * @return et.Items, error
 **/
 func (s *Linq) Last(n int) (et.Items, error) {
-	if s.Db.Driver == nil {
-		return et.Items{}, logs.NewError(MSG_DRIVER_NOT_FOUND)
+	if s.Db == nil {
+		return et.Items{}, logs.NewError(MSG_DATABASE_NOT_FOUND)
 	}
 
 	s.Limit = n
-	result, err := (*s.Db.Driver).Last(s)
+	result, err := s.Db.Last(s)
 	if s.Show {
 		logs.Debug(s.Describe().ToString())
 	}
@@ -110,11 +110,11 @@ func (s *Linq) Page(val int) *Linq {
 * @return *Linq
 **/
 func (s *Linq) Rows(val int) (et.List, error) {
-	if s.Db.Driver == nil {
-		return et.List{}, logs.NewError(MSG_DRIVER_NOT_FOUND)
+	if s.Db == nil {
+		return et.List{}, logs.NewError(MSG_DATABASE_NOT_FOUND)
 	}
 
-	all, err := (*s.Db.Driver).Count(s)
+	all, err := s.Db.Count(s)
 	if s.Show {
 		logs.Debug(s.Describe().ToString())
 	}
@@ -124,7 +124,7 @@ func (s *Linq) Rows(val int) (et.List, error) {
 
 	s.Limit = val
 	s.Offset = s.Limit * (s.page - 1)
-	result, err := (*s.Db.Driver).Query(s)
+	result, err := s.Db.Query(s)
 	if s.Show {
 		logs.Debug(s.Describe().ToString())
 	}

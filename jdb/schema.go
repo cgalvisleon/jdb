@@ -57,5 +57,5 @@ func (s *Schema) Describe() et.Json {
 * @return error
 **/
 func (s *Schema) Init() error {
-	return (*s.Db.Driver).CreateSchema(s.Name)
+	return s.Db.CreateSchema(s.Name)
 }

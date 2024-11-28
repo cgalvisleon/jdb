@@ -4,6 +4,11 @@ import (
 	"github.com/cgalvisleon/et/et"
 )
 
+var (
+	Postgres = "postgres"
+	Josefine = "josefine"
+)
+
 type Driver interface {
 	Name() string
 	Connect(params et.Json) error
@@ -39,8 +44,6 @@ type Driver interface {
 	SetSerie(tag string, val int) int64
 	CurrentSerie(tag string) int64
 }
-
-var Drivers map[string]*Driver
 
 /**
 * SetDriver
