@@ -13,7 +13,7 @@ func TableName(schema, name string) string {
 }
 
 type Model struct {
-	Db            *Database
+	Db            *DB
 	Schema        *Schema
 	CreatedAt     time.Time              `json:"created_date"`
 	UpdateAt      time.Time              `json:"update_date"`

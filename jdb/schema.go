@@ -12,7 +12,7 @@ func schemaName(name string) string {
 }
 
 type Schema struct {
-	Db          *Database
+	Db          *DB
 	CreatedAt   time.Time            `json:"created_date"`
 	UpdateAt    time.Time            `json:"update_date"`
 	Name        string               `json:"name"`
@@ -21,7 +21,7 @@ type Schema struct {
 	Function    map[string]*Function `json:"functions"`
 }
 
-func NewSchema(database *Database, name string) *Schema {
+func NewSchema(database *DB, name string) *Schema {
 	now := time.Now()
 
 	result := &Schema{

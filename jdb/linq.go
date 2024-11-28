@@ -45,7 +45,7 @@ type LinqOrder struct {
 }
 
 type Linq struct {
-	Db       *Database
+	Db       *DB
 	TypeLinq TypeLinq
 	Froms    []*LinqFrom
 	Joins    []*LinqJoin

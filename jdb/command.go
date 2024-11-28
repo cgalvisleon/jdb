@@ -17,7 +17,7 @@ const (
 )
 
 type Command struct {
-	Db      *Database
+	Db      *DB
 	Model   *Model
 	Data    []et.Json
 	Command TypeCommand

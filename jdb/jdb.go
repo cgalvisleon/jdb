@@ -7,12 +7,12 @@ import (
 
 var (
 	drivers map[string]func() Driver
-	dbs     map[string]*Database
+	dbs     map[string]*DB
 	schemas map[string]*Schema
 	models  map[string]*Model
 )
 
-func Load() (*Database, error) {
+func Load() (*DB, error) {
 	result, err := NewDatabase(Postgres)
 	if err != nil {
 		return nil, err
@@ -28,7 +28,7 @@ func Load() (*Database, error) {
 	return result, nil
 }
 
-func ConnectTo(params et.Json) (*Database, error) {
+func ConnectTo(params et.Json) (*DB, error) {
 	driver := params.Str("driver")
 	if driver == "" {
 		return nil, logs.NewError("Driver not defined")
@@ -51,7 +51,7 @@ func ConnectTo(params et.Json) (*Database, error) {
 
 func init() {
 	drivers = map[string]func() Driver{}
-	dbs = map[string]*Database{}
+	dbs = map[string]*DB{}
 	schemas = map[string]*Schema{}
 	models = map[string]*Model{}
 }
