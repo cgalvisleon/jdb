@@ -15,9 +15,9 @@ func test() {
 
 	model := jdb.NewSchema(db, "test")
 	users := jdb.NewModel(model, "users")
-	users.DefineColumn("name", jdb.TypeDataText, "")
-	users.DefineColumn("age", jdb.TypeDataInt, 0)
-	users.DefineColumn("email", jdb.TypeDataText, "")
+	users.DefineColumn("name", jdb.TypeDataText)
+	users.DefineColumn("age", jdb.TypeDataInt)
+	users.DefineColumn("email", jdb.TypeDataText)
 
 	items, err := jdb.From(users).
 		Where("name").Eq("Carlos").

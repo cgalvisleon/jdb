@@ -1,17 +1,18 @@
 package jdb
 
 /**
-* OrderByAsc
+* OrderBy
+* @param sorted bool
 * @param columns ...interface{}
 * @return *Linq
 **/
-func (s *Linq) OrderByAsc(columns ...interface{}) *Linq {
+func (s *Linq) OrderBy(sorted bool, columns ...interface{}) *Linq {
 	for _, col := range columns {
 		c := s.getColumn(col)
 		if c != nil {
 			order := &LinqOrder{
 				LinqSelect: *c,
-				Sorted:     true,
+				Sorted:     sorted,
 			}
 			s.Orders = append(s.Orders, order)
 		}
@@ -21,21 +22,19 @@ func (s *Linq) OrderByAsc(columns ...interface{}) *Linq {
 }
 
 /**
+* OrderByAsc
+* @param columns ...interface{}
+* @return *Linq
+**/
+func (s *Linq) OrderByAsc(columns ...interface{}) *Linq {
+	return s.OrderBy(true, columns...)
+}
+
+/**
 * OrderByDesc
 * @param columns ...interface{}
 * @return *Linq
 **/
 func (s *Linq) OrderByDesc(columns ...interface{}) *Linq {
-	for _, col := range columns {
-		c := s.getColumn(col)
-		if c != nil {
-			order := &LinqOrder{
-				LinqSelect: *c,
-				Sorted:     false,
-			}
-			s.Orders = append(s.Orders, order)
-		}
-	}
-
-	return s
+	return s.OrderBy(false, columns...)
 }

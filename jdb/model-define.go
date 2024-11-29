@@ -11,7 +11,8 @@ import (
 * @param def interface{}
 * @return *Model
 **/
-func (s *Model) DefineColumn(name string, typeData TypeData, def interface{}) *Column {
+func (s *Model) DefineColumn(name string, typeData TypeData) *Column {
+	def := typeData.DefaultValue(s.Db.driver)
 	col := newColumn(s, name, "", TpColumn, typeData, def)
 	s.Columns = append(s.Columns, col)
 	if slices.Contains([]string{IndexField, ProjectField, CreatedAtField, UpdatedAtField, StateField, SystemKeyField, FullTextField}, name) {
@@ -28,7 +29,8 @@ func (s *Model) DefineColumn(name string, typeData TypeData, def interface{}) *C
 * @param def interface{}
 * @return *Model
 **/
-func (s *Model) DefineAtribute(name string, typeData TypeData, def interface{}) *Column {
+func (s *Model) DefineAtribute(name string, typeData TypeData) *Column {
+	def := typeData.DefaultValue(s.Db.driver)
 	col := newColumn(s, name, "", TpAtribute, typeData, def)
 	s.Columns = append(s.Columns, col)
 
@@ -86,6 +88,22 @@ func (s *Model) DefineUnique(colums ...string) *Model {
 	for _, col := range cols {
 		idx := NewIndex(col, true)
 		s.Uniques[col.Field] = idx
+	}
+
+	return s
+}
+
+/**
+* DefineRequired
+* @param requireds ...string
+* @return *Model
+**/
+func (s *Model) DefineRequired(requireds ...string) *Model {
+	for _, required := range requireds {
+		col := s.GetColumn(required)
+		if col != nil {
+			s.ColRequired[col.Field] = true
+		}
 	}
 
 	return s

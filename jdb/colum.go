@@ -34,17 +34,9 @@ const (
 	TypeFullText
 )
 
-type TypeDefault int
-
-const (
-	DefaultNow TypeDefault = iota
-	DefaultToday
-	DefaultTime
-	DefaultNone
-	DefaultZero
-	DefaultId
-	DefaultKey
-)
+func (s TypeData) DefaultValue(d Driver) interface{} {
+	return d.DefaultValue(s)
+}
 
 var (
 	IndexField     = "index"

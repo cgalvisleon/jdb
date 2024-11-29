@@ -27,6 +27,7 @@ type Model struct {
 	Keys          map[string]*Column     `json:"keys"`
 	Relations     map[string]*Relation   `json:"relations"`
 	Dictionaries  map[string]*Dictionary `json:"dictionaries"`
+	ColRequired   map[string]bool        `json:"col_required"`
 	SourceField   *Column                `json:"data_field"`
 	FullTextField *Column                `json:"full_text"`
 	BeforeInsert  []Trigger              `json:"before_insert"`
@@ -68,7 +69,7 @@ func NewModel(schema *Schema, name string) *Model {
 		Integrity:    false,
 	}
 
-	result.Schema = schema
+	schema.Models[result.Name] = result
 
 	return result
 }

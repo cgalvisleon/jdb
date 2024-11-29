@@ -134,3 +134,14 @@ func (s *Linq) Rows(val int) (et.List, error) {
 
 	return result.ToList(all, s.page, s.Limit), nil
 }
+
+/**
+* List
+* @param page int
+* @param rows int
+* @return et.List, error
+**/
+func (s *Linq) List(page, rows int) (et.List, error) {
+	s.page = page
+	return s.Rows(rows)
+}

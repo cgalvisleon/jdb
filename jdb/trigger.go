@@ -13,4 +13,4 @@ const (
 	AfterDelete
 )
 
-type Trigger func(model *Model, old et.Json, new *et.Json, data et.Json) error
+type Trigger func(old et.Json, new *et.Json, data et.Json) error
