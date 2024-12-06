@@ -10,4 +10,6 @@ func (s *Postgres) MutateModel(model *jdb.Model) error {
 	return nil
 }
 
-func (s *Postgres) DefaultValue(tp jdb.TypeData) interface{}
+func (s *Postgres) DefaultValue(tp jdb.TypeData) interface{} {
+	return nil
+}

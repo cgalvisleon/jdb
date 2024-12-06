@@ -6,6 +6,7 @@ import (
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/logs"
 	"github.com/cgalvisleon/et/strs"
+	"github.com/cgalvisleon/et/utility"
 	jdb "github.com/cgalvisleon/jdb/jdb"
 	_ "github.com/lib/pq"
 )
@@ -32,38 +33,39 @@ func (s *Postgres) Name() string {
 }
 
 func (s *Postgres) chain(params et.Json) (string, error) {
-	if params.Str("username") == "" {
-		return "", logs.Alertf(jdb.MSS_PARAM_REQUIRED, "username")
-	}
-
-	if params.Str("password") == "" {
-		return "", logs.Alertf(jdb.MSS_PARAM_REQUIRED, "password")
-	}
-
-	if params.Str("host") == "" {
-		return "", logs.Alertf(jdb.MSS_PARAM_REQUIRED, "host")
-	}
-
-	if params.Int("port") == 0 {
-		return "", logs.Alertf(jdb.MSS_PARAM_REQUIRED, "port")
-	}
-
-	if params.Str("database") == "" {
-		return "", logs.Alertf(jdb.MSS_PARAM_REQUIRED, "database")
-	}
-
-	if params.Str("app") == "" {
-		return "", logs.Alertf(jdb.MSS_PARAM_REQUIRED, "app")
-	}
-
-	driver := jdb.Postgres
-	user := params.Str("user")
+	username := params.Str("username")
 	password := params.Str("password")
 	host := params.Str("host")
 	port := params.Int("port")
 	database := params.Str("database")
 	app := params.Str("app")
-	result := strs.Format(`%s://%s:%s@%s:%d/%s?sslmode=disable&application_name=%s`, driver, user, password, host, port, database, app)
+
+	if !utility.ValidStr(username, 0, []string{""}) {
+		return "", logs.Alertf(jdb.MSS_PARAM_REQUIRED, "username")
+	}
+
+	if !utility.ValidStr(password, 0, []string{""}) {
+		return "", logs.Alertf(jdb.MSS_PARAM_REQUIRED, "password")
+	}
+
+	if !utility.ValidStr(host, 0, []string{""}) {
+		return "", logs.Alertf(jdb.MSS_PARAM_REQUIRED, "host")
+	}
+
+	if port == 0 {
+		return "", logs.Alertf(jdb.MSS_PARAM_REQUIRED, "port")
+	}
+
+	if !utility.ValidStr(database, 0, []string{""}) {
+		return "", logs.Alertf(jdb.MSS_PARAM_REQUIRED, "database")
+	}
+
+	if !utility.ValidStr(app, 0, []string{""}) {
+		return "", logs.Alertf(jdb.MSS_PARAM_REQUIRED, "app")
+	}
+
+	driver := jdb.Postgres
+	result := strs.Format(`%s://%s:%s@%s:%d/%s?sslmode=disable&application_name=%s`, driver, username, password, host, port, database, app)
 
 	return result, nil
 }

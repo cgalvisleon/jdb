@@ -21,7 +21,7 @@ type TypeData int
 const (
 	TypeDataText TypeData = iota
 	TypeDataMemo
-	TypeDataShort
+	TypeDataShortText
 	TypeDataKey
 	TypeDataInt
 	TypeDataNumber
@@ -38,18 +38,54 @@ func (s TypeData) DefaultValue(d Driver) interface{} {
 	return d.DefaultValue(s)
 }
 
+type ColumnField string
+
 var (
-	IndexField     = "index"
-	DataField      = "_data"
-	ProjectField   = "project_id"
-	CreatedAtField = "created_at"
-	UpdatedAtField = "update_at"
-	StateField     = "_state"
-	SystemKeyField = "_idt"
-	CreatedToField = "created_to"
-	UpdatedToField = "updated_to"
-	FullTextField  = "_fulltext"
+	IndexField     ColumnField = "index"
+	DataField      ColumnField = "_data"
+	ProjectField   ColumnField = "project_id"
+	CreatedAtField ColumnField = "created_at"
+	UpdatedAtField ColumnField = "update_at"
+	StateField     ColumnField = "_state"
+	KeyField       ColumnField = "_id"
+	SystemKeyField ColumnField = "_idt"
+	CreatedToField ColumnField = "created_to"
+	UpdatedToField ColumnField = "updated_to"
+	FullTextField  ColumnField = "_fulltext"
 )
+
+func (s ColumnField) Str() string {
+	return string(s)
+}
+
+func (s ColumnField) TypeData() TypeData {
+	switch s {
+	case IndexField:
+		return TypeDataInt
+	case DataField:
+		return TypeDataObject
+	case ProjectField:
+		return TypeDataKey
+	case CreatedAtField:
+		return TypeDataTime
+	case UpdatedAtField:
+		return TypeDataTime
+	case StateField:
+		return TypeDataKey
+	case KeyField:
+		return TypeDataKey
+	case SystemKeyField:
+		return TypeDataKey
+	case CreatedToField:
+		return TypeDataTime
+	case UpdatedToField:
+		return TypeDataTime
+	case FullTextField:
+		return TypeFullText
+	}
+
+	return TypeDataText
+}
 
 type Column struct {
 	Model       *Model

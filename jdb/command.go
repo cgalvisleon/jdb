@@ -321,8 +321,8 @@ func (s *Command) Exec() (et.Items, error) {
 			return et.Items{}, err
 		}
 		for _, old := range current.Result {
-			s.Key = old.ValStr("", SystemKeyField)
-			if s.Key == "" {
+			s.Key = old.ValStr("-1", SystemKeyField.Str())
+			if s.Key == "-1" {
 				continue
 			}
 			result, err := s.updated(old, s.Data[0])
@@ -339,8 +339,8 @@ func (s *Command) Exec() (et.Items, error) {
 			return et.Items{}, err
 		}
 		for _, old := range current.Result {
-			s.Key = old.ValStr("", SystemKeyField)
-			if s.Key == "" {
+			s.Key = old.ValStr("-1", SystemKeyField.Str())
+			if s.Key == "-1" {
 				continue
 			}
 			result, err := s.delete(old)

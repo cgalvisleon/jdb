@@ -15,7 +15,7 @@ func (s *Model) DefineColumn(name string, typeData TypeData) *Column {
 	def := typeData.DefaultValue(s.Db.driver)
 	col := newColumn(s, name, "", TpColumn, typeData, def)
 	s.Columns = append(s.Columns, col)
-	if slices.Contains([]string{IndexField, ProjectField, CreatedAtField, UpdatedAtField, StateField, SystemKeyField, FullTextField}, name) {
+	if slices.Contains([]string{IndexField.Str(), ProjectField.Str(), CreatedAtField.Str(), UpdatedAtField.Str(), StateField.Str(), KeyField.Str(), SystemKeyField.Str(), DataField.Str(), FullTextField.Str()}, name) {
 		s.DefineIndex(true, name)
 	}
 

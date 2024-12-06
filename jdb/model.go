@@ -74,6 +74,31 @@ func NewModel(schema *Schema, name string) *Model {
 	return result
 }
 
+func NewColecction(schema *Schema, name string) *Model {
+	result := NewModel(schema, name)
+	result.DefineColumn(CreatedAtField.Str(), CreatedAtField.TypeData())
+	result.DefineColumn(UpdatedAtField.Str(), CreatedAtField.TypeData())
+	result.DefineColumn(ProjectField.Str(), CreatedAtField.TypeData())
+	result.DefineColumn(StateField.Str(), CreatedAtField.TypeData())
+	result.DefineColumn(KeyField.Str(), CreatedAtField.TypeData())
+	result.DefineColumn(DataField.Str(), CreatedAtField.TypeData())
+	result.DefineColumn(SystemKeyField.Str(), CreatedAtField.TypeData())
+	result.DefineColumn(IndexField.Str(), CreatedAtField.TypeData())
+	result.DefineKey(KeyField.Str())
+	result.DefineIndex(true,
+		CreatedAtField.Str(),
+		UpdatedAtField.Str(),
+		ProjectField.Str(),
+		StateField.Str(),
+		KeyField.Str(),
+		DataField.Str(),
+		SystemKeyField.Str(),
+		IndexField.Str(),
+	)
+
+	return result
+}
+
 /**
 * Describe
 * @return et.Json

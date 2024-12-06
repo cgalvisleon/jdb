@@ -1,6 +1,7 @@
 package jdb
 
 import (
+	"github.com/cgalvisleon/et/envar"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/logs"
 )
@@ -18,7 +19,15 @@ func Load() (*DB, error) {
 		return nil, err
 	}
 
-	err = result.Conected(et.Json{})
+	err = result.Conected(et.Json{
+		"driver":   Postgres,
+		"host":     envar.GetStr("localhost", "DB_HOST"),
+		"port":     envar.GetInt(5432, "DB_PORT"),
+		"database": envar.GetStr("", "DB_NAME"),
+		"username": envar.GetStr("", "DB_USER"),
+		"password": envar.GetStr("", "DB_PASSWORD"),
+		"app":      envar.GetStr("jdb", "DB_APP_NAME"),
+	})
 	if err != nil {
 		return nil, err
 	}

@@ -27,6 +27,10 @@ func NewDatabase(driver string) (*DB, error) {
 		return nil, logs.NewError(MSG_DRIVER_NOT_DEFINED)
 	}
 
+	if _, ok := drivers[driver]; !ok {
+		return nil, logs.NewErrorf(MSG_DRIVER_NOT_FOUND, driver)
+	}
+
 	now := time.Now()
 	return &DB{
 		CreatedAt:   now,
