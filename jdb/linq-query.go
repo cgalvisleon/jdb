@@ -3,6 +3,7 @@ package jdb
 import (
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/logs"
+	"github.com/cgalvisleon/et/mistake"
 )
 
 func (s *Linq) prebuild() {
@@ -28,7 +29,7 @@ func (s *Linq) First(n int) (et.Items, error) {
 	s.prebuild()
 
 	if s.Db == nil {
-		return et.Items{}, logs.NewError(MSG_DATABASE_NOT_FOUND)
+		return et.Items{}, mistake.New(MSG_DATABASE_NOT_FOUND)
 	}
 
 	s.Limit = n
@@ -58,7 +59,7 @@ func (s *Linq) All() (et.Items, error) {
 **/
 func (s *Linq) Last(n int) (et.Items, error) {
 	if s.Db == nil {
-		return et.Items{}, logs.NewError(MSG_DATABASE_NOT_FOUND)
+		return et.Items{}, mistake.New(MSG_DATABASE_NOT_FOUND)
 	}
 
 	s.Limit = n
@@ -111,7 +112,7 @@ func (s *Linq) Page(val int) *Linq {
 **/
 func (s *Linq) Rows(val int) (et.List, error) {
 	if s.Db == nil {
-		return et.List{}, logs.NewError(MSG_DATABASE_NOT_FOUND)
+		return et.List{}, mistake.New(MSG_DATABASE_NOT_FOUND)
 	}
 
 	all, err := s.Db.Count(s)

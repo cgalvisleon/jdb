@@ -5,6 +5,7 @@ import (
 
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/logs"
+	"github.com/cgalvisleon/et/mistake"
 	"github.com/cgalvisleon/et/utility"
 )
 
@@ -24,11 +25,11 @@ type DB struct {
 **/
 func NewDatabase(driver string) (*DB, error) {
 	if driver == "" {
-		return nil, logs.NewError(MSG_DRIVER_NOT_DEFINED)
+		return nil, logs.Alertm(MSG_DRIVER_NOT_DEFINED)
 	}
 
 	if _, ok := drivers[driver]; !ok {
-		return nil, logs.NewErrorf(MSG_DRIVER_NOT_FOUND, driver)
+		return nil, logs.Alertf(MSG_DRIVER_NOT_FOUND, driver)
 	}
 
 	now := time.Now()
@@ -61,7 +62,7 @@ func (s *DB) Describe() et.Json {
 **/
 func (s *DB) Conected(params et.Json) error {
 	if s.driver == nil {
-		return logs.NewError(MSG_DRIVER_NOT_DEFINED)
+		return mistake.New(MSG_DRIVER_NOT_DEFINED)
 	}
 
 	return s.driver.Connect(params)
@@ -73,7 +74,7 @@ func (s *DB) Conected(params et.Json) error {
 **/
 func (s *DB) Disconected() error {
 	if s.driver == nil {
-		return logs.NewError(MSG_DRIVER_NOT_DEFINED)
+		return mistake.New(MSG_DRIVER_NOT_DEFINED)
 	}
 
 	return s.driver.Disconnect()
@@ -86,7 +87,7 @@ func (s *DB) Disconected() error {
 **/
 func (s *DB) SetMain(params et.Json) error {
 	if s.driver == nil {
-		return logs.NewError(MSG_DRIVER_NOT_DEFINED)
+		return mistake.New(MSG_DRIVER_NOT_DEFINED)
 	}
 
 	return s.driver.SetMain(params)
@@ -98,7 +99,7 @@ func (s *DB) SetMain(params et.Json) error {
 **/
 func (s *DB) SetUser(username, password, confirmation string) error {
 	if s.driver == nil {
-		return logs.NewError(MSG_DRIVER_NOT_DEFINED)
+		return mistake.New(MSG_DRIVER_NOT_DEFINED)
 	}
 
 	return s.driver.SetUser(username, password, confirmation)
@@ -110,7 +111,7 @@ func (s *DB) SetUser(username, password, confirmation string) error {
 **/
 func (s *DB) DeleteUser(username string) error {
 	if s.driver == nil {
-		return logs.NewError(MSG_DRIVER_NOT_DEFINED)
+		return mistake.New(MSG_DRIVER_NOT_DEFINED)
 	}
 
 	return s.driver.DeleteUser(username)
@@ -123,7 +124,7 @@ func (s *DB) DeleteUser(username string) error {
 **/
 func (s *DB) CreateSchema(name string) error {
 	if s.driver == nil {
-		return logs.NewError(MSG_DRIVER_NOT_DEFINED)
+		return mistake.New(MSG_DRIVER_NOT_DEFINED)
 	}
 
 	return s.driver.CreateSchema(name)
@@ -136,7 +137,7 @@ func (s *DB) CreateSchema(name string) error {
 **/
 func (s *DB) DropSchema(name string) error {
 	if s.driver == nil {
-		return logs.NewError(MSG_DRIVER_NOT_DEFINED)
+		return mistake.New(MSG_DRIVER_NOT_DEFINED)
 	}
 
 	return s.driver.DropSchema(name)
@@ -149,7 +150,7 @@ func (s *DB) DropSchema(name string) error {
 **/
 func (s *DB) CreateModel(model *Model) error {
 	if s.driver == nil {
-		return logs.NewError(MSG_DRIVER_NOT_DEFINED)
+		return mistake.New(MSG_DRIVER_NOT_DEFINED)
 	}
 
 	return s.driver.CreateModel(model)
@@ -162,7 +163,7 @@ func (s *DB) CreateModel(model *Model) error {
 **/
 func (s *DB) MutateModel(model *Model) error {
 	if s.driver == nil {
-		return logs.NewError(MSG_DRIVER_NOT_DEFINED)
+		return mistake.New(MSG_DRIVER_NOT_DEFINED)
 	}
 
 	return s.driver.MutateModel(model)
@@ -176,7 +177,7 @@ func (s *DB) MutateModel(model *Model) error {
 **/
 func (s *DB) Exec(sql string, params ...interface{}) error {
 	if s.driver == nil {
-		return logs.NewError(MSG_DRIVER_NOT_DEFINED)
+		return mistake.New(MSG_DRIVER_NOT_DEFINED)
 	}
 
 	return s.driver.Exec(sql, params...)
@@ -190,7 +191,7 @@ func (s *DB) Exec(sql string, params ...interface{}) error {
 **/
 func (s *DB) SQL(sql string, params ...interface{}) (et.Items, error) {
 	if s.driver == nil {
-		return et.Items{}, logs.NewError(MSG_DRIVER_NOT_DEFINED)
+		return et.Items{}, mistake.New(MSG_DRIVER_NOT_DEFINED)
 	}
 
 	return s.driver.SQL(sql, params...)
@@ -204,7 +205,7 @@ func (s *DB) SQL(sql string, params ...interface{}) (et.Items, error) {
 **/
 func (s *DB) One(sql string, params ...interface{}) (et.Item, error) {
 	if s.driver == nil {
-		return et.Item{}, logs.NewError(MSG_DRIVER_NOT_DEFINED)
+		return et.Item{}, mistake.New(MSG_DRIVER_NOT_DEFINED)
 	}
 
 	return s.driver.One(sql, params...)
@@ -217,7 +218,7 @@ func (s *DB) One(sql string, params ...interface{}) (et.Item, error) {
 **/
 func (s *DB) Query(linq *Linq) (et.Items, error) {
 	if s.driver == nil {
-		return et.Items{}, logs.NewError(MSG_DRIVER_NOT_DEFINED)
+		return et.Items{}, mistake.New(MSG_DRIVER_NOT_DEFINED)
 	}
 
 	return s.driver.Query(linq)
@@ -230,7 +231,7 @@ func (s *DB) Query(linq *Linq) (et.Items, error) {
 **/
 func (s *DB) Count(linq *Linq) (int, error) {
 	if s.driver == nil {
-		return 0, logs.NewError(MSG_DRIVER_NOT_DEFINED)
+		return 0, mistake.New(MSG_DRIVER_NOT_DEFINED)
 	}
 
 	return s.driver.Count(linq)
@@ -243,7 +244,7 @@ func (s *DB) Count(linq *Linq) (int, error) {
 **/
 func (s *DB) Last(linq *Linq) (et.Items, error) {
 	if s.driver == nil {
-		return et.Items{}, logs.NewError(MSG_DRIVER_NOT_DEFINED)
+		return et.Items{}, mistake.New(MSG_DRIVER_NOT_DEFINED)
 	}
 
 	return s.driver.Last(linq)
@@ -256,7 +257,7 @@ func (s *DB) Last(linq *Linq) (et.Items, error) {
 **/
 func (s *DB) Current(command *Command) (et.Items, error) {
 	if s.driver == nil {
-		return et.Items{}, logs.NewError(MSG_DRIVER_NOT_DEFINED)
+		return et.Items{}, mistake.New(MSG_DRIVER_NOT_DEFINED)
 	}
 
 	return s.driver.Current(command)
@@ -269,7 +270,7 @@ func (s *DB) Current(command *Command) (et.Items, error) {
 **/
 func (s *DB) Command(command *Command) (et.Item, error) {
 	if s.driver == nil {
-		return et.Item{}, logs.NewError(MSG_DRIVER_NOT_DEFINED)
+		return et.Item{}, mistake.New(MSG_DRIVER_NOT_DEFINED)
 	}
 
 	return s.driver.Command(command)

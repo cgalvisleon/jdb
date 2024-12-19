@@ -40,7 +40,7 @@ func Load() (*DB, error) {
 func ConnectTo(params et.Json) (*DB, error) {
 	driver := params.Str("driver")
 	if driver == "" {
-		return nil, logs.NewError("Driver not defined")
+		return nil, logs.Alertm("Driver not defined")
 	}
 
 	result, err := NewDatabase(driver)

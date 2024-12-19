@@ -5,6 +5,7 @@ import (
 
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/logs"
+	"github.com/cgalvisleon/et/mistake"
 	"github.com/cgalvisleon/et/strs"
 )
 
@@ -301,8 +302,9 @@ func (s *Command) Exec() (et.Items, error) {
 	switch s.Command {
 	case Insert:
 		if len(s.Data) == 0 {
-			return et.Items{}, logs.NewError("Data not found")
+			return et.Items{}, mistake.New("Data not found")
 		}
+
 		for _, data := range s.Data {
 			result, err := s.inserted(data)
 			if err != nil {
@@ -314,7 +316,7 @@ func (s *Command) Exec() (et.Items, error) {
 		}
 	case Update:
 		if len(s.Data) == 0 {
-			return et.Items{}, logs.NewError("Data not found")
+			return et.Items{}, mistake.New("Data not found")
 		}
 		current, err := s.Db.Current(s)
 		if err != nil {
