@@ -1,8 +1,8 @@
 package jdb
 
 import (
+	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
-	"github.com/cgalvisleon/et/logs"
 	"github.com/cgalvisleon/et/mistake"
 )
 
@@ -17,7 +17,7 @@ func (s *Linq) prebuild() {
 		result.Set(val.From.As, val.Field)
 	}
 
-	logs.Debug(result.ToString())
+	console.Debug(result.ToString())
 }
 
 /**
@@ -35,7 +35,7 @@ func (s *Linq) First(n int) (et.Items, error) {
 	s.Limit = n
 	result, err := s.Db.Query(s)
 	if s.Show {
-		logs.Debug(s.Describe().ToString())
+		console.Debug(s.Describe().ToString())
 	}
 	if err != nil {
 		return et.Items{}, err
@@ -65,7 +65,7 @@ func (s *Linq) Last(n int) (et.Items, error) {
 	s.Limit = n
 	result, err := s.Db.Last(s)
 	if s.Show {
-		logs.Debug(s.Describe().ToString())
+		console.Debug(s.Describe().ToString())
 	}
 	if err != nil {
 		return et.Items{}, err
@@ -117,7 +117,7 @@ func (s *Linq) Rows(val int) (et.List, error) {
 
 	all, err := s.Db.Count(s)
 	if s.Show {
-		logs.Debug(s.Describe().ToString())
+		console.Debug(s.Describe().ToString())
 	}
 	if err != nil {
 		return et.List{}, err
@@ -127,7 +127,7 @@ func (s *Linq) Rows(val int) (et.List, error) {
 	s.Offset = s.Limit * (s.page - 1)
 	result, err := s.Db.Query(s)
 	if s.Show {
-		logs.Debug(s.Describe().ToString())
+		console.Debug(s.Describe().ToString())
 	}
 	if err != nil {
 		return et.List{}, err
@@ -145,4 +145,14 @@ func (s *Linq) Rows(val int) (et.List, error) {
 func (s *Linq) List(page, rows int) (et.List, error) {
 	s.page = page
 	return s.Rows(rows)
+}
+
+/**
+* Query
+* @param query []string
+* @return Linq
+**/
+func (s *Linq) Query(query []string) *Linq {
+
+	return s
 }

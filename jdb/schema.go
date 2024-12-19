@@ -20,7 +20,7 @@ type Schema struct {
 	Models      map[string]*Model
 }
 
-func NewSchema(db *DB, name string) *Schema {
+func NewSchema(db *DB, name string) (*Schema, error) {
 	now := time.Now()
 
 	result := &Schema{
@@ -31,10 +31,14 @@ func NewSchema(db *DB, name string) *Schema {
 		Description: "",
 		Models:      map[string]*Model{},
 	}
+	err := result.Init()
+	if err != nil {
+		return nil, err
+	}
 
 	db.Schemas[name] = result
 
-	return result
+	return result, nil
 }
 
 /**

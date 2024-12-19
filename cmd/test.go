@@ -1,8 +1,8 @@
 package main
 
 import (
+	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
-	"github.com/cgalvisleon/et/logs"
 	_ "github.com/cgalvisleon/jdb/drivers/postgres"
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
@@ -13,7 +13,7 @@ func test() {
 		panic(err)
 	}
 
-	model := jdb.NewSchema(db, "test")
+	model, _ := jdb.NewSchema(db, "test")
 	users := jdb.NewModel(model, "users")
 	users.DefineColumn("name", jdb.TypeDataText)
 	users.DefineColumn("age", jdb.TypeDataInt)
@@ -30,7 +30,7 @@ func test() {
 		panic(err)
 	}
 
-	logs.Debug(items.ToString())
+	console.Debug(items.ToString())
 
 	item, err := users.Insert(et.Json{}).
 		Debug().
@@ -39,5 +39,5 @@ func test() {
 		panic(err)
 	}
 
-	logs.Debug(item.ToString())
+	console.Debug(item.ToString())
 }

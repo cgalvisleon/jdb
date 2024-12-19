@@ -1,7 +1,7 @@
 package postgres
 
 import (
-	"github.com/cgalvisleon/et/logs"
+	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/strs"
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
@@ -9,7 +9,7 @@ import (
 func (s *Postgres) defineSeries() error {
 	exist, err := s.existTable("core", "SERIES")
 	if err != nil {
-		return logs.Panic(err)
+		return console.Panic(err)
 	}
 
 	if exist {
@@ -29,7 +29,7 @@ func (s *Postgres) defineSeries() error {
 
 	err = s.Exec(sql)
 	if err != nil {
-		return logs.Panic(err)
+		return console.Panic(err)
 	}
 
 	return s.defineSeriesFunction()
@@ -104,7 +104,7 @@ func (s *Postgres) defineSeriesFunction() error {
 
 	err := s.Exec(sql)
 	if err != nil {
-		return logs.Panic(err)
+		return console.Panic(err)
 	}
 
 	return nil
@@ -119,7 +119,7 @@ func (s *Postgres) GetSerie(tag string) int64 {
 	sql := `SELECT core.nextserie($1) AS SERIE;`
 	rows, err := s.query(db, sql, tag)
 	if err != nil {
-		logs.Error(err)
+		console.Error(err)
 		return 0
 	}
 	defer rows.Close()
@@ -143,7 +143,7 @@ func (s *Postgres) SetSerie(tag string, val int) int64 {
 	sql := `SELECT core.setserie($1) AS SERIE;`
 	rows, err := s.query(db, sql, tag)
 	if err != nil {
-		logs.Error(err)
+		console.Error(err)
 		return 0
 	}
 	defer rows.Close()
@@ -167,7 +167,7 @@ func (s *Postgres) CurrentSerie(tag string) int64 {
 	sql := `SELECT core.currserie($1) AS SERIE;`
 	rows, err := s.query(db, sql, tag)
 	if err != nil {
-		logs.Error(err)
+		console.Error(err)
 		return 0
 	}
 	defer rows.Close()

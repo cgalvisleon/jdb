@@ -1,11 +1,11 @@
 package postgres
 
-import "github.com/cgalvisleon/et/logs"
+import "github.com/cgalvisleon/et/console"
 
 func (s *Postgres) defineRecords() error {
 	exist, err := s.existTable("core", "RECORDS")
 	if err != nil {
-		return logs.Panic(err)
+		return console.Panic(err)
 	}
 
 	if exist {
@@ -37,7 +37,7 @@ func (s *Postgres) defineRecords() error {
 
 	err = s.Exec(sql)
 	if err != nil {
-		return logs.Panic(err)
+		return console.Panic(err)
 	}
 
 	return s.defineRecordsFunction()
@@ -135,7 +135,7 @@ func (s *Postgres) defineRecordsFunction() error {
 	`
 	err := s.Exec(sql)
 	if err != nil {
-		return logs.Panic(err)
+		return console.Panic(err)
 	}
 
 	return nil

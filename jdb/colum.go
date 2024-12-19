@@ -25,6 +25,7 @@ const (
 	TypeDataKey
 	TypeDataInt
 	TypeDataNumber
+	TypeDataPrecision
 	TypeDataSerie
 	TypeDataBool
 	TypeDataTime
@@ -34,21 +35,51 @@ const (
 	TypeFullText
 )
 
-func (s TypeData) DefaultValue(d Driver) interface{} {
-	return d.DefaultValue(s)
+func (s TypeData) DefaultValue() interface{} {
+	switch s {
+	case TypeDataArray:
+		return "[]"
+	case TypeDataBool:
+		return false
+	case TypeDataInt:
+		return 0
+	case TypeDataKey:
+		return "-1"
+	case TypeDataMemo:
+		return ""
+	case TypeDataNumber:
+		return 0.0
+	case TypeDataPrecision:
+		return 0.0
+	case TypeDataObject:
+		return "{}"
+	case TypeDataSerie:
+		return 0
+	case TypeDataShortText:
+		return ""
+	case TypeDataText:
+		return ""
+	case TypeDataTime:
+		return "NOW()"
+	case TypeFullText:
+		return ""
+	}
+
+	return ""
 }
 
 type ColumnField string
 
 var (
 	IndexField     ColumnField = "index"
-	DataField      ColumnField = "_data"
+	SourceField    ColumnField = "_data"
 	ProjectField   ColumnField = "project_id"
 	CreatedAtField ColumnField = "created_at"
 	UpdatedAtField ColumnField = "update_at"
 	StateField     ColumnField = "_state"
 	KeyField       ColumnField = "_id"
 	SystemKeyField ColumnField = "_idt"
+	ClassField     ColumnField = "_class"
 	CreatedToField ColumnField = "created_to"
 	UpdatedToField ColumnField = "updated_to"
 	FullTextField  ColumnField = "_fulltext"
@@ -58,11 +89,19 @@ func (s ColumnField) Str() string {
 	return string(s)
 }
 
+func (s ColumnField) Uppcase() string {
+	return strs.Uppcase(string(s))
+}
+
+func (s ColumnField) Lowcase() string {
+	return strs.Lowcase(string(s))
+}
+
 func (s ColumnField) TypeData() TypeData {
 	switch s {
 	case IndexField:
 		return TypeDataInt
-	case DataField:
+	case SourceField:
 		return TypeDataObject
 	case ProjectField:
 		return TypeDataKey

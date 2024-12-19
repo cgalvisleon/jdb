@@ -10,9 +10,9 @@ import (
 	"sync"
 	"syscall"
 
+	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/envar"
 	"github.com/cgalvisleon/et/et"
-	"github.com/cgalvisleon/et/logs"
 	"github.com/cgalvisleon/et/strs"
 	"github.com/go-chi/chi/v5"
 )
@@ -60,13 +60,13 @@ func (s *Systemd) Help(key string) {
 
 func (s *Systemd) SetConfig(cfg string) {
 	if cfg == "" {
-		logs.Errorm(MSG_CONFIG_REQUIRED)
+		console.Errorm(MSG_CONFIG_REQUIRED)
 		return
 	}
 
 	config, err := et.Object(cfg)
 	if err != nil {
-		logs.Alert(err)
+		console.Alert(err)
 		return
 	}
 
@@ -137,10 +137,10 @@ func (s *Systemd) Start() et.Item {
 	s.isRunning = true
 	go func() {
 		defer s.wg.Done()
-		logs.Logf(s.serviceName, `Iniciando el servidor en http://localhost:%d`, s.port)
+		console.Logf(s.serviceName, `Iniciando el servidor en http://localhost:%d`, s.port)
 		if err := s.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			s.isRunning = false
-			logs.Alert(err)
+			console.Alert(err)
 		}
 	}()
 
@@ -171,7 +171,7 @@ func (s *Systemd) Stop() et.Item {
 	}
 	s.wg.Wait()
 	s.isRunning = false
-	logs.Log(ServiceName, "Servidor detenido.")
+	console.Log(ServiceName, "Servidor detenido.")
 
 	return et.Item{
 		Ok:     true,

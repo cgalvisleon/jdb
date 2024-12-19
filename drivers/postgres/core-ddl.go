@@ -1,8 +1,8 @@
 package postgres
 
 import (
+	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
-	"github.com/cgalvisleon/et/logs"
 	"github.com/cgalvisleon/et/utility"
 )
 
@@ -13,7 +13,7 @@ import (
 func (s *Postgres) defineDDL() error {
 	exist, err := s.existTable("core", "DDL")
 	if err != nil {
-		return logs.Panic(err)
+		return console.Panic(err)
 	}
 
 	if exist {
@@ -87,7 +87,7 @@ func (s *Postgres) upsertDDL(id string, query string) error {
 	index := s.GetSerie("ddl")
 	err = s.Exec(sql, id, []byte(query), index)
 	if err != nil {
-		logs.Alertm(et.Json{
+		console.Alertm(et.Json{
 			"_id": id,
 			"sql": query,
 		}.ToString())

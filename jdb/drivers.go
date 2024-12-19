@@ -28,7 +28,6 @@ type Driver interface {
 	// Model
 	CreateModel(model *Model) error
 	MutateModel(model *Model) error
-	DefaultValue(tp TypeData) interface{}
 	// Query
 	Exec(sql string, params ...interface{}) error
 	SQL(sql string, params ...interface{}) (et.Items, error)

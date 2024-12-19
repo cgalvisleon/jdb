@@ -3,8 +3,8 @@ package jdb
 import (
 	"time"
 
+	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
-	"github.com/cgalvisleon/et/logs"
 	"github.com/cgalvisleon/et/mistake"
 	"github.com/cgalvisleon/et/utility"
 )
@@ -15,6 +15,7 @@ type DB struct {
 	Id          string             `json:"id"`
 	Description string             `json:"description"`
 	Schemas     map[string]*Schema `json:"schemas"`
+	UseCore     bool               `json:"use_core"`
 	driver      Driver
 }
 
@@ -25,11 +26,11 @@ type DB struct {
 **/
 func NewDatabase(driver string) (*DB, error) {
 	if driver == "" {
-		return nil, logs.Alertm(MSG_DRIVER_NOT_DEFINED)
+		return nil, console.Alertm(MSG_DRIVER_NOT_DEFINED)
 	}
 
 	if _, ok := drivers[driver]; !ok {
-		return nil, logs.Alertf(MSG_DRIVER_NOT_FOUND, driver)
+		return nil, console.Alertf(MSG_DRIVER_NOT_FOUND, driver)
 	}
 
 	now := time.Now()
@@ -141,6 +142,18 @@ func (s *DB) DropSchema(name string) error {
 	}
 
 	return s.driver.DropSchema(name)
+}
+
+/**
+* CreateCore
+* @return error
+**/
+func (s *DB) CreateCore() error {
+	if s.driver == nil {
+		return mistake.New(MSG_DRIVER_NOT_DEFINED)
+	}
+
+	return s.driver.CreateCore()
 }
 
 /**

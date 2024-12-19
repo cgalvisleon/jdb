@@ -3,8 +3,8 @@ package jdb
 import (
 	"time"
 
+	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
-	"github.com/cgalvisleon/et/logs"
 	"github.com/cgalvisleon/et/strs"
 )
 
@@ -13,33 +13,43 @@ func TableName(schema, name string) string {
 }
 
 type Model struct {
-	Db            *DB
-	Schema        *Schema
-	CreatedAt     time.Time              `json:"created_date"`
-	UpdateAt      time.Time              `json:"update_date"`
-	Name          string                 `json:"name"`
-	Table         string                 `json:"table"`
-	Description   string                 `json:"description"`
-	Columns       []*Column              `json:"columns"`
-	Details       map[string]Detail      `json:"details"`
-	Indices       map[string]*Index      `json:"indices"`
-	Uniques       map[string]*Index      `json:"uniques"`
-	Keys          map[string]*Column     `json:"keys"`
-	Relations     map[string]*Relation   `json:"relations"`
-	Dictionaries  map[string]*Dictionary `json:"dictionaries"`
-	ColRequired   map[string]bool        `json:"col_required"`
-	SourceField   *Column                `json:"data_field"`
-	FullTextField *Column                `json:"full_text"`
-	BeforeInsert  []Trigger              `json:"before_insert"`
-	AfterInsert   []Trigger              `json:"after_insert"`
-	BeforeUpdate  []Trigger              `json:"before_update"`
-	AfterUpdate   []Trigger              `json:"after_update"`
-	BeforeDelete  []Trigger              `json:"before_delete"`
-	AfterDelete   []Trigger              `json:"after_delete"`
-	Functions     map[string]*Function   `json:"functions"`
-	Integrity     bool                   `json:"integrity"`
+	Db             *DB
+	Schema         *Schema
+	CreatedAt      time.Time              `json:"created_date"`
+	UpdateAt       time.Time              `json:"update_date"`
+	Name           string                 `json:"name"`
+	Table          string                 `json:"table"`
+	Description    string                 `json:"description"`
+	Columns        []*Column              `json:"columns"`
+	Details        map[string]Detail      `json:"details"`
+	Indices        map[string]*Index      `json:"indices"`
+	Uniques        map[string]*Index      `json:"uniques"`
+	Keys           map[string]*Column     `json:"keys"`
+	References     map[string]*References `json:"references"`
+	Dictionaries   map[string]*Dictionary `json:"dictionaries"`
+	ColRequired    map[string]bool        `json:"col_required"`
+	SourceField    *Column                `json:"data_field"`
+	SystemKeyField *Column                `json:"key_field"`
+	StateField     *Column                `json:"state_field"`
+	IndexField     *Column                `json:"index_field"`
+	ClassField     *Column                `json:"class_field"`
+	FullTextField  *Column                `json:"full_text"`
+	BeforeInsert   []Trigger              `json:"before_insert"`
+	AfterInsert    []Trigger              `json:"after_insert"`
+	BeforeUpdate   []Trigger              `json:"before_update"`
+	AfterUpdate    []Trigger              `json:"after_update"`
+	BeforeDelete   []Trigger              `json:"before_delete"`
+	AfterDelete    []Trigger              `json:"after_delete"`
+	Functions      map[string]*Function   `json:"functions"`
+	Integrity      bool                   `json:"integrity"`
 }
 
+/**
+* NewModel
+* @param schema *Schema
+* @param name string
+* @return *Model
+**/
 func NewModel(schema *Schema, name string) *Model {
 	now := time.Now()
 
@@ -56,9 +66,8 @@ func NewModel(schema *Schema, name string) *Model {
 		Indices:      make(map[string]*Index),
 		Uniques:      make(map[string]*Index),
 		Keys:         make(map[string]*Column),
-		Relations:    make(map[string]*Relation),
+		References:   make(map[string]*References),
 		Dictionaries: make(map[string]*Dictionary),
-		SourceField:  nil,
 		BeforeInsert: []Trigger{},
 		AfterInsert:  []Trigger{},
 		BeforeUpdate: []Trigger{},
@@ -70,31 +79,6 @@ func NewModel(schema *Schema, name string) *Model {
 	}
 
 	schema.Models[result.Name] = result
-
-	return result
-}
-
-func NewColecction(schema *Schema, name string) *Model {
-	result := NewModel(schema, name)
-	result.DefineColumn(CreatedAtField.Str(), CreatedAtField.TypeData())
-	result.DefineColumn(UpdatedAtField.Str(), CreatedAtField.TypeData())
-	result.DefineColumn(ProjectField.Str(), CreatedAtField.TypeData())
-	result.DefineColumn(StateField.Str(), CreatedAtField.TypeData())
-	result.DefineColumn(KeyField.Str(), CreatedAtField.TypeData())
-	result.DefineColumn(DataField.Str(), CreatedAtField.TypeData())
-	result.DefineColumn(SystemKeyField.Str(), CreatedAtField.TypeData())
-	result.DefineColumn(IndexField.Str(), CreatedAtField.TypeData())
-	result.DefineKey(KeyField.Str())
-	result.DefineIndex(true,
-		CreatedAtField.Str(),
-		UpdatedAtField.Str(),
-		ProjectField.Str(),
-		StateField.Str(),
-		KeyField.Str(),
-		DataField.Str(),
-		SystemKeyField.Str(),
-		IndexField.Str(),
-	)
 
 	return result
 }
@@ -118,7 +102,7 @@ func (s *Model) Describe() et.Json {
 **/
 func (s *Model) Init() error {
 	if s.Db == nil {
-		return logs.Alertm(MSG_DATABASE_IS_REQUIRED)
+		return console.Alertm(MSG_DATABASE_IS_REQUIRED)
 	}
 
 	return s.Db.CreateModel(s)
@@ -165,7 +149,7 @@ func (s *Model) GetDetails(data *et.Json) {
 	for col, detail := range s.Details {
 		err := detail(col, data)
 		if err != nil {
-			logs.Alert(err)
+			console.Alert(err)
 		}
 	}
 }

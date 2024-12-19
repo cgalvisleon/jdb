@@ -1,9 +1,9 @@
 package jdb
 
 import (
+	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/envar"
 	"github.com/cgalvisleon/et/et"
-	"github.com/cgalvisleon/et/logs"
 )
 
 var (
@@ -19,6 +19,7 @@ func Load() (*DB, error) {
 		return nil, err
 	}
 
+	result.UseCore = true
 	err = result.Conected(et.Json{
 		"driver":   Postgres,
 		"host":     envar.GetStr("localhost", "DB_HOST"),
@@ -27,12 +28,13 @@ func Load() (*DB, error) {
 		"username": envar.GetStr("", "DB_USER"),
 		"password": envar.GetStr("", "DB_PASSWORD"),
 		"app":      envar.GetStr("jdb", "DB_APP_NAME"),
+		"core":     result.UseCore,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	logs.Log(Postgres, "Database connected")
+	result.CreateCore()
 
 	return result, nil
 }
@@ -40,7 +42,7 @@ func Load() (*DB, error) {
 func ConnectTo(params et.Json) (*DB, error) {
 	driver := params.Str("driver")
 	if driver == "" {
-		return nil, logs.Alertm("Driver not defined")
+		return nil, console.Alertm("Driver not defined")
 	}
 
 	result, err := NewDatabase(driver)
@@ -53,7 +55,10 @@ func ConnectTo(params et.Json) (*DB, error) {
 		return nil, err
 	}
 
-	logs.Log(driver, "Database connected")
+	core := params.Bool("core")
+	if core {
+		result.CreateCore()
+	}
 
 	return result, nil
 }

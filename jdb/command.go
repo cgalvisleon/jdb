@@ -3,8 +3,8 @@ package jdb
 import (
 	"strings"
 
+	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
-	"github.com/cgalvisleon/et/logs"
 	"github.com/cgalvisleon/et/mistake"
 	"github.com/cgalvisleon/et/strs"
 )
@@ -156,7 +156,7 @@ func (s *Command) consolidate(data et.Json) et.Json {
 func (s *Command) command() (et.Item, error) {
 	result, err := s.Db.Command(s)
 	if s.Show {
-		logs.Debug(s.Describe().ToString())
+		console.Debug(s.Describe().ToString())
 	}
 	if err != nil {
 		return et.Item{}, err

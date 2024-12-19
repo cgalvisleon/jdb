@@ -2,6 +2,8 @@ package jdb
 
 import (
 	"slices"
+
+	"github.com/cgalvisleon/et/strs"
 )
 
 /**
@@ -12,10 +14,25 @@ import (
 * @return *Model
 **/
 func (s *Model) DefineColumn(name string, typeData TypeData) *Column {
-	def := typeData.DefaultValue(s.Db.driver)
+	def := typeData.DefaultValue()
 	col := newColumn(s, name, "", TpColumn, typeData, def)
 	s.Columns = append(s.Columns, col)
-	if slices.Contains([]string{IndexField.Str(), ProjectField.Str(), CreatedAtField.Str(), UpdatedAtField.Str(), StateField.Str(), KeyField.Str(), SystemKeyField.Str(), DataField.Str(), FullTextField.Str()}, name) {
+	if strs.Uppcase(col.Name) == SourceField.Uppcase() {
+		s.SourceField = col
+	}
+	if strs.Uppcase(col.Name) == SystemKeyField.Uppcase() {
+		s.SystemKeyField = col
+	}
+	if strs.Uppcase(col.Name) == IndexField.Uppcase() {
+		s.IndexField = col
+	}
+	if strs.Uppcase(col.Name) == StateField.Uppcase() {
+		s.StateField = col
+	}
+	if strs.Uppcase(col.Name) == ClassField.Uppcase() {
+		s.ClassField = col
+	}
+	if slices.Contains([]string{IndexField.Str(), ProjectField.Str(), CreatedAtField.Str(), UpdatedAtField.Str(), StateField.Str(), KeyField.Str(), SystemKeyField.Str(), SourceField.Str(), FullTextField.Str()}, name) {
 		s.DefineIndex(true, name)
 	}
 
@@ -30,7 +47,7 @@ func (s *Model) DefineColumn(name string, typeData TypeData) *Column {
 * @return *Model
 **/
 func (s *Model) DefineAtribute(name string, typeData TypeData) *Column {
-	def := typeData.DefaultValue(s.Db.driver)
+	def := typeData.DefaultValue()
 	col := newColumn(s, name, "", TpAtribute, typeData, def)
 	s.Columns = append(s.Columns, col)
 

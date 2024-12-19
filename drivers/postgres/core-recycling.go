@@ -1,11 +1,11 @@
 package postgres
 
-import "github.com/cgalvisleon/et/logs"
+import "github.com/cgalvisleon/et/console"
 
 func (s *Postgres) defineRecycling() error {
 	exist, err := s.existTable("core", "RECYCLING")
 	if err != nil {
-		return logs.Panic(err)
+		return console.Panic(err)
 	}
 
 	if exist {
@@ -32,7 +32,7 @@ func (s *Postgres) defineRecycling() error {
 
 	err = s.Exec(sql)
 	if err != nil {
-		return logs.Panic(err)
+		return console.Panic(err)
 	}
 
 	return s.defineRecyclingFunction()
@@ -85,7 +85,7 @@ func (s *Postgres) defineRecyclingFunction() error {
 
 	err := s.Exec(sql)
 	if err != nil {
-		return logs.Panic(err)
+		return console.Panic(err)
 	}
 
 	return nil

@@ -3,8 +3,8 @@ package main
 import (
 	"os"
 
+	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
-	"github.com/cgalvisleon/et/logs"
 )
 
 const PackageName = "jdb"
@@ -79,32 +79,32 @@ func main() {
 	case CMD_Status:
 		result := _app.Status()
 		if result.Ok {
-			logs.Log(PackageName, result.Str("message"))
+			console.Log(PackageName, result.Str("message"))
 		} else {
-			logs.Alertm(result.Str("message"))
+			console.Alertm(result.Str("message"))
 		}
 	case CMD_Start:
 		result := _app.Start()
-		logs.Debug(result.ToString())
+		console.Debug(result.ToString())
 		message := result.Str("message")
 		if result.Ok {
-			logs.Log(PackageName, result.Str("message"))
+			console.Log(PackageName, result.Str("message"))
 		} else {
-			logs.Alertm(message)
+			console.Alertm(message)
 		}
 	case CMD_Stop:
 		result := _app.Stop()
 		if result.Ok {
-			logs.Log(PackageName, result.Str("message"))
+			console.Log(PackageName, result.Str("message"))
 		} else {
-			logs.Alertm(result.Str("message"))
+			console.Alertm(result.Str("message"))
 		}
 	case CMD_Restart:
 		result := _app.Restart()
 		if result.Ok {
-			logs.Log(PackageName, result.Str("message"))
+			console.Log(PackageName, result.Str("message"))
 		} else {
-			logs.Alertm(result.Str("message"))
+			console.Alertm(result.Str("message"))
 		}
 	}
 }

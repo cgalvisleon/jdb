@@ -3,22 +3,31 @@ package postgres
 import (
 	"database/sql"
 
+	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
-	"github.com/cgalvisleon/et/logs"
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
 func (s *Postgres) query(db *sql.DB, sql string, params ...interface{}) (*sql.Rows, error) {
 	rows, err := db.Query(sql, params...)
 	if err != nil {
-		return nil, logs.Alertf(jdb.MSG_QUERY_FAILED, err.Error())
+		return nil, console.Alertf(jdb.MSG_QUERY_FAILED, err.Error())
 	}
 
 	return rows, nil
 }
 
+func (s *Postgres) exec(db *sql.DB, sql string, params ...interface{}) (sql.Result, error) {
+	result, err := db.Exec(sql, params...)
+	if err != nil {
+		return nil, console.Alertf(jdb.MSG_QUERY_FAILED, err.Error())
+	}
+
+	return result, nil
+}
+
 func (s *Postgres) Exec(sql string, params ...interface{}) error {
-	_, err := s.query(s.db, sql, params...)
+	_, err := s.exec(s.db, sql, params...)
 	if err != nil {
 		return err
 	}
