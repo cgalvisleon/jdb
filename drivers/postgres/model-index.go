@@ -36,7 +36,7 @@ func ddlPrimaryKey(model *jdb.Model) string {
 		return result
 	}
 
-	result := strs.Format("\tPRIMARY KEY (%s)\n", strings.Join(primaryKeys(), ", "))
+	result := strs.Format("PRIMARY KEY (%s)", strings.Join(primaryKeys(), ", "))
 
 	return strs.Uppcase(result)
 }

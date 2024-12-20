@@ -6,6 +6,7 @@ import (
 
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/strs"
+	"github.com/cgalvisleon/et/utility"
 )
 
 /**
@@ -55,7 +56,7 @@ func SQLParse(sql string, args ...any) string {
 
 	for i, arg := range args {
 		old := strs.Format(`{$%d}`, i+1)
-		new := strs.Format(`%v`, et.Unquote(arg))
+		new := strs.Format(`%v`, utility.Unquote(arg))
 		sql = strings.ReplaceAll(sql, old, new)
 	}
 
