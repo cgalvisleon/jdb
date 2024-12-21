@@ -3,17 +3,17 @@ package jdb
 import (
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/strs"
+	"github.com/cgalvisleon/et/timezone"
+	"github.com/cgalvisleon/et/utility"
 )
-
-func fieldName(name string) string {
-	return strs.Uppcase(name)
-}
 
 type TypeColumn int
 
 const (
 	TpColumn TypeColumn = iota
 	TpAtribute
+	TpGenerate
+	TpDetail
 )
 
 type TypeData int
@@ -32,7 +32,8 @@ const (
 	// Special
 	TypeDataObject
 	TypeDataArray
-	TypeFullText
+	TypeDataFullText
+	TypeDataNone
 )
 
 func (s TypeData) DefaultValue() interface{} {
@@ -61,8 +62,6 @@ func (s TypeData) DefaultValue() interface{} {
 		return ""
 	case TypeDataTime:
 		return "NOW()"
-	case TypeFullText:
-		return ""
 	}
 
 	return ""
@@ -120,7 +119,7 @@ func (s ColumnField) TypeData() TypeData {
 	case UpdatedToField:
 		return TypeDataTime
 	case FullTextField:
-		return TypeFullText
+		return TypeDataFullText
 	}
 
 	return TypeDataText
@@ -129,9 +128,9 @@ func (s ColumnField) TypeData() TypeData {
 type Column struct {
 	Model       *Model
 	Name        string
+	Field       string
 	Description string
 	Table       string
-	Field       string
 	TypeColumn  TypeColumn
 	TypeData    TypeData
 	Default     interface{}
@@ -139,15 +138,16 @@ type Column struct {
 	Min         float64
 	Hidden      bool
 	Columns     []string
+	Definition  interface{}
 }
 
 func newColumn(model *Model, name string, description string, typeColumn TypeColumn, typeData TypeData, def interface{}) *Column {
 	return &Column{
 		Model:       model,
-		Name:        name,
+		Name:        Name(name),
+		Field:       strs.Uppcase(name),
 		Description: description,
 		Table:       model.Table,
-		Field:       fieldName(name),
 		TypeColumn:  typeColumn,
 		TypeData:    typeData,
 		Default:     def,
@@ -169,4 +169,43 @@ func (s *Column) Describe() et.Json {
 	}
 
 	return result
+}
+
+/**
+* Fk
+* @return string
+**/
+func (s *Column) Fk() string {
+	return s.Model.Table + "_" + s.Field
+}
+
+/**
+* Up
+* @return string
+**/
+func (s *Column) Up() string {
+	return strs.Uppcase(s.Field)
+}
+
+/**
+* Low
+* @return string
+**/
+func (s *Column) Low() string {
+	return strs.Lowcase(s.Field)
+}
+
+/**
+* DefaultValue
+* @return interface{}
+**/
+func (s *Column) DefaultValue() interface{} {
+	switch s.TypeData {
+	case TypeDataKey:
+		return utility.UUID()
+	case TypeDataTime:
+		return timezone.Now()
+	}
+
+	return s.Default
 }

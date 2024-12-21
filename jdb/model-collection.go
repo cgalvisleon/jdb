@@ -1,24 +1,23 @@
 package jdb
 
 /**
-* NewCollection
+* MakeCollection
 * @param schema *Schema
 * @param name string
 * @return *Model
 **/
-func NewCollection(schema *Schema, name string) *Model {
-	result := NewModel(schema, name)
-	result.DefineColumn(CreatedAtField.Str(), CreatedAtField.TypeData())
-	result.DefineColumn(UpdatedAtField.Str(), UpdatedAtField.TypeData())
-	result.DefineColumn(ProjectField.Str(), ProjectField.TypeData())
-	result.DefineColumn(StateField.Str(), StateField.TypeData())
-	result.DefineColumn(KeyField.Str(), KeyField.TypeData())
-	result.DefineColumn(ClassField.Str(), ClassField.TypeData())
-	result.DefineColumn(SourceField.Str(), SourceField.TypeData())
-	result.DefineColumn(SystemKeyField.Str(), SystemKeyField.TypeData())
-	result.DefineColumn(IndexField.Str(), IndexField.TypeData())
-	result.DefineKey(KeyField.Str())
-	result.DefineIndex(true,
+func (s *Model) MakeCollection() *Model {
+	s.DefineColumn(CreatedAtField.Str(), CreatedAtField.TypeData())
+	s.DefineColumn(UpdatedAtField.Str(), UpdatedAtField.TypeData())
+	s.DefineColumn(ProjectField.Str(), ProjectField.TypeData())
+	s.DefineColumn(StateField.Str(), StateField.TypeData())
+	s.DefineColumn(KeyField.Str(), KeyField.TypeData())
+	s.DefineColumn(ClassField.Str(), ClassField.TypeData())
+	s.DefineColumn(SourceField.Str(), SourceField.TypeData())
+	s.DefineColumn(SystemKeyField.Str(), SystemKeyField.TypeData())
+	s.DefineColumn(IndexField.Str(), IndexField.TypeData())
+	s.DefineKey(KeyField.Str())
+	s.DefineIndex(true,
 		CreatedAtField.Str(),
 		UpdatedAtField.Str(),
 		ProjectField.Str(),
@@ -30,5 +29,5 @@ func NewCollection(schema *Schema, name string) *Model {
 		IndexField.Str(),
 	)
 
-	return result
+	return s
 }

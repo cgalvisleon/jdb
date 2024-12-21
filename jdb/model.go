@@ -8,6 +8,10 @@ import (
 	"github.com/cgalvisleon/et/strs"
 )
 
+func Name(name string) string {
+	return strs.ReplaceAll(name, []string{" "}, "_")
+}
+
 func TableName(schema, name string) string {
 	return strs.Format(`%s.%s`, strs.Lowcase(schema), strs.Uppcase(name))
 }
@@ -21,11 +25,10 @@ type Model struct {
 	Table          string                 `json:"table"`
 	Description    string                 `json:"description"`
 	Columns        []*Column              `json:"columns"`
-	Details        map[string]Detail      `json:"details"`
 	Indices        map[string]*Index      `json:"indices"`
 	Uniques        map[string]*Index      `json:"uniques"`
 	Keys           map[string]*Column     `json:"keys"`
-	References     map[string]*References `json:"references"`
+	References     []*Reference           `json:"references"`
 	Dictionaries   map[string]*Dictionary `json:"dictionaries"`
 	ColRequired    map[string]bool        `json:"col_required"`
 	SourceField    *Column                `json:"data_field"`
@@ -58,15 +61,14 @@ func NewModel(schema *Schema, name string) *Model {
 		Schema:       schema,
 		CreatedAt:    now,
 		UpdateAt:     now,
-		Name:         strs.Titlecase(name),
+		Name:         Name(name),
 		Description:  "",
 		Table:        TableName(schema.Name, name),
 		Columns:      make([]*Column, 0),
-		Details:      make(map[string]Detail, 0),
 		Indices:      make(map[string]*Index),
 		Uniques:      make(map[string]*Index),
 		Keys:         make(map[string]*Column),
-		References:   make(map[string]*References),
+		References:   make([]*Reference, 0),
 		Dictionaries: make(map[string]*Dictionary),
 		BeforeInsert: []Trigger{},
 		AfterInsert:  []Trigger{},
@@ -114,9 +116,8 @@ func (s *Model) Init() error {
 * @return *Column
 **/
 func (s *Model) GetColumn(name string) *Column {
-	field := fieldName(name)
 	for _, col := range s.Columns {
-		if col.Field == field {
+		if col.Up() == strs.Uppcase(name) {
 			return col
 		}
 	}
@@ -141,17 +142,51 @@ func (s *Model) GetColumns(names ...string) []*Column {
 }
 
 /**
-* GetDetails
-* @param data *et.Json
-* @return error
+* GetKeys
+* @return []*Column
 **/
-func (s *Model) GetDetails(data *et.Json) {
-	for col, detail := range s.Details {
-		err := detail(col, data)
-		if err != nil {
-			console.Alert(err)
+func (s *Model) GetKeys() []*Column {
+	result := []*Column{}
+	for _, col := range s.Keys {
+		result = append(result, col)
+	}
+
+	return result
+}
+
+func (s *Model) GetForeignKeys() []string {
+
+	return nil
+}
+
+/**
+* GetDetails
+* @return []et.Json
+**/
+func (s *Model) GetDetails(data *et.Json) *et.Json {
+	for _, col := range s.Columns {
+		switch col.TypeColumn {
+		case TpGenerate:
+			col.Definition.(FuncGenerated)(col, data)
+		case TpDetail:
+			linq := From(col.Definition.(*Model))
+			first := true
+			for _, key := range col.Model.Keys {
+				val := (*data)[key.Field]
+				if first {
+					linq = linq.Where(key.Fk()).Eq(val)
+					first = false
+				} else {
+					linq = linq.And(key.Fk()).Eq(val)
+				}
+			}
+			result, err := linq.Page(1).Rows(30)
+			if err == nil {
+				data.Set(col.Low(), result)
+			}
 		}
 	}
+	return data
 }
 
 /**
@@ -170,6 +205,37 @@ func (s *Model) Column(name string) *Column {
 **/
 func (s *Model) Col(name string) *Column {
 	return s.GetColumn(name)
+}
+
+/**
+* New
+* @param data et.Json
+* @return et.Json
+**/
+func (s *Model) New() et.Json {
+	var result = &et.Json{}
+	var details = []*Column{}
+	for _, col := range s.Columns {
+		switch col.TypeColumn {
+		case TpGenerate:
+			col.Definition.(FuncGenerated)(col, result)
+		case TpDetail:
+			details = append(details, col)
+		default:
+			result.Set(col.Low(), col.DefaultValue())
+		}
+	}
+
+	for _, col := range details {
+		dtl := col.Definition.(*Model).New()
+		for _, key := range col.Model.Keys {
+			val := (*result)[key.Field]
+			dtl.Set(key.Fk(), val)
+		}
+		result.Set(col.Low(), dtl)
+	}
+
+	return *result
 }
 
 /**

@@ -110,10 +110,36 @@ func (s *Linq) Page(val int) *Linq {
 * @param limit int
 * @return *Linq
 **/
-func (s *Linq) Rows(val int) (et.List, error) {
+func (s *Linq) Rows(val int) (et.Items, error) {
+	if s.Db == nil {
+		return et.Items{}, mistake.New(MSG_DATABASE_NOT_FOUND)
+	}
+
+	s.Limit = val
+	s.Offset = s.Limit * (s.page - 1)
+	result, err := s.Db.Query(s)
+	if s.Show {
+		console.Debug(s.Describe().ToString())
+	}
+	if err != nil {
+		return et.Items{}, err
+	}
+
+	return result, nil
+}
+
+/**
+* List
+* @param page int
+* @param rows int
+* @return et.List, error
+**/
+func (s *Linq) List(page, rows int) (et.List, error) {
 	if s.Db == nil {
 		return et.List{}, mistake.New(MSG_DATABASE_NOT_FOUND)
 	}
+
+	s.page = page
 
 	all, err := s.Db.Count(s)
 	if s.Show {
@@ -123,7 +149,7 @@ func (s *Linq) Rows(val int) (et.List, error) {
 		return et.List{}, err
 	}
 
-	s.Limit = val
+	s.Limit = rows
 	s.Offset = s.Limit * (s.page - 1)
 	result, err := s.Db.Query(s)
 	if s.Show {
@@ -134,17 +160,6 @@ func (s *Linq) Rows(val int) (et.List, error) {
 	}
 
 	return result.ToList(all, s.page, s.Limit), nil
-}
-
-/**
-* List
-* @param page int
-* @param rows int
-* @return et.List, error
-**/
-func (s *Linq) List(page, rows int) (et.List, error) {
-	s.page = page
-	return s.Rows(rows)
 }
 
 /**

@@ -47,7 +47,7 @@ func ddlForeignKeys(model *jdb.Model) string {
 		field := ref.Key.Field
 		key := field + "_FKEY"
 		key = strs.Replace(key, "-", "_")
-		def := strs.Format(`ALTER TABLE IF EXISTS %s ADD CONSTRAINT %s FOREIGN KEY (%s) REFERENCES %s(%s);`, model.Table, key, field, ref.To, ref.ForeignKey)
+		def := strs.Format(`ALTER TABLE IF EXISTS %s ADD CONSTRAINT %s FOREIGN KEY (%s) REFERENCES %s(%s);`, model.Table, key, field, ref.To.Table, ref.To.Field)
 		if ref.OnDeleteCascade {
 			def = def + " ON DELETE CASCADE"
 		}

@@ -55,6 +55,42 @@ func (s *Model) DefineAtribute(name string, typeData TypeData) *Column {
 }
 
 /**
+* DefineGenerate
+* @param name string
+* @param function string
+* @return *Model
+**/
+func (s *Model) DefineGenerated(name string, f FuncGenerated) {
+	col := newColumn(s, name, "", TpGenerate, TypeDataNone, TypeDataNone.DefaultValue())
+	col.Definition = f
+	s.Columns = append(s.Columns, col)
+}
+
+/**
+* DefineDetail
+* @param name string
+* @param detail Detail
+* @return *Model
+**/
+func (s *Model) DefineDetail(name string) *Model {
+	detail := NewModel(s.Schema, name)
+	col := newColumn(s, name, "", TpDetail, TypeDataNone, TypeDataNone.DefaultValue())
+	col.Definition = detail
+	s.Columns = append(s.Columns, col)
+	keys := s.GetKeys()
+	for _, key := range keys {
+		fkn := key.Fk()
+		fk := detail.DefineColumn(fkn, key.TypeData)
+		NewReference(fk, RelationManyToOne, key)
+		ref := NewReference(key, RelationOneToMany, fk)
+		ref.OnDeleteCascade = true
+		ref.OnUpdateCascade = true
+	}
+
+	return detail
+}
+
+/**
 * DefineKey
 * @param colums ...*Column
 * @return *Model
@@ -156,24 +192,12 @@ func (s *Model) DefineTrigger(tp TypeTrigger, trigger Trigger) *Model {
 * @param function string
 * @return *Model
 **/
-func (s *Model) DefineFunction(name string, tp TypeFunction, definition string) *Model {
+func (s *Model) DefineFunction(name string, tp TypeFunction, definition string) *Function {
 	f := NewFunction(name, tp)
 	f.Definition = definition
-	s.Functions[f.Key] = f
+	s.Functions[f.Id] = f
 
-	return s
-}
-
-/**
-* DefineDetail
-* @param name string
-* @param detail Detail
-* @return *Model
-**/
-func (s *Model) DefineDetail(name string, detail Detail) *Model {
-	s.Details[name] = detail
-
-	return s
+	return f
 }
 
 /**

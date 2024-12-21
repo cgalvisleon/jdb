@@ -1,6 +1,8 @@
 package jdb
 
-import "github.com/cgalvisleon/et/strs"
+import (
+	"github.com/cgalvisleon/et/utility"
+)
 
 type TypeFunction int
 
@@ -12,11 +14,10 @@ const (
 )
 
 type Function struct {
-	Key          string
+	Id           string
 	Name         string
 	Description  string
 	TypeFunction TypeFunction
-	Args         []interface{}
 	Definition   string
 }
 
@@ -28,10 +29,9 @@ type Function struct {
 **/
 func NewFunction(name string, tp TypeFunction) *Function {
 	return &Function{
-		Key:          strs.Uppcase(name),
+		Id:           utility.UUID(),
 		Name:         name,
 		TypeFunction: tp,
-		Args:         make([]interface{}, 0),
 		Definition:   ``,
 	}
 }

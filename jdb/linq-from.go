@@ -3,7 +3,7 @@ package jdb
 func From(m *Model) *Linq {
 	result := &Linq{
 		Db:       m.Db,
-		TypeLinq: TypeLinqSelect,
+		TypeLinq: TypeLinqData,
 		Froms:    make([]*LinqFrom, 0),
 		Joins:    make([]*LinqJoin, 0),
 		Wheres:   make([]*LinqWhere, 0),
