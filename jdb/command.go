@@ -168,7 +168,7 @@ func (s *Command) command() (et.Item, error) {
 func (s *Command) inserted(data et.Json) (et.Item, error) {
 	s.consolidate(data)
 	for _, trigger := range s.Model.BeforeInsert {
-		err := trigger(nil, s.New, data)
+		err := Triggers[trigger](nil, s.New, data)
 		if err != nil {
 			return et.Item{}, err
 		}
@@ -180,7 +180,7 @@ func (s *Command) inserted(data et.Json) (et.Item, error) {
 	}
 
 	for _, trigger := range s.Model.AfterInsert {
-		err := trigger(nil, &result.Result, data)
+		err := Triggers[trigger](nil, &result.Result, data)
 		if err != nil {
 			return et.Item{}, err
 		}
@@ -194,7 +194,7 @@ func (s *Command) inserted(data et.Json) (et.Item, error) {
 func (s *Command) updated(old, data et.Json) (et.Item, error) {
 	s.consolidate(data)
 	for _, trigger := range s.Model.BeforeUpdate {
-		err := trigger(old, s.New, data)
+		err := Triggers[trigger](old, s.New, data)
 		if err != nil {
 			return et.Item{}, err
 		}
@@ -210,7 +210,7 @@ func (s *Command) updated(old, data et.Json) (et.Item, error) {
 	}
 
 	for _, trigger := range s.Model.AfterUpdate {
-		err := trigger(old, &result.Result, data)
+		err := Triggers[trigger](old, &result.Result, data)
 		if err != nil {
 			return et.Item{}, err
 		}
@@ -223,7 +223,7 @@ func (s *Command) updated(old, data et.Json) (et.Item, error) {
 
 func (s *Command) delete(old et.Json) (et.Item, error) {
 	for _, trigger := range s.Model.BeforeDelete {
-		err := trigger(old, nil, nil)
+		err := Triggers[trigger](old, nil, nil)
 		if err != nil {
 			return et.Item{}, err
 		}
@@ -239,7 +239,7 @@ func (s *Command) delete(old et.Json) (et.Item, error) {
 	}
 
 	for _, trigger := range s.Model.AfterDelete {
-		err := trigger(old, nil, nil)
+		err := Triggers[trigger](old, nil, nil)
 		if err != nil {
 			return et.Item{}, err
 		}

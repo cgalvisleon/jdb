@@ -157,29 +157,16 @@ func (s *DB) CreateCore() error {
 }
 
 /**
-* CreateModel
+* LoadModel
 * @param model *Model
 * @return error
 **/
-func (s *DB) CreateModel(model *Model) error {
+func (s *DB) LoadModel(model *Model) error {
 	if s.driver == nil {
 		return mistake.New(MSG_DRIVER_NOT_DEFINED)
 	}
 
-	return s.driver.CreateModel(model)
-}
-
-/**
-* MutateModel
-* @param model *Model
-* @return error
-**/
-func (s *DB) MutateModel(model *Model) error {
-	if s.driver == nil {
-		return mistake.New(MSG_DRIVER_NOT_DEFINED)
-	}
-
-	return s.driver.MutateModel(model)
+	return s.driver.LoadModel(model)
 }
 
 /**

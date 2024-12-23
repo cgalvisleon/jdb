@@ -12,12 +12,12 @@ func schemaName(name string) string {
 }
 
 type Schema struct {
-	Db          *DB
-	CreatedAt   time.Time `json:"created_date"`
-	UpdateAt    time.Time `json:"update_date"`
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
-	Models      map[string]*Model
+	Db          *DB               `json:"-"`
+	CreatedAt   time.Time         `json:"created_date"`
+	UpdateAt    time.Time         `json:"update_date"`
+	Name        string            `json:"name"`
+	Description string            `json:"description"`
+	Models      map[string]*Model `json:"models"`
 }
 
 func NewSchema(db *DB, name string) (*Schema, error) {

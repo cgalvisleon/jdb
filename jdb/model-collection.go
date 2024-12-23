@@ -22,7 +22,6 @@ func (s *Model) MakeCollection() *Model {
 		UpdatedAtField.Str(),
 		ProjectField.Str(),
 		StateField.Str(),
-		KeyField.Str(),
 		ClassField.Str(),
 		SourceField.Str(),
 		SystemKeyField.Str(),

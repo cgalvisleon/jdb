@@ -11,7 +11,8 @@ import (
 func (s *Postgres) query(db *sql.DB, sql string, params ...interface{}) (*sql.Rows, error) {
 	rows, err := db.Query(sql, params...)
 	if err != nil {
-		return nil, console.Alertf(jdb.MSG_QUERY_FAILED, err.Error())
+		sql = jdb.SQLParse(sql, params...)
+		return nil, console.QueryError(err, sql)
 	}
 
 	return rows, nil
@@ -20,7 +21,8 @@ func (s *Postgres) query(db *sql.DB, sql string, params ...interface{}) (*sql.Ro
 func (s *Postgres) exec(db *sql.DB, sql string, params ...interface{}) (sql.Result, error) {
 	result, err := db.Exec(sql, params...)
 	if err != nil {
-		return nil, console.Alertf(jdb.MSG_QUERY_FAILED, err.Error())
+		sql = jdb.SQLParse(sql, params...)
+		return nil, console.QueryError(err, sql)
 	}
 
 	return result, nil

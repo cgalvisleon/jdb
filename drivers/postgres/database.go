@@ -117,7 +117,7 @@ func (s *Postgres) CreateDatabase(name string) error {
 	sql := jdb.SQLDDL(`CREATE DATABASE $1`, name)
 	err = s.Exec(sql)
 	if err != nil {
-		return mistake.Newf(jdb.MSG_QUERY_FAILED, err.Error())
+		return err
 	}
 
 	console.Logf(jdb.Postgres, `Database %s created`, name)
@@ -142,7 +142,7 @@ func (s *Postgres) DropDatabase(name string) error {
 	sql := jdb.SQLDDL(`DROP DATABASE $1`, name)
 	err = s.Exec(sql)
 	if err != nil {
-		return mistake.Newf(jdb.MSG_QUERY_FAILED, err.Error())
+		return err
 	}
 
 	console.Logf(jdb.Postgres, `Database %s droped`, name)

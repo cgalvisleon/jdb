@@ -14,7 +14,7 @@ func test() {
 	}
 
 	model, _ := jdb.NewSchema(db, "test")
-	users := jdb.NewModel(model, "users")
+	users := jdb.NewModel(model, "users", 1)
 	users.DefineColumn("name", jdb.TypeDataText)
 	users.DefineColumn("age", jdb.TypeDataInt)
 	users.DefineColumn("email", jdb.TypeDataText)

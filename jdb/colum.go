@@ -88,11 +88,11 @@ func (s ColumnField) Str() string {
 	return string(s)
 }
 
-func (s ColumnField) Uppcase() string {
+func (s ColumnField) Up() string {
 	return strs.Uppcase(string(s))
 }
 
-func (s ColumnField) Lowcase() string {
+func (s ColumnField) Low() string {
 	return strs.Lowcase(string(s))
 }
 
@@ -126,19 +126,19 @@ func (s ColumnField) TypeData() TypeData {
 }
 
 type Column struct {
-	Model       *Model
-	Name        string
-	Field       string
-	Description string
-	Table       string
-	TypeColumn  TypeColumn
-	TypeData    TypeData
-	Default     interface{}
-	Max         float64
-	Min         float64
-	Hidden      bool
-	Columns     []string
-	Definition  interface{}
+	Model       *Model      `json:"-"`
+	Name        string      `json:"name"`
+	Field       string      `json:"field"`
+	Description string      `json:"description"`
+	Table       string      `json:"table"`
+	TypeColumn  TypeColumn  `json:"type_column"`
+	TypeData    TypeData    `json:"type_data"`
+	Default     interface{} `json:"default"`
+	Max         float64     `json:"max"`
+	Min         float64     `json:"min"`
+	Hidden      bool        `json:"hidden"`
+	Columns     []string    `json:"columns"`
+	Definition  interface{} `json:"definition"`
 }
 
 func newColumn(model *Model, name string, description string, typeColumn TypeColumn, typeData TypeData, def interface{}) *Column {

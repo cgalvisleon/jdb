@@ -17,19 +17,19 @@ func (s *Model) DefineColumn(name string, typeData TypeData) *Column {
 	def := typeData.DefaultValue()
 	col := newColumn(s, name, "", TpColumn, typeData, def)
 	s.Columns = append(s.Columns, col)
-	if strs.Uppcase(col.Name) == SourceField.Uppcase() {
+	if col.Up() == SourceField.Up() {
 		s.SourceField = col
 	}
-	if strs.Uppcase(col.Name) == SystemKeyField.Uppcase() {
+	if col.Up() == SystemKeyField.Up() {
 		s.SystemKeyField = col
 	}
-	if strs.Uppcase(col.Name) == IndexField.Uppcase() {
+	if col.Up() == IndexField.Up() {
 		s.IndexField = col
 	}
-	if strs.Uppcase(col.Name) == StateField.Uppcase() {
+	if col.Up() == StateField.Up() {
 		s.StateField = col
 	}
-	if strs.Uppcase(col.Name) == ClassField.Uppcase() {
+	if col.Up() == ClassField.Up() {
 		s.ClassField = col
 	}
 	if slices.Contains([]string{IndexField.Str(), ProjectField.Str(), CreatedAtField.Str(), UpdatedAtField.Str(), StateField.Str(), KeyField.Str(), SystemKeyField.Str(), SourceField.Str(), FullTextField.Str()}, name) {
@@ -72,8 +72,8 @@ func (s *Model) DefineGenerated(name string, f FuncGenerated) {
 * @param detail Detail
 * @return *Model
 **/
-func (s *Model) DefineDetail(name string) *Model {
-	detail := NewModel(s.Schema, name)
+func (s *Model) DefineDetail(name string, version int) *Model {
+	detail := NewModel(s.Schema, name, version)
 	col := newColumn(s, name, "", TpDetail, TypeDataNone, TypeDataNone.DefaultValue())
 	col.Definition = detail
 	s.Columns = append(s.Columns, col)
@@ -169,19 +169,39 @@ func (s *Model) DefineRequired(requireds ...string) *Model {
 * @return *Model
 **/
 func (s *Model) DefineTrigger(tp TypeTrigger, trigger Trigger) *Model {
+	name := strs.Format(`%s_%s`, s.Name, tp.Name())
+	name = strs.Uppcase(name)
 	switch tp {
 	case BeforeInsert:
-		s.BeforeInsert = append(s.BeforeInsert, trigger)
+		idx := len(s.BeforeInsert) + 1
+		name := strs.Format(`%s_%d`, name, idx)
+		Triggers[name] = trigger
+		s.BeforeInsert = append(s.BeforeInsert, name)
 	case AfterInsert:
-		s.AfterInsert = append(s.AfterInsert, trigger)
+		idx := len(s.AfterInsert) + 1
+		name := strs.Format(`%s_%d`, name, idx)
+		Triggers[name] = trigger
+		s.AfterInsert = append(s.AfterInsert, name)
 	case BeforeUpdate:
-		s.BeforeUpdate = append(s.BeforeUpdate, trigger)
+		idx := len(s.BeforeUpdate) + 1
+		name := strs.Format(`%s_%d`, name, idx)
+		Triggers[name] = trigger
+		s.BeforeUpdate = append(s.BeforeUpdate, name)
 	case AfterUpdate:
-		s.AfterUpdate = append(s.AfterUpdate, trigger)
+		idx := len(s.AfterUpdate) + 1
+		name := strs.Format(`%s_%d`, name, idx)
+		Triggers[name] = trigger
+		s.AfterUpdate = append(s.AfterUpdate, name)
 	case BeforeDelete:
-		s.BeforeDelete = append(s.BeforeDelete, trigger)
+		idx := len(s.BeforeDelete) + 1
+		name := strs.Format(`%s_%d`, name, idx)
+		Triggers[name] = trigger
+		s.BeforeDelete = append(s.BeforeDelete, name)
 	case AfterDelete:
-		s.AfterDelete = append(s.AfterDelete, trigger)
+		idx := len(s.AfterDelete) + 1
+		name := strs.Format(`%s_%d`, name, idx)
+		Triggers[name] = trigger
+		s.AfterDelete = append(s.AfterDelete, name)
 	}
 	return s
 }

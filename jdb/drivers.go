@@ -26,8 +26,7 @@ type Driver interface {
 	CreateSchema(name string) error
 	DropSchema(name string) error
 	// Model
-	CreateModel(model *Model) error
-	MutateModel(model *Model) error
+	LoadModel(model *Model) error
 	// Query
 	Exec(sql string, params ...interface{}) error
 	SQL(sql string, params ...interface{}) (et.Items, error)

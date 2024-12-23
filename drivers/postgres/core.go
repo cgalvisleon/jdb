@@ -13,6 +13,9 @@ func (s *Postgres) CreateCore() error {
 	if err := s.defineDDL(); err != nil {
 		return err
 	}
+	if err := s.defineModel(); err != nil {
+		return err
+	}
 
 	return nil
 }

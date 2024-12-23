@@ -95,13 +95,13 @@ func (s *Postgres) ddlTriggers(model *jdb.Model) string {
 	}
 
 	if model.SystemKeyField != nil {
-		result = strs.Append(result, ddlRecordTriggers(model), "\n")
+		result = strs.Append(result, ddlRecordTriggers(model), "\n\n")
 	}
 	if model.StateField != nil {
-		result = strs.Append(result, ddlRecycligTriggers(model), "\n")
+		result = strs.Append(result, ddlRecycligTriggers(model), "\n\n")
 	}
 	if model.IndexField != nil {
-		result = strs.Append(result, ddlSeriesTriggers(model), "\n")
+		result = strs.Append(result, ddlSeriesTriggers(model), "\n\n")
 	}
 
 	return result
@@ -116,10 +116,18 @@ func (s *Postgres) ddlTable(model *jdb.Model) string {
 	}
 	columnsDef = strs.Append(columnsDef, ddlPrimaryKey(model), "\n\t")
 	result := strs.Format("\nCREATE TABLE IF NOT EXISTS %s (%s\n);", model.Table, columnsDef)
-	result = strs.Uppcase(result)
+	result = strs.Append(result, s.ddlIndex(model), "\n")
+	result = strs.Append(result, s.ddlUniqueIndex(model), "\n\n")
+	result = strs.Append(result, s.ddlTriggers(model), "\n\n")
+
+	return result
+}
+
+func (s *Postgres) ddlIndexFunction(model *jdb.Model) string {
+	result := "\n"
 	result = strs.Append(result, s.ddlIndex(model), "\n")
 	result = strs.Append(result, s.ddlUniqueIndex(model), "\n")
-	result = strs.Append(result, s.ddlTriggers(model), "\n")
+	result = strs.Append(result, s.ddlTriggers(model), "\n\n")
 
 	return result
 }

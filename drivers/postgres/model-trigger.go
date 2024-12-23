@@ -25,7 +25,9 @@ func ddlRecordTriggers(model *jdb.Model) string {
 	FOR EACH ROW
 	EXECUTE PROCEDURE core.RECORDS_BEFORE_DELETE();`, model.Table)
 
-	return strs.Uppcase(result)
+	result = strs.Replace(result, "\t", "")
+
+	return result
 }
 
 func ddlRecycligTriggers(model *jdb.Model) string {

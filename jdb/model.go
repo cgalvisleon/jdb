@@ -1,6 +1,8 @@
 package jdb
 
 import (
+	"encoding/gob"
+	"encoding/json"
 	"time"
 
 	"github.com/cgalvisleon/et/console"
@@ -17,8 +19,8 @@ func TableName(schema, name string) string {
 }
 
 type Model struct {
-	Db             *DB
-	Schema         *Schema
+	Db             *DB                    `json:"-"`
+	Schema         *Schema                `json:"-"`
 	CreatedAt      time.Time              `json:"created_date"`
 	UpdateAt       time.Time              `json:"update_date"`
 	Name           string                 `json:"name"`
@@ -37,14 +39,15 @@ type Model struct {
 	IndexField     *Column                `json:"index_field"`
 	ClassField     *Column                `json:"class_field"`
 	FullTextField  *Column                `json:"full_text"`
-	BeforeInsert   []Trigger              `json:"before_insert"`
-	AfterInsert    []Trigger              `json:"after_insert"`
-	BeforeUpdate   []Trigger              `json:"before_update"`
-	AfterUpdate    []Trigger              `json:"after_update"`
-	BeforeDelete   []Trigger              `json:"before_delete"`
-	AfterDelete    []Trigger              `json:"after_delete"`
+	BeforeInsert   []string               `json:"before_insert"`
+	AfterInsert    []string               `json:"after_insert"`
+	BeforeUpdate   []string               `json:"before_update"`
+	AfterUpdate    []string               `json:"after_update"`
+	BeforeDelete   []string               `json:"before_delete"`
+	AfterDelete    []string               `json:"after_delete"`
 	Functions      map[string]*Function   `json:"functions"`
 	Integrity      bool                   `json:"integrity"`
+	Version        int                    `json:"version"`
 }
 
 /**
@@ -53,9 +56,11 @@ type Model struct {
 * @param name string
 * @return *Model
 **/
-func NewModel(schema *Schema, name string) *Model {
+func NewModel(schema *Schema, name string, version int) *Model {
+	if version == 0 {
+		version = 1
+	}
 	now := time.Now()
-
 	result := &Model{
 		Db:           schema.Db,
 		Schema:       schema,
@@ -70,19 +75,62 @@ func NewModel(schema *Schema, name string) *Model {
 		Keys:         make(map[string]*Column),
 		References:   make([]*Reference, 0),
 		Dictionaries: make(map[string]*Dictionary),
-		BeforeInsert: []Trigger{},
-		AfterInsert:  []Trigger{},
-		BeforeUpdate: []Trigger{},
-		AfterUpdate:  []Trigger{},
-		BeforeDelete: []Trigger{},
-		AfterDelete:  []Trigger{},
+		BeforeInsert: []string{},
+		AfterInsert:  []string{},
+		BeforeUpdate: []string{},
+		AfterUpdate:  []string{},
+		BeforeDelete: []string{},
+		AfterDelete:  []string{},
 		Functions:    make(map[string]*Function),
 		Integrity:    false,
+		Version:      version,
 	}
 
 	schema.Models[result.Name] = result
 
 	return result
+}
+
+func init() {
+	gob.Register(&Column{})
+}
+
+/**
+* Up
+* @return string
+**/
+func (s *Model) Up() string {
+	return strs.Uppcase(s.Name)
+}
+
+/**
+* Low
+* @return string
+**/
+func (s *Model) Low() string {
+	return strs.Lowcase(s.Name)
+}
+
+/**
+* Serialized
+* @return []byte, error
+**/
+func (s *Model) Serialized() ([]byte, error) {
+	return json.Marshal(s)
+}
+
+/**
+* Deserialize
+* @param data []byte
+* @return error
+**/
+func (s *Model) Load(data []byte) error {
+	err := json.Unmarshal(data, s)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 /**
@@ -107,7 +155,7 @@ func (s *Model) Init() error {
 		return console.Alertm(MSG_DATABASE_IS_REQUIRED)
 	}
 
-	return s.Db.CreateModel(s)
+	return s.Db.LoadModel(s)
 }
 
 /**

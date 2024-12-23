@@ -16,7 +16,7 @@ func (s *Postgres) CreateSchema(name string) error {
 	sql := jdb.SQLDDL(`CREATE SCHEMA IF NOT EXISTS $1`, name)
 	err := s.Exec(sql)
 	if err != nil {
-		return mistake.Newf(jdb.MSG_QUERY_FAILED, err.Error())
+		return err
 	}
 
 	go s.upsertDDL(strs.Format(`create_schema_%s`, name), sql)
@@ -34,7 +34,7 @@ func (s *Postgres) DropSchema(name string) error {
 	sql := jdb.SQLDDL(`DROP SCHEMA IF EXISTS $1 CASCADE`, name)
 	err := s.Exec(sql)
 	if err != nil {
-		return mistake.Newf(jdb.MSG_QUERY_FAILED, err.Error())
+		return err
 	}
 
 	go s.upsertDDL(strs.Format(`drop_schema_%s`, name), sql)
