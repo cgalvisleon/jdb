@@ -18,19 +18,16 @@ const (
 )
 
 type Command struct {
-	Db      *DB
-	Model   *Model
-	Data    []et.Json
+	*Model
 	Command TypeCommand
-	Columns et.Json
-	Atribs  et.Json
+	Data    []et.Json
+	Old     et.Json
 	New     *et.Json
-	Key     string
 	Wheres  []*LinqWhere
 	Returns []*LinqSelect
-	Show    bool
 	Sql     string
 	Result  et.Items
+	Show    bool
 }
 
 /**
@@ -79,24 +76,18 @@ func (s *Command) getColumn(col interface{}) *LinqSelect {
 	switch v := col.(type) {
 	case Column:
 		from := &LinqFrom{
-			Model: *s.Model,
+			Model: s.Model,
 			As:    s.Model.Table,
 		}
 
-		return &LinqSelect{
-			From:  from,
-			Field: v.Field,
-		}
+		return NewLinqSelect(from, v.Field)
 	case *Column:
 		from := &LinqFrom{
-			Model: *s.Model,
+			Model: s.Model,
 			As:    s.Model.Table,
 		}
 
-		return &LinqSelect{
-			From:  from,
-			Field: v.Field,
-		}
+		return NewLinqSelect(from, v.Field)
 	case string:
 		list := strings.Split(v, ".")
 		if len(list) == 0 {
@@ -104,15 +95,12 @@ func (s *Command) getColumn(col interface{}) *LinqSelect {
 		}
 
 		from := &LinqFrom{
-			Model: *s.Model,
+			Model: s.Model,
 			As:    s.Model.Table,
 		}
 
 		if len(list) == 1 {
-			return &LinqSelect{
-				From:  from,
-				Field: strs.Uppcase(list[0]),
-			}
+			return NewLinqSelect(from, strs.Uppcase(list[0]))
 		}
 
 		return nil

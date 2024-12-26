@@ -27,7 +27,7 @@ func NewSchema(db *DB, name string) (*Schema, error) {
 		Db:          db,
 		CreatedAt:   now,
 		UpdateAt:    now,
-		Name:        strs.Lowcase(name),
+		Name:        Name(name),
 		Description: "",
 		Models:      map[string]*Model{},
 	}

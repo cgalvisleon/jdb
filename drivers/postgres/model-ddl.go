@@ -16,6 +16,8 @@ func (s *Postgres) typeColumn(tp jdb.TypeData) interface{} {
 		return "INTEGER"
 	case jdb.TypeDataKey:
 		return "VARCHAR(80)"
+	case jdb.TypeDataState:
+		return "VARCHAR(20)"
 	case jdb.TypeDataMemo:
 		return "TEXT"
 	case jdb.TypeDataNumber:
@@ -47,6 +49,8 @@ func (s *Postgres) defaultValue(tp jdb.TypeData) interface{} {
 		return 0
 	case jdb.TypeDataKey:
 		return utility.Quote("-1")
+	case jdb.TypeDataState:
+		return utility.Quote(utility.ACTIVE)
 	case jdb.TypeDataMemo:
 		return utility.Quote("")
 	case jdb.TypeDataNumber:

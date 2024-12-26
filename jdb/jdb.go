@@ -14,7 +14,8 @@ var (
 )
 
 func Load() (*DB, error) {
-	result, err := NewDatabase(Postgres)
+	name := envar.GetStr("", "DB_NAME")
+	result, err := NewDatabase(name, Postgres)
 	if err != nil {
 		return nil, err
 	}
@@ -24,7 +25,7 @@ func Load() (*DB, error) {
 		"driver":   Postgres,
 		"host":     envar.GetStr("localhost", "DB_HOST"),
 		"port":     envar.GetInt(5432, "DB_PORT"),
-		"database": envar.GetStr("", "DB_NAME"),
+		"database": name,
 		"username": envar.GetStr("", "DB_USER"),
 		"password": envar.GetStr("", "DB_PASSWORD"),
 		"app":      envar.GetStr("jdb", "DB_APP_NAME"),
@@ -45,7 +46,8 @@ func ConnectTo(params et.Json) (*DB, error) {
 		return nil, console.Alertm("Driver not defined")
 	}
 
-	result, err := NewDatabase(driver)
+	name := params.ValStr("db", "name")
+	result, err := NewDatabase(name, driver)
 	if err != nil {
 		return nil, err
 	}

@@ -1,33 +1,93 @@
 package jdb
 
-/**
-* Select
-* @param columns ...interface{}
-* @return *Linq
-**/
-func (s *Linq) Select(columns ...interface{}) *Linq {
-	s.TypeLinq = TypeLinqSelect
-	for _, column := range columns {
-		col := s.getColumn(column)
-		if col != nil {
-			s.Selects = append(s.Selects, col)
-		}
-	}
+import "github.com/cgalvisleon/et/strs"
 
-	return s
+type TypeOperation int
+
+const (
+	OperNone TypeOperation = iota
+	OpertionSum
+	OpertionCount
+	OpertionAvg
+	OpertionMax
+	OpertionMin
+)
+
+type LinqSelect struct {
+	From      *LinqFrom
+	Field     *Field
+	Operation TypeOperation
 }
 
 /**
-* Data
-* @param columns ...interface{}
+* NewLinqSelect
+* @param from *LinqFrom
+* @param name string
+* @return *LinqSelect
+**/
+func NewLinqSelect(from *LinqFrom, name string) *LinqSelect {
+	field := from.GetField(name)
+	if field == nil {
+		return nil
+	}
+
+	result := &LinqSelect{
+		From:  from,
+		Field: field,
+	}
+
+	from.Selects = append(from.Selects, result)
+
+	return result
+}
+
+/**
+* GetSelects
+* @return []string
+**/
+func (s *Linq) ListSelects() []string {
+	result := []string{}
+	for _, frm := range s.Froms {
+		for _, sel := range frm.Selects {
+			result = append(result, strs.Format(`%s, %s`, sel.Field.Tag(), sel.Field.Caption()))
+		}
+	}
+
+	if len(result) == 0 {
+		frm := s.Froms[0]
+		for _, col := range frm.Columns {
+			if col == frm.SourceField {
+				continue
+			} else if col.TypeColumn == TpAtribute {
+				result = append(result, strs.Format(`%s.%s.%s, %s`, frm.As, frm.SourceField.Up(), col.Low(), col.Low()))
+			} else {
+				result = append(result, strs.Format(`%s.%s, %s`, frm.As, col.Up(), col.Low()))
+			}
+		}
+	}
+
+	return result
+}
+
+/**
+* GetField
+* @param name string
+* @return *Field
+**/
+func (s *LinqSelect) GetField(name string) *Field {
+	return s.From.GetField(name)
+}
+
+/**
+* Select
+* @param fields ...string
 * @return *Linq
 **/
-func (s *Linq) Data(columns ...interface{}) *Linq {
-	s.TypeLinq = TypeLinqData
-	for _, column := range columns {
-		col := s.getColumn(column)
-		if col != nil {
-			s.Selects = append(s.Selects, col)
+func (s *Linq) Select(fields ...string) *Linq {
+	for _, name := range fields {
+		sel := s.getSelect(name)
+		if sel != nil {
+			sel.From.Selects = append(sel.From.Selects, sel)
 		}
 	}
 
@@ -36,75 +96,60 @@ func (s *Linq) Data(columns ...interface{}) *Linq {
 
 /**
 * Sum
-* @param column interface{}
+* @param field string
 * @return *Linq
 **/
-func (s *Linq) Sum(column interface{}) *Linq {
-	col := s.getColumn(column)
-	col.Function = Sum
-	if col != nil {
-		s.Selects = append(s.Selects, col)
-	}
+func (s *Linq) Sum(field string) *Linq {
+	sel := s.getSelect(field)
+	sel.Operation = OpertionSum
 
 	return s
 }
 
 /**
 * Count
-* @param column interface{}
+* @param field string
 * @return *Linq
 **/
-func (s *Linq) Count(column interface{}) *Linq {
-	col := s.getColumn(column)
-	col.Function = Count
-	if col != nil {
-		s.Selects = append(s.Selects, col)
-	}
+func (s *Linq) Count(field string) *Linq {
+	sel := s.getSelect(field)
+	sel.Operation = OpertionCount
 
 	return s
 }
 
 /**
 * Avg
-* @param column interface{}
+* @param field string
 * @return *Linq
 **/
-func (s *Linq) Avg(column interface{}) *Linq {
-	col := s.getColumn(column)
-	col.Function = Avg
-	if col != nil {
-		s.Selects = append(s.Selects, col)
-	}
+func (s *Linq) Avg(field string) *Linq {
+	sel := s.getSelect(field)
+	sel.Operation = OpertionAvg
 
 	return s
 }
 
 /**
 * Max
-* @param column interface{}
+* @param column string
 * @return *Linq
 **/
-func (s *Linq) Max(column interface{}) *Linq {
-	col := s.getColumn(column)
-	col.Function = Max
-	if col != nil {
-		s.Selects = append(s.Selects, col)
-	}
+func (s *Linq) Max(column string) *Linq {
+	sel := s.getSelect(column)
+	sel.Operation = OpertionMax
 
 	return s
 }
 
 /**
 * Min
-* @param column interface{}
+* @param column string
 * @return *Linq
 **/
-func (s *Linq) Min(column interface{}) *Linq {
-	col := s.getColumn(column)
-	col.Function = Min
-	if col != nil {
-		s.Selects = append(s.Selects, col)
-	}
+func (s *Linq) Min(column string) *Linq {
+	sel := s.getSelect(column)
+	sel.Operation = OpertionMin
 
 	return s
 }

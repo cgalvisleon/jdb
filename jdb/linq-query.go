@@ -1,24 +1,9 @@
 package jdb
 
 import (
-	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/mistake"
 )
-
-func (s *Linq) prebuild() {
-	result := et.Json{}
-
-	for _, val := range s.Froms {
-		result.Set(val.Table, val.As)
-	}
-
-	for _, val := range s.Selects {
-		result.Set(val.From.As, val.Field)
-	}
-
-	console.Debug(result.ToString())
-}
 
 /**
 * First
@@ -26,17 +11,12 @@ func (s *Linq) prebuild() {
 * @return et.Items, error
 **/
 func (s *Linq) First(n int) (et.Items, error) {
-	s.prebuild()
-
 	if s.Db == nil {
 		return et.Items{}, mistake.New(MSG_DATABASE_NOT_FOUND)
 	}
 
 	s.Limit = n
 	result, err := s.Db.Query(s)
-	if s.Show {
-		console.Debug(s.Describe().ToString())
-	}
 	if err != nil {
 		return et.Items{}, err
 	}
@@ -64,9 +44,6 @@ func (s *Linq) Last(n int) (et.Items, error) {
 
 	s.Limit = n
 	result, err := s.Db.Last(s)
-	if s.Show {
-		console.Debug(s.Describe().ToString())
-	}
 	if err != nil {
 		return et.Items{}, err
 	}
@@ -100,8 +77,8 @@ func (s *Linq) One() (et.Item, error) {
 * @return *Linq
 **/
 func (s *Linq) Page(val int) *Linq {
-	s.page = val
-	s.Offset = s.Limit * (s.page - 1)
+	s.Sheet = val
+	s.Offset = s.Limit * (s.Sheet - 1)
 	return s
 }
 
@@ -116,11 +93,8 @@ func (s *Linq) Rows(val int) (et.Items, error) {
 	}
 
 	s.Limit = val
-	s.Offset = s.Limit * (s.page - 1)
+	s.Offset = s.Limit * (s.Sheet - 1)
 	result, err := s.Db.Query(s)
-	if s.Show {
-		console.Debug(s.Describe().ToString())
-	}
 	if err != nil {
 		return et.Items{}, err
 	}
@@ -139,27 +113,21 @@ func (s *Linq) List(page, rows int) (et.List, error) {
 		return et.List{}, mistake.New(MSG_DATABASE_NOT_FOUND)
 	}
 
-	s.page = page
+	s.Sheet = page
 
 	all, err := s.Db.Count(s)
-	if s.Show {
-		console.Debug(s.Describe().ToString())
-	}
 	if err != nil {
 		return et.List{}, err
 	}
 
 	s.Limit = rows
-	s.Offset = s.Limit * (s.page - 1)
+	s.Offset = s.Limit * (s.Sheet - 1)
 	result, err := s.Db.Query(s)
-	if s.Show {
-		console.Debug(s.Describe().ToString())
-	}
 	if err != nil {
 		return et.List{}, err
 	}
 
-	return result.ToList(all, s.page, s.Limit), nil
+	return result.ToList(all, s.Sheet, s.Limit), nil
 }
 
 /**
@@ -167,7 +135,27 @@ func (s *Linq) List(page, rows int) (et.List, error) {
 * @param query []string
 * @return Linq
 **/
-func (s *Linq) Query(query []string) *Linq {
+func (s *Linq) Query(query et.Json) (et.Items, error) {
+	selects := query.ArrayStr([]string{}, "select")
+	joins := query.ArrayJson([]et.Json{}, "join")
 
-	return s
+	s.Select(selects...)
+	s.SetJoins(joins)
+	s.Db.Query(s)
+	return et.Items{
+		Ok: true,
+		Result: []et.Json{{
+			"select":   s.ListSelects(),
+			"from":     s.ListForms(),
+			"join":     s.ListJoins(),
+			"where":    s.ListWheres(),
+			"group_by": s.ListGroups(),
+			"having":   s.ListHavings(),
+			"order_by": s.ListOrders(),
+			"limit": et.Json{
+				"sheet":  s.Sheet,
+				"offset": s.Offset,
+			},
+		}},
+	}, nil
 }

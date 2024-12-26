@@ -3,6 +3,7 @@ package jdb
 import (
 	"encoding/gob"
 	"encoding/json"
+	"slices"
 	"time"
 
 	"github.com/cgalvisleon/et/console"
@@ -10,12 +11,8 @@ import (
 	"github.com/cgalvisleon/et/strs"
 )
 
-func Name(name string) string {
-	return strs.ReplaceAll(name, []string{" "}, "_")
-}
-
 func TableName(schema, name string) string {
-	return strs.Format(`%s.%s`, strs.Lowcase(schema), strs.Uppcase(name))
+	return strs.Format(`%s.%s`, strs.Lowcase(schema), strs.Lowcase(name))
 }
 
 type Model struct {
@@ -39,13 +36,13 @@ type Model struct {
 	IndexField     *Column                `json:"index_field"`
 	ClassField     *Column                `json:"class_field"`
 	FullTextField  *Column                `json:"full_text"`
-	BeforeInsert   []string               `json:"before_insert"`
-	AfterInsert    []string               `json:"after_insert"`
-	BeforeUpdate   []string               `json:"before_update"`
-	AfterUpdate    []string               `json:"after_update"`
-	BeforeDelete   []string               `json:"before_delete"`
-	AfterDelete    []string               `json:"after_delete"`
-	Functions      map[string]*Function   `json:"functions"`
+	BeforeInsert   []string               `json:"-"`
+	AfterInsert    []string               `json:"-"`
+	BeforeUpdate   []string               `json:"-"`
+	AfterUpdate    []string               `json:"-"`
+	BeforeDelete   []string               `json:"-"`
+	AfterDelete    []string               `json:"-"`
+	Functions      map[string]*Function   `json:"-"`
 	Integrity      bool                   `json:"integrity"`
 	Version        int                    `json:"version"`
 }
@@ -61,12 +58,13 @@ func NewModel(schema *Schema, name string, version int) *Model {
 		version = 1
 	}
 	now := time.Now()
+	name = Name(name)
 	result := &Model{
 		Db:           schema.Db,
 		Schema:       schema,
 		CreatedAt:    now,
 		UpdateAt:     now,
-		Name:         Name(name),
+		Name:         name,
 		Description:  "",
 		Table:        TableName(schema.Name, name),
 		Columns:      make([]*Column, 0),
@@ -165,7 +163,7 @@ func (s *Model) Init() error {
 **/
 func (s *Model) GetColumn(name string) *Column {
 	for _, col := range s.Columns {
-		if col.Up() == strs.Uppcase(name) {
+		if col.Low() == strs.Lowcase(name) {
 			return col
 		}
 	}
@@ -264,6 +262,9 @@ func (s *Model) New() et.Json {
 	var result = &et.Json{}
 	var details = []*Column{}
 	for _, col := range s.Columns {
+		if slices.Contains([]*Column{s.SystemKeyField, s.IndexField}, col) {
+			continue
+		}
 		switch col.TypeColumn {
 		case TpGenerate:
 			col.Definition.(FuncGenerated)(col, result)

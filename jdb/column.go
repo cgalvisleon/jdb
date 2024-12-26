@@ -23,6 +23,7 @@ const (
 	TypeDataMemo
 	TypeDataShortText
 	TypeDataKey
+	TypeDataState
 	TypeDataInt
 	TypeDataNumber
 	TypeDataPrecision
@@ -46,6 +47,8 @@ func (s TypeData) DefaultValue() interface{} {
 		return 0
 	case TypeDataKey:
 		return "-1"
+	case TypeDataState:
+		return utility.ACTIVE
 	case TypeDataMemo:
 		return ""
 	case TypeDataNumber:
@@ -65,6 +68,41 @@ func (s TypeData) DefaultValue() interface{} {
 	}
 
 	return ""
+}
+
+func (s TypeData) Str() string {
+	switch s {
+	case TypeDataArray:
+		return "array"
+	case TypeDataBool:
+		return "bool"
+	case TypeDataInt:
+		return "int"
+	case TypeDataKey:
+		return "key"
+	case TypeDataState:
+		return "state"
+	case TypeDataMemo:
+		return "memo"
+	case TypeDataNumber:
+		return "number"
+	case TypeDataPrecision:
+		return "precision"
+	case TypeDataObject:
+		return "object"
+	case TypeDataSerie:
+		return "serie"
+	case TypeDataShortText:
+		return "short_text"
+	case TypeDataText:
+		return "text"
+	case TypeDataTime:
+		return "time"
+	case TypeDataFullText:
+		return "full_text"
+	default:
+		return "text"
+	}
 }
 
 type ColumnField string
@@ -109,7 +147,7 @@ func (s ColumnField) TypeData() TypeData {
 	case UpdatedAtField:
 		return TypeDataTime
 	case StateField:
-		return TypeDataKey
+		return TypeDataState
 	case KeyField:
 		return TypeDataKey
 	case SystemKeyField:
@@ -142,10 +180,11 @@ type Column struct {
 }
 
 func newColumn(model *Model, name string, description string, typeColumn TypeColumn, typeData TypeData, def interface{}) *Column {
+	name = Name(name)
 	return &Column{
 		Model:       model,
-		Name:        Name(name),
-		Field:       strs.Uppcase(name),
+		Name:        name,
+		Field:       name,
 		Description: description,
 		Table:       model.Table,
 		TypeColumn:  typeColumn,
@@ -200,6 +239,9 @@ func (s *Column) Low() string {
 * @return interface{}
 **/
 func (s *Column) DefaultValue() interface{} {
+	if s.Up() == ProjectField.Up() {
+		return "-1"
+	}
 	switch s.TypeData {
 	case TypeDataKey:
 		return utility.UUID()
@@ -208,4 +250,15 @@ func (s *Column) DefaultValue() interface{} {
 	}
 
 	return s.Default
+}
+
+/**
+* DefaultQuote
+* @return interface{}
+**/
+func (s *Column) DefaultQuote() interface{} {
+	result := s.DefaultValue()
+	result = utility.Quote(result)
+
+	return result
 }

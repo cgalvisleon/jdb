@@ -15,10 +15,11 @@ func (s *Postgres) LoadModel(model *jdb.Model) error {
 	}
 
 	oldVersion := current.Int("version")
-	var action = "load"
+	var action string
 	var sql string
 	if oldVersion == 0 {
 		sql = s.ddlTable(model)
+		action = "load"
 	} else if oldVersion != model.Version {
 		bt, err := current.Byte("model")
 		if err != nil {
@@ -34,9 +35,8 @@ func (s *Postgres) LoadModel(model *jdb.Model) error {
 		action = "mutate"
 	} else {
 		sql = s.ddlIndexFunction(model)
+		action = "index"
 	}
-
-	console.Debug("LoadModel:", sql)
 
 	serialized, err := model.Serialized()
 	if err != nil {

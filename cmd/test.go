@@ -23,7 +23,7 @@ func test() {
 		Where("name").Eq("Carlos").
 		And("age").More(18).
 		Or("email").Like("*gmail.com").
-		Data("name", "email").
+		Select("name", "email").
 		Debug().
 		All()
 	if err != nil {

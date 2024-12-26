@@ -28,9 +28,9 @@ type Driver interface {
 	// Model
 	LoadModel(model *Model) error
 	// Query
-	Exec(sql string, params ...interface{}) error
-	SQL(sql string, params ...interface{}) (et.Items, error)
-	One(sql string, params ...interface{}) (et.Item, error)
+	Exec(sql string, params ...any) error
+	SQL(sql string, params ...any) (et.Items, error)
+	One(sql string, params ...any) (et.Item, error)
 	Query(linq *Linq) (et.Items, error)
 	Count(linq *Linq) (int, error)
 	Last(linq *Linq) (et.Items, error)

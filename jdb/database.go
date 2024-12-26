@@ -6,13 +6,22 @@ import (
 	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/mistake"
+	"github.com/cgalvisleon/et/strs"
 	"github.com/cgalvisleon/et/utility"
 )
+
+func Name(name string) string {
+	result := strs.ReplaceAll(name, []string{" "}, "_")
+	return strs.Lowcase(result)
+}
+
+var JDBS []*DB = []*DB{}
 
 type DB struct {
 	CreatedAt   time.Time          `json:"created_date"`
 	UpdateAt    time.Time          `json:"update_date"`
 	Id          string             `json:"id"`
+	Name        string             `json:"name"`
 	Description string             `json:"description"`
 	Schemas     map[string]*Schema `json:"schemas"`
 	UseCore     bool               `json:"use_core"`
@@ -24,7 +33,7 @@ type DB struct {
 * @param driver string
 * @return *DB
 **/
-func NewDatabase(driver string) (*DB, error) {
+func NewDatabase(name, driver string) (*DB, error) {
 	if driver == "" {
 		return nil, console.Alertm(MSG_DRIVER_NOT_DEFINED)
 	}
@@ -34,14 +43,19 @@ func NewDatabase(driver string) (*DB, error) {
 	}
 
 	now := time.Now()
-	return &DB{
+	result := &DB{
 		CreatedAt:   now,
 		UpdateAt:    now,
 		Id:          utility.UUID(),
+		Name:        Name(name),
 		Description: "",
 		Schemas:     map[string]*Schema{},
 		driver:      drivers[driver](),
-	}, nil
+	}
+
+	JDBS = append(JDBS, result)
+
+	return result, nil
 }
 
 /**
@@ -172,10 +186,10 @@ func (s *DB) LoadModel(model *Model) error {
 /**
 * Exec
 * @param sql string
-* @param params ...interface{}
+* @param params ...any
 * @return error
 **/
-func (s *DB) Exec(sql string, params ...interface{}) error {
+func (s *DB) Exec(sql string, params ...any) error {
 	if s.driver == nil {
 		return mistake.New(MSG_DRIVER_NOT_DEFINED)
 	}
@@ -186,10 +200,10 @@ func (s *DB) Exec(sql string, params ...interface{}) error {
 /**
 * SQL
 * @param sql string
-* @param params ...interface{}
+* @param params ...any
 * @return et.Items, error
 **/
-func (s *DB) SQL(sql string, params ...interface{}) (et.Items, error) {
+func (s *DB) SQL(sql string, params ...any) (et.Items, error) {
 	if s.driver == nil {
 		return et.Items{}, mistake.New(MSG_DRIVER_NOT_DEFINED)
 	}
@@ -200,10 +214,10 @@ func (s *DB) SQL(sql string, params ...interface{}) (et.Items, error) {
 /**
 * One
 * @param sql string
-* @param params ...interface{}
+* @param params ...any
 * @return et.Item, error
 **/
-func (s *DB) One(sql string, params ...interface{}) (et.Item, error) {
+func (s *DB) One(sql string, params ...any) (et.Item, error) {
 	if s.driver == nil {
 		return et.Item{}, mistake.New(MSG_DRIVER_NOT_DEFINED)
 	}

@@ -14,8 +14,13 @@ import (
 * @return *Model
 **/
 func (s *Model) DefineColumn(name string, typeData TypeData) *Column {
+	col := s.Column(name)
+	if col != nil {
+		return col
+	}
+
 	def := typeData.DefaultValue()
-	col := newColumn(s, name, "", TpColumn, typeData, def)
+	col = newColumn(s, name, "", TpColumn, typeData, def)
 	s.Columns = append(s.Columns, col)
 	if col.Up() == SourceField.Up() {
 		s.SourceField = col
@@ -47,8 +52,15 @@ func (s *Model) DefineColumn(name string, typeData TypeData) *Column {
 * @return *Model
 **/
 func (s *Model) DefineAtribute(name string, typeData TypeData) *Column {
+	col := s.Column(name)
+	if col != nil {
+		return col
+	}
+
+	s.DefineColumn(SourceField.Up(), SourceField.TypeData())
 	def := typeData.DefaultValue()
-	col := newColumn(s, name, "", TpAtribute, typeData, def)
+	col = newColumn(s, name, "", TpAtribute, typeData, def)
+	col.Field = SourceField.Low()
 	s.Columns = append(s.Columns, col)
 
 	return col
