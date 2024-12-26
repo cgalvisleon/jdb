@@ -20,6 +20,14 @@ type LinqSelect struct {
 }
 
 /**
+* TypeColumn
+* @return TypeColumn
+**/
+func (s *LinqSelect) TypeColumn() TypeColumn {
+	return s.Field.Column.TypeColumn
+}
+
+/**
 * NewLinqSelect
 * @param from *LinqFrom
 * @param name string

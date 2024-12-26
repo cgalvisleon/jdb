@@ -104,12 +104,7 @@ func (s *LinqFilter) Add(val interface{}) interface{} {
 		appendValue(m, val)
 		m.Wheres = append(m.Wheres, s.where)
 	case *Command:
-		field := m.getColumn(val)
-		if field != nil {
-			s.where.B = append(s.where.B, field)
-		} else {
-			s.where.B = append(s.where.B, val)
-		}
+		s.where.B = append(s.where.B, val)
 		m.Wheres = append(m.Wheres, s.where)
 	case *LinqJoin:
 		appendValue(m.Linq, val)

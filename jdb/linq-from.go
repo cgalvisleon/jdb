@@ -45,7 +45,7 @@ func From(m *Model) *Linq {
 		Offset:  0,
 		Limit:   0,
 		Show:    false,
-		Sheet:   0,
+		Sheet:   1,
 		index:   65,
 	}
 

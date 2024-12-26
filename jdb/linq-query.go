@@ -1,6 +1,7 @@
 package jdb
 
 import (
+	"github.com/cgalvisleon/et/envar"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/mistake"
 )
@@ -15,7 +16,12 @@ func (s *Linq) First(n int) (et.Items, error) {
 		return et.Items{}, mistake.New(MSG_DATABASE_NOT_FOUND)
 	}
 
+	limit := envar.GetInt(1000, "QUERY_LIMIT")
+	if n > limit {
+		n = limit
+	}
 	s.Limit = n
+	s.Offset = (s.Sheet - 1) * s.Limit
 	result, err := s.Db.Query(s)
 	if err != nil {
 		return et.Items{}, err
@@ -78,7 +84,7 @@ func (s *Linq) One() (et.Item, error) {
 **/
 func (s *Linq) Page(val int) *Linq {
 	s.Sheet = val
-	s.Offset = s.Limit * (s.Sheet - 1)
+	s.Offset = (s.Sheet - 1) * s.Limit
 	return s
 }
 
@@ -92,14 +98,7 @@ func (s *Linq) Rows(val int) (et.Items, error) {
 		return et.Items{}, mistake.New(MSG_DATABASE_NOT_FOUND)
 	}
 
-	s.Limit = val
-	s.Offset = s.Limit * (s.Sheet - 1)
-	result, err := s.Db.Query(s)
-	if err != nil {
-		return et.Items{}, err
-	}
-
-	return result, nil
+	return s.First(val)
 }
 
 /**
@@ -113,16 +112,13 @@ func (s *Linq) List(page, rows int) (et.List, error) {
 		return et.List{}, mistake.New(MSG_DATABASE_NOT_FOUND)
 	}
 
-	s.Sheet = page
-
 	all, err := s.Db.Count(s)
 	if err != nil {
 		return et.List{}, err
 	}
 
-	s.Limit = rows
-	s.Offset = s.Limit * (s.Sheet - 1)
-	result, err := s.Db.Query(s)
+	s.Sheet = page
+	result, err := s.First(rows)
 	if err != nil {
 		return et.List{}, err
 	}

@@ -7,12 +7,12 @@ import (
 
 func colName(sl *jdb.LinqSelect) string {
 	result := strs.Append("", sl.From.As, "")
-	switch sl.Column.TypeColumn {
+	switch sl.TypeColumn() {
 	case jdb.TpColumn:
-		result = strs.Append(result, sl.Column.Up(), ".")
+		result = strs.Append(result, sl.Field.Name, ".")
 	case jdb.TpAtribute:
-		result = strs.Append(result, sl.From.SourceField.Up(), ".")
-		result = strs.Format(`%s#>>'{%s}'`, result, sl.Column.Low())
+		result = strs.Append(result, sl.Field.Name, ".")
+		result = strs.Format(`%s#>>'{%s}'`, result, sl.Field.Atrib)
 	}
 
 	return result
@@ -32,15 +32,15 @@ func (s *Postgres) queryColumns(froms []*jdb.LinqFrom) string {
 		l := 20
 		n := 0
 		obj := ""
-		for _, slc := range frm.Selects {
+		for _, sel := range frm.Selects {
 			n++
-			if slc.Column.TypeColumn == jdb.TpColumn && slc.Column != slc.From.SourceField {
-				def := colName(slc)
-				obj = strs.Append(obj, strs.Format(`'%s', %s`, slc.Column.Low(), def), ",\n")
-			} else if slc.Column.TypeColumn == jdb.TpAtribute {
-				def := colName(slc)
-				def = strs.Format(`COALESCE(%s, %v)`, def, slc.Column.DefaultQuote())
-				def = strs.Format(`'%s', %s`, slc.Column.Low(), def)
+			if sel.TypeColumn() == jdb.TpColumn && sel.Field.Column != sel.From.SourceField {
+				def := colName(sel)
+				obj = strs.Append(obj, strs.Format(`'%s', %s`, sel.Field.Name, def), ",\n")
+			} else if sel.TypeColumn() == jdb.TpAtribute {
+				def := colName(sel)
+				def = strs.Format(`COALESCE(%s, %v)`, def, sel.Field.Column.DefaultQuote())
+				def = strs.Format(`'%s', %s`, sel.Field.Atrib, def)
 				obj = strs.Append(obj, def, ",\n")
 			}
 			if n == l {

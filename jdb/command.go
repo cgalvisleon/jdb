@@ -1,12 +1,8 @@
 package jdb
 
 import (
-	"strings"
-
-	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/mistake"
-	"github.com/cgalvisleon/et/strs"
 )
 
 type TypeCommand int
@@ -15,13 +11,16 @@ const (
 	Insert TypeCommand = iota
 	Update
 	Delete
+	Bulk
 )
 
 type Command struct {
 	*Model
 	Command TypeCommand
 	Data    []et.Json
-	Old     et.Json
+	Atribs  et.Json
+	Fields  et.Json
+	Key     string
 	New     *et.Json
 	Wheres  []*LinqWhere
 	Returns []*LinqSelect
@@ -39,12 +38,11 @@ type Command struct {
 **/
 func NewCommand(model *Model, data []et.Json, command TypeCommand) *Command {
 	return &Command{
-		Db:      model.Db,
 		Model:   model,
-		Data:    data,
 		Command: command,
-		Columns: et.Json{},
 		Atribs:  et.Json{},
+		Fields:  et.Json{},
+		Data:    data,
 		New:     &et.Json{},
 		Wheres:  make([]*LinqWhere, 0),
 		Returns: make([]*LinqSelect, 0),
@@ -67,175 +65,24 @@ func (s *Command) Describe() et.Json {
 	return result
 }
 
-/**
-* getColumn
-* @param col interface{}
-* @return *LinqSelect
-**/
-func (s *Command) getColumn(col interface{}) *LinqSelect {
-	switch v := col.(type) {
-	case Column:
-		from := &LinqFrom{
-			Model: s.Model,
-			As:    s.Model.Table,
-		}
-
-		return NewLinqSelect(from, v.Field)
-	case *Column:
-		from := &LinqFrom{
-			Model: s.Model,
-			As:    s.Model.Table,
-		}
-
-		return NewLinqSelect(from, v.Field)
-	case string:
-		list := strings.Split(v, ".")
-		if len(list) == 0 {
-			return nil
-		}
-
-		from := &LinqFrom{
-			Model: s.Model,
-			As:    s.Model.Table,
-		}
-
-		if len(list) == 1 {
-			return NewLinqSelect(from, strs.Uppcase(list[0]))
-		}
-
-		return nil
-	default:
-		return nil
-	}
-}
-
 func (s *Command) consolidate(data et.Json) et.Json {
-	if s.Model.Integrity {
-		for k, v := range data {
-			if col := s.Model.GetColumn(k); col != nil {
-				(*s.New)[k] = v
-				switch col.TypeColumn {
-				case TpAtribute:
-					s.Atribs[k] = v
-				case TpColumn:
-					s.Columns[k] = v
-				}
-			}
-		}
-	} else {
-		for k, v := range data {
+	for k, v := range data {
+		col := s.GetColumn(k)
+		if col != nil {
 			(*s.New)[k] = v
-			if col := s.Model.GetColumn(k); col != nil {
-				switch col.TypeColumn {
-				case TpAtribute:
-					s.Atribs[k] = v
-				case TpColumn:
-					s.Columns[k] = v
-				}
-			} else {
+			switch col.TypeColumn {
+			case TpAtribute:
 				s.Atribs[k] = v
+			case TpColumn:
+				s.Fields[k] = v
 			}
+		} else if !s.Integrity {
+			(*s.New)[k] = v
+			s.Atribs[k] = v
 		}
 	}
 
 	return (*s.New)
-}
-
-func (s *Command) command() (et.Item, error) {
-	result, err := s.Db.Command(s)
-	if s.Show {
-		console.Debug(s.Describe().ToString())
-	}
-	if err != nil {
-		return et.Item{}, err
-	}
-
-	return result, nil
-}
-
-func (s *Command) inserted(data et.Json) (et.Item, error) {
-	s.consolidate(data)
-	for _, trigger := range s.Model.BeforeInsert {
-		err := Triggers[trigger](nil, s.New, data)
-		if err != nil {
-			return et.Item{}, err
-		}
-	}
-
-	result, err := s.command()
-	if err != nil {
-		return et.Item{}, err
-	}
-
-	for _, trigger := range s.Model.AfterInsert {
-		err := Triggers[trigger](nil, &result.Result, data)
-		if err != nil {
-			return et.Item{}, err
-		}
-	}
-
-	s.Model.GetDetails(&result.Result)
-
-	return result, nil
-}
-
-func (s *Command) updated(old, data et.Json) (et.Item, error) {
-	s.consolidate(data)
-	for _, trigger := range s.Model.BeforeUpdate {
-		err := Triggers[trigger](old, s.New, data)
-		if err != nil {
-			return et.Item{}, err
-		}
-	}
-
-	result, err := s.command()
-	if err != nil {
-		return et.Item{}, err
-	}
-
-	if result.Ok {
-		s.New = &result.Result
-	}
-
-	for _, trigger := range s.Model.AfterUpdate {
-		err := Triggers[trigger](old, &result.Result, data)
-		if err != nil {
-			return et.Item{}, err
-		}
-	}
-
-	s.Model.GetDetails(&result.Result)
-
-	return result, nil
-}
-
-func (s *Command) delete(old et.Json) (et.Item, error) {
-	for _, trigger := range s.Model.BeforeDelete {
-		err := Triggers[trigger](old, nil, nil)
-		if err != nil {
-			return et.Item{}, err
-		}
-	}
-
-	result, err := s.command()
-	if err != nil {
-		return et.Item{}, err
-	}
-
-	if result.Ok {
-		s.New = &result.Result
-	}
-
-	for _, trigger := range s.Model.AfterDelete {
-		err := Triggers[trigger](old, nil, nil)
-		if err != nil {
-			return et.Item{}, err
-		}
-	}
-
-	s.Model.GetDetails(&result.Result)
-
-	return result, nil
 }
 
 /**
@@ -270,7 +117,7 @@ func (s *Model) Delete() *Command {
 * @return *Command
 **/
 func (s *Model) Bulk(data []et.Json) *Command {
-	return NewCommand(s, data, Insert)
+	return NewCommand(s, data, Bulk)
 }
 
 /**
@@ -306,6 +153,7 @@ func (s *Command) Exec() (et.Items, error) {
 		if len(s.Data) == 0 {
 			return et.Items{}, mistake.New("Data not found")
 		}
+
 		current, err := s.Db.Current(s)
 		if err != nil {
 			return et.Items{}, err
