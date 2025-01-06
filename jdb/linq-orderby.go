@@ -1,6 +1,9 @@
 package jdb
 
-import "github.com/cgalvisleon/et/strs"
+import (
+	"github.com/cgalvisleon/et/et"
+	"github.com/cgalvisleon/et/strs"
+)
 
 type LinqOrder struct {
 	LinqSelect
@@ -15,7 +18,7 @@ type LinqOrder struct {
 **/
 func (s *Linq) OrderBy(sorted bool, columns ...string) *Linq {
 	for _, col := range columns {
-		c := s.getSelect(col)
+		c := s.GetSelect(col)
 		if c != nil {
 			order := &LinqOrder{
 				LinqSelect: *c,
@@ -46,10 +49,29 @@ func (s *Linq) OrderByDesc(columns ...string) *Linq {
 	return s.OrderBy(false, columns...)
 }
 
+/**
+* SetOrders
+* @param orders []et.Json
+* @return *Linq
+**/
+func (s *Linq) SetOrders(orders []et.Json) *Linq {
+	for _, item := range orders {
+		sorted := item.Bool("sorted")
+		columns := item.ArrayStr([]string{}, "columns")
+		s.OrderBy(sorted, columns...)
+	}
+
+	return s
+}
+
+/**
+* ListOrders
+* @return []string
+**/
 func (s *Linq) ListOrders() []string {
 	result := []string{}
 	for _, sel := range s.Orders {
-		result = append(result, strs.Format(`%s, %s, SORTED:%v`, sel.Field.Tag(), sel.Field.Caption(), sel.Sorted))
+		result = append(result, strs.Format(`%s, SORTED:%v`, sel.Field.AsField(), sel.Sorted))
 	}
 
 	return result

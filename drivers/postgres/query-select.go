@@ -5,20 +5,24 @@ import (
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
-func colName(sl *jdb.LinqSelect) string {
-	result := strs.Append("", sl.From.As, "")
-	switch sl.TypeColumn() {
+func selectField(field *jdb.Field) string {
+	result := strs.Append("", field.As, "")
+	switch field.Column.TypeColumn {
 	case jdb.TpColumn:
-		result = strs.Append(result, sl.Field.Name, ".")
+		result = strs.Append(result, field.Name, ".")
 	case jdb.TpAtribute:
-		result = strs.Append(result, sl.Field.Name, ".")
-		result = strs.Format(`%s#>>'{%s}'`, result, sl.Field.Atrib)
+		result = strs.Append(result, field.Field, ".")
+		result = strs.Format(`%s#>>'{%s}'`, result, field.Name)
 	}
 
 	return result
 }
 
 func jsonbBuildObject(result, obj string) string {
+	if len(obj) == 0 {
+		return result
+	}
+
 	return strs.Append(result, strs.Format("jsonb_build_object(\n%s)", obj), "||\n")
 }
 
@@ -35,10 +39,10 @@ func (s *Postgres) queryColumns(froms []*jdb.LinqFrom) string {
 		for _, sel := range frm.Selects {
 			n++
 			if sel.TypeColumn() == jdb.TpColumn && sel.Field.Column != sel.From.SourceField {
-				def := colName(sel)
+				def := selectField(sel.Field)
 				obj = strs.Append(obj, strs.Format(`'%s', %s`, sel.Field.Name, def), ",\n")
 			} else if sel.TypeColumn() == jdb.TpAtribute {
-				def := colName(sel)
+				def := selectField(sel.Field)
 				def = strs.Format(`COALESCE(%s, %v)`, def, sel.Field.Column.DefaultQuote())
 				def = strs.Format(`'%s', %s`, sel.Field.Atrib, def)
 				obj = strs.Append(obj, def, ",\n")

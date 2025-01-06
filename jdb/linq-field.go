@@ -1,21 +1,30 @@
 package jdb
 
 import (
-	"strconv"
-	"strings"
-
+	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/strs"
 )
 
 type Field struct {
+	Owner  interface{}
 	Column *Column
 	Schema string
 	Table  string
 	As     string
+	Field  string
 	Name   string
 	Atrib  string
-	Index  int
-	Value  interface{}
+}
+
+func (s *Field) Define() et.Json {
+	return et.Json{
+		"schema": s.Schema,
+		"table":  s.Table,
+		"as":     s.As,
+		"field":  s.Field,
+		"name":   s.Name,
+		"atrib":  s.Atrib,
+	}
 }
 
 /**
@@ -30,12 +39,24 @@ func (s *Field) TableName() string {
 * Tag
 * @return string
 **/
-func (s *Field) Tag() string {
+func (s *Field) TableField() string {
 	result := ""
 	result = strs.Append(result, s.Schema, "")
 	result = strs.Append(result, s.Table, ".")
-	result = strs.Append(result, s.Name, ".")
+	result = strs.Append(result, s.Field, ".")
 	result = strs.Append(result, s.Atrib, ".")
+
+	return result
+}
+
+/**
+* AsField
+* @return string
+**/
+func (s *Field) AsField() string {
+	result := ""
+	result = strs.Append(result, s.As, "")
+	result = strs.Append(result, s.Name, ".")
 
 	return result
 }
@@ -45,85 +66,5 @@ func (s *Field) Tag() string {
 * @return string
 **/
 func (s *Field) Caption() string {
-	if len(s.Atrib) == 0 {
-		return s.Name
-	}
-
-	return s.Atrib
-}
-
-func NewField(name string) *Field {
-	name = strs.Lowcase(name)
-	list := strings.Split(name, ".")
-
-	if len(list) == 1 {
-		return &Field{
-			Schema: "",
-			Table:  "",
-			As:     "",
-			Name:   list[0],
-			Atrib:  "",
-			Index:  0,
-		}
-	}
-
-	if len(list) == 2 {
-		return &Field{
-			Schema: "",
-			Table:  list[0],
-			As:     "",
-			Name:   list[1],
-			Atrib:  "",
-			Index:  0,
-		}
-	}
-
-	if len(list) == 3 {
-		result := &Field{
-			Schema: list[0],
-			Table:  list[1],
-			As:     "",
-			Name:   list[2],
-			Atrib:  "",
-			Index:  0,
-		}
-		subList := strings.Split(list[1], ":")
-		if len(subList) == 2 {
-			result.Table = subList[0]
-			result.As = subList[1]
-		}
-
-		return result
-	}
-
-	if len(list) == 4 {
-		result := &Field{
-			Schema: list[0],
-			Table:  list[1],
-			As:     "",
-			Name:   list[2],
-			Atrib:  list[3],
-			Index:  0,
-		}
-
-		subList := strings.Split(list[1], ":")
-		if len(subList) == 2 {
-			result.Table = subList[0]
-			result.As = subList[1]
-		}
-
-		subList = strings.Split(list[3], ":")
-		if len(subList) == 2 {
-			result.Atrib = subList[0]
-			idx, err := strconv.Atoi(subList[1])
-			if err != nil {
-				idx = 0
-			}
-			result.Index = idx
-		}
-
-		return result
-	}
-
-	return nil
+	return s.Name
 }

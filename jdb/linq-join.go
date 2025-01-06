@@ -14,6 +14,21 @@ const (
 	JoinFull
 )
 
+func (s TypeJoin) Str() string {
+	switch s {
+	case JoinInner:
+		return "INNER JOIN"
+	case JoinLeft:
+		return "LEFT JOIN"
+	case JoinRight:
+		return "RIGHT JOIN"
+	case JoinFull:
+		return "FULL JOIN"
+	}
+
+	return ""
+}
+
 type LinqJoin struct {
 	Linq     *Linq
 	TypeJoin TypeJoin
@@ -81,15 +96,76 @@ func (s *Linq) FullJoin(m *Model) *LinqJoin {
 
 /**
 * On
-* @param col interface{}
+* @param name string
 * @return *Linq
 **/
-func (s *LinqJoin) On(name string) *LinqFilter {
-	col := s.From.GetField(name)
+func (s *LinqJoin) On(field string) *LinqFilter {
+	col := s.From.GetField(field)
 	if col != nil {
 		return NewLinqFilter(s, col)
 	}
 
+	return NewLinqFilter(s, field)
+}
+
+/**
+* And
+* @param val interface{}
+* @return *LinqFilter
+**/
+func (s *LinqJoin) And(val interface{}) *LinqFilter {
+	field, ok := val.(string)
+	if !ok {
+		return nil
+	}
+
+	result := s.On(field)
+	result.where.Conector = And
+
+	return result
+}
+
+/**
+* Or
+* @param field string
+* @return *LinqFilter
+**/
+func (s *LinqJoin) Or(val interface{}) *LinqFilter {
+	field, ok := val.(string)
+	if !ok {
+		return nil
+	}
+
+	result := s.On(field)
+	result.where.Conector = And
+
+	return result
+}
+
+/**
+* Select
+* @param fields ...string
+* @return FilterTo
+**/
+func (s *LinqJoin) Select(fields ...string) *Linq {
+	return s.Linq
+}
+
+/**
+* Data
+* @param fields ...string
+* @return FilterTo
+**/
+func (s *LinqJoin) Data(fields ...string) *Linq {
+	return s.Linq
+}
+
+/**
+* Return
+* @param fields ...string
+* @return *Command
+**/
+func (s *LinqJoin) Return(fields ...string) *Command {
 	return nil
 }
 
@@ -97,8 +173,22 @@ func (s *LinqJoin) On(name string) *LinqFilter {
 * SetJoins
 * @param vals []et.Json
 **/
-func (s *Linq) SetJoins(vals []et.Json) {
+func (s *Linq) SetJoins(vals []et.Json) *Linq {
+	for _, val := range vals {
+		from := val.Str("from")
+		model := models[from]
+		if model != nil {
+			on := val.Json("on")
+			key := strs.Format(`%s.%s`, from, on.Str("key"))
+			to := on.Str("to")
+			foreign := on.Str("foreignKey")
+			foreignKey := strs.Format(`%s.%s`, to, foreign)
+			s.Join(model).On(key).
+				Eq(foreignKey)
+		}
+	}
 
+	return s
 }
 
 /**
@@ -108,7 +198,10 @@ func (s *Linq) SetJoins(vals []et.Json) {
 func (s *Linq) ListJoins() []string {
 	result := []string{}
 	for _, join := range s.Joins {
-		result = append(result, strs.Format(`%s %s ON %s`, join.TypeJoin, join.From.Table, join.Wheres[0].String()))
+		result = append(result, strs.Format(`%s %s AS %s`, join.TypeJoin.Str(), join.From.Table, join.From.As))
+		for _, where := range join.Wheres {
+			result = append(result, strs.Format(`%s`, where.String()))
+		}
 	}
 
 	return result

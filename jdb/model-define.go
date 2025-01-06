@@ -14,14 +14,13 @@ import (
 * @return *Model
 **/
 func (s *Model) DefineColumn(name string, typeData TypeData) *Column {
-	col := s.Column(name)
+	col := s.GetColumn(name)
 	if col != nil {
 		return col
 	}
 
 	def := typeData.DefaultValue()
 	col = newColumn(s, name, "", TpColumn, typeData, def)
-	s.Columns = append(s.Columns, col)
 	if col.Up() == SourceField.Up() {
 		s.SourceField = col
 	}
@@ -36,6 +35,15 @@ func (s *Model) DefineColumn(name string, typeData TypeData) *Column {
 	}
 	if col.Up() == ClassField.Up() {
 		s.ClassField = col
+	}
+	if col.Up() == IndexField.Up() {
+		s.IndexField = col
+	}
+	idx := slices.IndexFunc(s.Columns, func(e *Column) bool { return e == s.IndexField })
+	if idx == -1 {
+		s.Columns = append(s.Columns, col)
+	} else {
+		s.Columns = append(s.Columns[:idx], append([]*Column{col}, s.Columns[idx:]...)...)
 	}
 	if slices.Contains([]string{IndexField.Str(), ProjectField.Str(), CreatedAtField.Str(), UpdatedAtField.Str(), StateField.Str(), KeyField.Str(), SystemKeyField.Str(), SourceField.Str(), FullTextField.Str()}, name) {
 		s.DefineIndex(true, name)
@@ -52,7 +60,7 @@ func (s *Model) DefineColumn(name string, typeData TypeData) *Column {
 * @return *Model
 **/
 func (s *Model) DefineAtribute(name string, typeData TypeData) *Column {
-	col := s.Column(name)
+	col := s.GetColumn(name)
 	if col != nil {
 		return col
 	}
@@ -84,20 +92,13 @@ func (s *Model) DefineGenerated(name string, f FuncGenerated) {
 * @param detail Detail
 * @return *Model
 **/
-func (s *Model) DefineDetail(name string, version int) *Model {
-	detail := NewModel(s.Schema, name, version)
+func (s *Model) DefineDetail(name, table string, version int) *Model {
+	detail := NewModel(s.Schema, table, version)
 	col := newColumn(s, name, "", TpDetail, TypeDataNone, TypeDataNone.DefaultValue())
 	col.Definition = detail
 	s.Columns = append(s.Columns, col)
 	keys := s.GetKeys()
-	for _, key := range keys {
-		fkn := key.Fk()
-		fk := detail.DefineColumn(fkn, key.TypeData)
-		NewReference(fk, RelationManyToOne, key)
-		ref := NewReference(key, RelationOneToMany, fk)
-		ref.OnDeleteCascade = true
-		ref.OnUpdateCascade = true
-	}
+	detail.MakeDetail(keys)
 
 	return detail
 }

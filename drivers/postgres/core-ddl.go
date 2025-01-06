@@ -48,8 +48,7 @@ func (s *Postgres) defineDDL() error {
 	CREATE TRIGGER RECORDS_BEFORE_DELETE
 	BEFORE DELETE ON core.DDL
 	FOR EACH ROW
-	EXECUTE PROCEDURE core.RECORDS_BEFORE_DELETE();
-	`
+	EXECUTE PROCEDURE core.RECORDS_BEFORE_DELETE();`
 
 	err = s.Exec(sql)
 	if err != nil {

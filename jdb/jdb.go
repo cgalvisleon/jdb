@@ -30,6 +30,20 @@ func Load() (*DB, error) {
 		"password": envar.GetStr("", "DB_PASSWORD"),
 		"app":      envar.GetStr("jdb", "DB_APP_NAME"),
 		"core":     result.UseCore,
+		"fields": et.Json{
+			"IndexField":     "index",
+			"SourceField":    "_data",
+			"ProjectField":   "project_id",
+			"CreatedAtField": "created_at",
+			"UpdatedAtField": "update_at",
+			"StateField":     "_state",
+			"KeyField":       "_id",
+			"SystemKeyField": "_idt",
+			"ClassField":     "_class",
+			"CreatedToField": "created_to",
+			"UpdatedToField": "updated_to",
+			"FullTextField":  "_fulltext",
+		},
 	})
 	if err != nil {
 		return nil, err
@@ -61,6 +75,38 @@ func ConnectTo(params et.Json) (*DB, error) {
 	if core {
 		result.CreateCore()
 	}
+
+	fields := params.Json("fields")
+	for key, value := range fields {
+		switch key {
+		case "IndexField":
+			IndexField = value.(ColumnField)
+		case "SourceField":
+			SourceField = value.(ColumnField)
+		case "ProjectField":
+			ProjectField = value.(ColumnField)
+		case "CreatedAtField":
+			CreatedAtField = value.(ColumnField)
+		case "UpdatedAtField":
+			UpdatedAtField = value.(ColumnField)
+		case "StateField":
+			StateField = value.(ColumnField)
+		case "KeyField":
+			KeyField = value.(ColumnField)
+		case "SystemKeyField":
+			SystemKeyField = value.(ColumnField)
+		case "ClassField":
+			ClassField = value.(ColumnField)
+		case "CreatedToField":
+			CreatedToField = value.(ColumnField)
+		case "UpdatedToField":
+			UpdatedToField = value.(ColumnField)
+		case "FullTextField":
+			FullTextField = value.(ColumnField)
+		}
+	}
+
+	dbs[name] = result
 
 	return result, nil
 }

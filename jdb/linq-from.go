@@ -8,31 +8,6 @@ type LinqFrom struct {
 	Selects []*LinqSelect
 }
 
-func (s *LinqFrom) GetField(name string) *Field {
-	result := NewField(name)
-	if result == nil {
-		return nil
-	}
-
-	col := s.GetColumn(result.Name)
-	if col == nil && s.Integrity {
-		return nil
-	}
-
-	if col == nil {
-		col = s.DefineAtribute(name, TypeDataText)
-	}
-
-	result.Column = col
-	result.Schema = s.Schema.Name
-	result.Table = s.Name
-	result.As = s.As
-	result.Name = col.Field
-	result.Atrib = col.Name
-
-	return result
-}
-
 func From(m *Model) *Linq {
 	result := &Linq{
 		Db:      m.Db,
@@ -55,17 +30,34 @@ func From(m *Model) *Linq {
 }
 
 /**
+* GetField
+* @param name string
+* @return *Field
+**/
+func (s *LinqFrom) GetField(name string) *Field {
+	result := s.Model.GetField(name)
+	if result != nil {
+		result.As = s.As
+	}
+
+	list := strs.Split(name, `.`)
+	switch len(list) {
+	case 2:
+
+	}
+
+	return result
+}
+
+/**
 * ListForms
 * @return []string
 **/
 func (s *Linq) ListForms() []string {
 	var result []string
-	if len(s.Froms) == 0 {
-		return result
+	for _, from := range s.Froms {
+		result = append(result, strs.Format(`%s, %s`, from.Table, from.As))
 	}
-
-	from := s.Froms[0]
-	result = append(result, strs.Format(`%s, %s`, from.Table, from.As))
 
 	return result
 }

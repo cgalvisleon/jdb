@@ -16,17 +16,18 @@ const (
 
 type Command struct {
 	*Model
-	Command TypeCommand
-	Data    []et.Json
-	Atribs  et.Json
-	Fields  et.Json
-	Key     string
-	New     *et.Json
-	Wheres  []*LinqWhere
-	Returns []*LinqSelect
-	Sql     string
-	Result  et.Items
-	Show    bool
+	TypeSelect TypeSelect `json:"type_select"`
+	Command    TypeCommand
+	Origin     []et.Json
+	Atribs     et.Json
+	Fields     et.Json
+	Key        string
+	New        *et.Json
+	Wheres     []*LinqWhere
+	Returns    []*LinqSelect
+	Sql        string
+	Result     et.Items
+	Show       bool
 }
 
 /**
@@ -42,7 +43,7 @@ func NewCommand(model *Model, data []et.Json, command TypeCommand) *Command {
 		Command: command,
 		Atribs:  et.Json{},
 		Fields:  et.Json{},
-		Data:    data,
+		Origin:  data,
 		New:     &et.Json{},
 		Wheres:  make([]*LinqWhere, 0),
 		Returns: make([]*LinqSelect, 0),
@@ -67,10 +68,10 @@ func (s *Command) Describe() et.Json {
 
 func (s *Command) consolidate(data et.Json) et.Json {
 	for k, v := range data {
-		col := s.GetColumn(k)
-		if col != nil {
+		field := s.GetField(k)
+		if field != nil {
 			(*s.New)[k] = v
-			switch col.TypeColumn {
+			switch field.Column.TypeColumn {
 			case TpAtribute:
 				s.Atribs[k] = v
 			case TpColumn:
@@ -136,11 +137,11 @@ func (s *Command) Debug() *Command {
 func (s *Command) Exec() (et.Items, error) {
 	switch s.Command {
 	case Insert:
-		if len(s.Data) == 0 {
+		if len(s.Origin) == 0 {
 			return et.Items{}, mistake.New("Data not found")
 		}
 
-		for _, data := range s.Data {
+		for _, data := range s.Origin {
 			result, err := s.inserted(data)
 			if err != nil {
 				return et.Items{}, err
@@ -150,7 +151,7 @@ func (s *Command) Exec() (et.Items, error) {
 			s.Result.Ok = true
 		}
 	case Update:
-		if len(s.Data) == 0 {
+		if len(s.Origin) == 0 {
 			return et.Items{}, mistake.New("Data not found")
 		}
 
@@ -163,7 +164,7 @@ func (s *Command) Exec() (et.Items, error) {
 			if s.Key == "-1" {
 				continue
 			}
-			result, err := s.updated(old, s.Data[0])
+			result, err := s.updated(old, s.Origin[0])
 			if err != nil {
 				return et.Items{}, err
 			}

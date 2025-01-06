@@ -1,6 +1,10 @@
 package jdb
 
-import "github.com/cgalvisleon/et/strs"
+import (
+	"slices"
+
+	"github.com/cgalvisleon/et/strs"
+)
 
 type TypeOperation int
 
@@ -33,10 +37,10 @@ func (s *LinqSelect) TypeColumn() TypeColumn {
 * @param name string
 * @return *LinqSelect
 **/
-func NewLinqSelect(from *LinqFrom, name string) *LinqSelect {
-	field := from.GetField(name)
-	if field == nil {
-		return nil
+func NewLinqSelect(from *LinqFrom, field *Field) *LinqSelect {
+	idx := slices.IndexFunc(from.Selects, func(e *LinqSelect) bool { return e.Field.TableField() == field.TableField() })
+	if idx != -1 {
+		return from.Selects[idx]
 	}
 
 	result := &LinqSelect{
@@ -50,14 +54,14 @@ func NewLinqSelect(from *LinqFrom, name string) *LinqSelect {
 }
 
 /**
-* GetSelects
+* ListSelects
 * @return []string
 **/
 func (s *Linq) ListSelects() []string {
 	result := []string{}
 	for _, frm := range s.Froms {
 		for _, sel := range frm.Selects {
-			result = append(result, strs.Format(`%s, %s`, sel.Field.Tag(), sel.Field.Caption()))
+			result = append(result, strs.Format(`%s, %s`, sel.Field.TableField(), sel.Field.Caption()))
 		}
 	}
 
@@ -93,7 +97,7 @@ func (s *LinqSelect) GetField(name string) *Field {
 **/
 func (s *Linq) Select(fields ...string) *Linq {
 	for _, name := range fields {
-		sel := s.getSelect(name)
+		sel := s.GetSelect(name)
 		if sel != nil {
 			sel.From.Selects = append(sel.From.Selects, sel)
 		}
@@ -103,12 +107,31 @@ func (s *Linq) Select(fields ...string) *Linq {
 }
 
 /**
+* Data
+* @param fields ...string
+* @return *Linq
+**/
+func (s *Linq) Data(fields ...string) *Linq {
+	s.TypeSelect = Data
+	return s.Select(fields...)
+}
+
+/**
+* Return
+* @param fields ...string
+* @return *Command
+**/
+func (s *Linq) Return(fields ...string) *Command {
+	return nil
+}
+
+/**
 * Sum
 * @param field string
 * @return *Linq
 **/
 func (s *Linq) Sum(field string) *Linq {
-	sel := s.getSelect(field)
+	sel := s.GetSelect(field)
 	sel.Operation = OpertionSum
 
 	return s
@@ -120,7 +143,7 @@ func (s *Linq) Sum(field string) *Linq {
 * @return *Linq
 **/
 func (s *Linq) Count(field string) *Linq {
-	sel := s.getSelect(field)
+	sel := s.GetSelect(field)
 	sel.Operation = OpertionCount
 
 	return s
@@ -132,7 +155,7 @@ func (s *Linq) Count(field string) *Linq {
 * @return *Linq
 **/
 func (s *Linq) Avg(field string) *Linq {
-	sel := s.getSelect(field)
+	sel := s.GetSelect(field)
 	sel.Operation = OpertionAvg
 
 	return s
@@ -144,7 +167,7 @@ func (s *Linq) Avg(field string) *Linq {
 * @return *Linq
 **/
 func (s *Linq) Max(column string) *Linq {
-	sel := s.getSelect(column)
+	sel := s.GetSelect(column)
 	sel.Operation = OpertionMax
 
 	return s
@@ -156,7 +179,7 @@ func (s *Linq) Max(column string) *Linq {
 * @return *Linq
 **/
 func (s *Linq) Min(column string) *Linq {
-	sel := s.getSelect(column)
+	sel := s.GetSelect(column)
 	sel.Operation = OpertionMin
 
 	return s

@@ -14,7 +14,7 @@ func (s *Linq) GroupBy(columns ...string) *Linq {
 func (s *Linq) ListGroups() []string {
 	result := []string{}
 	for _, sel := range s.Groups {
-		result = append(result, strs.Format(`%s, %s`, sel.Field.Tag(), sel.Field.Caption()))
+		result = append(result, strs.Format(`%s, %s`, sel.Field.TableField(), sel.Field.Caption()))
 	}
 
 	return result

@@ -67,7 +67,8 @@ func (s *Postgres) Query(linq *jdb.Linq) (et.Items, error) {
 	linq.Sql = ""
 	linq.Sql = strs.Append(linq.Sql, s.querySelect(linq.Froms), "\n")
 	linq.Sql = strs.Append(linq.Sql, s.queryFrom(linq.Froms), "\n")
-	linq.Sql = strs.Append(linq.Sql, s.queryWhere(linq), "\n")
+	linq.Sql = strs.Append(linq.Sql, s.queryJoin(linq.Joins), "\n")
+	linq.Sql = strs.Append(linq.Sql, s.queryWhere(linq.Wheres), "\n")
 	linq.Sql = strs.Append(linq.Sql, s.queryGroupBy(linq), "\n")
 	linq.Sql = strs.Append(linq.Sql, s.queryHaving(linq), "\n")
 	linq.Sql = strs.Append(linq.Sql, s.queryOrderBy(linq), "\n")

@@ -215,7 +215,10 @@ func (s *Column) Describe() et.Json {
 * @return string
 **/
 func (s *Column) Fk() string {
-	return s.Model.Table + "_" + s.Field
+	result := strs.ReplaceAll(s.Field, []string{"_"}, "")
+	result = s.Model.Name + "_" + result
+
+	return result
 }
 
 /**

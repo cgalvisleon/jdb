@@ -2,18 +2,8 @@ package postgres
 
 import (
 	"github.com/cgalvisleon/et/strs"
-	"github.com/cgalvisleon/et/utility"
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
-
-func whereVal(val interface{}) interface{} {
-	switch v := val.(type) {
-	case *jdb.LinqSelect:
-		return colName(v)
-	default:
-		return utility.Quote(v)
-	}
-}
 
 func whereOperator(op jdb.Operator, val interface{}) string {
 	switch op {
@@ -52,27 +42,37 @@ func whereOperator(op jdb.Operator, val interface{}) string {
 func whereConnector(con jdb.Connector) string {
 	switch con {
 	case jdb.And:
-		return " AND "
+		return "\nAND "
 	case jdb.Or:
-		return " OR "
+		return "\nOR "
 	default:
 		return ""
 	}
 }
 
-func (s *Postgres) queryWhere(linq *jdb.Linq) string {
-	result := ""
-	for i, w := range linq.Wheres {
-		a := whereVal(w.A)
-		b := whereVal(w.B)
-		def := strs.Format("%s%s", a, whereOperator(w.Operator, b))
-		if i == 0 {
-			result = def
-			continue
-		}
+func whereFilter(where *jdb.LinqWhere) string {
+	if where == nil {
+		return ""
+	}
 
+	key := where.GetKey()
+	values := where.GetValue(where.Value)
+	return strs.Format("%v%v", key, whereOperator(where.Operator, values))
+}
+
+func whereFilters(wheres []*jdb.LinqWhere) string {
+	result := ""
+	for _, w := range wheres {
+		def := whereFilter(w)
 		result = strs.Append(result, def, whereConnector(w.Conector))
 	}
+
+	return result
+}
+
+func (s *Postgres) queryWhere(wheres []*jdb.LinqWhere) string {
+	result := whereFilters(wheres)
+	result = strs.Append("WHERE", result, " ")
 
 	return result
 }

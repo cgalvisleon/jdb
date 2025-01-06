@@ -37,6 +37,7 @@ func NewSchema(db *DB, name string) (*Schema, error) {
 	}
 
 	db.Schemas[name] = result
+	schemas[name] = result
 
 	return result, nil
 }
@@ -60,4 +61,20 @@ func (s *Schema) Describe() et.Json {
 **/
 func (s *Schema) Init() error {
 	return s.Db.CreateSchema(s.Name)
+}
+
+/**
+* Low
+* @return string
+**/
+func (s *Schema) Low() string {
+	return strs.Lowcase(s.Name)
+}
+
+/**
+* Up
+* @return string
+**/
+func (s *Schema) Up() string {
+	return strs.Uppcase(s.Name)
 }

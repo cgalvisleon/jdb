@@ -134,9 +134,13 @@ func (s *Linq) List(page, rows int) (et.List, error) {
 func (s *Linq) Query(query et.Json) (et.Items, error) {
 	selects := query.ArrayStr([]string{}, "select")
 	joins := query.ArrayJson([]et.Json{}, "join")
+	where := query.ArrayJson([]et.Json{}, "where")
+	orders := query.ArrayJson([]et.Json{}, "order_by")
 
 	s.Select(selects...)
 	s.SetJoins(joins)
+	s.SetWheres(where)
+	s.SetOrders(orders)
 	s.Db.Query(s)
 	return et.Items{
 		Ok: true,
