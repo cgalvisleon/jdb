@@ -11,7 +11,11 @@ func (s *Linq) Having(col ...string) *LinqWhere {
 	return result
 }
 
-func (s *Linq) ListHavings() []string {
+/**
+* listHavings
+* @return []string
+**/
+func (s *Linq) listHavings() []string {
 	result := []string{}
 	for _, val := range s.Havings {
 		result = append(result, val.String())

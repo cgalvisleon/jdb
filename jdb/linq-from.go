@@ -20,7 +20,7 @@ func From(m *Model) *Linq {
 		Offset:  0,
 		Limit:   0,
 		Show:    false,
-		Sheet:   1,
+		Sheet:   0,
 		index:   65,
 	}
 
@@ -40,20 +40,14 @@ func (s *LinqFrom) GetField(name string) *Field {
 		result.As = s.As
 	}
 
-	list := strs.Split(name, `.`)
-	switch len(list) {
-	case 2:
-
-	}
-
 	return result
 }
 
 /**
-* ListForms
+* listForms
 * @return []string
 **/
-func (s *Linq) ListForms() []string {
+func (s *Linq) listForms() []string {
 	var result []string
 	for _, from := range s.Froms {
 		result = append(result, strs.Format(`%s, %s`, from.Table, from.As))

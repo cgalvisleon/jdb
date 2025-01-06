@@ -173,7 +173,7 @@ func (s *LinqJoin) Return(fields ...string) *Command {
 * SetJoins
 * @param vals []et.Json
 **/
-func (s *Linq) SetJoins(vals []et.Json) *Linq {
+func (s *Linq) setJoins(vals []et.Json) *Linq {
 	for _, val := range vals {
 		from := val.Str("from")
 		model := models[from]
@@ -192,10 +192,10 @@ func (s *Linq) SetJoins(vals []et.Json) *Linq {
 }
 
 /**
-* ListJoins
+* listJoins
 * @return []string
 **/
-func (s *Linq) ListJoins() []string {
+func (s *Linq) listJoins() []string {
 	result := []string{}
 	for _, join := range s.Joins {
 		result = append(result, strs.Format(`%s %s AS %s`, join.TypeJoin.Str(), join.From.Table, join.From.As))

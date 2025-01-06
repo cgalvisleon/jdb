@@ -1,25 +1,6 @@
 package jdb
 
 /**
-* GetSelect
-* @param name string
-* @return *LinqSelect
-**/
-func (s *Command) GetSelect(name string) *LinqSelect {
-	field := s.GetField(name)
-	if field == nil {
-		return nil
-	}
-
-	from := &LinqFrom{
-		Model: s.Model,
-		As:    s.Model.Table,
-	}
-
-	return NewLinqSelect(from, field)
-}
-
-/**
 * Where
 * @param field string
 * @return *LinqFilter

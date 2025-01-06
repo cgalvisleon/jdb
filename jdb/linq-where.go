@@ -372,10 +372,10 @@ func (s *Linq) Or(val interface{}) *LinqFilter {
 }
 
 /**
-* ListWheres
+* listWheres
 * @return []string
 **/
-func (s *Linq) ListWheres() []string {
+func (s *Linq) listWheres() []string {
 	result := []string{}
 	for _, val := range s.Wheres {
 		result = append(result, val.String())
@@ -385,10 +385,10 @@ func (s *Linq) ListWheres() []string {
 }
 
 /**
-* SetWheres
+* setWheres
 * @param query []et.Json
 **/
-func (s *Linq) SetWheres(query []et.Json) *Linq {
+func (s *Linq) setWheres(query []et.Json) *Linq {
 	var filter *LinqFilter
 	var filterTo FilterTo
 	for _, item := range query {

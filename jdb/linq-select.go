@@ -54,10 +54,10 @@ func NewLinqSelect(from *LinqFrom, field *Field) *LinqSelect {
 }
 
 /**
-* ListSelects
+* listSelects
 * @return []string
 **/
-func (s *Linq) ListSelects() []string {
+func (s *Linq) listSelects() []string {
 	result := []string{}
 	for _, frm := range s.Froms {
 		for _, sel := range frm.Selects {
@@ -96,8 +96,8 @@ func (s *LinqSelect) GetField(name string) *Field {
 * @return *Linq
 **/
 func (s *Linq) Select(fields ...string) *Linq {
-	for _, name := range fields {
-		sel := s.GetSelect(name)
+	for _, field := range fields {
+		sel := s.GetSelect(field)
 		if sel != nil {
 			sel.From.Selects = append(sel.From.Selects, sel)
 		}
@@ -112,8 +112,10 @@ func (s *Linq) Select(fields ...string) *Linq {
 * @return *Linq
 **/
 func (s *Linq) Data(fields ...string) *Linq {
-	s.TypeSelect = Data
-	return s.Select(fields...)
+	result := s.Select(fields...)
+	result.TypeSelect = Data
+
+	return result
 }
 
 /**
@@ -163,11 +165,11 @@ func (s *Linq) Avg(field string) *Linq {
 
 /**
 * Max
-* @param column string
+* @param field string
 * @return *Linq
 **/
-func (s *Linq) Max(column string) *Linq {
-	sel := s.GetSelect(column)
+func (s *Linq) Max(field string) *Linq {
+	sel := s.GetSelect(field)
 	sel.Operation = OpertionMax
 
 	return s
@@ -175,11 +177,11 @@ func (s *Linq) Max(column string) *Linq {
 
 /**
 * Min
-* @param column string
+* @param field string
 * @return *Linq
 **/
-func (s *Linq) Min(column string) *Linq {
-	sel := s.GetSelect(column)
+func (s *Linq) Min(field string) *Linq {
+	sel := s.GetSelect(field)
 	sel.Operation = OpertionMin
 
 	return s

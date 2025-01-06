@@ -195,9 +195,9 @@ func (s *Model) GetColumns(names ...string) []*Column {
 * @param name string
 * @return *Field
 **/
-func (s *Model) SetField(name string) *Field {
+func (s *Model) SetField(name string, create bool) *Field {
 	col := s.GetColumn(name)
-	if col == nil && s.Integrity {
+	if col == nil && !create {
 		return nil
 	}
 
@@ -227,17 +227,19 @@ func (s *Model) SetField(name string) *Field {
 func (s *Model) GetField(name string) *Field {
 	list := strs.Split(name, ".")
 	switch len(list) {
+	case 1:
+		return s.SetField(list[0], false)
 	case 2:
 		if s.Name != strs.Lowcase(list[0]) {
 			return nil
 		}
-		return s.SetField(list[1])
+		return s.SetField(list[1], !s.Integrity)
 	case 3:
 		table := strs.Format(`%s.%s`, list[0], list[1])
 		if s.Table != strs.Lowcase(table) {
 			return nil
 		}
-		return s.SetField(list[2])
+		return s.SetField(list[2], !s.Integrity)
 	default:
 		return nil
 	}

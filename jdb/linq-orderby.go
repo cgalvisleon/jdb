@@ -6,7 +6,7 @@ import (
 )
 
 type LinqOrder struct {
-	LinqSelect
+	Field  *Field
 	Sorted bool
 }
 
@@ -18,11 +18,11 @@ type LinqOrder struct {
 **/
 func (s *Linq) OrderBy(sorted bool, columns ...string) *Linq {
 	for _, col := range columns {
-		c := s.GetSelect(col)
-		if c != nil {
+		field := s.GetField(col)
+		if field != nil {
 			order := &LinqOrder{
-				LinqSelect: *c,
-				Sorted:     sorted,
+				Field:  field,
+				Sorted: sorted,
 			}
 			s.Orders = append(s.Orders, order)
 		}
@@ -50,11 +50,11 @@ func (s *Linq) OrderByDesc(columns ...string) *Linq {
 }
 
 /**
-* SetOrders
+* setOrders
 * @param orders []et.Json
 * @return *Linq
 **/
-func (s *Linq) SetOrders(orders []et.Json) *Linq {
+func (s *Linq) setOrders(orders []et.Json) *Linq {
 	for _, item := range orders {
 		sorted := item.Bool("sorted")
 		columns := item.ArrayStr([]string{}, "columns")
@@ -65,10 +65,10 @@ func (s *Linq) SetOrders(orders []et.Json) *Linq {
 }
 
 /**
-* ListOrders
+* listOrders
 * @return []string
 **/
-func (s *Linq) ListOrders() []string {
+func (s *Linq) listOrders() []string {
 	result := []string{}
 	for _, sel := range s.Orders {
 		result = append(result, strs.Format(`%s, SORTED:%v`, sel.Field.AsField(), sel.Sorted))

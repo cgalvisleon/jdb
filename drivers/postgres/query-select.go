@@ -13,6 +13,7 @@ func selectField(field *jdb.Field) string {
 	case jdb.TpAtribute:
 		result = strs.Append(result, field.Field, ".")
 		result = strs.Format(`%s#>>'{%s}'`, result, field.Name)
+		result = strs.Format(`COALESCE(%s, %v)`, result, field.Column.DefaultQuote())
 	}
 
 	return result
@@ -26,74 +27,90 @@ func jsonbBuildObject(result, obj string) string {
 	return strs.Append(result, strs.Format("jsonb_build_object(\n%s)", obj), "||\n")
 }
 
-func (s *Postgres) queryColumns(froms []*jdb.LinqFrom) string {
-	if len(froms) == 0 {
-		return ""
-	}
-
-	var result string
-	for _, frm := range froms {
-		l := 20
-		n := 0
-		obj := ""
-		for _, sel := range frm.Selects {
-			n++
-			if sel.TypeColumn() == jdb.TpColumn && sel.Field.Column != sel.From.SourceField {
-				def := selectField(sel.Field)
-				obj = strs.Append(obj, strs.Format(`'%s', %s`, sel.Field.Name, def), ",\n")
-			} else if sel.TypeColumn() == jdb.TpAtribute {
-				def := selectField(sel.Field)
-				def = strs.Format(`COALESCE(%s, %v)`, def, sel.Field.Column.DefaultQuote())
-				def = strs.Format(`'%s', %s`, sel.Field.Atrib, def)
-				obj = strs.Append(obj, def, ",\n")
-			}
-			if n == l {
-				result = jsonbBuildObject(result, obj)
-				obj = ""
-				n = 0
-			}
+func (s *Postgres) queryData(selects []*jdb.LinqSelect, orders []*jdb.LinqOrder) string {
+	result := ""
+	l := 20
+	n := 0
+	obj := ""
+	for _, sel := range selects {
+		n++
+		if sel.Field.Column == sel.From.SourceField {
+			continue
+		} else if sel.TypeColumn() == jdb.TpColumn {
+			def := selectField(sel.Field)
+			def = strs.Format(`'%s', %s`, sel.Field.Name, def)
+			obj = strs.Append(obj, def, ",\n")
+		} else if sel.TypeColumn() == jdb.TpAtribute {
+			def := selectField(sel.Field)
+			def = strs.Format(`'%s', %s`, sel.Field.Atrib, def)
+			obj = strs.Append(obj, def, ",\n")
 		}
-		if n > 0 {
+		if n == l {
 			result = jsonbBuildObject(result, obj)
+			obj = ""
+			n = 0
 		}
 	}
+	if n > 0 {
+		result = jsonbBuildObject(result, obj)
+	}
 
-	if len(result) == 0 {
-		frm := froms[0]
-		if frm.SourceField != nil {
-			result = strs.Format("%s.%s", frm.As, frm.SourceField.Up())
-		}
-		l := 20
-		n := 0
-		obj := ""
-		for _, col := range frm.Columns {
-			n++
-			if col.TypeColumn == jdb.TpColumn && col != col.Model.SourceField {
-				obj = strs.Append(obj, strs.Format(`'%s', %s.%s`, col.Low(), frm.As, col.Up()), ",\n")
-			}
-			if n == l {
-				result = jsonbBuildObject(result, obj)
-				obj = ""
-				n = 0
-			}
-		}
-		if n > 0 {
-			result = jsonbBuildObject(result, obj)
+	result = strs.Append(result, jdb.SourceField.Up(), " AS ")
+	for _, ord := range orders {
+		def := selectField(ord.Field)
+		result = strs.Append(result, def, ",\n")
+	}
+
+	return result
+}
+
+func (s *Postgres) querySelects(linq *jdb.Linq, selects []*jdb.LinqSelect) string {
+	if linq.TypeSelect == jdb.Data {
+		return s.queryData(selects, linq.Orders)
+	}
+
+	result := ""
+	for _, sel := range selects {
+		if sel.TypeColumn() == jdb.TpColumn {
+			def := selectField(sel.Field)
+			result = strs.Append(result, def, ",\n")
+		} else if sel.TypeColumn() == jdb.TpAtribute {
+			def := selectField(sel.Field)
+			def = strs.Format(`%s AS %s`, def, sel.Field.Name)
+			result = strs.Append(result, def, ",\n")
 		}
 	}
 
 	return result
 }
 
-func (s *Postgres) querySelect(froms []*jdb.LinqFrom) string {
-	columns := s.queryColumns(froms)
-	if len(columns) == 0 {
+func (s *Postgres) querySelect(linq *jdb.Linq) string {
+	froms := linq.Froms
+	if len(froms) == 0 {
 		return ""
 	}
 
-	result := "\nSELECT DISTINCT"
-	result = strs.Append(result, columns, "\n")
-	result = strs.Append(result, strs.Format(" AS %s", jdb.SourceField.Up()), "")
+	var selects = []*jdb.LinqSelect{}
+	for _, frm := range froms {
+		selects = append(selects, frm.Selects...)
+	}
+
+	if len(selects) == 0 {
+		frm := froms[0]
+		for _, col := range frm.Columns {
+			field := frm.GetField(col.Name)
+			if field != nil {
+				selects = append(selects, &jdb.LinqSelect{
+					From:  frm,
+					Field: field,
+				})
+			}
+		}
+		selects = append(selects, frm.Selects...)
+	}
+
+	result := s.querySelects(linq, selects)
+	result = strs.Append("\nSELECT DISTINCT", result, "\n")
 
 	return result
 }

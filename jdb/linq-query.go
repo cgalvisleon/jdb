@@ -20,8 +20,7 @@ func (s *Linq) First(n int) (et.Items, error) {
 	if n > limit {
 		n = limit
 	}
-	s.Limit = n
-	s.Offset = (s.Sheet - 1) * s.Limit
+	s.setLimit(n)
 	result, err := s.Db.Query(s)
 	if err != nil {
 		return et.Items{}, err
@@ -84,7 +83,7 @@ func (s *Linq) One() (et.Item, error) {
 **/
 func (s *Linq) Page(val int) *Linq {
 	s.Sheet = val
-	s.Offset = (s.Sheet - 1) * s.Limit
+	s.calcOffset()
 	return s
 }
 
@@ -132,30 +131,36 @@ func (s *Linq) List(page, rows int) (et.List, error) {
 * @return Linq
 **/
 func (s *Linq) Query(query et.Json) (et.Items, error) {
-	selects := query.ArrayStr([]string{}, "select")
 	joins := query.ArrayJson([]et.Json{}, "join")
 	where := query.ArrayJson([]et.Json{}, "where")
 	orders := query.ArrayJson([]et.Json{}, "order_by")
+	limit := query.ValInt(1000, "limit")
+	page := query.ValInt(0, "page")
 
-	s.Select(selects...)
-	s.SetJoins(joins)
-	s.SetWheres(where)
-	s.SetOrders(orders)
+	if query["data"] != nil {
+		data := query.ArrayStr([]string{}, "data")
+		s.Data(data...)
+	} else {
+		selects := query.ArrayStr([]string{}, "select")
+		s.Select(selects...)
+	}
+	s.setJoins(joins)
+	s.setWheres(where)
+	s.setOrders(orders)
+	s.setLimit(limit)
+	s.setPage(page)
 	s.Db.Query(s)
 	return et.Items{
 		Ok: true,
 		Result: []et.Json{{
-			"select":   s.ListSelects(),
-			"from":     s.ListForms(),
-			"join":     s.ListJoins(),
-			"where":    s.ListWheres(),
-			"group_by": s.ListGroups(),
-			"having":   s.ListHavings(),
-			"order_by": s.ListOrders(),
-			"limit": et.Json{
-				"sheet":  s.Sheet,
-				"offset": s.Offset,
-			},
+			"select":   s.listSelects(),
+			"from":     s.listForms(),
+			"join":     s.listJoins(),
+			"where":    s.listWheres(),
+			"group_by": s.listGroups(),
+			"having":   s.listHavings(),
+			"order_by": s.listOrders(),
+			"limit":    s.listLimit(),
 		}},
 	}, nil
 }

@@ -65,7 +65,7 @@ func (s *Postgres) One(sql string, params ...any) (et.Item, error) {
 
 func (s *Postgres) Query(linq *jdb.Linq) (et.Items, error) {
 	linq.Sql = ""
-	linq.Sql = strs.Append(linq.Sql, s.querySelect(linq.Froms), "\n")
+	linq.Sql = strs.Append(linq.Sql, s.querySelect(linq), "\n")
 	linq.Sql = strs.Append(linq.Sql, s.queryFrom(linq.Froms), "\n")
 	linq.Sql = strs.Append(linq.Sql, s.queryJoin(linq.Joins), "\n")
 	linq.Sql = strs.Append(linq.Sql, s.queryWhere(linq.Wheres), "\n")
