@@ -6,14 +6,38 @@ import (
 )
 
 func selectField(field *jdb.Field) string {
+	agregaction := func(val string) string {
+		switch field.Agregation {
+		case jdb.AgregationSum:
+			val = strs.Format(`SUM(%s)`, val)
+			field.Alias = strs.Format(`SUM_%s`, field.Alias)
+		case jdb.AgregationCount:
+			val = strs.Format(`COUNT(%s)`, val)
+			field.Alias = strs.Format(`COUNT_%s`, field.Alias)
+		case jdb.AgregationAvg:
+			val = strs.Format(`AVG(%s)`, val)
+			field.Alias = strs.Format(`AVG_%s`, field.Alias)
+		case jdb.AgregationMin:
+			val = strs.Format(`MIN(%s)`, val)
+			field.Alias = strs.Format(`MIN_%s`, field.Alias)
+		case jdb.AgregationMax:
+			val = strs.Format(`MAX(%s)`, val)
+			field.Alias = strs.Format(`MAX_%s`, field.Alias)
+		}
+
+		return val
+	}
+
 	result := strs.Append("", field.As, "")
 	switch field.Column.TypeColumn {
 	case jdb.TpColumn:
 		result = strs.Append(result, field.Name, ".")
+		result = agregaction(result)
 	case jdb.TpAtribute:
 		result = strs.Append(result, field.Field, ".")
 		result = strs.Format(`%s#>>'{%s}'`, result, field.Name)
 		result = strs.Format(`COALESCE(%s, %v)`, result, field.Column.DefaultQuote())
+		result = agregaction(result)
 	}
 
 	return result
@@ -38,11 +62,11 @@ func (s *Postgres) queryData(selects []*jdb.LinqSelect, orders []*jdb.LinqOrder)
 			continue
 		} else if sel.TypeColumn() == jdb.TpColumn {
 			def := selectField(sel.Field)
-			def = strs.Format(`'%s', %s`, sel.Field.Name, def)
+			def = strs.Format(`'%s', %s`, sel.Field.Alias, def)
 			obj = strs.Append(obj, def, ",\n")
 		} else if sel.TypeColumn() == jdb.TpAtribute {
 			def := selectField(sel.Field)
-			def = strs.Format(`'%s', %s`, sel.Field.Atrib, def)
+			def = strs.Format(`'%s', %s`, sel.Field.Alias, def)
 			obj = strs.Append(obj, def, ",\n")
 		}
 		if n == l {
@@ -73,10 +97,13 @@ func (s *Postgres) querySelects(linq *jdb.Linq, selects []*jdb.LinqSelect) strin
 	for _, sel := range selects {
 		if sel.TypeColumn() == jdb.TpColumn {
 			def := selectField(sel.Field)
+			if sel.Field.Agregation != jdb.Nag {
+				def = strs.Format(`%s AS %s`, def, sel.Field.Alias)
+			}
 			result = strs.Append(result, def, ",\n")
 		} else if sel.TypeColumn() == jdb.TpAtribute {
 			def := selectField(sel.Field)
-			def = strs.Format(`%s AS %s`, def, sel.Field.Name)
+			def = strs.Format(`%s AS %s`, def, sel.Field.Alias)
 			result = strs.Append(result, def, ",\n")
 		}
 	}

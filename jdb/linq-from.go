@@ -10,18 +10,27 @@ type LinqFrom struct {
 
 func From(m *Model) *Linq {
 	result := &Linq{
-		Db:      m.Db,
-		Froms:   make([]*LinqFrom, 0),
-		Joins:   make([]*LinqJoin, 0),
-		Wheres:  make([]*LinqWhere, 0),
-		Groups:  make([]*LinqSelect, 0),
-		Havings: make([]*LinqWhere, 0),
-		Orders:  make([]*LinqOrder, 0),
-		Offset:  0,
-		Limit:   0,
-		Show:    false,
-		Sheet:   0,
-		index:   65,
+		Db:     m.Db,
+		Froms:  make([]*LinqFrom, 0),
+		Joins:  make([]*LinqJoin, 0),
+		Groups: make([]*LinqSelect, 0),
+		Orders: make([]*LinqOrder, 0),
+		Offset: 0,
+		Limit:  0,
+		Show:   false,
+		Sheet:  0,
+		index:  65,
+	}
+	result.LinqFilter = &LinqFilter{
+		main:   result,
+		Wheres: make([]*LinqWhere, 0),
+	}
+	result.Havings = &LinqHaving{
+		Linq: result,
+	}
+	result.Havings.LinqFilter = &LinqFilter{
+		main:   result.Havings,
+		Wheres: make([]*LinqWhere, 0),
 	}
 
 	result.addFrom(m)

@@ -6,14 +6,17 @@ import (
 )
 
 type Field struct {
-	Owner  interface{}
-	Column *Column
-	Schema string
-	Table  string
-	As     string
-	Field  string
-	Name   string
-	Atrib  string
+	Owner      interface{}
+	Column     *Column
+	Schema     string
+	Table      string
+	As         string
+	Field      string
+	Name       string
+	Atrib      string
+	Alias      string
+	Agregation TypeAgregation
+	Result     string
 }
 
 func (s *Field) Define() et.Json {

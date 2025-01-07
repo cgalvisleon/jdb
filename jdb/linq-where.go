@@ -79,7 +79,21 @@ type LinqWhere struct {
 	Conector Connector
 	Key      interface{}
 	Operator Operator
-	Value    []interface{}
+	Values   []interface{}
+}
+
+/**
+* NewLinqWhere
+* @params key interface{}
+* @return LinqWhere
+**/
+func NewLinqWhere(key interface{}) *LinqWhere {
+	return &LinqWhere{
+		Conector: NoC,
+		Key:      key,
+		Operator: NoP,
+		Values:   make([]interface{}, 0),
+	}
 }
 
 /**
@@ -126,210 +140,11 @@ func (s *LinqWhere) String() string {
 	result = strs.Append(result, s.GetKey(), " ")
 	result = strs.Append(result, s.Operator.Str(), " ")
 
-	for _, val := range s.Value {
+	for _, val := range s.Values {
 		result = strs.Append(result, s.GetValue(val), " ")
 	}
 
 	return result
-}
-
-type FilterTo interface {
-	And(val interface{}) *LinqFilter
-	Or(fval interface{}) *LinqFilter
-	Select(fields ...string) *Linq
-	Data(fields ...string) *Linq
-	Return(fields ...string) *Command
-}
-
-type LinqFilter struct {
-	main  FilterTo
-	where *LinqWhere
-}
-
-/**
-* NewLinqFilter
-* @param main interface{}
-* @param key interface{}
-* @return *LinqFilter
-**/
-func NewLinqFilter(main FilterTo, key interface{}) *LinqFilter {
-	where := &LinqWhere{
-		Conector: NoC,
-		Key:      key,
-		Operator: NoP,
-		Value:    make([]interface{}, 0),
-	}
-
-	return &LinqFilter{
-		main:  main,
-		where: where,
-	}
-}
-
-/**
-* Add
-* @param val interface{}
-* @return *LinqFilter
-**/
-func (s *LinqFilter) Add(val interface{}) FilterTo {
-	appendValue := func(linq *Linq, value interface{}) {
-		switch v := value.(type) {
-		case string:
-			field := linq.GetField(v)
-			if field != nil {
-				s.where.Value = append(s.where.Value, field)
-			} else {
-				s.where.Value = append(s.where.Value, value)
-			}
-		default:
-			s.where.Value = append(s.where.Value, value)
-		}
-	}
-
-	switch m := s.main.(type) {
-	case *Linq:
-		appendValue(m, val)
-		m.Wheres = append(m.Wheres, s.where)
-	case *Command:
-		s.where.Value = append(s.where.Value, val)
-		m.Wheres = append(m.Wheres, s.where)
-	case *LinqJoin:
-		appendValue(m.Linq, val)
-		m.Wheres = append(m.Wheres, s.where)
-	}
-
-	return s.main
-}
-
-/**
-* Eq
-* @param val interface{}
-* @return FilterTo
-**/
-func (s *LinqFilter) Eq(val interface{}) FilterTo {
-	s.where.Operator = Equal
-	return s.Add(val)
-}
-
-/**
-* Neg
-* @param val interface{}
-* @return FilterTo
-**/
-func (s *LinqFilter) Neg(val interface{}) FilterTo {
-	s.where.Operator = Neg
-	return s.Add(val)
-}
-
-/**
-* In
-* @param val ...any
-* @return FilterTo
-**/
-func (s *LinqFilter) In(val ...any) FilterTo {
-	s.where.Operator = In
-	return s.Add(val)
-}
-
-/**
-* Like
-* @param val interface{}
-* @return FilterTo
-**/
-func (s *LinqFilter) Like(val interface{}) FilterTo {
-	s.where.Operator = Like
-	return s.Add(val)
-}
-
-/**
-* More
-* @param val interface{}
-* @return FilterTo
-**/
-func (s *LinqFilter) More(val interface{}) FilterTo {
-	s.where.Operator = More
-	return s.Add(val)
-}
-
-/**
-* Less
-* @param val interface{}
-* @return FilterTo
-**/
-func (s *LinqFilter) Less(val interface{}) FilterTo {
-	s.where.Operator = Less
-	return s.Add(val)
-}
-
-/**
-* MoreEq
-* @param val interface{}
-* @return FilterTo
-**/
-func (s *LinqFilter) MoreEq(val interface{}) FilterTo {
-	s.where.Operator = MoreEq
-	return s.Add(val)
-}
-
-/**
-* LessEq
-* @param val interface{}
-* @return FilterTo
-**/
-func (s *LinqFilter) LessEs(val interface{}) FilterTo {
-	s.where.Operator = LessEq
-	return s.Add(val)
-}
-
-/**
-* Search
-* @param val interface{}
-* @return FilterTo
-**/
-func (s *LinqFilter) Search(val interface{}) FilterTo {
-	s.where.Operator = Search
-	return s.Add(val)
-}
-
-/**
-* Between
-* @param val1, val2 interface{}
-* @return FilterTo
-**/
-func (s *LinqFilter) Between(val interface{}) FilterTo {
-	s.where.Operator = Between
-	vals, ok := val.([]interface{})
-	if !ok {
-		return s.main
-	}
-
-	switch len(vals) {
-	case 1:
-		return s.Add(vals[0])
-	case 2:
-		s.Add(vals[0])
-		return s.Add(vals[1])
-	default:
-		return s.main
-	}
-}
-
-/**
-* IsNull
-* @return *LinqFilter
-**/
-func (s *LinqFilter) IsNull() *LinqFilter {
-	s.where.Operator = IsNull
-	return s
-}
-
-/**
-* NotNull
-* @return *LinqFilter
-**/
-func (s *LinqFilter) NotNull() *LinqFilter {
-	s.where.Operator = NotNull
-	return s
 }
 
 /**
@@ -337,16 +152,18 @@ func (s *LinqFilter) NotNull() *LinqFilter {
 * @param val interface{}
 * @return *LinqFilter
 **/
-func (s *Linq) Where(val interface{}) *LinqFilter {
-	switch v := val.(type) {
-	case string:
-		sel := s.GetField(v)
-		if sel != nil {
-			return NewLinqFilter(s, sel)
+func (s *Linq) Where(val interface{}) *Linq {
+	field, ok := val.(string)
+	if ok {
+		field := s.GetField(field)
+		if field != nil {
+			s.where = NewLinqWhere(field)
+			return s
 		}
 	}
 
-	return NewLinqFilter(s, val)
+	s.where = NewLinqWhere(val)
+	return s
 }
 
 /**
@@ -357,7 +174,8 @@ func (s *Linq) Where(val interface{}) *LinqFilter {
 func (s *Linq) And(val interface{}) *LinqFilter {
 	result := s.Where(val)
 	result.where.Conector = And
-	return result
+
+	return result.LinqFilter
 }
 
 /**
@@ -368,7 +186,8 @@ func (s *Linq) And(val interface{}) *LinqFilter {
 func (s *Linq) Or(val interface{}) *LinqFilter {
 	result := s.Where(val)
 	result.where.Conector = Or
-	return result
+
+	return result.LinqFilter
 }
 
 /**
@@ -386,48 +205,42 @@ func (s *Linq) listWheres() []string {
 
 /**
 * setWheres
-* @param query []et.Json
+* @param wheres []et.Json
 **/
-func (s *Linq) setWheres(query []et.Json) *Linq {
-	var filter *LinqFilter
-	var filterTo FilterTo
-	for _, item := range query {
+func (s *Linq) setWheres(wheres []et.Json) *Linq {
+	for _, item := range wheres {
 		if item["key"] != nil {
-			filter = s.Where(item["key"])
-		} else if filterTo == nil {
-			continue
+			s.Where(item["key"])
 		} else if item["and"] != nil {
-			filter = filterTo.And(item["and"])
+			s.And(item["and"])
 		} else if item["or"] != nil {
-			filter = filterTo.Or(item["or"])
+			s.Or(item["or"])
 		}
 
-		if filter == nil {
-			continue
-		} else if item["eq"] != nil {
-			filterTo = filter.Eq(item["eq"])
+		if item["eq"] != nil {
+			s.Eq(item["eq"])
 		} else if item["neg"] != nil {
-			filterTo = filter.Neg(item["neg"])
+			s.Neg(item["neg"])
 		} else if item["in"] != nil {
-			filterTo = filter.In(item["in"])
+			s.In(item["in"])
 		} else if item["like"] != nil {
-			filterTo = filter.Like(item["like"])
+			s.Like(item["like"])
 		} else if item["more"] != nil {
-			filterTo = filter.More(item["more"])
+			s.More(item["more"])
 		} else if item["less"] != nil {
-			filterTo = filter.Less(item["less"])
+			s.Less(item["less"])
 		} else if item["moreEq"] != nil {
-			filterTo = filter.MoreEq(item["moreEq"])
+			s.MoreEq(item["moreEq"])
 		} else if item["lessEq"] != nil {
-			filterTo = filter.LessEs(item["lessEq"])
+			s.LessEs(item["lessEq"])
 		} else if item["search"] != nil {
-			filterTo = filter.Search(item["search"])
+			s.Search(item["search"])
 		} else if item["between"] != nil {
-			filterTo = filter.Between(item["between"])
+			s.Between(item["between"])
 		} else if item["isNull"] != nil {
-			filter.IsNull()
+			s.IsNull()
 		} else if item["notNull"] != nil {
-			filter.NotNull()
+			s.NotNull()
 		}
 
 	}

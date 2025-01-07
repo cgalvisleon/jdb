@@ -210,6 +210,7 @@ func (s *Model) SetField(name string, create bool) *Field {
 		Table:  s.Name,
 		Field:  col.Field,
 		Name:   col.Name,
+		Alias:  col.Name,
 	}
 
 	if col.TypeColumn != TpColumn {

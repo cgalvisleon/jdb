@@ -6,21 +6,9 @@ import (
 	"github.com/cgalvisleon/et/strs"
 )
 
-type TypeOperation int
-
-const (
-	OperNone TypeOperation = iota
-	OpertionSum
-	OpertionCount
-	OpertionAvg
-	OpertionMax
-	OpertionMin
-)
-
 type LinqSelect struct {
-	From      *LinqFrom
-	Field     *Field
-	Operation TypeOperation
+	From  *LinqFrom
+	Field *Field
 }
 
 /**
@@ -124,65 +112,5 @@ func (s *Linq) Data(fields ...string) *Linq {
 * @return *Command
 **/
 func (s *Linq) Return(fields ...string) *Command {
-	return nil
-}
-
-/**
-* Sum
-* @param field string
-* @return *Linq
-**/
-func (s *Linq) Sum(field string) *Linq {
-	sel := s.GetSelect(field)
-	sel.Operation = OpertionSum
-
-	return s
-}
-
-/**
-* Count
-* @param field string
-* @return *Linq
-**/
-func (s *Linq) Count(field string) *Linq {
-	sel := s.GetSelect(field)
-	sel.Operation = OpertionCount
-
-	return s
-}
-
-/**
-* Avg
-* @param field string
-* @return *Linq
-**/
-func (s *Linq) Avg(field string) *Linq {
-	sel := s.GetSelect(field)
-	sel.Operation = OpertionAvg
-
-	return s
-}
-
-/**
-* Max
-* @param field string
-* @return *Linq
-**/
-func (s *Linq) Max(field string) *Linq {
-	sel := s.GetSelect(field)
-	sel.Operation = OpertionMax
-
-	return s
-}
-
-/**
-* Min
-* @param field string
-* @return *Linq
-**/
-func (s *Linq) Min(field string) *Linq {
-	sel := s.GetSelect(field)
-	sel.Operation = OpertionMin
-
-	return s
+	return &Command{}
 }

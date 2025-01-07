@@ -1,14 +1,32 @@
 package jdb
 
-import "github.com/cgalvisleon/et/strs"
+import (
+	"github.com/cgalvisleon/et/strs"
+)
 
 /**
 * GroupBy
-* @param columns ...string
+* @param fields ...string
 * @return *Linq
 **/
-func (s *Linq) GroupBy(columns ...string) *Linq {
+func (s *Linq) GroupBy(fields ...string) *Linq {
+	for _, field := range fields {
+		sel := s.GetSelect(field)
+		if sel != nil {
+			s.Groups = append(s.Groups, sel)
+		}
+	}
+
 	return s
+}
+
+/**
+* setGroupBy
+* @param fields ...string
+* @return *Linq
+**/
+func (s *Linq) setGroupBy(fields ...string) *Linq {
+	return s.GroupBy(fields...)
 }
 
 /**

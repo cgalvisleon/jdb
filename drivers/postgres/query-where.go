@@ -56,7 +56,7 @@ func whereFilter(where *jdb.LinqWhere) string {
 	}
 
 	key := where.GetKey()
-	values := where.GetValue(where.Value)
+	values := where.GetValue(where.Values)
 	return strs.Format("%v%v", key, whereOperator(where.Operator, values))
 }
 

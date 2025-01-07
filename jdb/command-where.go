@@ -3,15 +3,20 @@ package jdb
 /**
 * Where
 * @param field string
-* @return *LinqFilter
+* @return *Command
 **/
-func (s *Command) Where(field string) *LinqFilter {
-	col := s.GetSelect(field)
-	if col != nil {
-		return NewLinqFilter(s, col)
+func (s *Command) Where(val interface{}) *Command {
+	switch v := val.(type) {
+	case string:
+		field := s.GetField(v)
+		if field != nil {
+			s.where = NewLinqWhere(field)
+			return s
+		}
 	}
 
-	return NewLinqFilter(s, field)
+	s.where = NewLinqWhere(val)
+	return s
 }
 
 /**
@@ -20,14 +25,9 @@ func (s *Command) Where(field string) *LinqFilter {
 * @return *LinqFilter
 **/
 func (s *Command) And(val interface{}) *LinqFilter {
-	field, ok := val.(string)
-	if !ok {
-		return nil
-	}
-
-	result := s.Where(field)
+	result := s.Where(val)
 	result.where.Conector = And
-	return result
+	return s.LinqFilter
 }
 
 /**
@@ -36,14 +36,9 @@ func (s *Command) And(val interface{}) *LinqFilter {
 * @return *LinqFilter
 **/
 func (s *Command) Or(val interface{}) *LinqFilter {
-	field, ok := val.(string)
-	if !ok {
-		return nil
-	}
-
-	result := s.Where(field)
+	result := s.Where(val)
 	result.where.Conector = Or
-	return result
+	return s.LinqFilter
 }
 
 /**
@@ -71,7 +66,7 @@ func (s *Command) Data(fields ...string) *Linq {
 **/
 func (s *Command) Return(fields ...string) *Command {
 	for _, name := range fields {
-		sel := s.GetSelect(name)
+		sel := s.GetReturn(name)
 		if sel != nil {
 			s.Returns = append(s.Returns, sel)
 		}

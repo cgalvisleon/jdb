@@ -30,10 +30,10 @@ func (s TypeJoin) Str() string {
 }
 
 type LinqJoin struct {
+	*LinqFilter
 	Linq     *Linq
 	TypeJoin TypeJoin
 	From     *LinqFrom
-	Wheres   []*LinqWhere
 }
 
 /**
@@ -51,8 +51,12 @@ func (s *Linq) Join(m *Model) *LinqJoin {
 		Linq:     s,
 		TypeJoin: JoinInner,
 		From:     from,
-		Wheres:   make([]*LinqWhere, 0),
 	}
+	result.LinqFilter = &LinqFilter{
+		main:   result,
+		Wheres: make([]*LinqWhere, 0),
+	}
+
 	s.Joins = append(s.Joins, result)
 
 	return result
@@ -102,27 +106,27 @@ func (s *Linq) FullJoin(m *Model) *LinqJoin {
 func (s *LinqJoin) On(field string) *LinqFilter {
 	col := s.From.GetField(field)
 	if col != nil {
-		return NewLinqFilter(s, col)
+		s.where = NewLinqWhere(col)
+	} else {
+		s.where = NewLinqWhere(field)
 	}
 
-	return NewLinqFilter(s, field)
+	return s.LinqFilter
 }
 
 /**
 * And
-* @param val interface{}
+* @param field string
 * @return *LinqFilter
 **/
 func (s *LinqJoin) And(val interface{}) *LinqFilter {
 	field, ok := val.(string)
-	if !ok {
-		return nil
+	if ok {
+		result := s.On(field)
+		result.where.Conector = And
 	}
 
-	result := s.On(field)
-	result.where.Conector = And
-
-	return result
+	return s.LinqFilter
 }
 
 /**
@@ -132,20 +136,18 @@ func (s *LinqJoin) And(val interface{}) *LinqFilter {
 **/
 func (s *LinqJoin) Or(val interface{}) *LinqFilter {
 	field, ok := val.(string)
-	if !ok {
-		return nil
+	if ok {
+		result := s.On(field)
+		result.where.Conector = Or
 	}
 
-	result := s.On(field)
-	result.where.Conector = And
-
-	return result
+	return s.LinqFilter
 }
 
 /**
 * Select
 * @param fields ...string
-* @return FilterTo
+* @return *Linq
 **/
 func (s *LinqJoin) Select(fields ...string) *Linq {
 	return s.Linq
@@ -154,7 +156,7 @@ func (s *LinqJoin) Select(fields ...string) *Linq {
 /**
 * Data
 * @param fields ...string
-* @return FilterTo
+* @return *Linq
 **/
 func (s *LinqJoin) Data(fields ...string) *Linq {
 	return s.Linq
@@ -166,15 +168,15 @@ func (s *LinqJoin) Data(fields ...string) *Linq {
 * @return *Command
 **/
 func (s *LinqJoin) Return(fields ...string) *Command {
-	return nil
+	return &Command{}
 }
 
 /**
 * SetJoins
-* @param vals []et.Json
+* @param joins []et.Json
 **/
-func (s *Linq) setJoins(vals []et.Json) *Linq {
-	for _, val := range vals {
+func (s *Linq) setJoins(joins []et.Json) *Linq {
+	for _, val := range joins {
 		from := val.Str("from")
 		model := models[from]
 		if model != nil {

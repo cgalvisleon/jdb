@@ -16,6 +16,7 @@ const (
 
 type Command struct {
 	*Model
+	*LinqFilter
 	TypeSelect TypeSelect `json:"type_select"`
 	Command    TypeCommand
 	Origin     []et.Json
@@ -23,7 +24,6 @@ type Command struct {
 	Fields     et.Json
 	Key        string
 	New        *et.Json
-	Wheres     []*LinqWhere
 	Returns    []*LinqSelect
 	Sql        string
 	Result     et.Items
@@ -38,19 +38,22 @@ type Command struct {
 * @return *Command
 **/
 func NewCommand(model *Model, data []et.Json, command TypeCommand) *Command {
-	return &Command{
+	result := &Command{
 		Model:   model,
 		Command: command,
 		Atribs:  et.Json{},
 		Fields:  et.Json{},
 		Origin:  data,
 		New:     &et.Json{},
-		Wheres:  make([]*LinqWhere, 0),
 		Returns: make([]*LinqSelect, 0),
 		Show:    false,
 		Sql:     "",
 		Result:  et.Items{},
 	}
+	result.Wheres = make([]*LinqWhere, 0)
+	result.main = result
+
+	return result
 }
 
 /**
@@ -84,41 +87,6 @@ func (s *Command) consolidate(data et.Json) et.Json {
 	}
 
 	return (*s.New)
-}
-
-/**
-* Insert
-* @param data []et.Json
-* @return *Command
-**/
-func (s *Model) Insert(data et.Json) *Command {
-	return NewCommand(s, []et.Json{data}, Insert)
-}
-
-/**
-* Update
-* @param data []et.Json
-* @return *Command
-**/
-func (s *Model) Update(data et.Json) *Command {
-	return NewCommand(s, []et.Json{data}, Update)
-}
-
-/**
-* Delete
-* @return *Command
-**/
-func (s *Model) Delete() *Command {
-	return NewCommand(s, []et.Json{}, Delete)
-}
-
-/**
-* Bulk
-* @param data []et.Json
-* @return *Command
-**/
-func (s *Model) Bulk(data []et.Json) *Command {
-	return NewCommand(s, data, Bulk)
 }
 
 /**
@@ -216,11 +184,11 @@ func (s *Command) One() (et.Item, error) {
 }
 
 /**
-* GetSelect
+* GetReturn
 * @param name string
 * @return *LinqSelect
 **/
-func (s *Command) GetSelect(name string) *LinqSelect {
+func (s *Command) GetReturn(name string) *LinqSelect {
 	field := s.GetField(name)
 	if field == nil {
 		return nil

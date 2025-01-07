@@ -133,6 +133,8 @@ func (s *Linq) List(page, rows int) (et.List, error) {
 func (s *Linq) Query(query et.Json) (et.Items, error) {
 	joins := query.ArrayJson([]et.Json{}, "join")
 	where := query.ArrayJson([]et.Json{}, "where")
+	groups := query.ArrayStr([]string{}, "group_by")
+	havings := query.ArrayJson([]et.Json{}, "having")
 	orders := query.ArrayJson([]et.Json{}, "order_by")
 	limit := query.ValInt(1000, "limit")
 	page := query.ValInt(0, "page")
@@ -146,6 +148,8 @@ func (s *Linq) Query(query et.Json) (et.Items, error) {
 	}
 	s.setJoins(joins)
 	s.setWheres(where)
+	s.setGroupBy(groups...)
+	s.setHavings(havings)
 	s.setOrders(orders)
 	s.setLimit(limit)
 	s.setPage(page)

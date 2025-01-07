@@ -15,13 +15,13 @@ const (
 )
 
 type Linq struct {
+	*LinqFilter
 	Db         *DB           `json:"-"`
 	TypeSelect TypeSelect    `json:"type_select"`
 	Froms      []*LinqFrom   `json:"froms"`
 	Joins      []*LinqJoin   `json:"joins"`
-	Wheres     []*LinqWhere  `json:"wheres"`
 	Groups     []*LinqSelect `json:"group_bys"`
-	Havings    []*LinqWhere  `json:"havings"`
+	Havings    *LinqHaving   `json:"havings"`
 	Orders     []*LinqOrder  `json:"orders"`
 	Sheet      int           `json:"sheet"`
 	Offset     int           `json:"offset"`
@@ -99,7 +99,7 @@ func (s *Linq) getFrom(m interface{}) *LinqFrom {
 /**
 * GetField
 * @param name string
-* @return *LinqSelect
+* @return *Field
 **/
 func (s *Linq) GetField(name string) *Field {
 	var field *Field
@@ -115,13 +115,38 @@ func (s *Linq) GetField(name string) *Field {
 }
 
 /**
+* GetAgregation
+* @params name string
+* @return *Field
+**/
+func (s *Linq) GetAgregation(name string) *Field {
+	for tp, ag := range agregations {
+		if ag.re.MatchString(name) {
+			name = strs.ReplaceAll(name, []string{ag.Agregation, "(", ")"}, "")
+			field := s.GetField(name)
+			if field != nil {
+				field.Agregation = tp
+				return field
+			}
+		}
+	}
+
+	return nil
+}
+
+/**
 * GetSelect
 * @param name string
 * @return *LinqSelect
-**/
+*
+ */
 func (s *Linq) GetSelect(name string) *LinqSelect {
 	field := s.GetField(name)
+	if field != nil {
+		return NewLinqSelect(field.Owner.(*LinqFrom), field)
+	}
 
+	field = s.GetAgregation(name)
 	if field != nil {
 		return NewLinqSelect(field.Owner.(*LinqFrom), field)
 	}
@@ -162,4 +187,29 @@ func Query(query et.Json) (et.Items, error) {
 	return From(model).
 		Debug().
 		Query(query)
+}
+
+/**
+* Commands
+* @param command et.Json
+* @return et.Items, error
+**/
+func Commands(command et.Json) (et.Items, error) {
+	if command.IsEmpty() {
+		return et.Items{}, mistake.New(MSG_QUERY_EMPTY)
+	}
+
+	from := command.Str("from")
+	if !utility.ValidStr(from, 0, []string{""}) {
+		return et.Items{}, mistake.New(MSG_QUERY_FROM_REQUIRED)
+	}
+
+	model := models[from]
+	if model == nil {
+		return et.Items{}, mistake.Newf(MSG_MODEL_NOT_FOUND, from)
+	}
+
+	return model.Command(command).
+		Debug().
+		Exec()
 }
