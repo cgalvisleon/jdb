@@ -209,7 +209,6 @@ func Commands(command et.Json) (et.Items, error) {
 		return et.Items{}, mistake.Newf(MSG_MODEL_NOT_FOUND, from)
 	}
 
-	return model.Command(command).
-		Debug().
-		Exec()
+	return model.
+		Command(command)
 }

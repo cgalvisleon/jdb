@@ -13,7 +13,7 @@ func (s *Postgres) tableAs(from *jdb.LinqFrom) string {
 	return strs.Append(from.Table, from.As, " AS ")
 }
 
-func (s *Postgres) queryFrom(froms []*jdb.LinqFrom) string {
+func (s *Postgres) sqlFrom(froms []*jdb.LinqFrom) string {
 	if len(froms) == 0 {
 		return ""
 	}

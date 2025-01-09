@@ -51,7 +51,7 @@ func jsonbBuildObject(result, obj string) string {
 	return strs.Append(result, strs.Format("jsonb_build_object(\n%s)", obj), "||\n")
 }
 
-func (s *Postgres) queryData(selects []*jdb.LinqSelect, orders []*jdb.LinqOrder) string {
+func (s *Postgres) sqlData(selects []*jdb.LinqSelect, orders []*jdb.LinqOrder) string {
 	result := ""
 	l := 20
 	n := 0
@@ -88,9 +88,9 @@ func (s *Postgres) queryData(selects []*jdb.LinqSelect, orders []*jdb.LinqOrder)
 	return result
 }
 
-func (s *Postgres) querySelects(linq *jdb.Linq, selects []*jdb.LinqSelect) string {
+func (s *Postgres) sqlSelects(linq *jdb.Linq, selects []*jdb.LinqSelect) string {
 	if linq.TypeSelect == jdb.Data {
-		return s.queryData(selects, linq.Orders)
+		return s.sqlData(selects, linq.Orders)
 	}
 
 	result := ""
@@ -111,7 +111,7 @@ func (s *Postgres) querySelects(linq *jdb.Linq, selects []*jdb.LinqSelect) strin
 	return result
 }
 
-func (s *Postgres) querySelect(linq *jdb.Linq) string {
+func (s *Postgres) sqlSelect(linq *jdb.Linq) string {
 	froms := linq.Froms
 	if len(froms) == 0 {
 		return ""
@@ -136,7 +136,7 @@ func (s *Postgres) querySelect(linq *jdb.Linq) string {
 		selects = append(selects, frm.Selects...)
 	}
 
-	result := s.querySelects(linq, selects)
+	result := s.sqlSelects(linq, selects)
 	result = strs.Append("\nSELECT DISTINCT", result, "\n")
 
 	return result

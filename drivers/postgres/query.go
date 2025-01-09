@@ -65,14 +65,14 @@ func (s *Postgres) One(sql string, params ...any) (et.Item, error) {
 
 func (s *Postgres) Query(linq *jdb.Linq) (et.Items, error) {
 	linq.Sql = ""
-	linq.Sql = strs.Append(linq.Sql, s.querySelect(linq), "\n")
-	linq.Sql = strs.Append(linq.Sql, s.queryFrom(linq.Froms), "\n")
-	linq.Sql = strs.Append(linq.Sql, s.queryJoin(linq.Joins), "\n")
-	linq.Sql = strs.Append(linq.Sql, s.queryWhere(linq.Wheres), "\n")
-	linq.Sql = strs.Append(linq.Sql, s.queryGroupBy(linq), "\n")
-	linq.Sql = strs.Append(linq.Sql, s.queryHaving(linq), "\n")
-	linq.Sql = strs.Append(linq.Sql, s.queryOrderBy(linq), "\n")
-	linq.Sql = strs.Append(linq.Sql, s.queryLimit(linq), "\n")
+	linq.Sql = strs.Append(linq.Sql, s.sqlSelect(linq), "\n")
+	linq.Sql = strs.Append(linq.Sql, s.sqlFrom(linq.Froms), "\n")
+	linq.Sql = strs.Append(linq.Sql, s.sqlJoin(linq.Joins), "\n")
+	linq.Sql = strs.Append(linq.Sql, s.sqlWhere(linq.Wheres), "\n")
+	linq.Sql = strs.Append(linq.Sql, s.sqlGroupBy(linq), "\n")
+	linq.Sql = strs.Append(linq.Sql, s.sqlHaving(linq), "\n")
+	linq.Sql = strs.Append(linq.Sql, s.sqlOrderBy(linq), "\n")
+	linq.Sql = strs.Append(linq.Sql, s.sqlLimit(linq), "\n")
 
 	if linq.Show {
 		console.Debug(linq.Sql)

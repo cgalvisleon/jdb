@@ -38,20 +38,27 @@ type Command struct {
 * @return *Command
 **/
 func NewCommand(model *Model, data []et.Json, command TypeCommand) *Command {
-	result := &Command{
-		Model:   model,
-		Command: command,
-		Atribs:  et.Json{},
-		Fields:  et.Json{},
-		Origin:  data,
-		New:     &et.Json{},
-		Returns: make([]*LinqSelect, 0),
-		Show:    false,
-		Sql:     "",
-		Result:  et.Items{},
+	tp := Select
+	if model.SourceField != nil {
+		tp = Data
 	}
-	result.Wheres = make([]*LinqWhere, 0)
-	result.main = result
+	result := &Command{
+		Model:      model,
+		TypeSelect: tp,
+		Command:    command,
+		Atribs:     et.Json{},
+		Fields:     et.Json{},
+		Origin:     data,
+		New:        &et.Json{},
+		Returns:    make([]*LinqSelect, 0),
+		Show:       false,
+		Sql:        "",
+		Result:     et.Items{},
+	}
+	result.LinqFilter = &LinqFilter{
+		main:   result,
+		Wheres: make([]*LinqWhere, 0),
+	}
 
 	return result
 }

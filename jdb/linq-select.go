@@ -42,34 +42,6 @@ func NewLinqSelect(from *LinqFrom, field *Field) *LinqSelect {
 }
 
 /**
-* listSelects
-* @return []string
-**/
-func (s *Linq) listSelects() []string {
-	result := []string{}
-	for _, frm := range s.Froms {
-		for _, sel := range frm.Selects {
-			result = append(result, strs.Format(`%s, %s`, sel.Field.TableField(), sel.Field.Caption()))
-		}
-	}
-
-	if len(result) == 0 {
-		frm := s.Froms[0]
-		for _, col := range frm.Columns {
-			if col == frm.SourceField {
-				continue
-			} else if col.TypeColumn == TpAtribute {
-				result = append(result, strs.Format(`%s.%s.%s, %s`, frm.As, frm.SourceField.Up(), col.Low(), col.Low()))
-			} else {
-				result = append(result, strs.Format(`%s.%s, %s`, frm.As, col.Up(), col.Low()))
-			}
-		}
-	}
-
-	return result
-}
-
-/**
 * GetField
 * @param name string
 * @return *Field
@@ -113,4 +85,32 @@ func (s *Linq) Data(fields ...string) *Linq {
 **/
 func (s *Linq) Return(fields ...string) *Command {
 	return &Command{}
+}
+
+/**
+* listSelects
+* @return []string
+**/
+func (s *Linq) listSelects() []string {
+	result := []string{}
+	for _, frm := range s.Froms {
+		for _, sel := range frm.Selects {
+			result = append(result, strs.Format(`%s, %s`, sel.Field.TableField(), sel.Field.Caption()))
+		}
+	}
+
+	if len(result) == 0 {
+		frm := s.Froms[0]
+		for _, col := range frm.Columns {
+			if col == frm.SourceField {
+				continue
+			} else if col.TypeColumn == TpAtribute {
+				result = append(result, strs.Format(`%s.%s.%s: %s`, frm.As, frm.SourceField.Up(), col.Low(), col.Low()))
+			} else {
+				result = append(result, strs.Format(`%s.%s: %s`, frm.As, col.Up(), col.Low()))
+			}
+		}
+	}
+
+	return result
 }

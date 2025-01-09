@@ -59,6 +59,9 @@ func (s *Field) TableField() string {
 func (s *Field) AsField() string {
 	result := ""
 	result = strs.Append(result, s.As, "")
+	if s.Field != s.Name {
+		result = strs.Append(result, s.Field, ".")
+	}
 	result = strs.Append(result, s.Name, ".")
 
 	return result

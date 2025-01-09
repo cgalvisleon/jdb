@@ -127,23 +127,23 @@ func (s *Linq) List(page, rows int) (et.List, error) {
 
 /**
 * Query
-* @param query []string
+* @param params []string
 * @return Linq
 **/
-func (s *Linq) Query(query et.Json) (et.Items, error) {
-	joins := query.ArrayJson([]et.Json{}, "join")
-	where := query.ArrayJson([]et.Json{}, "where")
-	groups := query.ArrayStr([]string{}, "group_by")
-	havings := query.ArrayJson([]et.Json{}, "having")
-	orders := query.ArrayJson([]et.Json{}, "order_by")
-	limit := query.ValInt(1000, "limit")
-	page := query.ValInt(0, "page")
+func (s *Linq) Query(params et.Json) (et.Items, error) {
+	joins := params.ArrayJson([]et.Json{}, "join")
+	where := params.ArrayJson([]et.Json{}, "where")
+	groups := params.ArrayStr([]string{}, "group_by")
+	havings := params.ArrayJson([]et.Json{}, "having")
+	orders := params.ArrayJson([]et.Json{}, "order_by")
+	limit := params.ValInt(1000, "limit")
+	page := params.ValInt(0, "page")
 
-	if query["data"] != nil {
-		data := query.ArrayStr([]string{}, "data")
+	if params["data"] != nil {
+		data := params.ArrayStr([]string{}, "data")
 		s.Data(data...)
 	} else {
-		selects := query.ArrayStr([]string{}, "select")
+		selects := params.ArrayStr([]string{}, "select")
 		s.Select(selects...)
 	}
 	s.setJoins(joins)

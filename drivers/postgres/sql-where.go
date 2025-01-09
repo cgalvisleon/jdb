@@ -70,7 +70,7 @@ func whereFilters(wheres []*jdb.LinqWhere) string {
 	return result
 }
 
-func (s *Postgres) queryWhere(wheres []*jdb.LinqWhere) string {
+func (s *Postgres) sqlWhere(wheres []*jdb.LinqWhere) string {
 	result := whereFilters(wheres)
 	result = strs.Append("WHERE", result, " ")
 

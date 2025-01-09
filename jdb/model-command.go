@@ -1,6 +1,9 @@
 package jdb
 
-import "github.com/cgalvisleon/et/et"
+import (
+	"github.com/cgalvisleon/et/et"
+	"github.com/cgalvisleon/et/mistake"
+)
 
 /**
 * Insert
@@ -37,7 +40,44 @@ func (s *Model) Bulk(data []et.Json) *Command {
 	return NewCommand(s, data, Bulk)
 }
 
-func (s *Model) Command(command et.Json) *Command {
+/**
+* Command
+* @param params et.Json
+* @return et.Items, error
+**/
+func (s *Model) Command(params et.Json) (et.Items, error) {
+	command := params.Str("command")
+	where := params.ArrayJson([]et.Json{}, "where")
+	returns := params.ArrayStr([]string{}, "returns")
+	var conm *Command
+	switch command {
+	case "insert":
+		data := params.Json("data")
+		conm = s.Insert(data)
+	case "update":
+		data := params.Json("data")
+		conm = s.Update(data)
+	case "delete":
+		conm = s.Delete()
+	case "bulk":
+		data := params.ArrayJson([]et.Json{}, "data")
+		conm = s.Bulk(data)
+	}
+	if conm == nil {
+		return et.Items{}, mistake.New("command not found")
+	}
 
-	return s.Insert(command)
+	conm.setWhere(where)
+	conm.Return(returns...)
+	conm.Debug()
+	s.Db.Command(conm)
+	return et.Items{
+		Ok: true,
+		Result: []et.Json{{
+			"command": command,
+			"from":    s.Table,
+			"where":   conm.listWheres(),
+			"returns": conm.listReturns(),
+		}},
+	}, nil
 }

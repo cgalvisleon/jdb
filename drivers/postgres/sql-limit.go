@@ -6,7 +6,7 @@ import (
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
-func (s *Postgres) queryLimit(linq *jdb.Linq) string {
+func (s *Postgres) sqlLimit(linq *jdb.Linq) string {
 	result := ""
 	if linq.Sheet > 0 {
 		result = strs.Format(`LIMIT %d OFFSET %d`, linq.Limit, linq.Offset)

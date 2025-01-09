@@ -5,7 +5,7 @@ import (
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
-func (s *Postgres) queryJoin(joins []*jdb.LinqJoin) string {
+func (s *Postgres) sqlJoin(joins []*jdb.LinqJoin) string {
 	result := ""
 	for _, join := range joins {
 		def := s.tableAs(join.From)

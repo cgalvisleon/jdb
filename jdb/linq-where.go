@@ -191,19 +191,6 @@ func (s *Linq) Or(val interface{}) *LinqFilter {
 }
 
 /**
-* listWheres
-* @return []string
-**/
-func (s *Linq) listWheres() []string {
-	result := []string{}
-	for _, val := range s.Wheres {
-		result = append(result, val.String())
-	}
-
-	return result
-}
-
-/**
 * setWheres
 * @param wheres []et.Json
 **/
@@ -242,8 +229,20 @@ func (s *Linq) setWheres(wheres []et.Json) *Linq {
 		} else if item["notNull"] != nil {
 			s.NotNull()
 		}
-
 	}
 
 	return s
+}
+
+/**
+* listWheres
+* @return []string
+**/
+func (s *Linq) listWheres() []string {
+	result := []string{}
+	for _, val := range s.Wheres {
+		result = append(result, val.String())
+	}
+
+	return result
 }
