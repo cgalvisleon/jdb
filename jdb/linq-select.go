@@ -43,11 +43,11 @@ func NewLinqSelect(from *LinqFrom, field *Field) *LinqSelect {
 
 /**
 * GetField
-* @param name string
+* @param name string, isCreated bool
 * @return *Field
 **/
-func (s *LinqSelect) GetField(name string) *Field {
-	return s.From.GetField(name)
+func (s *LinqSelect) GetField(name string, isCreated bool) *Field {
+	return s.From.GetField(name, isCreated)
 }
 
 /**

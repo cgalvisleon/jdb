@@ -1,6 +1,10 @@
 package jdb
 
-import "regexp"
+import (
+	"regexp"
+
+	"github.com/cgalvisleon/et/strs"
+)
 
 type TypeAgregation int
 
@@ -50,6 +54,7 @@ func (s *Linq) Sum(field string) *Linq {
 	sel := s.GetSelect(field)
 	if sel != nil {
 		sel.Field.Agregation = AgregationSum
+		sel.Field.Alias = strs.Format(`sum_%s`, sel.Field.Name)
 	}
 
 	return s
@@ -64,6 +69,7 @@ func (s *Linq) Count(field string) *Linq {
 	sel := s.GetSelect(field)
 	if sel != nil {
 		sel.Field.Agregation = AgregationCount
+		sel.Field.Alias = strs.Format(`count_%s`, sel.Field.Name)
 	}
 
 	return s
@@ -78,6 +84,7 @@ func (s *Linq) Avg(field string) *Linq {
 	sel := s.GetSelect(field)
 	if sel != nil {
 		sel.Field.Agregation = AgregationAvg
+		sel.Field.Alias = strs.Format(`avg_%s`, sel.Field.Name)
 	}
 
 	return s
@@ -92,6 +99,7 @@ func (s *Linq) Min(field string) *Linq {
 	sel := s.GetSelect(field)
 	if sel != nil {
 		sel.Field.Agregation = AgregationMin
+		sel.Field.Alias = strs.Format(`min_%s`, sel.Field.Name)
 	}
 
 	return s
@@ -106,6 +114,7 @@ func (s *Linq) Max(field string) *Linq {
 	sel := s.GetSelect(field)
 	if sel != nil {
 		sel.Field.Agregation = AgregationMax
+		sel.Field.Alias = strs.Format(`max_%s`, sel.Field.Name)
 	}
 
 	return s

@@ -98,20 +98,20 @@ func (s *Linq) getFrom(m interface{}) *LinqFrom {
 
 /**
 * GetField
-* @param name string
+* @param name string, isCreated bool
 * @return *Field
 **/
-func (s *Linq) GetField(name string) *Field {
+func (s *Linq) GetField(name string, isCreated bool) *Field {
 	var field *Field
 	for _, from := range s.Froms {
-		field = from.GetField(name)
+		field = from.GetField(name, isCreated)
 		if field != nil {
 			field.Owner = from
 			break
 		}
 	}
 
-	return field
+	return nil
 }
 
 /**
@@ -123,7 +123,7 @@ func (s *Linq) GetAgregation(name string) *Field {
 	for tp, ag := range agregations {
 		if ag.re.MatchString(name) {
 			name = strs.ReplaceAll(name, []string{ag.Agregation, "(", ")"}, "")
-			field := s.GetField(name)
+			field := s.GetField(name, false)
 			if field != nil {
 				field.Agregation = tp
 				return field
@@ -141,12 +141,12 @@ func (s *Linq) GetAgregation(name string) *Field {
 *
  */
 func (s *Linq) GetSelect(name string) *LinqSelect {
-	field := s.GetField(name)
+	field := s.GetAgregation(name)
 	if field != nil {
 		return NewLinqSelect(field.Owner.(*LinqFrom), field)
 	}
 
-	field = s.GetAgregation(name)
+	field = s.GetField(name, true)
 	if field != nil {
 		return NewLinqSelect(field.Owner.(*LinqFrom), field)
 	}

@@ -14,9 +14,9 @@ type Field struct {
 	Field      string
 	Name       string
 	Atrib      string
-	Alias      string
 	Agregation TypeAgregation
-	Result     string
+	Alias      string
+	Value      interface{}
 }
 
 func (s *Field) Define() et.Json {
@@ -27,6 +27,8 @@ func (s *Field) Define() et.Json {
 		"field":  s.Field,
 		"name":   s.Name,
 		"atrib":  s.Atrib,
+		"alias":  s.Alias,
+		"value":  s.Value,
 	}
 }
 

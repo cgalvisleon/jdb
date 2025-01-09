@@ -18,7 +18,7 @@ type LinqOrder struct {
 **/
 func (s *Linq) OrderBy(sorted bool, columns ...string) *Linq {
 	for _, col := range columns {
-		field := s.GetField(col)
+		field := s.GetField(col, true)
 		if field != nil {
 			order := &LinqOrder{
 				Field:  field,

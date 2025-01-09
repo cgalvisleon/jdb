@@ -1,5 +1,7 @@
 package jdb
 
+import "github.com/cgalvisleon/et/et"
+
 type FilterTo interface {
 	And(val interface{}) *LinqFilter
 	Or(val interface{}) *LinqFilter
@@ -14,6 +16,36 @@ type LinqFilter struct {
 	Wheres []*LinqWhere
 }
 
+func (s *LinqFilter) setCondition(where et.Json) *LinqFilter {
+	if where["eq"] != nil {
+		s.Eq(where["eq"])
+	} else if where["neg"] != nil {
+		s.Neg(where["neg"])
+	} else if where["in"] != nil {
+		s.In(where["in"])
+	} else if where["like"] != nil {
+		s.Like(where["like"])
+	} else if where["more"] != nil {
+		s.More(where["more"])
+	} else if where["less"] != nil {
+		s.Less(where["less"])
+	} else if where["moreEq"] != nil {
+		s.MoreEq(where["moreEq"])
+	} else if where["lessEq"] != nil {
+		s.LessEs(where["lessEq"])
+	} else if where["search"] != nil {
+		s.Search(where["search"])
+	} else if where["between"] != nil {
+		s.Between(where["between"])
+	} else if where["isNull"] != nil {
+		s.IsNull()
+	} else if where["notNull"] != nil {
+		s.NotNull()
+	}
+
+	return s
+}
+
 /**
 * AddValue
 * @param val interface{}
@@ -23,7 +55,7 @@ func (s *LinqFilter) AddValue(val interface{}) FilterTo {
 	appendValue := func(linq *Linq, value interface{}) {
 		switch v := value.(type) {
 		case string:
-			field := linq.GetField(v)
+			field := linq.GetField(v, false)
 			if field != nil {
 				s.where.Values = append(s.where.Values, field)
 			} else {

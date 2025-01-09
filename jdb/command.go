@@ -78,7 +78,7 @@ func (s *Command) Describe() et.Json {
 
 func (s *Command) consolidate(data et.Json) et.Json {
 	for k, v := range data {
-		field := s.GetField(k)
+		field := s.GetField(k, true)
 		if field != nil {
 			(*s.New)[k] = v
 			switch field.Column.TypeColumn {
@@ -196,7 +196,7 @@ func (s *Command) One() (et.Item, error) {
 * @return *LinqSelect
 **/
 func (s *Command) GetReturn(name string) *LinqSelect {
-	field := s.GetField(name)
+	field := s.GetField(name, true)
 	if field == nil {
 		return nil
 	}

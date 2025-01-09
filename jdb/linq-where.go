@@ -155,7 +155,7 @@ func (s *LinqWhere) String() string {
 func (s *Linq) Where(val interface{}) *Linq {
 	field, ok := val.(string)
 	if ok {
-		field := s.GetField(field)
+		field := s.GetField(field, false)
 		if field != nil {
 			s.where = NewLinqWhere(field)
 			return s
@@ -204,31 +204,7 @@ func (s *Linq) setWheres(wheres []et.Json) *Linq {
 			s.Or(item["or"])
 		}
 
-		if item["eq"] != nil {
-			s.Eq(item["eq"])
-		} else if item["neg"] != nil {
-			s.Neg(item["neg"])
-		} else if item["in"] != nil {
-			s.In(item["in"])
-		} else if item["like"] != nil {
-			s.Like(item["like"])
-		} else if item["more"] != nil {
-			s.More(item["more"])
-		} else if item["less"] != nil {
-			s.Less(item["less"])
-		} else if item["moreEq"] != nil {
-			s.MoreEq(item["moreEq"])
-		} else if item["lessEq"] != nil {
-			s.LessEs(item["lessEq"])
-		} else if item["search"] != nil {
-			s.Search(item["search"])
-		} else if item["between"] != nil {
-			s.Between(item["between"])
-		} else if item["isNull"] != nil {
-			s.IsNull()
-		} else if item["notNull"] != nil {
-			s.NotNull()
-		}
+		s.setCondition(item)
 	}
 
 	return s

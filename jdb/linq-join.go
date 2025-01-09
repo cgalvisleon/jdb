@@ -104,7 +104,7 @@ func (s *Linq) FullJoin(m *Model) *LinqJoin {
 * @return *Linq
 **/
 func (s *LinqJoin) On(field string) *LinqFilter {
-	col := s.From.GetField(field)
+	col := s.From.GetField(field, false)
 	if col != nil {
 		s.where = NewLinqWhere(col)
 	} else {

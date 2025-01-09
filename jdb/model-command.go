@@ -49,6 +49,7 @@ func (s *Model) Command(params et.Json) (et.Items, error) {
 	command := params.Str("command")
 	where := params.ArrayJson([]et.Json{}, "where")
 	returns := params.ArrayStr([]string{}, "returns")
+	debug := params.ValBool(false, "debug")
 	var conm *Command
 	switch command {
 	case "insert":
@@ -69,8 +70,10 @@ func (s *Model) Command(params et.Json) (et.Items, error) {
 
 	conm.setWhere(where)
 	conm.Return(returns...)
-	conm.Debug()
-	s.Db.Command(conm)
+	if debug {
+		conm.Debug()
+	}
+	conm.Exec()
 	return et.Items{
 		Ok: true,
 		Result: []et.Json{{

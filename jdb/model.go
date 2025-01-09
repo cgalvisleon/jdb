@@ -222,14 +222,14 @@ func (s *Model) SetField(name string, create bool) *Field {
 
 /**
 * GetField
-* @param name string
+* @param name string, isCreated bool
 * @return *Field
 **/
-func (s *Model) GetField(name string) *Field {
+func (s *Model) GetField(name string, isCreated bool) *Field {
 	list := strs.Split(name, ".")
 	switch len(list) {
 	case 1:
-		return s.SetField(list[0], false)
+		return s.SetField(list[0], isCreated)
 	case 2:
 		if s.Name != strs.Lowcase(list[0]) {
 			return nil
@@ -264,6 +264,12 @@ func (s *Model) GetKeys() []*Column {
 * @return []et.Json
 **/
 func (s *Model) GetDetails(data *et.Json) *et.Json {
+	if data == nil {
+		data = &et.Json{}
+	} else if data.IsEmpty() {
+		data = &et.Json{}
+	}
+
 	for _, col := range s.Columns {
 		switch col.TypeColumn {
 		case TpGenerate:
@@ -274,18 +280,26 @@ func (s *Model) GetDetails(data *et.Json) *et.Json {
 			linq := From(model)
 			for _, key := range col.Model.Keys {
 				val := (*data)[key.Field]
+				if val == nil {
+					break
+				}
 				if filter == nil {
 					filter = linq.Where(key.Fk()).Eq(val)
 				} else {
 					filter = linq.And(key.Fk()).Eq(val)
 				}
 			}
-			result, err := linq.Page(1).Rows(30)
-			if err == nil {
-				data.Set(col.Low(), result)
+			result, err := linq.
+				Page(1).
+				Rows(col.Limit)
+			if err != nil {
+				data.Set(col.Name, result)
+			} else {
+				data.Set(col.Name, []et.Json{})
 			}
 		}
 	}
+
 	return data
 }
 
@@ -306,8 +320,12 @@ func (s *Model) New() et.Json {
 			col.Definition.(FuncGenerated)(col, result)
 		case TpDetail:
 			details = append(details, col)
+		case TpColumn:
+			if col != s.SourceField {
+				result.Set(col.Name, col.DefaultValue())
+			}
 		default:
-			result.Set(col.Low(), col.DefaultValue())
+			result.Set(col.Name, col.DefaultValue())
 		}
 	}
 
@@ -317,7 +335,7 @@ func (s *Model) New() et.Json {
 			val := (*result)[key.Field]
 			dtl.Set(key.Fk(), val)
 		}
-		result.Set(col.Low(), dtl)
+		result.Set(col.Name, dtl)
 	}
 
 	return *result

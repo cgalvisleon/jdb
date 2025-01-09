@@ -10,19 +10,14 @@ func selectField(field *jdb.Field) string {
 		switch field.Agregation {
 		case jdb.AgregationSum:
 			val = strs.Format(`SUM(%s)`, val)
-			field.Alias = strs.Format(`SUM_%s`, field.Alias)
 		case jdb.AgregationCount:
 			val = strs.Format(`COUNT(%s)`, val)
-			field.Alias = strs.Format(`COUNT_%s`, field.Alias)
 		case jdb.AgregationAvg:
 			val = strs.Format(`AVG(%s)`, val)
-			field.Alias = strs.Format(`AVG_%s`, field.Alias)
 		case jdb.AgregationMin:
 			val = strs.Format(`MIN(%s)`, val)
-			field.Alias = strs.Format(`MIN_%s`, field.Alias)
 		case jdb.AgregationMax:
 			val = strs.Format(`MAX(%s)`, val)
-			field.Alias = strs.Format(`MAX_%s`, field.Alias)
 		}
 
 		return val
@@ -88,9 +83,9 @@ func (s *Postgres) sqlData(selects []*jdb.LinqSelect, orders []*jdb.LinqOrder) s
 	return result
 }
 
-func (s *Postgres) sqlSelects(linq *jdb.Linq, selects []*jdb.LinqSelect) string {
-	if linq.TypeSelect == jdb.Data {
-		return s.sqlData(selects, linq.Orders)
+func (s *Postgres) sqlColumns(tp jdb.TypeSelect, selects []*jdb.LinqSelect, orders []*jdb.LinqOrder) string {
+	if tp == jdb.Data {
+		return s.sqlData(selects, orders)
 	}
 
 	result := ""
@@ -136,7 +131,7 @@ func (s *Postgres) sqlSelect(linq *jdb.Linq) string {
 		selects = append(selects, frm.Selects...)
 	}
 
-	result := s.sqlSelects(linq, selects)
+	result := s.sqlColumns(linq.TypeSelect, selects, linq.Orders)
 	result = strs.Append("\nSELECT DISTINCT", result, "\n")
 
 	return result

@@ -177,6 +177,7 @@ type Column struct {
 	Hidden      bool        `json:"hidden"`
 	Columns     []string    `json:"columns"`
 	Definition  interface{} `json:"definition"`
+	Limit       int         `json:"limit"`
 }
 
 func newColumn(model *Model, name string, description string, typeColumn TypeColumn, typeData TypeData, def interface{}) *Column {
@@ -194,6 +195,7 @@ func newColumn(model *Model, name string, description string, typeColumn TypeCol
 		Min:         0,
 		Hidden:      false,
 		Columns:     []string{},
+		Limit:       30,
 	}
 }
 

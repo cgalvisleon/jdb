@@ -40,11 +40,11 @@ func From(m *Model) *Linq {
 
 /**
 * GetField
-* @param name string
+* @param name string, isCreated bool
 * @return *Field
 **/
-func (s *LinqFrom) GetField(name string) *Field {
-	result := s.Model.GetField(name)
+func (s *LinqFrom) GetField(name string, isCreated bool) *Field {
+	result := s.Model.GetField(name, isCreated)
 	if result != nil {
 		result.As = s.As
 	}
