@@ -81,6 +81,10 @@ func (s *Postgres) sqlData(frm *jdb.LinqFrom, selects []*jdb.LinqSelect, orders 
 	}
 
 	result = strs.Append(result, jdb.SourceField.Up(), " AS ")
+	if orders == nil {
+		return result
+	}
+
 	for _, ord := range orders {
 		def := selectField(ord.Field)
 		result = strs.Append(result, def, ",\n")

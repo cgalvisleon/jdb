@@ -41,7 +41,9 @@ func (s *Postgres) sqlUpdate(command *jdb.Command) string {
 		set = strs.Append(set, strs.Format(`%s=%s`, jdb.SourceField.Up(), atribs), ",\n")
 	}
 
-	result = strs.Format(result, command.From.Table, set, where)
+	frm := command.From
+	where = whereFilters(command.Wheres)
+	result = strs.Format(result, frm.Table, set, where)
 
 	return result
 }

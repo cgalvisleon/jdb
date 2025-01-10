@@ -7,8 +7,6 @@ import (
 
 func (s *Postgres) sqlReturn(command *jdb.Command) string {
 	var selects = []*jdb.LinqSelect{}
-	var orders = []*jdb.LinqOrder{}
-
 	frm := command.From
 	for _, col := range frm.Columns {
 		if col.TypeColumn != jdb.TpColumn {
@@ -22,8 +20,12 @@ func (s *Postgres) sqlReturn(command *jdb.Command) string {
 		})
 	}
 
-	result := s.sqlColumns(frm, command.TypeSelect, selects, orders)
+	result := s.sqlColumns(frm, command.TypeSelect, selects, nil)
 	result = strs.Append("RETURNING", result, "\n")
+	if frm.IndexField != nil {
+		def := strs.Format(`ORDER BY %s`, frm.IndexField.Up())
+		result = strs.Append(result, def, "\n")
+	}
 
 	return result
 }

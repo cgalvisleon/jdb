@@ -1,7 +1,15 @@
 package postgres
 
-import jdb "github.com/cgalvisleon/jdb/jdb"
+import (
+	"github.com/cgalvisleon/et/strs"
+	jdb "github.com/cgalvisleon/jdb/jdb"
+)
 
 func (s *Postgres) sqlDelete(command *jdb.Command) string {
-	return ""
+	frm := command.From
+	where := whereFilters(command.Wheres)
+	result := "DELETE FROM %s\nWHERE %s"
+	result = strs.Format(result, frm.Table, where)
+
+	return result
 }

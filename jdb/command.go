@@ -23,7 +23,6 @@ type Command struct {
 	Origin     []et.Json
 	Atribs     et.Json
 	Fields     et.Json
-	Key        interface{}
 	New        *et.Json
 	Sql        string
 	Result     et.Items
@@ -117,6 +116,7 @@ func (s *Command) consolidate(data et.Json) et.Json {
 **/
 func (s *Command) Debug() *Command {
 	s.Show = true
+
 	return s
 }
 
@@ -157,6 +157,11 @@ func (s *Command) Exec() (et.Items, error) {
 			return et.Items{}, mistake.New(MSG_NOT_DATA)
 		}
 
+		result, err := s.bulk()
+		if err != nil {
+			return et.Items{}, err
+		}
+		s.Result.Add(result.Result)
 	}
 
 	return s.Result, nil

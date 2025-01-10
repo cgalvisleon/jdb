@@ -21,10 +21,14 @@ func (s *Postgres) sqlCurrent(command *jdb.Command) string {
 		}
 	}
 
-	result := s.sqlColumns(frm, command.TypeSelect, selects, []*jdb.LinqOrder{})
+	result := s.sqlColumns(frm, command.TypeSelect, selects, nil)
 	result = strs.Append("\nSELECT DISTINCT", result, "\n")
 	result = strs.Append(result, "WHERE", "\n")
 	result = strs.Append(result, whereFilters(command.Wheres), "\n")
+	if frm.IndexField != nil {
+		def := strs.Format(`ORDER BY %s`, frm.IndexField.Up())
+		result = strs.Append(result, def, "\n")
+	}
 
 	return result
 }

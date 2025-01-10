@@ -2,14 +2,9 @@ package jdb
 
 import (
 	"github.com/cgalvisleon/et/et"
-	"github.com/cgalvisleon/et/mistake"
 )
 
 func (s *Command) inserted() (et.Item, error) {
-	if s.From.SystemKeyField == nil {
-		return et.Item{}, mistake.New(MSG_SYSTEMKEYFIELD_NOT_FOUND)
-	}
-
 	data := s.Origin[0]
 	s.consolidate(data)
 

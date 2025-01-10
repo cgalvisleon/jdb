@@ -6,49 +6,54 @@ import (
 )
 
 func (s *Command) updated() (et.Items, error) {
-	if s.From.SystemKeyField == nil {
-		return et.Items{}, mistake.New(MSG_SYSTEMKEYFIELD_NOT_FOUND)
-	}
-
 	current, err := s.Db.Current(s)
 	if err != nil {
 		return et.Items{}, err
 	}
 	data := s.Origin[0]
 	s.consolidate(data)
-
 	results := et.Items{}
-	for _, old := range current.Result {
-		for _, trigger := range s.From.BeforeUpdate {
-			err := Triggers[trigger](old, s.New, data)
-			if err != nil {
-				return et.Items{}, err
-			}
-		}
 
-		s.Key = old[SystemKeyField.Str()]
-		if s.Key == nil {
-			continue
-		}
+	if !current.Ok {
+		return et.Items{}, mistake.New(MSG_NOT_DATA)
+	}
 
+	if current.Count > 1 {
 		result, err := s.Db.Command(s)
 		if err != nil {
 			return et.Items{}, err
 		}
 
 		new := &result.Result
-
-		for _, trigger := range s.From.AfterUpdate {
-			err := Triggers[trigger](old, new, data)
-			if err != nil {
-				return et.Items{}, err
-			}
-		}
-
 		s.From.GetDetails(new)
-
 		results.Add(*new)
+
+		return results, nil
 	}
+
+	old := current.Result[0]
+	for _, trigger := range s.From.BeforeUpdate {
+		err := Triggers[trigger](old, s.New, data)
+		if err != nil {
+			return et.Items{}, err
+		}
+	}
+
+	result, err := s.Db.Command(s)
+	if err != nil {
+		return et.Items{}, err
+	}
+
+	new := &result.Result
+	for _, trigger := range s.From.AfterUpdate {
+		err := Triggers[trigger](old, new, data)
+		if err != nil {
+			return et.Items{}, err
+		}
+	}
+
+	s.From.GetDetails(new)
+	results.Add(*new)
 
 	return results, nil
 }
