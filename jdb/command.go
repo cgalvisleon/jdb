@@ -15,16 +15,16 @@ const (
 )
 
 type Command struct {
-	*Model
 	*LinqFilter
+	Db         *DB
 	TypeSelect TypeSelect `json:"type_select"`
+	From       *LinqFrom
 	Command    TypeCommand
 	Origin     []et.Json
 	Atribs     et.Json
 	Fields     et.Json
-	Key        string
+	Key        interface{}
 	New        *et.Json
-	Returns    []*LinqSelect
 	Sql        string
 	Result     et.Items
 	Show       bool
@@ -43,14 +43,12 @@ func NewCommand(model *Model, data []et.Json, command TypeCommand) *Command {
 		tp = Data
 	}
 	result := &Command{
-		Model:      model,
 		TypeSelect: tp,
 		Command:    command,
 		Atribs:     et.Json{},
 		Fields:     et.Json{},
 		Origin:     data,
 		New:        &et.Json{},
-		Returns:    make([]*LinqSelect, 0),
 		Show:       false,
 		Sql:        "",
 		Result:     et.Items{},
@@ -59,8 +57,25 @@ func NewCommand(model *Model, data []et.Json, command TypeCommand) *Command {
 		main:   result,
 		Wheres: make([]*LinqWhere, 0),
 	}
+	result.addFrom(model)
 
 	return result
+}
+
+/**
+* addFrom
+* @param m *Model
+* @return *LinqFrom
+**/
+func (s *Command) addFrom(m *Model) *LinqFrom {
+	s.Db = m.Db
+	s.From = &LinqFrom{
+		Model:   m,
+		As:      "",
+		Selects: make([]*LinqSelect, 0),
+	}
+
+	return s.From
 }
 
 /**
@@ -78,7 +93,7 @@ func (s *Command) Describe() et.Json {
 
 func (s *Command) consolidate(data et.Json) et.Json {
 	for k, v := range data {
-		field := s.GetField(k, true)
+		field := s.From.GetField(k, true)
 		if field != nil {
 			(*s.New)[k] = v
 			switch field.Column.TypeColumn {
@@ -87,7 +102,7 @@ func (s *Command) consolidate(data et.Json) et.Json {
 			case TpColumn:
 				s.Fields[k] = v
 			}
-		} else if !s.Integrity {
+		} else if !s.From.Integrity {
 			(*s.New)[k] = v
 			s.Atribs[k] = v
 		}
@@ -113,58 +128,35 @@ func (s *Command) Exec() (et.Items, error) {
 	switch s.Command {
 	case Insert:
 		if len(s.Origin) == 0 {
-			return et.Items{}, mistake.New("Data not found")
+			return et.Items{}, mistake.New(MSG_NOT_DATA)
 		}
 
-		for _, data := range s.Origin {
-			result, err := s.inserted(data)
-			if err != nil {
-				return et.Items{}, err
-			}
-			s.Result.Result = append(s.Result.Result, result.Result)
-			s.Result.Count++
-			s.Result.Ok = true
+		result, err := s.inserted()
+		if err != nil {
+			return et.Items{}, err
 		}
+		s.Result.Add(result.Result)
 	case Update:
 		if len(s.Origin) == 0 {
-			return et.Items{}, mistake.New("Data not found")
+			return et.Items{}, mistake.New(MSG_NOT_DATA)
 		}
 
-		current, err := s.Db.Current(s)
+		result, err := s.updated()
 		if err != nil {
 			return et.Items{}, err
 		}
-		for _, old := range current.Result {
-			s.Key = old.ValStr("-1", SystemKeyField.Str())
-			if s.Key == "-1" {
-				continue
-			}
-			result, err := s.updated(old, s.Origin[0])
-			if err != nil {
-				return et.Items{}, err
-			}
-			s.Result.Result = append(s.Result.Result, result.Result)
-			s.Result.Count++
-			s.Result.Ok = true
-		}
+		s.Result = result
 	case Delete:
-		current, err := s.Db.Current(s)
+		result, err := s.delete()
 		if err != nil {
 			return et.Items{}, err
 		}
-		for _, old := range current.Result {
-			s.Key = old.ValStr("-1", SystemKeyField.Str())
-			if s.Key == "-1" {
-				continue
-			}
-			result, err := s.delete(old)
-			if err != nil {
-				return et.Items{}, err
-			}
-			s.Result.Result = append(s.Result.Result, result.Result)
-			s.Result.Count++
-			s.Result.Ok = true
+		s.Result = result
+	case Bulk:
+		if len(s.Origin) == 0 {
+			return et.Items{}, mistake.New(MSG_NOT_DATA)
 		}
+
 	}
 
 	return s.Result, nil
@@ -196,15 +188,10 @@ func (s *Command) One() (et.Item, error) {
 * @return *LinqSelect
 **/
 func (s *Command) GetReturn(name string) *LinqSelect {
-	field := s.GetField(name, true)
+	field := s.From.GetField(name, true)
 	if field == nil {
 		return nil
 	}
 
-	from := &LinqFrom{
-		Model: s.Model,
-		As:    s.Model.Table,
-	}
-
-	return NewLinqSelect(from, field)
+	return NewLinqSelect(s.From, field)
 }

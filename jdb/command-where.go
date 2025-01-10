@@ -10,7 +10,7 @@ import "github.com/cgalvisleon/et/et"
 func (s *Command) Where(val interface{}) *Command {
 	switch v := val.(type) {
 	case string:
-		field := s.GetField(v, false)
+		field := s.From.GetField(v, false)
 		if field != nil {
 			s.where = NewLinqWhere(field)
 			return s

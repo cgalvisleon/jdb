@@ -267,3 +267,23 @@ func (s *Column) DefaultQuote() interface{} {
 
 	return result
 }
+
+/**
+* GetField
+* @return *Field
+**/
+func (s *Column) GetField() *Field {
+	result := &Field{
+		Column: s,
+		Schema: s.Model.Schema.Name,
+		Table:  s.Model.Name,
+		Field:  s.Field,
+		Name:   s.Name,
+		Alias:  s.Name,
+	}
+	if s.TypeColumn != TpColumn {
+		result.Atrib = s.Name
+	}
+
+	return result
+}

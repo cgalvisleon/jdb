@@ -9,12 +9,20 @@ func (s *Postgres) sqlReturn(command *jdb.Command) string {
 	var selects = []*jdb.LinqSelect{}
 	var orders = []*jdb.LinqOrder{}
 
-	selects = append(selects, command.Returns...)
-	if len(selects) == 0 {
-		return ""
+	frm := command.From
+	for _, col := range frm.Columns {
+		if col.TypeColumn != jdb.TpColumn {
+			continue
+		}
+		field := col.GetField()
+		field.As = frm.As
+		selects = append(selects, &jdb.LinqSelect{
+			From:  frm,
+			Field: field,
+		})
 	}
 
-	result := s.sqlColumns(command.TypeSelect, selects, orders)
+	result := s.sqlColumns(frm, command.TypeSelect, selects, orders)
 	result = strs.Append("RETURNING", result, "\n")
 
 	return result

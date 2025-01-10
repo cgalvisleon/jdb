@@ -1,36 +1,54 @@
 package jdb
 
-import "github.com/cgalvisleon/et/et"
+import (
+	"github.com/cgalvisleon/et/et"
+	"github.com/cgalvisleon/et/mistake"
+)
 
-func (s *Command) delete(old et.Json) (et.Item, error) {
-	for _, trigger := range s.BeforeDelete {
-		err := Triggers[trigger](old, nil, nil)
-		if err != nil {
-			return et.Item{}, err
-		}
+func (s *Command) delete() (et.Items, error) {
+	if s.From.SystemKeyField == nil {
+		return et.Items{}, mistake.New(MSG_SYSTEMKEYFIELD_NOT_FOUND)
 	}
 
-	result, err := s.Db.Command(s)
+	current, err := s.Db.Current(s)
 	if err != nil {
-		return et.Item{}, err
-	} else {
-		result.Ok = true
+		return et.Items{}, err
 	}
+	data := s.Origin[0]
+	s.consolidate(data)
 
-	if result.Ok {
-		s.New = &result.Result
-	}
-
-	for _, trigger := range s.AfterDelete {
-		err := Triggers[trigger](old, nil, nil)
-		if err != nil {
-			return et.Item{}, err
+	results := et.Items{}
+	for _, old := range current.Result {
+		for _, trigger := range s.From.BeforeDelete {
+			err := Triggers[trigger](old, nil, nil)
+			if err != nil {
+				return et.Items{}, err
+			}
 		}
+
+		s.Key = old[SystemKeyField.Str()]
+		if s.Key == nil {
+			continue
+		}
+
+		result, err := s.Db.Command(s)
+		if err != nil {
+			return et.Items{}, err
+		}
+
+		new := &result.Result
+
+		for _, trigger := range s.From.AfterDelete {
+			err := Triggers[trigger](old, nil, nil)
+			if err != nil {
+				return et.Items{}, err
+			}
+		}
+
+		s.From.GetDetails(new)
+
+		results.Add(*new)
 	}
 
-	if len(s.Returns) > 0 {
-		s.GetDetails(&result.Result)
-	}
-
-	return result, nil
+	return results, nil
 }

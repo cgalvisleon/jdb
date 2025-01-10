@@ -7,7 +7,8 @@ type FilterTo interface {
 	Or(val interface{}) *LinqFilter
 	Select(fields ...string) *Linq
 	Data(fields ...string) *Linq
-	Return(fields ...string) *Command
+	Exec() (et.Items, error)
+	One() (et.Item, error)
 }
 
 type LinqFilter struct {

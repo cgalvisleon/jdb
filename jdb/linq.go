@@ -107,7 +107,7 @@ func (s *Linq) GetField(name string, isCreated bool) *Field {
 		field = from.GetField(name, isCreated)
 		if field != nil {
 			field.Owner = from
-			break
+			return field
 		}
 	}
 

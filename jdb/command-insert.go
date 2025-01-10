@@ -1,11 +1,19 @@
 package jdb
 
-import "github.com/cgalvisleon/et/et"
+import (
+	"github.com/cgalvisleon/et/et"
+	"github.com/cgalvisleon/et/mistake"
+)
 
-func (s *Command) inserted(data et.Json) (et.Item, error) {
+func (s *Command) inserted() (et.Item, error) {
+	if s.From.SystemKeyField == nil {
+		return et.Item{}, mistake.New(MSG_SYSTEMKEYFIELD_NOT_FOUND)
+	}
+
+	data := s.Origin[0]
 	s.consolidate(data)
 
-	for _, trigger := range s.BeforeInsert {
+	for _, trigger := range s.From.BeforeInsert {
 		err := Triggers[trigger](nil, s.New, data)
 		if err != nil {
 			return et.Item{}, err
@@ -15,24 +23,18 @@ func (s *Command) inserted(data et.Json) (et.Item, error) {
 	result, err := s.Db.Command(s)
 	if err != nil {
 		return et.Item{}, err
-	} else {
-		result.Ok = true
 	}
 
-	if result.Ok {
-		s.New = &result.Result
-	}
+	new := &result.Result
 
-	for _, trigger := range s.AfterInsert {
-		err := Triggers[trigger](nil, s.New, data)
+	for _, trigger := range s.From.AfterInsert {
+		err := Triggers[trigger](nil, new, data)
 		if err != nil {
 			return et.Item{}, err
 		}
 	}
 
-	if len(s.Returns) > 0 {
-		s.GetDetails(&result.Result)
-	}
+	s.From.GetDetails(new)
 
 	return result, nil
 }

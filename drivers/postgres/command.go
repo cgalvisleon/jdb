@@ -8,6 +8,12 @@ import (
 )
 
 func (s *Postgres) Current(command *jdb.Command) (et.Items, error) {
+	command.Sql = ""
+	command.Sql = strs.Append(command.Sql, s.sqlCurrent(command), "\n")
+	if command.Show {
+		console.Debug(command.Sql)
+	}
+
 	return et.Items{}, nil
 }
 

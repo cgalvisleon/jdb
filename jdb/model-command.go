@@ -48,7 +48,6 @@ func (s *Model) Bulk(data []et.Json) *Command {
 func (s *Model) Command(params et.Json) (et.Items, error) {
 	command := params.Str("command")
 	where := params.ArrayJson([]et.Json{}, "where")
-	returns := params.ArrayStr([]string{}, "returns")
 	debug := params.ValBool(false, "debug")
 	var conm *Command
 	switch command {
@@ -69,7 +68,6 @@ func (s *Model) Command(params et.Json) (et.Items, error) {
 	}
 
 	conm.setWhere(where)
-	conm.Return(returns...)
 	if debug {
 		conm.Debug()
 	}
@@ -80,7 +78,6 @@ func (s *Model) Command(params et.Json) (et.Items, error) {
 			"command": command,
 			"from":    s.Table,
 			"where":   conm.listWheres(),
-			"returns": conm.listReturns(),
 		}},
 	}, nil
 }

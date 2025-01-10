@@ -26,7 +26,7 @@ func selectField(field *jdb.Field) string {
 	result := strs.Append("", field.As, "")
 	switch field.Column.TypeColumn {
 	case jdb.TpColumn:
-		result = strs.Append(result, field.Name, ".")
+		result = strs.Append(result, field.Field, ".")
 		result = agregaction(result)
 	case jdb.TpAtribute:
 		result = strs.Append(result, field.Field, ".")
@@ -46,8 +46,14 @@ func jsonbBuildObject(result, obj string) string {
 	return strs.Append(result, strs.Format("jsonb_build_object(\n%s)", obj), "||\n")
 }
 
-func (s *Postgres) sqlData(selects []*jdb.LinqSelect, orders []*jdb.LinqOrder) string {
+func (s *Postgres) sqlData(frm *jdb.LinqFrom, selects []*jdb.LinqSelect, orders []*jdb.LinqOrder) string {
 	result := ""
+	if frm != nil {
+		def := strs.Append("", frm.As, ".")
+		def = strs.Append(def, jdb.SourceField.Up(), ".")
+		def = strs.Format(`%s`, def)
+		result = strs.Append(result, def, "")
+	}
 	l := 20
 	n := 0
 	obj := ""
@@ -83,9 +89,9 @@ func (s *Postgres) sqlData(selects []*jdb.LinqSelect, orders []*jdb.LinqOrder) s
 	return result
 }
 
-func (s *Postgres) sqlColumns(tp jdb.TypeSelect, selects []*jdb.LinqSelect, orders []*jdb.LinqOrder) string {
+func (s *Postgres) sqlColumns(frm *jdb.LinqFrom, tp jdb.TypeSelect, selects []*jdb.LinqSelect, orders []*jdb.LinqOrder) string {
 	if tp == jdb.Data {
-		return s.sqlData(selects, orders)
+		return s.sqlData(frm, selects, orders)
 	}
 
 	result := ""
@@ -112,6 +118,7 @@ func (s *Postgres) sqlSelect(linq *jdb.Linq) string {
 		return ""
 	}
 
+	var result string
 	var selects = []*jdb.LinqSelect{}
 	for _, frm := range froms {
 		selects = append(selects, frm.Selects...)
@@ -120,18 +127,21 @@ func (s *Postgres) sqlSelect(linq *jdb.Linq) string {
 	if len(selects) == 0 {
 		frm := froms[0]
 		for _, col := range frm.Columns {
-			field := frm.GetField(col.Name)
-			if field != nil {
-				selects = append(selects, &jdb.LinqSelect{
-					From:  frm,
-					Field: field,
-				})
+			if col.TypeColumn != jdb.TpColumn {
+				continue
 			}
+			field := col.GetField()
+			field.As = frm.As
+			selects = append(selects, &jdb.LinqSelect{
+				From:  frm,
+				Field: field,
+			})
 		}
-		selects = append(selects, frm.Selects...)
+		result = s.sqlColumns(frm, linq.TypeSelect, selects, linq.Orders)
+	} else {
+		result = s.sqlColumns(nil, linq.TypeSelect, selects, linq.Orders)
 	}
 
-	result := s.sqlColumns(linq.TypeSelect, selects, linq.Orders)
 	result = strs.Append("\nSELECT DISTINCT", result, "\n")
 
 	return result

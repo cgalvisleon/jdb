@@ -16,7 +16,9 @@ func (s *Postgres) sqlOrderBy(linq *jdb.Linq) string {
 		}
 		result = strs.Append(result, def, ",\n")
 	}
-	result = strs.Append("ORDER BY", result, "\n")
+	if len(result) != 0 {
+		result = strs.Append("ORDER BY", result, "\n")
+	}
 
 	return result
 }

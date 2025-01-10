@@ -195,29 +195,17 @@ func (s *Model) GetColumns(names ...string) []*Column {
 * @param name string
 * @return *Field
 **/
-func (s *Model) SetField(name string, create bool) *Field {
+func (s *Model) SetField(name string, isCreated bool) *Field {
 	col := s.GetColumn(name)
-	if col == nil && !create {
+	if col == nil && !isCreated {
 		return nil
 	}
 
 	if col == nil {
 		col = s.DefineAtribute(name, TypeDataText)
 	}
-	result := &Field{
-		Column: col,
-		Schema: s.Schema.Name,
-		Table:  s.Name,
-		Field:  col.Field,
-		Name:   col.Name,
-		Alias:  col.Name,
-	}
 
-	if col.TypeColumn != TpColumn {
-		result.Atrib = col.Name
-	}
-
-	return result
+	return col.GetField()
 }
 
 /**

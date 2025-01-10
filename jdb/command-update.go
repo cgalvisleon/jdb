@@ -1,38 +1,54 @@
 package jdb
 
-import "github.com/cgalvisleon/et/et"
+import (
+	"github.com/cgalvisleon/et/et"
+	"github.com/cgalvisleon/et/mistake"
+)
 
-func (s *Command) updated(old, data et.Json) (et.Item, error) {
+func (s *Command) updated() (et.Items, error) {
+	if s.From.SystemKeyField == nil {
+		return et.Items{}, mistake.New(MSG_SYSTEMKEYFIELD_NOT_FOUND)
+	}
+
+	current, err := s.Db.Current(s)
+	if err != nil {
+		return et.Items{}, err
+	}
+	data := s.Origin[0]
 	s.consolidate(data)
 
-	for _, trigger := range s.BeforeUpdate {
-		err := Triggers[trigger](old, s.New, data)
-		if err != nil {
-			return et.Item{}, err
+	results := et.Items{}
+	for _, old := range current.Result {
+		for _, trigger := range s.From.BeforeUpdate {
+			err := Triggers[trigger](old, s.New, data)
+			if err != nil {
+				return et.Items{}, err
+			}
 		}
-	}
 
-	result, err := s.Db.Command(s)
-	if err != nil {
-		return et.Item{}, err
-	} else {
-		result.Ok = true
-	}
-
-	if result.Ok {
-		s.New = &result.Result
-	}
-
-	for _, trigger := range s.AfterUpdate {
-		err := Triggers[trigger](old, s.New, data)
-		if err != nil {
-			return et.Item{}, err
+		s.Key = old[SystemKeyField.Str()]
+		if s.Key == nil {
+			continue
 		}
+
+		result, err := s.Db.Command(s)
+		if err != nil {
+			return et.Items{}, err
+		}
+
+		new := &result.Result
+
+		for _, trigger := range s.From.AfterUpdate {
+			err := Triggers[trigger](old, new, data)
+			if err != nil {
+				return et.Items{}, err
+			}
+		}
+
+		s.From.GetDetails(new)
+
+		results.Add(*new)
 	}
 
-	if len(s.Returns) > 0 {
-		s.GetDetails(&result.Result)
-	}
-
-	return result, nil
+	return results, nil
 }

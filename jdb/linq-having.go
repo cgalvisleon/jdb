@@ -84,12 +84,19 @@ func (s *LinqHaving) Data(fields ...string) *Linq {
 }
 
 /**
-* Return
-* @param fields ...string
-* @return *Command
+* Exec
+* @return et.Items, error
 **/
-func (s *LinqHaving) Return(fields ...string) *Command {
-	return &Command{}
+func (s *LinqHaving) Exec() (et.Items, error) {
+	return et.Items{}, nil
+}
+
+/**
+* One
+* @return et.Item, error
+**/
+func (s *LinqHaving) One() (et.Item, error) {
+	return et.Item{}, nil
 }
 
 /**

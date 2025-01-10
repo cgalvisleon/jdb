@@ -3,6 +3,7 @@ package jdb
 import (
 	"slices"
 
+	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/strs"
 )
 
@@ -79,12 +80,11 @@ func (s *Linq) Data(fields ...string) *Linq {
 }
 
 /**
-* Return
-* @param fields ...string
-* @return *Command
+* Exec
+* @return et.Items, error
 **/
-func (s *Linq) Return(fields ...string) *Command {
-	return &Command{}
+func (s *Linq) Exec() (et.Items, error) {
+	return et.Items{}, nil
 }
 
 /**
