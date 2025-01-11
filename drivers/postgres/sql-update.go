@@ -27,7 +27,7 @@ func (s *Postgres) sqlUpdate(command *jdb.Command) string {
 	}
 	atribs := ""
 	for key, val := range command.Atribs {
-		atrib := strs.Uppcase(key)
+		atrib := strs.Lowcase(key)
 		value := utility.Quote(val)
 
 		if len(atribs) == 0 {

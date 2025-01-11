@@ -1,9 +1,15 @@
 package postgres
 
-import jdb "github.com/cgalvisleon/jdb/jdb"
+import (
+	"github.com/cgalvisleon/et/strs"
+	jdb "github.com/cgalvisleon/jdb/jdb"
+)
 
 func (s *Postgres) sqlHaving(linq *jdb.Linq) string {
-	result := ""
+	wheres := linq.Havings.Wheres
+	where := whereFilters(wheres)
+	result := "HAVING %s"
+	result = strs.Format(result, where)
 
 	return result
 }
