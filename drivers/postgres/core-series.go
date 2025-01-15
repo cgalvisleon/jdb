@@ -191,3 +191,23 @@ func (s *Postgres) NextCode(tag, prefix string) string {
 		return strs.Format("%s%08v", prefix, num)
 	}
 }
+
+func defineSeriesTrigger(table string) string {
+	result := jdb.SQLDDL(`
+	DROP TRIGGER IF EXISTS SERIES_AFTER_INSERT ON $1 CASCADE;
+	CREATE TRIGGER SERIES_AFTER_INSERT
+	AFTER INSERT ON $1
+	FOR EACH ROW
+	EXECUTE PROCEDURE core.SERIES_AFTER_SET();
+
+	DROP TRIGGER IF EXISTS SERIES_AFTER_UPDATE ON $1 CASCADE;
+	CREATE TRIGGER SERIES_AFTER_UPDATE
+	AFTER UPDATE ON $1
+	FOR EACH ROW
+	WHEN (OLD.INDEX IS DISTINCT FROM NEW.INDEX)
+	EXECUTE PROCEDURE core.SERIES_AFTER_SET();`, table)
+
+	result = strs.Replace(result, "\t", "")
+
+	return result
+}

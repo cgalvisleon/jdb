@@ -12,7 +12,7 @@ import (
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
-func (s *Postgres) existDatabase(name string) (bool, error) {
+func (s *Postgres) ExistDatabase(name string) (bool, error) {
 	sql := `
 	SELECT EXISTS(
 	SELECT 1
@@ -23,11 +23,7 @@ func (s *Postgres) existDatabase(name string) (bool, error) {
 		return false, err
 	}
 
-	if !items.Ok {
-		return false, console.Alertm(jdb.MSG_DATABASE_NOT_FOUND)
-	}
-
-	return true, nil
+	return items.Ok, nil
 }
 
 func (s *Postgres) chain(params et.Json) (string, error) {
@@ -105,7 +101,7 @@ func (s *Postgres) CreateDatabase(name string) error {
 		return mistake.Newf(msg.NOT_DRIVER_DB)
 	}
 
-	exist, err := s.existDatabase(name)
+	exist, err := s.ExistDatabase(name)
 	if err != nil {
 		return err
 	}
@@ -130,7 +126,7 @@ func (s *Postgres) DropDatabase(name string) error {
 		return mistake.Newf(msg.NOT_DRIVER_DB)
 	}
 
-	exist, err := s.existDatabase(name)
+	exist, err := s.ExistDatabase(name)
 	if err != nil {
 		return err
 	}

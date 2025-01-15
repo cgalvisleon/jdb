@@ -1,70 +1,17 @@
 package postgres
 
 import (
-	"github.com/cgalvisleon/et/strs"
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
 func ddlRecordTriggers(model *jdb.Model) string {
-	result := jdb.SQLDDL(`
-	DROP TRIGGER IF EXISTS RECORDS_BEFORE_INSERT ON $1 CASCADE;
-	CREATE TRIGGER RECORDS_BEFORE_INSERT
-	BEFORE INSERT ON $1
-	FOR EACH ROW
-	EXECUTE PROCEDURE core.RECORDS_BEFORE_INSERT();
-
-	DROP TRIGGER IF EXISTS RECORDS_BEFORE_UPDATE ON $1 CASCADE;
-	CREATE TRIGGER RECORDS_BEFORE_UPDATE
-	BEFORE UPDATE ON $1
-	FOR EACH ROW
-	EXECUTE PROCEDURE core.RECORDS_BEFORE_UPDATE();
-
-	DROP TRIGGER IF EXISTS RECORDS_BEFORE_DELETE ON $1 CASCADE;
-	CREATE TRIGGER RECORDS_BEFORE_DELETE
-	BEFORE DELETE ON $1
-	FOR EACH ROW
-	EXECUTE PROCEDURE core.RECORDS_BEFORE_DELETE();`, model.Table)
-
-	result = strs.Replace(result, "\t", "")
-
-	return result
+	return defineRecordTrigger(model.Table)
 }
 
 func ddlRecycligTriggers(model *jdb.Model) string {
-	result := jdb.SQLDDL(`
-  DROP TRIGGER IF EXISTS RECYCLING ON $1 CASCADE;
-	CREATE TRIGGER RECYCLING
-	AFTER UPDATE ON $1
-	FOR EACH ROW WHEN (OLD._STATE!=NEW._STATE)
-	EXECUTE PROCEDURE core.RECYCLING_UPDATE();
-
-	DROP TRIGGER IF EXISTS RECYCLING_DELETE ON $1 CASCADE;
-	CREATE TRIGGER RECYCLING_DELETE
-	AFTER DELETE ON $1
-	FOR EACH ROW
-	EXECUTE PROCEDURE core.RECYCLING_DELETE();`, model.Table)
-
-	result = strs.Replace(result, "\t", "")
-
-	return result
+	return defineRecyclingTrigger(model.Table)
 }
 
 func ddlSeriesTriggers(model *jdb.Model) string {
-	result := jdb.SQLDDL(`
-	DROP TRIGGER IF EXISTS SERIES_AFTER_INSERT ON $1 CASCADE;
-	CREATE TRIGGER SERIES_AFTER_INSERT
-	AFTER INSERT ON $1
-	FOR EACH ROW
-	EXECUTE PROCEDURE core.SERIES_AFTER_SET();
-
-	DROP TRIGGER IF EXISTS SERIES_AFTER_UPDATE ON $1 CASCADE;
-	CREATE TRIGGER SERIES_AFTER_UPDATE
-	AFTER UPDATE ON $1
-	FOR EACH ROW
-	WHEN (OLD.INDEX IS DISTINCT FROM NEW.INDEX)
-	EXECUTE PROCEDURE core.SERIES_AFTER_SET();`, model.Table)
-
-	result = strs.Replace(result, "\t", "")
-
-	return result
+	return defineSeriesTrigger(model.Table)
 }

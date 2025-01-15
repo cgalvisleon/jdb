@@ -1,6 +1,10 @@
 package postgres
 
-import "github.com/cgalvisleon/et/console"
+import (
+	"github.com/cgalvisleon/et/console"
+	"github.com/cgalvisleon/et/strs"
+	jdb "github.com/cgalvisleon/jdb/jdb"
+)
 
 func (s *Postgres) defineRecords() error {
 	exist, err := s.existTable("core", "RECORDS")
@@ -58,7 +62,7 @@ func (s *Postgres) defineRecordsFunction() error {
 				'option', NEW.OPTION,        
 				'_idt', NEW._IDT
 			)::text
-			);		
+			);
 		END IF;
   RETURN NEW;
   END;
@@ -92,6 +96,36 @@ func (s *Postgres) defineRecordsFunction() error {
 		INSERT INTO core.RECORDS(TABLE_SCHEMA, TABLE_NAME, OPTION, SYNC, _IDT)
 		VALUES (TG_TABLE_SCHEMA, TG_TABLE_NAME, TG_OP, VSYNC, NEW._IDT);
 
+		PERFORM pg_notify(
+		'trigger',
+		json_build_object(
+			'schema', TG_TABLE_SCHEMA,
+			'table', TG_TABLE_NAME,
+			'option', TG_OP,
+			'event', 'before_insert',
+			'_idt', NEW._IDT
+		)::text
+		);
+
+  	RETURN NEW;
+  END;
+  $$ LANGUAGE plpgsql;
+
+	CREATE OR REPLACE FUNCTION core.RECORDS_AFTER_INSERT()
+  RETURNS
+    TRIGGER AS $$
+  BEGIN
+		PERFORM pg_notify(
+		'trigger',
+		json_build_object(
+			'schema', TG_TABLE_SCHEMA,
+			'table', TG_TABLE_NAME,
+			'option', TG_OP,
+			'event', 'after_insert',
+			'_idt', NEW._IDT
+		)::text
+		);
+    
   	RETURN NEW;
   END;
   $$ LANGUAGE plpgsql;
@@ -115,9 +149,39 @@ func (s *Postgres) defineRecordsFunction() error {
 		SYNC=VSYNC
 		WHERE _IDT=NEW._IDT;
 
+		PERFORM pg_notify(
+		'trigger',
+		json_build_object(
+			'schema', TG_TABLE_SCHEMA,
+			'table', TG_TABLE_NAME,
+			'option', TG_OP,
+			'event', 'before_update',
+			'_idt', NEW._IDT
+		)::text
+		);
+
   	RETURN NEW;
   END;
   $$ LANGUAGE plpgsql;
+
+	CREATE OR REPLACE FUNCTION core.RECORDS_AFTER_UPDATE()
+	RETURNS
+		TRIGGER AS $$
+	BEGIN
+		PERFORM pg_notify(
+		'trigger',
+		json_build_object(
+			'schema', TG_TABLE_SCHEMA,
+			'table', TG_TABLE_NAME,
+			'option', TG_OP,
+			'event', 'after_update',
+			'_idt', NEW._IDT
+		)::text
+		);
+
+		RETURN NEW;
+	END;
+	$$ LANGUAGE plpgsql;
 
   CREATE OR REPLACE FUNCTION core.RECORDS_BEFORE_DELETE()
   RETURNS
@@ -129,9 +193,39 @@ func (s *Postgres) defineRecordsFunction() error {
 		SYNC=FALSE
 		WHERE _IDT=OLD._IDT;
 		
+		PERFORM pg_notify(
+		'trigger',
+		json_build_object(
+			'schema', TG_TABLE_SCHEMA,
+			'table', TG_TABLE_NAME,
+			'option', TG_OP,
+			'event', 'before_delete',
+			'_idt', OLD._IDT
+		)::text
+		);
+
   	RETURN OLD;
   END;
   $$ LANGUAGE plpgsql;
+
+	CREATE OR REPLACE FUNCTION core.RECORDS_AFTER_DELETE()
+	RETURNS
+		TRIGGER AS $$
+	BEGIN
+	PERFORM pg_notify(
+		'trigger',
+		json_build_object(
+			'schema', TG_TABLE_SCHEMA,
+			'table', TG_TABLE_NAME,
+			'option', TG_OP,
+			'event', 'after_delete',
+			'_idt', NEW._IDT
+		)::text
+		);
+
+	RETURN OLD;
+	END;
+	$$ LANGUAGE plpgsql;
 	`
 	err := s.Exec(sql)
 	if err != nil {
@@ -139,4 +233,47 @@ func (s *Postgres) defineRecordsFunction() error {
 	}
 
 	return nil
+}
+
+func defineRecordTrigger(table string) string {
+	result := jdb.SQLDDL(`
+	DROP TRIGGER IF EXISTS RECORDS_BEFORE_INSERT ON $1 CASCADE;
+	CREATE TRIGGER RECORDS_BEFORE_INSERT
+	BEFORE INSERT ON $1
+	FOR EACH ROW
+	EXECUTE PROCEDURE core.RECORDS_BEFORE_INSERT();
+
+	DROP TRIGGER IF EXISTS RECORDS_AFTER_INSERT ON $1 CASCADE;
+	CREATE TRIGGER RECORDS_AFTER_INSERT
+	BEFORE INSERT ON $1
+	FOR EACH ROW
+	EXECUTE PROCEDURE core.RECORDS_AFTER_INSERT();
+
+	DROP TRIGGER IF EXISTS RECORDS_BEFORE_UPDATE ON $1 CASCADE;
+	CREATE TRIGGER RECORDS_BEFORE_UPDATE
+	BEFORE UPDATE ON $1
+	FOR EACH ROW
+	EXECUTE PROCEDURE core.RECORDS_BEFORE_UPDATE();
+
+	DROP TRIGGER IF EXISTS RECORDS_AFTER_UPDATE ON $1 CASCADE;
+	CREATE TRIGGER RECORDS_AFTER_UPDATE
+	BEFORE UPDATE ON $1
+	FOR EACH ROW
+	EXECUTE PROCEDURE core.RECORDS_AFTER_UPDATE();
+
+	DROP TRIGGER IF EXISTS RECORDS_BEFORE_DELETE ON $1 CASCADE;
+	CREATE TRIGGER RECORDS_BEFORE_DELETE
+	BEFORE DELETE ON $1
+	FOR EACH ROW
+	EXECUTE PROCEDURE core.RECORDS_BEFORE_DELETE();
+
+	DROP TRIGGER IF EXISTS RECORDS_AFTER_DELETE ON $1 CASCADE;
+	CREATE TRIGGER RECORDS_AFTER_DELETE
+	BEFORE DELETE ON $1
+	FOR EACH ROW
+	EXECUTE PROCEDURE core.RECORDS_AFTER_DELETE();`, table)
+
+	result = strs.Replace(result, "\t", "")
+
+	return result
 }

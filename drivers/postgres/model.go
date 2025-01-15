@@ -51,7 +51,7 @@ func (s *Postgres) LoadModel(model *jdb.Model) error {
 	go s.upsertDDL(strs.Format(`load_model_%s`, model.Table), sql)
 	go s.upsertModel(model.Table, model.Version, serialized)
 
-	console.Logf(jdb.Postgres, `Model %s %s`, model.Name, action)
+	console.Logf(model.Db.Name, `Model %s %s`, model.Name, action)
 
 	return nil
 }

@@ -57,7 +57,7 @@ func (s *Linq) OrderByDesc(columns ...string) *Linq {
 func (s *Linq) setOrders(orders []et.Json) *Linq {
 	for _, item := range orders {
 		sorted := item.Bool("sorted")
-		columns := item.ArrayStr([]string{}, "columns")
+		columns := item.ArrayStr("columns")
 		s.OrderBy(sorted, columns...)
 	}
 

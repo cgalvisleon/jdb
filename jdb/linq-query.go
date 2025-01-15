@@ -131,19 +131,19 @@ func (s *Linq) List(page, rows int) (et.List, error) {
 * @return Linq
 **/
 func (s *Linq) Query(params et.Json) (et.Items, error) {
-	joins := params.ArrayJson([]et.Json{}, "join")
-	where := params.ArrayJson([]et.Json{}, "where")
-	groups := params.ArrayStr([]string{}, "group_by")
-	havings := params.ArrayJson([]et.Json{}, "having")
-	orders := params.ArrayJson([]et.Json{}, "order_by")
+	joins := params.ArrayJson("join")
+	where := params.ArrayJson("where")
+	groups := params.ArrayStr("group_by")
+	havings := params.ArrayJson("having")
+	orders := params.ArrayJson("order_by")
 	limit := params.ValInt(1000, "limit")
 	page := params.ValInt(0, "page")
 
 	if params["data"] != nil {
-		data := params.ArrayStr([]string{}, "data")
+		data := params.ArrayStr("data")
 		s.Data(data...)
 	} else {
-		selects := params.ArrayStr([]string{}, "select")
+		selects := params.ArrayStr("select")
 		s.Select(selects...)
 	}
 	s.setJoins(joins)

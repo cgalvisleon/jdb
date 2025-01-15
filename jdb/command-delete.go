@@ -10,8 +10,6 @@ func (s *Command) delete() (et.Items, error) {
 	if err != nil {
 		return et.Items{}, err
 	}
-	data := s.Origin[0]
-	s.consolidate(data)
 	results := et.Items{}
 
 	if !current.Ok {

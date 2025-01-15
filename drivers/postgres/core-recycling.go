@@ -1,6 +1,10 @@
 package postgres
 
-import "github.com/cgalvisleon/et/console"
+import (
+	"github.com/cgalvisleon/et/console"
+	"github.com/cgalvisleon/et/strs"
+	jdb "github.com/cgalvisleon/jdb/jdb"
+)
 
 func (s *Postgres) defineRecycling() error {
 	exist, err := s.existTable("core", "RECYCLING")
@@ -89,4 +93,23 @@ func (s *Postgres) defineRecyclingFunction() error {
 	}
 
 	return nil
+}
+
+func defineRecyclingTrigger(table string) string {
+	result := jdb.SQLDDL(`
+  DROP TRIGGER IF EXISTS RECYCLING ON $1 CASCADE;
+	CREATE TRIGGER RECYCLING
+	AFTER UPDATE ON $1
+	FOR EACH ROW WHEN (OLD._STATE!=NEW._STATE)
+	EXECUTE PROCEDURE core.RECYCLING_UPDATE();
+
+	DROP TRIGGER IF EXISTS RECYCLING_DELETE ON $1 CASCADE;
+	CREATE TRIGGER RECYCLING_DELETE
+	AFTER DELETE ON $1
+	FOR EACH ROW
+	EXECUTE PROCEDURE core.RECYCLING_DELETE();`, table)
+
+	result = strs.Replace(result, "\t", "")
+
+	return result
 }

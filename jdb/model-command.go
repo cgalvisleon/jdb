@@ -47,7 +47,7 @@ func (s *Model) Bulk(data []et.Json) *Command {
 **/
 func (s *Model) Command(params et.Json) (et.Items, error) {
 	command := params.Str("command")
-	where := params.ArrayJson([]et.Json{}, "where")
+	where := params.ArrayJson("where")
 	debug := params.ValBool(false, "debug")
 	var conm *Command
 	switch command {
@@ -60,7 +60,7 @@ func (s *Model) Command(params et.Json) (et.Items, error) {
 	case "delete":
 		conm = s.Delete()
 	case "bulk":
-		data := params.ArrayJson([]et.Json{}, "data")
+		data := params.ArrayJson("data")
 		conm = s.Bulk(data)
 	}
 	if conm == nil {

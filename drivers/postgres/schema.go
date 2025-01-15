@@ -13,8 +13,17 @@ func (s *Postgres) CreateSchema(name string) error {
 		return mistake.Newf(msg.NOT_DRIVER_DB)
 	}
 
+	exist, err := s.ExistSchema(name)
+	if err != nil {
+		return err
+	}
+
+	if exist {
+		return nil
+	}
+
 	sql := jdb.SQLDDL(`CREATE SCHEMA IF NOT EXISTS $1`, name)
-	err := s.Exec(sql)
+	err = s.Exec(sql)
 	if err != nil {
 		return err
 	}
@@ -42,4 +51,18 @@ func (s *Postgres) DropSchema(name string) error {
 	console.Logf(jdb.Postgres, `Schema %s droped`, name)
 
 	return nil
+}
+
+func (s *Postgres) ExistSchema(name string) (bool, error) {
+	if s.db == nil {
+		return false, mistake.Newf(msg.NOT_DRIVER_DB)
+	}
+
+	sql := jdb.SQLDDL(`SELECT 1 FROM pg_namespace WHERE nspname = '$1';`, name)
+	items, err := s.SQL(sql)
+	if err != nil {
+		return false, err
+	}
+
+	return items.Ok, nil
 }
