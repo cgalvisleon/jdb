@@ -1,8 +1,6 @@
 package postgres
 
 import (
-	"strings"
-
 	"github.com/cgalvisleon/et/strs"
 	"github.com/cgalvisleon/et/utility"
 	jdb "github.com/cgalvisleon/jdb/jdb"
@@ -72,82 +70,6 @@ func (s *Postgres) defaultValue(tp jdb.TypeData) interface{} {
 	}
 }
 
-func (s *Postgres) ddlPrimaryKey(model *jdb.Model) string {
-	primaryKeys := func() []string {
-		var result []string
-		for _, v := range model.Keys {
-			result = append(result, v.Field)
-		}
-
-		return result
-	}
-
-	result := strs.Format("PRIMARY KEY (%s)", strings.Join(primaryKeys(), ", "))
-
-	return strs.Uppcase(result)
-}
-
-func (s *Postgres) ddlForeignKeys(model *jdb.Model) string {
-	var result string
-	for _, ref := range model.References {
-		field := ref.Key.Field
-		key := field + "_FKEY"
-		key = strs.Replace(key, "-", "_")
-		key = strs.Uppcase(key)
-		def := strs.Format(`ALTER TABLE IF EXISTS %s ADD CONSTRAINT %s FOREIGN KEY (%s) REFERENCES %s(%s);`, model.Table, key, field, ref.To.Table, ref.To.Field)
-		if ref.OnDeleteCascade {
-			def = def + " ON DELETE CASCADE"
-		}
-		if ref.OnUpdateCascade {
-			def = def + " ON UPDATE CASCADE"
-		}
-		result = strs.Format("SELECT core.add_constraint_if_not_exists('%s', '%s', '%s', '%s');\n", model.Schema.Low(), model.Low(), strs.Lowcase(key), def)
-	}
-
-	return result
-}
-
-func (s *Postgres) ddlIndex(model *jdb.Model) string {
-	var result string
-	for _, index := range model.Indices {
-		def := ddlIndex(index.Column)
-
-		result = strs.Append(result, def, "\n")
-	}
-
-	return result
-}
-
-func (s *Postgres) ddlUniqueIndex(model *jdb.Model) string {
-	var result string
-	for _, index := range model.Uniques {
-		def := ddlUniqueIndex(index.Column)
-
-		result = strs.Append(result, def, "\n")
-	}
-
-	return result
-}
-
-func (s *Postgres) ddlTriggers(model *jdb.Model) string {
-	var result string
-	if !model.Db.UseCore {
-		return result
-	}
-
-	if model.SystemKeyField != nil {
-		result = strs.Append(result, ddlRecordTriggers(model), "\n\n")
-	}
-	if model.StateField != nil {
-		result = strs.Append(result, ddlRecycligTriggers(model), "\n\n")
-	}
-	if model.IndexField != nil {
-		result = strs.Append(result, ddlSeriesTriggers(model), "\n\n")
-	}
-
-	return result
-}
-
 func (s *Postgres) ddlTable(model *jdb.Model) string {
 	var columnsDef string
 	for _, column := range model.Columns {
@@ -165,12 +87,27 @@ func (s *Postgres) ddlTable(model *jdb.Model) string {
 	return result
 }
 
-func (s *Postgres) ddlIndexFunction(model *jdb.Model) string {
-	result := "\n"
-	result = strs.Append(result, s.ddlIndex(model), "\n")
-	result = strs.Append(result, s.ddlUniqueIndex(model), "\n")
-	result = strs.Append(result, s.ddlForeignKeys(model), "\n\n")
-	result = strs.Append(result, s.ddlTriggers(model), "\n\n")
+func (s *Postgres) ddlTableRename(old, new string) string {
+	result := strs.Format(`ALTER TABLE %s RENAME TO %s;`, old, new)
+
+	return result
+}
+
+func (s *Postgres) ddlTableInsert(old *jdb.Model) string {
+	backupTable := strs.Format(`%s_BACKUP`, old.Table)
+	fields := ""
+	for _, column := range old.Columns {
+		if column.TypeColumn == jdb.TpColumn {
+			fields = strs.Append(fields, strs.Format("%s", column.Up()), ", ")
+		}
+	}
+	result := strs.Format("INSERT INTO %s (%s)\nSELECT %s FROM %s;", old.Table, fields, fields, backupTable)
+
+	return result
+}
+
+func (s *Postgres) ddlTableDrop(table string) string {
+	result := strs.Format("DROP TABLE IF EXISTS %s CASCADE;", table)
 
 	return result
 }

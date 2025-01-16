@@ -6,12 +6,6 @@ import (
 	"github.com/cgalvisleon/et/strs"
 )
 
-type KeyValue struct {
-	Ok    bool   `json:"ok"`
-	Value string `json:"value"`
-	Imdex int    `json:"index"`
-}
-
 /**
 * defineKeyValue - Define KeyValue table
 * @return error
@@ -49,12 +43,12 @@ func (s *Postgres) defineKeyValue() error {
 }
 
 /**
-* SetKeyValue - Set key value
+* SetKey - Set key value
 * @params key string
 * @params value string
 * @return error
 **/
-func (s *Postgres) SetKeyValue(key, value string) error {
+func (s *Postgres) SetKey(key, value string) error {
 	sql := `
 	UPDATE core.KEYVALUES SET
 	VALUE = $2
@@ -84,11 +78,11 @@ func (s *Postgres) SetKeyValue(key, value string) error {
 }
 
 /**
-* GetKeyValue - Get key value
+* GetKey - Get key value
 * @params key string
 * @return KeyValue, error
 **/
-func (s *Postgres) GetKeyValue(key string) (KeyValue, error) {
+func (s *Postgres) GetKey(key string) (et.KeyValue, error) {
 	sql := `
 	SELECT *
 	FROM core.KEYVALUES
@@ -97,10 +91,10 @@ func (s *Postgres) GetKeyValue(key string) (KeyValue, error) {
 
 	item, err := s.One(sql, key)
 	if err != nil {
-		return KeyValue{}, err
+		return et.KeyValue{}, err
 	}
 
-	return KeyValue{
+	return et.KeyValue{
 		Ok:    item.Ok,
 		Value: item.Str("value"),
 		Imdex: item.Int("index"),
@@ -108,11 +102,11 @@ func (s *Postgres) GetKeyValue(key string) (KeyValue, error) {
 }
 
 /**
-* DelKeyValue - Delete key value
+* DeleteKey - Delete key value
 * @params key string
 * @return error
 **/
-func (s *Postgres) DelKeyValue(key string) error {
+func (s *Postgres) DeleteKey(key string) error {
 	sql := `
 	DELETE 
 	FROM core.KEYVALUES
@@ -127,13 +121,13 @@ func (s *Postgres) DelKeyValue(key string) error {
 }
 
 /**
-* FindKeyValue - Find key value
+* FindKeys - Find key value
 * @params search string
 * @params page int
 * @params rows int
 * @return et.List, error
 **/
-func (s *Postgres) FindKeyValue(search string, page, rows int) (et.List, error) {
+func (s *Postgres) FindKeys(search string, page, rows int) (et.List, error) {
 	sql := `
 	SELECT COUNT(*) AS ALL
 	FROM core.KEYVALUES A

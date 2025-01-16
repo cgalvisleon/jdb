@@ -212,3 +212,73 @@ func (s *LinqFilter) NotNull() *LinqFilter {
 	s.where.Operator = NotNull
 	return s
 }
+
+/**
+* First
+* @param n int
+* @return et.Items, error
+**/
+func (s *LinqFilter) First(n int) (et.Items, error) {
+	return s.main.(*Linq).First(n)
+}
+
+/**
+* All
+* @return et.Items, error
+**/
+func (s *LinqFilter) All() (et.Items, error) {
+	return s.main.(*Linq).All()
+}
+
+/**
+* Last
+* @param n int
+* @return et.Items, error
+**/
+func (s *LinqFilter) Last(n int) (et.Items, error) {
+	return s.main.(*Linq).Last(n)
+}
+
+/**
+* One
+* @return et.Item, error
+**/
+func (s *LinqFilter) One() (et.Item, error) {
+	return s.main.(*Linq).One()
+}
+
+/**
+* Page
+* @param val int
+* @return *Linq
+**/
+func (s *LinqFilter) Page(val int) *Linq {
+	return s.main.(*Linq).Page(val)
+}
+
+/**
+* Rows
+* @param val int
+* @return et.Items, error
+**/
+func (s *LinqFilter) Rows(val int) (et.Items, error) {
+	return s.main.(*Linq).Rows(val)
+}
+
+/**
+* List
+* @param page, rows int
+* @return et.List, error
+**/
+func (s *LinqFilter) List(page, rows int) (et.List, error) {
+	return s.main.(*Linq).List(page, rows)
+}
+
+/**
+* Query
+* @param params et.Json
+* @return (et.Items, error)
+**/
+func (s *LinqFilter) Query(params et.Json) (et.Items, error) {
+	return s.main.(*Linq).Query(params)
+}

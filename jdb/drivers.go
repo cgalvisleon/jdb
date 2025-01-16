@@ -42,6 +42,11 @@ type Driver interface {
 	NextCode(tag, prefix string) string
 	SetSerie(tag string, val int) int64
 	CurrentSerie(tag string) int64
+	// Key Value
+	SetKey(key, value string) error
+	GetKey(key string) (et.KeyValue, error)
+	DeleteKey(key string) error
+	FindKeys(search string, page, rows int) (et.List, error)
 }
 
 /**

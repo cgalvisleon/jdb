@@ -340,3 +340,58 @@ func (s *DB) CurrentSerie(tag string) int64 {
 
 	return s.driver.CurrentSerie(tag)
 }
+
+/**
+* SetKey
+* @param key string
+* @param value string
+* @return error
+**/
+func (s *DB) SetKey(key, value string) error {
+	if s.driver == nil {
+		return mistake.New(MSG_DRIVER_NOT_DEFINED)
+	}
+
+	return s.driver.SetKey(key, value)
+}
+
+/**
+* GetKey
+* @param key string
+* @return et.KeyValue, error
+**/
+func (s *DB) GetKey(key string) (et.KeyValue, error) {
+	if s.driver == nil {
+		return et.KeyValue{}, mistake.New(MSG_DRIVER_NOT_DEFINED)
+	}
+
+	return s.driver.GetKey(key)
+}
+
+/**
+* DeleteKey
+* @param key string
+* @return error
+**/
+func (s *DB) DeleteKey(key string) error {
+	if s.driver == nil {
+		return mistake.New(MSG_DRIVER_NOT_DEFINED)
+	}
+
+	return s.driver.DeleteKey(key)
+}
+
+/**
+* FindKeys
+* @param search string
+* @param page int
+* @param rows int
+* @return et.List, error
+**/
+func (s *DB) FindKeys(search string, page, rows int) (et.List, error) {
+	if s.driver == nil {
+		return et.List{}, mistake.New(MSG_DRIVER_NOT_DEFINED)
+	}
+
+	return s.driver.FindKeys(search, page, rows)
+}

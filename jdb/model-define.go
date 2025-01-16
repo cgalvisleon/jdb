@@ -75,6 +75,105 @@ func (s *Model) DefineAtribute(name string, typeData TypeData) *Column {
 }
 
 /**
+* DefineCreatedAtField
+* @return *Column
+**/
+func (s *Model) DefineCreatedAtField() *Column {
+	result := s.DefineColumn(CreatedAtField.Low(), CreatedAtField.TypeData())
+	s.DefineIndex(true, CreatedAtField.Low())
+
+	return result
+}
+
+/**
+* DefineUpdatedAtField
+* @return *Column
+**/
+func (s *Model) DefineUpdatedAtField() *Column {
+	result := s.DefineColumn(UpdatedAtField.Low(), UpdatedAtField.TypeData())
+	s.DefineIndex(true, UpdatedAtField.Low())
+
+	return result
+}
+
+/**
+* DefineStateField
+* @return *Column
+**/
+func (s *Model) DefineStateField() *Column {
+	result := s.DefineColumn(StateField.Low(), StateField.TypeData())
+	s.DefineIndex(true, StateField.Low())
+
+	return result
+}
+
+/**
+* DefineKeyField
+* @return *Column
+**/
+func (s *Model) DefineKeyField() *Column {
+	result := s.DefineColumn(KeyField.Low(), KeyField.TypeData())
+	s.DefineKey(KeyField.Low())
+
+	return result
+}
+
+/**
+* DefineSystemKeyField
+* @return *Column
+**/
+func (s *Model) DefineSystemKeyField() *Column {
+	result := s.DefineColumn(SystemKeyField.Low(), SystemKeyField.TypeData())
+	s.DefineKey(SystemKeyField.Low())
+
+	return result
+}
+
+/**
+* DefineIndexField
+* @return *Column
+**/
+func (s *Model) DefineIndexField() *Column {
+	result := s.DefineColumn(IndexField.Low(), IndexField.TypeData())
+	s.DefineIndex(true, IndexField.Low())
+
+	return result
+}
+
+/**
+* DefineClassField
+* @return *Column
+**/
+func (s *Model) DefineClassField() *Column {
+	result := s.DefineColumn(ClassField.Low(), ClassField.TypeData())
+	s.DefineIndex(true, ClassField.Low())
+
+	return result
+}
+
+/**
+* DefineProjectField
+* @return *Column
+**/
+func (s *Model) DefineProjectField() *Column {
+	result := s.DefineColumn(ProjectField.Low(), ProjectField.TypeData())
+	s.DefineIndex(true, ProjectField.Low())
+
+	return result
+}
+
+/**
+* DefineSourceField
+* @return *Column
+**/
+func (s *Model) DefineSourceField() *Column {
+	result := s.DefineColumn(SourceField.Low(), SourceField.TypeData())
+	s.DefineIndex(true, SourceField.Low())
+
+	return result
+}
+
+/**
 * DefineGenerate
 * @param name string
 * @param function string
