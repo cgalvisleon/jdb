@@ -33,7 +33,7 @@ const (
 	// Special
 	TypeDataObject
 	TypeDataArray
-	TypeDataFullText
+	TypeDataGeometry
 	TypeDataNone
 )
 
@@ -49,8 +49,6 @@ func (s TypeData) DefaultValue() interface{} {
 		return "-1"
 	case TypeDataState:
 		return utility.ACTIVE
-	case TypeDataMemo:
-		return ""
 	case TypeDataNumber:
 		return 0.0
 	case TypeDataPrecision:
@@ -59,12 +57,10 @@ func (s TypeData) DefaultValue() interface{} {
 		return "{}"
 	case TypeDataSerie:
 		return 0
-	case TypeDataShortText:
-		return ""
-	case TypeDataText:
-		return ""
 	case TypeDataTime:
 		return "NOW()"
+	case TypeDataGeometry:
+		return "{type: 'Point', coordinates: [0, 0]}"
 	}
 
 	return ""
@@ -98,8 +94,8 @@ func (s TypeData) Str() string {
 		return "text"
 	case TypeDataTime:
 		return "time"
-	case TypeDataFullText:
-		return "full_text"
+	case TypeDataGeometry:
+		return "geometry"
 	default:
 		return "text"
 	}
@@ -107,19 +103,32 @@ func (s TypeData) Str() string {
 
 type ColumnField string
 
+const (
+	INDEX      = "index"
+	SOURCE     = "source"
+	PROJECT    = "project"
+	CREATED_AT = "created_at"
+	UPDATED_AT = "update_at"
+	STATUS     = "status"
+	ID         = "id"
+	SYSID      = "jdbid"
+	CLASS      = "_class"
+	CREATED_TO = "created_to"
+	UPDATED_TO = "updated_to"
+)
+
 var (
-	IndexField     ColumnField = "index"
-	SourceField    ColumnField = "_data"
-	ProjectField   ColumnField = "project_id"
-	CreatedAtField ColumnField = "created_at"
-	UpdatedAtField ColumnField = "update_at"
-	StateField     ColumnField = "_state"
-	KeyField       ColumnField = "_id"
-	SystemKeyField ColumnField = "_idt"
-	ClassField     ColumnField = "_class"
-	CreatedToField ColumnField = "created_to"
-	UpdatedToField ColumnField = "updated_to"
-	FullTextField  ColumnField = "_fulltext"
+	IndexField     ColumnField = INDEX
+	SourceField    ColumnField = SOURCE
+	ProjectField   ColumnField = PROJECT
+	CreatedAtField ColumnField = CREATED_AT
+	UpdatedAtField ColumnField = UPDATED_AT
+	StateField     ColumnField = STATUS
+	KeyField       ColumnField = ID
+	SystemKeyField ColumnField = SYSID
+	ClassField     ColumnField = CLASS
+	CreatedToField ColumnField = CREATED_TO
+	UpdatedToField ColumnField = UPDATED_TO
 )
 
 func (s ColumnField) Str() string {
@@ -156,28 +165,27 @@ func (s ColumnField) TypeData() TypeData {
 		return TypeDataTime
 	case UpdatedToField:
 		return TypeDataTime
-	case FullTextField:
-		return TypeDataFullText
 	}
 
 	return TypeDataText
 }
 
 type Column struct {
-	Model       *Model      `json:"-"`
-	Name        string      `json:"name"`
-	Field       string      `json:"field"`
-	Description string      `json:"description"`
-	Table       string      `json:"table"`
-	TypeColumn  TypeColumn  `json:"type_column"`
-	TypeData    TypeData    `json:"type_data"`
-	Default     interface{} `json:"default"`
-	Max         float64     `json:"max"`
-	Min         float64     `json:"min"`
-	Hidden      bool        `json:"hidden"`
-	Columns     []string    `json:"columns"`
-	Definition  interface{} `json:"definition"`
-	Limit       int         `json:"limit"`
+	Model         *Model        `json:"-"`
+	Name          string        `json:"name"`
+	Field         string        `json:"field"`
+	Description   string        `json:"description"`
+	Table         string        `json:"table"`
+	TypeColumn    TypeColumn    `json:"type_column"`
+	TypeData      TypeData      `json:"type_data"`
+	Default       interface{}   `json:"default"`
+	Max           float64       `json:"max"`
+	Min           float64       `json:"min"`
+	Hidden        bool          `json:"hidden"`
+	Columns       []string      `json:"columns"`
+	Detail        *Model        `json:"detail"`
+	FuncGenerated FuncGenerated `json:"-"`
+	Limit         int           `json:"limit"`
 }
 
 func newColumn(model *Model, name string, description string, typeColumn TypeColumn, typeData TypeData, def interface{}) *Column {

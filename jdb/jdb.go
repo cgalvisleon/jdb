@@ -101,8 +101,6 @@ func ConnectTo(params et.Json) (*DB, error) {
 			CreatedToField = value.(ColumnField)
 		case "UpdatedToField":
 			UpdatedToField = value.(ColumnField)
-		case "FullTextField":
-			FullTextField = value.(ColumnField)
 		}
 	}
 

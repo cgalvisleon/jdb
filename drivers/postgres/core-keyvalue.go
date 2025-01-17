@@ -4,6 +4,7 @@ import (
 	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/strs"
+	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
 /**
@@ -20,17 +21,18 @@ func (s *Postgres) defineKeyValue() error {
 		return nil
 	}
 
-	sql := `
+	sql := strs.Change(`
   CREATE TABLE IF NOT EXISTS core.KEYVALUES(
 		_ID VARCHAR(80) DEFAULT '',
 		VALUE TEXT,
-		_IDT VARCHAR(80) DEFAULT '-1',
+		_IDT VARCHAR(80) DEFAULT '-1' INVISIBLE,
 		INDEX BIGINT DEFAULT 0,
 		PRIMARY KEY(_ID)
 	);
 	CREATE INDEX IF NOT EXISTS KEYVALUES__IDT_IDX ON core.KEYVALUES(_IDT);
-	CREATE INDEX IF NOT EXISTS KEYVALUES_INDEX_IDX ON core.KEYVALUES(INDEX);
-	`
+	CREATE INDEX IF NOT EXISTS KEYVALUES_INDEX_IDX ON core.KEYVALUES(INDEX);`,
+		[]string{"date_create", "date_update", "_id", "_idt", "_data"},
+		[]string{jdb.CreatedAtField.Str(), jdb.UpdatedAtField.Str(), jdb.KeyField.Str(), jdb.SystemKeyField.Str(), jdb.SourceField.Str()})
 	sql = strs.Append(sql, defineRecordTrigger("core.KEYVALUES"), "\n")
 	sql = strs.Append(sql, defineSeriesTrigger("core.KEYVALUES"), "\n")
 

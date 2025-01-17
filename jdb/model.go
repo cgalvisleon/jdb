@@ -28,20 +28,22 @@ type Model struct {
 	Uniques        map[string]*Index      `json:"uniques"`
 	Keys           map[string]*Column     `json:"keys"`
 	References     []*Reference           `json:"references"`
-	Dictionaries   map[string]*Dictionary `json:"dictionaries"`
+	Dictionaries   map[string]*Dictionary `json:"-"`
 	ColRequired    map[string]bool        `json:"col_required"`
+	KeyField       *Column                `json:"key_field"`
 	SourceField    *Column                `json:"source_field"`
 	SystemKeyField *Column                `json:"system_key_field"`
 	StateField     *Column                `json:"state_field"`
 	IndexField     *Column                `json:"index_field"`
 	ClassField     *Column                `json:"class_field"`
-	FullTextField  *Column                `json:"full_text"`
+	FullText       []string               `json:"full_text"`
 	BeforeInsert   []string               `json:"-"`
 	AfterInsert    []string               `json:"-"`
 	BeforeUpdate   []string               `json:"-"`
 	AfterUpdate    []string               `json:"-"`
 	BeforeDelete   []string               `json:"-"`
 	AfterDelete    []string               `json:"-"`
+	Details        map[string]*Model      `json:"-"`
 	Functions      map[string]*Function   `json:"-"`
 	Integrity      bool                   `json:"integrity"`
 	Version        int                    `json:"version"`
@@ -59,14 +61,20 @@ func NewModel(schema *Schema, name string, version int) *Model {
 	}
 	now := time.Now()
 	name = Name(name)
-	result := &Model{
+	table := TableName(schema.Name, name)
+	result := models[table]
+	if result != nil {
+		return result
+	}
+
+	result = &Model{
 		Db:           schema.Db,
 		Schema:       schema,
 		CreatedAt:    now,
 		UpdateAt:     now,
 		Name:         name,
 		Description:  "",
-		Table:        TableName(schema.Name, name),
+		Table:        table,
 		Columns:      make([]*Column, 0),
 		Indices:      make(map[string]*Index),
 		Uniques:      make(map[string]*Index),
@@ -74,19 +82,21 @@ func NewModel(schema *Schema, name string, version int) *Model {
 		References:   make([]*Reference, 0),
 		Dictionaries: make(map[string]*Dictionary),
 		ColRequired:  make(map[string]bool),
+		FullText:     []string{},
 		BeforeInsert: []string{},
 		AfterInsert:  []string{},
 		BeforeUpdate: []string{},
 		AfterUpdate:  []string{},
 		BeforeDelete: []string{},
 		AfterDelete:  []string{},
+		Details:      make(map[string]*Model),
 		Functions:    make(map[string]*Function),
 		Integrity:    false,
 		Version:      version,
 	}
 
 	schema.Models[result.Name] = result
-	models[result.Table] = result
+	models[table] = result
 
 	return result
 }
@@ -142,6 +152,12 @@ func (s *Model) Describe() et.Json {
 	if err != nil {
 		return et.Json{}
 	}
+
+	dictionaries := map[string]et.Json{}
+	for key, value := range s.Dictionaries {
+		dictionaries[key] = value.Describe()
+	}
+	result["dictionaries"] = dictionaries
 
 	return result
 }
@@ -217,18 +233,21 @@ func (s *Model) GetField(name string, isCreated bool) *Field {
 	list := strs.Split(name, ".")
 	switch len(list) {
 	case 1:
+		isCreated = isCreated && s.SourceField != nil
 		return s.SetField(list[0], isCreated)
 	case 2:
 		if s.Name != strs.Lowcase(list[0]) {
 			return nil
 		}
-		return s.SetField(list[1], !s.Integrity)
+		isCreated = s.SourceField != nil && !s.Integrity
+		return s.SetField(list[1], isCreated)
 	case 3:
 		table := strs.Format(`%s.%s`, list[0], list[1])
 		if s.Table != strs.Lowcase(table) {
 			return nil
 		}
-		return s.SetField(list[2], !s.Integrity)
+		isCreated = s.SourceField != nil && !s.Integrity
+		return s.SetField(list[2], isCreated)
 	default:
 		return nil
 	}
@@ -261,9 +280,14 @@ func (s *Model) GetDetails(data *et.Json) *et.Json {
 	for _, col := range s.Columns {
 		switch col.TypeColumn {
 		case TpGenerate:
-			col.Definition.(FuncGenerated)(col, data)
+			if col.FuncGenerated != nil {
+				col.FuncGenerated(col, data)
+			}
 		case TpDetail:
-			model := col.Definition.(*Model)
+			model := col.Detail
+			if model == nil {
+				continue
+			}
 			var filter FilterTo
 			linq := From(model)
 			for _, key := range col.Model.Keys {
@@ -298,16 +322,15 @@ func (s *Model) GetDetails(data *et.Json) *et.Json {
 **/
 func (s *Model) New() et.Json {
 	var result = &et.Json{}
-	var details = []*Column{}
 	for _, col := range s.Columns {
 		if slices.Contains([]*Column{s.SystemKeyField, s.IndexField}, col) {
 			continue
 		}
 		switch col.TypeColumn {
 		case TpGenerate:
-			col.Definition.(FuncGenerated)(col, result)
-		case TpDetail:
-			details = append(details, col)
+			if col.FuncGenerated != nil {
+				col.FuncGenerated(col, result)
+			}
 		case TpColumn:
 			if col != s.SourceField {
 				result.Set(col.Name, col.DefaultValue())
@@ -317,25 +340,16 @@ func (s *Model) New() et.Json {
 		}
 	}
 
-	for _, col := range details {
-		dtl := col.Definition.(*Model).New()
-		for _, key := range col.Model.Keys {
+	for _, detail := range s.Details {
+		dtl := detail.New()
+		for _, key := range detail.Keys {
 			val := (*result)[key.Field]
 			dtl.Set(key.Fk(), val)
 		}
-		result.Set(col.Name, dtl)
+		result.Set(detail.Name, dtl)
 	}
 
 	return *result
-}
-
-/**
-* Col
-* @param name string
-* @return *Column
-**/
-func (s *Model) FullText() *Column {
-	return s.FullTextField
 }
 
 /**
@@ -343,43 +357,34 @@ func (s *Model) FullText() *Column {
 * @return *Model
 **/
 func (s *Model) MakeCollection() *Model {
-	s.DefineColumn(CreatedAtField.Str(), CreatedAtField.TypeData())
-	s.DefineColumn(UpdatedAtField.Str(), UpdatedAtField.TypeData())
-	s.DefineColumn(ProjectField.Str(), ProjectField.TypeData())
-	s.DefineColumn(StateField.Str(), StateField.TypeData())
-	s.DefineColumn(KeyField.Str(), KeyField.TypeData())
-	class := s.DefineColumn(ClassField.Str(), ClassField.TypeData())
-	class.Default = s.Low()
-	s.DefineColumn(SourceField.Str(), SourceField.TypeData())
-	s.DefineColumn(SystemKeyField.Str(), SystemKeyField.TypeData())
-	s.DefineColumn(IndexField.Str(), IndexField.TypeData())
-	s.DefineKey(KeyField.Str())
+	s.DefineCreatedAtField()
+	s.DefineUpdatedAtField()
+	s.DefineStateField()
+	s.DefineKeyField()
+	s.DefineClassField()
+	s.DefineSourceField()
+	s.DefineSystemKeyField()
+	s.DefineIndexField()
 
 	return s
 }
 
 /**
-* MakeDetail
+* MakeDetailRelation
 * @param fkeys []*Column
 * @return *Model
 **/
-func (s *Model) MakeDetail(fkeys []*Column) *Model {
-	s.DefineColumn(CreatedAtField.Str(), CreatedAtField.TypeData())
-	s.DefineColumn(UpdatedAtField.Str(), UpdatedAtField.TypeData())
-	s.DefineColumn(KeyField.Str(), KeyField.TypeData())
-	s.DefineColumn(SourceField.Str(), SourceField.TypeData())
-	s.DefineColumn(SystemKeyField.Str(), SystemKeyField.TypeData())
-	s.DefineColumn(IndexField.Str(), IndexField.TypeData())
-	s.DefineKey(KeyField.Str())
-	for _, key := range fkeys {
-		fkn := key.Fk()
-		fk := s.DefineColumn(fkn, key.TypeData)
-		NewReference(fk, RelationManyToOne, key)
-		ref := NewReference(key, RelationOneToMany, fk)
-		ref.OnDeleteCascade = true
-		ref.OnUpdateCascade = true
-		s.DefineRequired(fkn)
-	}
+func (s *Model) MakeDetailRelation(owner *Model) *Model {
+	key := owner.KeyField
+	fkn := owner.Name
+	fk := s.DefineColumn(fkn, key.TypeData)
+	NewReference(fk, RelationManyToOne, key)
+	ref := NewReference(key, RelationOneToMany, fk)
+	ref.OnDeleteCascade = true
+	ref.OnUpdateCascade = true
+	s.DefineRequired(fkn)
+	s.DefineSystemKeyField()
+	s.DefineIndexField()
 
 	return s
 }

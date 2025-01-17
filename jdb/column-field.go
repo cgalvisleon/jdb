@@ -41,7 +41,7 @@ func (s *Field) TableName() string {
 }
 
 /**
-* Tag
+* TableField
 * @return string
 **/
 func (s *Field) TableField() string {

@@ -34,6 +34,8 @@ func (s *Postgres) typeColumn(tp jdb.TypeData) interface{} {
 		return "VARCHAR(250)"
 	case jdb.TypeDataTime:
 		return "TIMESTAMP"
+	case jdb.TypeDataGeometry:
+		return "JSONB"
 	default:
 		return "VARCHAR(250)"
 	}
@@ -65,6 +67,8 @@ func (s *Postgres) defaultValue(tp jdb.TypeData) interface{} {
 		return utility.Quote("")
 	case jdb.TypeDataTime:
 		return utility.Quote("NOW()")
+	case jdb.TypeDataGeometry:
+		return utility.Quote("{type: 'Point', coordinates: [0, 0]}")
 	default:
 		return utility.Quote("")
 	}
@@ -73,7 +77,9 @@ func (s *Postgres) defaultValue(tp jdb.TypeData) interface{} {
 func (s *Postgres) ddlTable(model *jdb.Model) string {
 	var columnsDef string
 	for _, column := range model.Columns {
-		if column.TypeColumn == jdb.TpColumn {
+		if column == model.SystemKeyField {
+			columnsDef += strs.Format("\n\t%s %s INVISIBLE DEFAULT %v,", column.Name, s.typeColumn(column.TypeData), s.defaultValue(column.TypeData))
+		} else if column.TypeColumn == jdb.TpColumn {
 			columnsDef += strs.Format("\n\t%s %s DEFAULT %v,", column.Name, s.typeColumn(column.TypeData), s.defaultValue(column.TypeData))
 		}
 	}

@@ -1,6 +1,8 @@
 package jdb
 
-import "github.com/cgalvisleon/et/et"
+import (
+	"github.com/cgalvisleon/et/et"
+)
 
 type TypeTrigger int
 

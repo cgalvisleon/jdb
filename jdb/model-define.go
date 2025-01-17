@@ -19,6 +19,7 @@ func (s *Model) DefineColumn(name string, typeData TypeData) *Column {
 		return col
 	}
 
+	idx := -1
 	def := typeData.DefaultValue()
 	col = newColumn(s, name, "", TpColumn, typeData, def)
 	if col.Up() == SourceField.Up() {
@@ -36,16 +37,26 @@ func (s *Model) DefineColumn(name string, typeData TypeData) *Column {
 	if col.Up() == ClassField.Up() {
 		s.ClassField = col
 	}
-	if col.Up() == IndexField.Up() {
-		s.IndexField = col
+	if col.Up() == KeyField.Up() {
+		s.KeyField = col
 	}
-	idx := slices.IndexFunc(s.Columns, func(e *Column) bool { return e == s.IndexField })
+	if col.Up() == ProjectField.Up() {
+		idx = slices.IndexFunc(s.Columns, func(e *Column) bool { return e == s.SourceField })
+	}
+	if idx == -1 {
+		idx = slices.IndexFunc(s.Columns, func(e *Column) bool { return e == s.SystemKeyField })
+	}
+	if idx == -1 {
+		idx = slices.IndexFunc(s.Columns, func(e *Column) bool { return e == s.IndexField })
+	}
 	if idx == -1 {
 		s.Columns = append(s.Columns, col)
 	} else {
 		s.Columns = append(s.Columns[:idx], append([]*Column{col}, s.Columns[idx:]...)...)
 	}
-	if slices.Contains([]string{IndexField.Str(), ProjectField.Str(), CreatedAtField.Str(), UpdatedAtField.Str(), StateField.Str(), KeyField.Str(), SystemKeyField.Str(), SourceField.Str(), FullTextField.Str()}, name) {
+	if slices.Contains([]string{IndexField.Str(), ProjectField.Str(), CreatedAtField.Str(), UpdatedAtField.Str(), StateField.Str(), KeyField.Str(), SystemKeyField.Str(), SourceField.Str()}, name) {
+		s.DefineIndex(true, name)
+	} else if slices.Contains([]TypeData{TypeDataObject, TypeDataArray, TypeDataKey, TypeDataGeometry}, typeData) {
 		s.DefineIndex(true, name)
 	}
 
@@ -146,6 +157,7 @@ func (s *Model) DefineIndexField() *Column {
 **/
 func (s *Model) DefineClassField() *Column {
 	result := s.DefineColumn(ClassField.Low(), ClassField.TypeData())
+	result.Default = s.Low()
 	s.DefineIndex(true, ClassField.Low())
 
 	return result
@@ -181,7 +193,7 @@ func (s *Model) DefineSourceField() *Column {
 **/
 func (s *Model) DefineGenerated(name string, f FuncGenerated) {
 	col := newColumn(s, name, "", TpGenerate, TypeDataNone, TypeDataNone.DefaultValue())
-	col.Definition = f
+	col.FuncGenerated = f
 	s.Columns = append(s.Columns, col)
 }
 
@@ -191,13 +203,13 @@ func (s *Model) DefineGenerated(name string, f FuncGenerated) {
 * @param detail Detail
 * @return *Model
 **/
-func (s *Model) DefineDetail(name, table string, version int) *Model {
-	detail := NewModel(s.Schema, table, version)
+func (s *Model) DefineDetail(name string) *Model {
+	detail := NewModel(s.Schema, name, 1)
 	col := newColumn(s, name, "", TpDetail, TypeDataNone, TypeDataNone.DefaultValue())
-	col.Definition = detail
+	col.Detail = detail
 	s.Columns = append(s.Columns, col)
-	keys := s.GetKeys()
-	detail.MakeDetail(keys)
+	s.Details[name] = detail
+	detail.MakeDetailRelation(s)
 
 	return detail
 }
@@ -339,9 +351,14 @@ func (s *Model) DefineFunction(name string, tp TypeFunction, definition string) 
 * @param value interface{}
 * @return *Dictionary
 **/
-func (s *Model) DefineDictionary(name, key string, value interface{}) *Dictionary {
-	result := NewDictionary(s, key, value)
-	s.Dictionaries[name] = result
+func (s *Model) DefineDictionary(name, key, value string) *Dictionary {
+	result := s.Dictionaries[value]
+	if result != nil {
+		return result
+	}
+
+	result = NewDictionary(s, name, key, value)
+	s.Dictionaries[value] = result
 
 	return result
 }

@@ -1,7 +1,7 @@
 package postgres
 
 /**
-* defineAddConstraintIfNotExists
+* defineFuntion: Define functions if not exists
 * @return error
 **/
 func (s *Postgres) defineFunctions() error {

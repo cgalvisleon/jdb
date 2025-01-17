@@ -16,7 +16,7 @@ func (s *Postgres) defineRecycling() error {
 		return s.defineRecyclingFunction()
 	}
 
-	sql := `
+	sql := strs.Change(`
   CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 	CREATE EXTENSION IF NOT EXISTS pgcrypto;
 	CREATE SCHEMA IF NOT EXISTS core;
@@ -32,7 +32,9 @@ func (s *Postgres) defineRecycling() error {
   CREATE INDEX IF NOT EXISTS RECYCLING_TABLE_SCHEMA_IDX ON core.RECYCLING(TABLE_SCHEMA);
   CREATE INDEX IF NOT EXISTS RECYCLING_TABLE_NAME_IDX ON core.RECYCLING(TABLE_NAME);
   CREATE INDEX IF NOT EXISTS RECYCLING__IDT_IDX ON core.RECYCLING(_IDT);
-	CREATE INDEX IF NOT EXISTS RECYCLING_INDEX_IDX ON core.RECYCLING(INDEX);`
+	CREATE INDEX IF NOT EXISTS RECYCLING_INDEX_IDX ON core.RECYCLING(INDEX);`,
+		[]string{"date_create", "date_update", "_id", "_idt", "_data"},
+		[]string{jdb.CreatedAtField.Str(), jdb.UpdatedAtField.Str(), jdb.KeyField.Str(), jdb.SystemKeyField.Str(), jdb.SourceField.Str()})
 
 	err = s.Exec(sql)
 	if err != nil {
@@ -43,7 +45,7 @@ func (s *Postgres) defineRecycling() error {
 }
 
 func (s *Postgres) defineRecyclingFunction() error {
-	sql := `  
+	sql := strs.Change(`  
   CREATE OR REPLACE FUNCTION core.RECYCLING_UPDATE()
   RETURNS
     TRIGGER AS $$
@@ -84,8 +86,9 @@ func (s *Postgres) defineRecyclingFunction() error {
 
   RETURN NEW;
   END;
-  $$ LANGUAGE plpgsql;
-  `
+  $$ LANGUAGE plpgsql;`,
+		[]string{"date_create", "date_update", "_id", "_idt", "_data"},
+		[]string{jdb.CreatedAtField.Str(), jdb.UpdatedAtField.Str(), jdb.KeyField.Str(), jdb.SystemKeyField.Str(), jdb.SourceField.Str()})
 
 	err := s.Exec(sql)
 	if err != nil {
@@ -96,7 +99,7 @@ func (s *Postgres) defineRecyclingFunction() error {
 }
 
 func defineRecyclingTrigger(table string) string {
-	result := jdb.SQLDDL(`
+	result := strs.Change(`
   DROP TRIGGER IF EXISTS RECYCLING ON $1 CASCADE;
 	CREATE TRIGGER RECYCLING
 	AFTER UPDATE ON $1
@@ -107,7 +110,9 @@ func defineRecyclingTrigger(table string) string {
 	CREATE TRIGGER RECYCLING_DELETE
 	AFTER DELETE ON $1
 	FOR EACH ROW
-	EXECUTE PROCEDURE core.RECYCLING_DELETE();`, table)
+	EXECUTE PROCEDURE core.RECYCLING_DELETE();`,
+		[]string{"_STATE", "$1"},
+		[]string{jdb.StateField.Str(), table})
 
 	result = strs.Replace(result, "\t", "")
 

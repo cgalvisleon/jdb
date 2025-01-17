@@ -16,7 +16,7 @@ func (s *Postgres) defineRecords() error {
 		return s.defineRecordsFunction()
 	}
 
-	sql := `
+	sql := strs.Change(`
 	CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 	CREATE EXTENSION IF NOT EXISTS pgcrypto;
 	CREATE SCHEMA IF NOT EXISTS core;
@@ -31,13 +31,17 @@ func (s *Postgres) defineRecords() error {
     _IDT VARCHAR(80) DEFAULT '-1',
     INDEX SERIAL,
     PRIMARY KEY (TABLE_SCHEMA, TABLE_NAME, _IDT)
-  );    
+  );
+	CREATE INDEX IF NOT EXISTS RECORDS_DATE_MAKE_IDX ON core.RECORDS(DATE_MAKE);
+	CREATE INDEX IF NOT EXISTS RECORDS_DATE_UPDATE_IDX ON core.RECORDS(DATE_UPDATE);
   CREATE INDEX IF NOT EXISTS RECORDS_TABLE_SCHEMA_IDX ON core.RECORDS(TABLE_SCHEMA);
   CREATE INDEX IF NOT EXISTS RECORDS_TABLE_NAME_IDX ON core.RECORDS(TABLE_NAME);
 	CREATE INDEX IF NOT EXISTS RECORDS_OPTION_IDX ON core.RECORDS(OPTION);
 	CREATE INDEX IF NOT EXISTS RECORDS_SYNC_IDX ON core.RECORDS(SYNC);
   CREATE INDEX IF NOT EXISTS RECORDS__IDT_IDX ON core.RECORDS(_IDT);  
-	CREATE INDEX IF NOT EXISTS RECORDS_INDEX_IDX ON core.RECORDS(INDEX);`
+	CREATE INDEX IF NOT EXISTS RECORDS_INDEX_IDX ON core.RECORDS(INDEX);`,
+		[]string{"date_create", "date_update", "_id", "_idt", "_data"},
+		[]string{jdb.CreatedAtField.Str(), jdb.UpdatedAtField.Str(), jdb.KeyField.Str(), jdb.SystemKeyField.Str(), jdb.SourceField.Str()})
 
 	err = s.Exec(sql)
 	if err != nil {
@@ -48,7 +52,7 @@ func (s *Postgres) defineRecords() error {
 }
 
 func (s *Postgres) defineRecordsFunction() error {
-	sql := `
+	sql := strs.Change(`
 	CREATE OR REPLACE FUNCTION core.SYNC_NOTIFY()
   RETURNS
     TRIGGER AS $$  
@@ -87,7 +91,7 @@ func (s *Postgres) defineRecordsFunction() error {
 		VSYNC BOOLEAN;
   BEGIN
     IF NEW._IDT = '-1' THEN
-      NEW._IDT = uuid_generate_v4();
+      NEW._IDT = CONCAT(TABLE_SCHEMA, ".", TG_TABLE_NAME, ":", uuid_generate_v4());
 			VSYNC = FALSE;
 		ELSE
 			VSYNC = TRUE;
@@ -225,8 +229,9 @@ func (s *Postgres) defineRecordsFunction() error {
 
 	RETURN OLD;
 	END;
-	$$ LANGUAGE plpgsql;
-	`
+	$$ LANGUAGE plpgsql;`,
+		[]string{"date_create", "date_update", "_id", "_idt", "_data"},
+		[]string{jdb.CreatedAtField.Str(), jdb.UpdatedAtField.Str(), jdb.KeyField.Str(), jdb.SystemKeyField.Str(), jdb.SourceField.Str()})
 	err := s.Exec(sql)
 	if err != nil {
 		return console.Panic(err)

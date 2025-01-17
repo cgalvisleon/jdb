@@ -3,7 +3,9 @@ package postgres
 import (
 	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
+	"github.com/cgalvisleon/et/strs"
 	"github.com/cgalvisleon/et/utility"
+	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
 /**
@@ -20,11 +22,11 @@ func (s *Postgres) defineDDL() error {
 		return nil
 	}
 
-	sql := `
+	sql := strs.Change(`
   CREATE TABLE IF NOT EXISTS core.DDL(
 		_ID VARCHAR(80) DEFAULT '-1',
 		SQL BYTEA,
-		_IDT VARCHAR(80) DEFAULT '-1',
+		_IDT VARCHAR(80) DEFAULT '-1' INVISIBLE,
 		INDEX BIGINT DEFAULT 0,
 		PRIMARY KEY(_ID)
 	);
@@ -47,7 +49,9 @@ func (s *Postgres) defineDDL() error {
 	CREATE TRIGGER RECORDS_BEFORE_DELETE
 	BEFORE DELETE ON core.DDL
 	FOR EACH ROW
-	EXECUTE PROCEDURE core.RECORDS_BEFORE_DELETE();`
+	EXECUTE PROCEDURE core.RECORDS_BEFORE_DELETE();`,
+		[]string{"date_create", "date_update", "_id", "_idt", "_data"},
+		[]string{jdb.CreatedAtField.Str(), jdb.UpdatedAtField.Str(), jdb.KeyField.Str(), jdb.SystemKeyField.Str(), jdb.SourceField.Str()})
 
 	err = s.Exec(sql)
 	if err != nil {

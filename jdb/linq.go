@@ -147,11 +147,20 @@ func (s *Linq) GetSelect(name string) *LinqSelect {
 	}
 
 	field = s.GetField(name, true)
-	if field != nil {
-		return NewLinqSelect(field.Owner.(*LinqFrom), field)
+	if field == nil {
+		return nil
 	}
 
-	return nil
+	if field.Column.TypeColumn == TpDetail {
+		col := field.Column
+		model := col.Model
+		detail := col.Detail
+		fk := strs.Format(`%s.%s`, model.Name, col.Model.KeyField.Name)
+		s.Join(detail).
+			On(model.Name).Eq(fk)
+	}
+
+	return NewLinqSelect(field.Owner.(*LinqFrom), field)
 }
 
 /**
