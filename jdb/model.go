@@ -16,37 +16,36 @@ func TableName(schema, name string) string {
 }
 
 type Model struct {
-	Db             *DB                    `json:"-"`
-	Schema         *Schema                `json:"-"`
-	CreatedAt      time.Time              `json:"created_date"`
-	UpdateAt       time.Time              `json:"update_date"`
-	Name           string                 `json:"name"`
-	Table          string                 `json:"table"`
-	Description    string                 `json:"description"`
-	Columns        []*Column              `json:"columns"`
-	Indices        map[string]*Index      `json:"indices"`
-	Uniques        map[string]*Index      `json:"uniques"`
-	Keys           map[string]*Column     `json:"keys"`
-	References     []*Reference           `json:"references"`
-	Dictionaries   map[string]*Dictionary `json:"-"`
-	ColRequired    map[string]bool        `json:"col_required"`
-	KeyField       *Column                `json:"key_field"`
-	SourceField    *Column                `json:"source_field"`
-	SystemKeyField *Column                `json:"system_key_field"`
-	StateField     *Column                `json:"state_field"`
-	IndexField     *Column                `json:"index_field"`
-	ClassField     *Column                `json:"class_field"`
-	FullText       []string               `json:"full_text"`
-	BeforeInsert   []string               `json:"-"`
-	AfterInsert    []string               `json:"-"`
-	BeforeUpdate   []string               `json:"-"`
-	AfterUpdate    []string               `json:"-"`
-	BeforeDelete   []string               `json:"-"`
-	AfterDelete    []string               `json:"-"`
-	Details        map[string]*Model      `json:"-"`
-	Functions      map[string]*Function   `json:"-"`
-	Integrity      bool                   `json:"integrity"`
-	Version        int                    `json:"version"`
+	Db             *DB                         `json:"-"`
+	Schema         *Schema                     `json:"-"`
+	CreatedAt      time.Time                   `json:"created_date"`
+	UpdateAt       time.Time                   `json:"update_date"`
+	Name           string                      `json:"name"`
+	Table          string                      `json:"table"`
+	Description    string                      `json:"description"`
+	Columns        []*Column                   `json:"columns"`
+	Indices        map[string]*Index           `json:"indices"`
+	Uniques        map[string]*Index           `json:"uniques"`
+	Keys           map[string]*Column          `json:"keys"`
+	References     []*Reference                `json:"references"`
+	Dictionaries   map[interface{}]*Dictionary `json:"-"`
+	ColRequired    map[string]bool             `json:"col_required"`
+	KeyField       *Column                     `json:"key_field"`
+	SourceField    *Column                     `json:"source_field"`
+	SystemKeyField *Column                     `json:"system_key_field"`
+	StateField     *Column                     `json:"state_field"`
+	IndexField     *Column                     `json:"index_field"`
+	ClassField     *Column                     `json:"class_field"`
+	BeforeInsert   []string                    `json:"-"`
+	AfterInsert    []string                    `json:"-"`
+	BeforeUpdate   []string                    `json:"-"`
+	AfterUpdate    []string                    `json:"-"`
+	BeforeDelete   []string                    `json:"-"`
+	AfterDelete    []string                    `json:"-"`
+	Details        map[string]*Model           `json:"-"`
+	Functions      map[string]*Function        `json:"-"`
+	Integrity      bool                        `json:"integrity"`
+	Version        int                         `json:"version"`
 }
 
 /**
@@ -80,9 +79,8 @@ func NewModel(schema *Schema, name string, version int) *Model {
 		Uniques:      make(map[string]*Index),
 		Keys:         make(map[string]*Column),
 		References:   make([]*Reference, 0),
-		Dictionaries: make(map[string]*Dictionary),
+		Dictionaries: make(map[interface{}]*Dictionary),
 		ColRequired:  make(map[string]bool),
-		FullText:     []string{},
 		BeforeInsert: []string{},
 		AfterInsert:  []string{},
 		BeforeUpdate: []string{},
@@ -153,7 +151,7 @@ func (s *Model) Describe() et.Json {
 		return et.Json{}
 	}
 
-	dictionaries := map[string]et.Json{}
+	dictionaries := map[interface{}]et.Json{}
 	for key, value := range s.Dictionaries {
 		dictionaries[key] = value.Describe()
 	}
@@ -320,28 +318,39 @@ func (s *Model) GetDetails(data *et.Json) *et.Json {
 * @param data et.Json
 * @return et.Json
 **/
-func (s *Model) New() et.Json {
+func (s *Model) New(data et.Json) et.Json {
 	var result = &et.Json{}
-	for _, col := range s.Columns {
-		if slices.Contains([]*Column{s.SystemKeyField, s.IndexField}, col) {
-			continue
-		}
-		switch col.TypeColumn {
-		case TpGenerate:
-			if col.FuncGenerated != nil {
-				col.FuncGenerated(col, result)
+	defaultColValue := func(cols []*Column) {
+		for _, col := range cols {
+			if slices.Contains([]*Column{s.SystemKeyField, s.IndexField}, col) {
+				continue
 			}
-		case TpColumn:
-			if col != s.SourceField {
+			switch col.TypeColumn {
+			case TpColumn:
+				if col != s.SourceField {
+					result.Set(col.Name, col.DefaultValue())
+				}
+			case TpAtribute:
 				result.Set(col.Name, col.DefaultValue())
+			case TpGenerate:
+				if col.FuncGenerated != nil {
+					col.FuncGenerated(col, result)
+				}
 			}
-		default:
-			result.Set(col.Name, col.DefaultValue())
+		}
+	}
+
+	defaultColValue(s.Columns)
+
+	for _, value := range data {
+		dictionary := s.Dictionaries[value]
+		if dictionary != nil {
+			defaultColValue(dictionary.Columns)
 		}
 	}
 
 	for _, detail := range s.Details {
-		dtl := detail.New()
+		dtl := detail.New(et.Json{})
 		for _, key := range detail.Keys {
 			val := (*result)[key.Field]
 			dtl.Set(key.Fk(), val)

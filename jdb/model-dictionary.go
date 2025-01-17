@@ -6,7 +6,7 @@ type Dictionary struct {
 	Column  *Column
 	Name    string
 	Key     string
-	Value   string
+	Value   interface{}
 	Columns []*Column
 }
 
@@ -16,7 +16,7 @@ type Dictionary struct {
 * @param value interface{}
 * @return *Dictionary
 **/
-func NewDictionary(model *Model, name, key, value string) *Dictionary {
+func NewDictionary(model *Model, name, key string, value interface{}) *Dictionary {
 	col := model.GetColumn(key)
 	return &Dictionary{
 		Column:  col,
