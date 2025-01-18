@@ -15,15 +15,15 @@ const (
 )
 
 type Command struct {
-	*LinqFilter
+	*QlFilter
 	Db         *DB
 	TypeSelect TypeSelect `json:"type_select"`
-	From       *LinqFrom
+	From       *QlFrom
 	Command    TypeCommand
 	Origin     []et.Json
 	Atribs     et.Json
 	Fields     et.Json
-	New        *et.Json
+	New        et.Json
 	Sql        string
 	Result     et.Items
 	Show       bool
@@ -47,14 +47,14 @@ func NewCommand(model *Model, data []et.Json, command TypeCommand) *Command {
 		Atribs:     et.Json{},
 		Fields:     et.Json{},
 		Origin:     data,
-		New:        &et.Json{},
+		New:        et.Json{},
 		Show:       false,
 		Sql:        "",
 		Result:     et.Items{},
 	}
-	result.LinqFilter = &LinqFilter{
+	result.QlFilter = &QlFilter{
 		main:   result,
-		Wheres: make([]*LinqWhere, 0),
+		Wheres: make([]*QlWhere, 0),
 	}
 	result.addFrom(model)
 
@@ -64,14 +64,14 @@ func NewCommand(model *Model, data []et.Json, command TypeCommand) *Command {
 /**
 * addFrom
 * @param m *Model
-* @return *LinqFrom
+* @return *QlFrom
 **/
-func (s *Command) addFrom(m *Model) *LinqFrom {
+func (s *Command) addFrom(m *Model) *QlFrom {
 	s.Db = m.Db
-	s.From = &LinqFrom{
+	s.From = &QlFrom{
 		Model:   m,
 		As:      "",
-		Selects: make([]*LinqSelect, 0),
+		Selects: make([]*QlSelect, 0),
 	}
 
 	return s.From
@@ -94,7 +94,7 @@ func (s *Command) consolidate(data et.Json) et.Json {
 	for k, v := range data {
 		field := s.From.GetField(k, true)
 		if field != nil {
-			(*s.New)[k] = v
+			s.New[k] = v
 			switch field.Column.TypeColumn {
 			case TpAtribute:
 				s.Atribs[k] = v
@@ -102,12 +102,12 @@ func (s *Command) consolidate(data et.Json) et.Json {
 				s.Fields[k] = v
 			}
 		} else if !s.From.Integrity {
-			(*s.New)[k] = v
+			s.New[k] = v
 			s.Atribs[k] = v
 		}
 	}
 
-	return (*s.New)
+	return s.New
 }
 
 /**
@@ -131,7 +131,8 @@ func (s *Command) Exec() (et.Items, error) {
 			return et.Items{}, mistake.New(MSG_NOT_DATA)
 		}
 
-		result, err := s.inserted()
+		data := s.Origin[0]
+		result, err := s.inserted(data)
 		if err != nil {
 			return et.Items{}, err
 		}
@@ -141,7 +142,8 @@ func (s *Command) Exec() (et.Items, error) {
 			return et.Items{}, mistake.New(MSG_NOT_DATA)
 		}
 
-		result, err := s.updated()
+		data := s.Origin[0]
+		result, err := s.updated(data)
 		if err != nil {
 			return et.Items{}, err
 		}
@@ -190,13 +192,13 @@ func (s *Command) One() (et.Item, error) {
 /**
 * GetReturn
 * @param name string
-* @return *LinqSelect
+* @return *QlSelect
 **/
-func (s *Command) GetReturn(name string) *LinqSelect {
+func (s *Command) GetReturn(name string) *QlSelect {
 	field := s.From.GetField(name, true)
 	if field == nil {
 		return nil
 	}
 
-	return NewLinqSelect(s.From, field)
+	return NewQlSelect(s.From, field)
 }

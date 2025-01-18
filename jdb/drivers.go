@@ -31,12 +31,11 @@ type Driver interface {
 	Exec(sql string, params ...any) error
 	SQL(sql string, params ...any) (et.Items, error)
 	One(sql string, params ...any) (et.Item, error)
-	Query(linq *Linq) (et.Items, error)
-	Count(linq *Linq) (int, error)
-	Last(linq *Linq) (et.Items, error)
+	Query(linq *Ql) (et.Items, error)
+	Count(linq *Ql) (int, error)
+	Last(linq *Ql) (et.Items, error)
 	// Command
-	Current(command *Command) (et.Items, error)
-	Command(command *Command) (et.Item, error)
+	Command(command *Command) (et.Items, error)
 	// Series
 	GetSerie(tag string) int64
 	NextCode(tag, prefix string) string

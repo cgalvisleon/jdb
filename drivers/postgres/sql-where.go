@@ -5,8 +5,8 @@ import (
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
-func whereOperator(op jdb.Operator, val interface{}) string {
-	switch op {
+func whereOperator(where *jdb.QlWhere, val interface{}) string {
+	switch where.Operator {
 	case jdb.Equal:
 		return strs.Format("=%v", val)
 	case jdb.Neg:
@@ -30,10 +30,7 @@ func whereOperator(op jdb.Operator, val interface{}) string {
 	case jdb.NotNull:
 		return " IS NOT NULL"
 	case jdb.Search:
-		if val == "%"+"%" {
-			val = "%"
-		}
-		return strs.Format(" ILIKE %v", val)
+		return strs.Format(" @@ to_tsquery('%s', %v)", where.Language, val)
 	default:
 		return ""
 	}
@@ -50,17 +47,18 @@ func whereConnector(con jdb.Connector) string {
 	}
 }
 
-func whereFilter(where *jdb.LinqWhere) string {
+func whereFilter(where *jdb.QlWhere) string {
 	if where == nil {
 		return ""
 	}
 
 	key := where.GetKey()
 	values := where.GetValue(where.Values)
-	return strs.Format("%v%v", key, whereOperator(where.Operator, values))
+	def := whereOperator(where, values)
+	return strs.Format("%v%v", key, def)
 }
 
-func whereFilters(wheres []*jdb.LinqWhere) string {
+func whereFilters(wheres []*jdb.QlWhere) string {
 	result := ""
 	for _, w := range wheres {
 		def := whereFilter(w)
@@ -70,7 +68,7 @@ func whereFilters(wheres []*jdb.LinqWhere) string {
 	return result
 }
 
-func (s *Postgres) sqlWhere(wheres []*jdb.LinqWhere) string {
+func (s *Postgres) sqlWhere(wheres []*jdb.QlWhere) string {
 	result := whereFilters(wheres)
 	result = strs.Append("WHERE", result, " ")
 

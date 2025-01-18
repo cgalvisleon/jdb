@@ -5,7 +5,7 @@ import (
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
-func (s *Postgres) sqlOrderBy(linq *jdb.Linq) string {
+func (s *Postgres) sqlOrderBy(linq *jdb.Ql) string {
 	result := ""
 	for _, ord := range linq.Orders {
 		def := selectField(ord.Field)

@@ -5,31 +5,31 @@ import (
 	"github.com/cgalvisleon/et/strs"
 )
 
-type LinqHaving struct {
-	*LinqFilter
-	Linq *Linq
+type QlHaving struct {
+	*QlFilter
+	Ql *Ql
 }
 
 /**
 * Having
 * @param field string
-* @return *LinqWhere
+* @return *QlWhere
 **/
-func (s *Linq) Having(field string) *LinqHaving {
+func (s *Ql) Having(field string) *QlHaving {
 	return s.Havings.on(field)
 }
 
 /**
 * Having
 * @param field string
-* @return *LinqWhere
+* @return *QlWhere
 **/
-func (s *LinqHaving) on(field string) *LinqHaving {
-	sel := s.Linq.GetSelect(field)
+func (s *QlHaving) on(field string) *QlHaving {
+	sel := s.Ql.GetSelect(field)
 	if sel != nil {
-		s.where = NewLinqWhere(sel)
+		s.where = NewQlWhere(sel)
 	} else {
-		s.where = NewLinqWhere(field)
+		s.where = NewQlWhere(field)
 	}
 
 	return s
@@ -38,56 +38,56 @@ func (s *LinqHaving) on(field string) *LinqHaving {
 /**
 * And
 * @param field string
-* @return *LinqFilter
+* @return *QlFilter
 **/
-func (s *LinqHaving) And(val interface{}) *LinqFilter {
+func (s *QlHaving) And(val interface{}) *QlFilter {
 	field, ok := val.(string)
 	if ok {
 		result := s.on(field)
 		result.where.Conector = And
 	}
 
-	return s.LinqFilter
+	return s.QlFilter
 }
 
 /**
 * Or
 * @param field string
-* @return *LinqFilter
+* @return *QlFilter
 **/
-func (s *LinqHaving) Or(val interface{}) *LinqFilter {
+func (s *QlHaving) Or(val interface{}) *QlFilter {
 	field, ok := val.(string)
 	if ok {
 		result := s.on(field)
 		result.where.Conector = Or
 	}
 
-	return s.LinqFilter
+	return s.QlFilter
 }
 
 /**
 * Select
 * @param fields ...string
-* @return *Linq
+* @return *Ql
 **/
-func (s *LinqHaving) Select(fields ...string) *Linq {
-	return s.Linq
+func (s *QlHaving) Select(fields ...string) *Ql {
+	return s.Ql
 }
 
 /**
 * Data
 * @param fields ...string
-* @return *Linq
+* @return *Ql
 **/
-func (s *LinqHaving) Data(fields ...string) *Linq {
-	return s.Linq
+func (s *QlHaving) Data(fields ...string) *Ql {
+	return s.Ql
 }
 
 /**
 * Exec
 * @return et.Items, error
 **/
-func (s *LinqHaving) Exec() (et.Items, error) {
+func (s *QlHaving) Exec() (et.Items, error) {
 	return et.Items{}, nil
 }
 
@@ -95,16 +95,16 @@ func (s *LinqHaving) Exec() (et.Items, error) {
 * One
 * @return et.Item, error
 **/
-func (s *LinqHaving) One() (et.Item, error) {
+func (s *QlHaving) One() (et.Item, error) {
 	return et.Item{}, nil
 }
 
 /**
 * setHavings
 * @param havings []et.Json
-* @return *Linq
+* @return *Ql
 **/
-func (s *Linq) setHavings(havings []et.Json) *Linq {
+func (s *Ql) setHavings(havings []et.Json) *Ql {
 	for _, val := range havings {
 		from := val.Str("from")
 		model := models[from]
@@ -126,7 +126,7 @@ func (s *Linq) setHavings(havings []et.Json) *Linq {
 * listHavings
 * @return []string
 **/
-func (s *Linq) listHavings() []string {
+func (s *Ql) listHavings() []string {
 	result := []string{}
 	for _, val := range s.Havings.Wheres {
 		result = append(result, val.String())

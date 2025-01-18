@@ -2,36 +2,36 @@ package jdb
 
 import "github.com/cgalvisleon/et/strs"
 
-type LinqFrom struct {
+type QlFrom struct {
 	*Model
 	As      string
-	Selects []*LinqSelect
+	Selects []*QlSelect
 }
 
-func From(m *Model) *Linq {
-	result := &Linq{
+func From(m *Model) *Ql {
+	result := &Ql{
 		Db:         m.Db,
 		TypeSelect: Select,
-		Froms:      make([]*LinqFrom, 0),
-		Joins:      make([]*LinqJoin, 0),
-		Groups:     make([]*LinqSelect, 0),
-		Orders:     make([]*LinqOrder, 0),
+		Froms:      make([]*QlFrom, 0),
+		Joins:      make([]*QlJoin, 0),
+		Groups:     make([]*QlSelect, 0),
+		Orders:     make([]*QlOrder, 0),
 		Offset:     0,
 		Limit:      0,
 		Show:       false,
 		Sheet:      0,
 		index:      65,
 	}
-	result.LinqFilter = &LinqFilter{
+	result.QlFilter = &QlFilter{
 		main:   result,
-		Wheres: make([]*LinqWhere, 0),
+		Wheres: make([]*QlWhere, 0),
 	}
-	result.Havings = &LinqHaving{
-		Linq: result,
+	result.Havings = &QlHaving{
+		Ql: result,
 	}
-	result.Havings.LinqFilter = &LinqFilter{
+	result.Havings.QlFilter = &QlFilter{
 		main:   result.Havings,
-		Wheres: make([]*LinqWhere, 0),
+		Wheres: make([]*QlWhere, 0),
 	}
 
 	result.addFrom(m)
@@ -44,7 +44,7 @@ func From(m *Model) *Linq {
 * @param name string, isCreated bool
 * @return *Field
 **/
-func (s *LinqFrom) GetField(name string, isCreated bool) *Field {
+func (s *QlFrom) GetField(name string, isCreated bool) *Field {
 	result := s.Model.GetField(name, isCreated)
 	if result != nil {
 		result.As = s.As
@@ -57,7 +57,7 @@ func (s *LinqFrom) GetField(name string, isCreated bool) *Field {
 * listForms
 * @return []string
 **/
-func (s *Linq) listForms() []string {
+func (s *Ql) listForms() []string {
 	var result []string
 	for _, from := range s.Froms {
 		result = append(result, strs.Format(`%s, %s`, from.Table, from.As))

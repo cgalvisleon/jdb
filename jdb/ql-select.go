@@ -7,8 +7,8 @@ import (
 	"github.com/cgalvisleon/et/strs"
 )
 
-type LinqSelect struct {
-	From  *LinqFrom
+type QlSelect struct {
+	From  *QlFrom
 	Field *Field
 }
 
@@ -16,23 +16,23 @@ type LinqSelect struct {
 * TypeColumn
 * @return TypeColumn
 **/
-func (s *LinqSelect) TypeColumn() TypeColumn {
+func (s *QlSelect) TypeColumn() TypeColumn {
 	return s.Field.Column.TypeColumn
 }
 
 /**
-* NewLinqSelect
-* @param from *LinqFrom
+* NewQlSelect
+* @param from *QlFrom
 * @param name string
-* @return *LinqSelect
+* @return *QlSelect
 **/
-func NewLinqSelect(from *LinqFrom, field *Field) *LinqSelect {
-	idx := slices.IndexFunc(from.Selects, func(e *LinqSelect) bool { return e.Field.TableField() == field.TableField() })
+func NewQlSelect(from *QlFrom, field *Field) *QlSelect {
+	idx := slices.IndexFunc(from.Selects, func(e *QlSelect) bool { return e.Field.TableField() == field.TableField() })
 	if idx != -1 {
 		return from.Selects[idx]
 	}
 
-	result := &LinqSelect{
+	result := &QlSelect{
 		From:  from,
 		Field: field,
 	}
@@ -47,16 +47,16 @@ func NewLinqSelect(from *LinqFrom, field *Field) *LinqSelect {
 * @param name string, isCreated bool
 * @return *Field
 **/
-func (s *LinqSelect) GetField(name string, isCreated bool) *Field {
+func (s *QlSelect) GetField(name string, isCreated bool) *Field {
 	return s.From.GetField(name, isCreated)
 }
 
 /**
 * Select
 * @param fields ...string
-* @return *Linq
+* @return *Ql
 **/
-func (s *Linq) Select(fields ...string) *Linq {
+func (s *Ql) Select(fields ...string) *Ql {
 	for _, field := range fields {
 		sel := s.GetSelect(field)
 		if sel != nil {
@@ -70,9 +70,9 @@ func (s *Linq) Select(fields ...string) *Linq {
 /**
 * Data
 * @param fields ...string
-* @return *Linq
+* @return *Ql
 **/
-func (s *Linq) Data(fields ...string) *Linq {
+func (s *Ql) Data(fields ...string) *Ql {
 	result := s.Select(fields...)
 	result.TypeSelect = Data
 
@@ -83,7 +83,7 @@ func (s *Linq) Data(fields ...string) *Linq {
 * Exec
 * @return et.Items, error
 **/
-func (s *Linq) Exec() (et.Items, error) {
+func (s *Ql) Exec() (et.Items, error) {
 	return et.Items{}, nil
 }
 
@@ -91,7 +91,7 @@ func (s *Linq) Exec() (et.Items, error) {
 * listSelects
 * @return []string
 **/
-func (s *Linq) listSelects() []string {
+func (s *Ql) listSelects() []string {
 	result := []string{}
 	for _, frm := range s.Froms {
 		for _, sel := range frm.Selects {
@@ -105,9 +105,9 @@ func (s *Linq) listSelects() []string {
 			if col == frm.SourceField {
 				continue
 			} else if col.TypeColumn == TpAtribute {
-				result = append(result, strs.Format(`%s.%s.%s: %s`, frm.As, frm.SourceField.Up(), col.Low(), col.Low()))
+				result = append(result, strs.Format(`%s.%s.%s: %s`, frm.As, frm.SourceField.Name, col.Name, col.Name))
 			} else {
-				result = append(result, strs.Format(`%s.%s: %s`, frm.As, col.Up(), col.Low()))
+				result = append(result, strs.Format(`%s.%s: %s`, frm.As, col.Name, col.Name))
 			}
 		}
 	}

@@ -5,7 +5,7 @@ import (
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
-func (s *Postgres) tableAs(from *jdb.LinqFrom) string {
+func (s *Postgres) tableAs(from *jdb.QlFrom) string {
 	if from == nil {
 		return ""
 	}
@@ -13,7 +13,7 @@ func (s *Postgres) tableAs(from *jdb.LinqFrom) string {
 	return strs.Append(from.Table, from.As, " AS ")
 }
 
-func (s *Postgres) sqlFrom(froms []*jdb.LinqFrom) string {
+func (s *Postgres) sqlFrom(froms []*jdb.QlFrom) string {
 	if len(froms) == 0 {
 		return ""
 	}

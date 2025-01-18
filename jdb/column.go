@@ -34,6 +34,7 @@ const (
 	TypeDataObject
 	TypeDataArray
 	TypeDataGeometry
+	TypeDataFullText
 	TypeDataNone
 )
 
@@ -96,6 +97,8 @@ func (s TypeData) Str() string {
 		return "time"
 	case TypeDataGeometry:
 		return "geometry"
+	case TypeDataFullText:
+		return "full_text"
 	default:
 		return "text"
 	}
@@ -110,11 +113,12 @@ const (
 	CREATED_AT = "created_at"
 	UPDATED_AT = "update_at"
 	STATUS     = "status"
-	ID         = "id"
+	KEY        = "id"
 	SYSID      = "jdbid"
 	CLASS      = "_class"
 	CREATED_TO = "created_to"
 	UPDATED_TO = "updated_to"
+	FULLTEXT   = "fulltext"
 )
 
 var (
@@ -124,24 +128,13 @@ var (
 	CreatedAtField ColumnField = CREATED_AT
 	UpdatedAtField ColumnField = UPDATED_AT
 	StateField     ColumnField = STATUS
-	KeyField       ColumnField = ID
+	KeyField       ColumnField = KEY
 	SystemKeyField ColumnField = SYSID
 	ClassField     ColumnField = CLASS
 	CreatedToField ColumnField = CREATED_TO
 	UpdatedToField ColumnField = UPDATED_TO
+	FullTextField  ColumnField = FULLTEXT
 )
-
-func (s ColumnField) Str() string {
-	return string(s)
-}
-
-func (s ColumnField) Up() string {
-	return strs.Uppcase(string(s))
-}
-
-func (s ColumnField) Low() string {
-	return strs.Lowcase(string(s))
-}
 
 func (s ColumnField) TypeData() TypeData {
 	switch s {
@@ -165,6 +158,8 @@ func (s ColumnField) TypeData() TypeData {
 		return TypeDataTime
 	case UpdatedToField:
 		return TypeDataTime
+	case FullTextField:
+		return TypeDataFullText
 	}
 
 	return TypeDataText
@@ -182,14 +177,13 @@ type Column struct {
 	Max           float64       `json:"max"`
 	Min           float64       `json:"min"`
 	Hidden        bool          `json:"hidden"`
-	Columns       []string      `json:"columns"`
+	FullText      []string      `json:"columns"`
 	Detail        *Model        `json:"detail"`
 	FuncGenerated FuncGenerated `json:"-"`
 	Limit         int           `json:"limit"`
 }
 
 func newColumn(model *Model, name string, description string, typeColumn TypeColumn, typeData TypeData, def interface{}) *Column {
-	name = Name(name)
 	return &Column{
 		Model:       model,
 		Name:        name,
@@ -202,7 +196,7 @@ func newColumn(model *Model, name string, description string, typeColumn TypeCol
 		Max:         0,
 		Min:         0,
 		Hidden:      false,
-		Columns:     []string{},
+		FullText:    []string{},
 		Limit:       30,
 	}
 }
@@ -232,27 +226,11 @@ func (s *Column) Fk() string {
 }
 
 /**
-* Up
-* @return string
-**/
-func (s *Column) Up() string {
-	return strs.Uppcase(s.Field)
-}
-
-/**
-* Low
-* @return string
-**/
-func (s *Column) Low() string {
-	return strs.Lowcase(s.Field)
-}
-
-/**
 * DefaultValue
 * @return interface{}
 **/
 func (s *Column) DefaultValue() interface{} {
-	if s.Up() == ProjectField.Up() {
+	if s.Name == string(ProjectField) {
 		return "-1"
 	}
 	switch s.TypeData {

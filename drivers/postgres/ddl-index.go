@@ -12,6 +12,8 @@ func ddlIndex(col *jdb.Column) string {
 	result := jdb.SQLDDL(`CREATE INDEX IF NOT EXISTS $2_$3_$4_IDX ON $1($4);`, col.Model.Table, col.Model.Schema.Name, col.Model.Name, col.Field)
 	if slices.Contains([]jdb.TypeData{jdb.TypeDataObject, jdb.TypeDataArray}, col.TypeData) {
 		result = jdb.SQLDDL(`CREATE INDEX IF NOT EXISTS $2_$3_$4_IDX ON $1 USING GIN($4 jsonb_path_ops);`, col.Model.Table, col.Model.Schema.Name, col.Model.Name, col.Field)
+	} else if slices.Contains([]jdb.TypeData{jdb.TypeDataFullText}, col.TypeData) {
+		result = jdb.SQLDDL(`CREATE INDEX IF NOT EXISTS $2_$3_$4_IDX ON $1 USING GIN($4);`, col.Model.Table, col.Model.Schema.Name, col.Model.Name, col.Field)
 	} else if col.TypeColumn == jdb.TpAtribute {
 		result = jdb.SQLDDL(`CREATE INDEX IF NOT EXISTS $2_$3_$4_IDX ON $1 USING GIN(($4->'$5'));`, col.Model.Table, col.Model.Schema.Name, col.Model.Name, col.Field, col.Name)
 	}

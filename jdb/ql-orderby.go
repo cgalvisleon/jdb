@@ -5,7 +5,7 @@ import (
 	"github.com/cgalvisleon/et/strs"
 )
 
-type LinqOrder struct {
+type QlOrder struct {
 	Field  *Field
 	Sorted bool
 }
@@ -14,13 +14,13 @@ type LinqOrder struct {
 * OrderBy
 * @param sorted bool
 * @param columns ...string
-* @return *Linq
+* @return *Ql
 **/
-func (s *Linq) OrderBy(sorted bool, columns ...string) *Linq {
+func (s *Ql) OrderBy(sorted bool, columns ...string) *Ql {
 	for _, col := range columns {
 		field := s.GetField(col, true)
 		if field != nil {
-			order := &LinqOrder{
+			order := &QlOrder{
 				Field:  field,
 				Sorted: sorted,
 			}
@@ -34,27 +34,27 @@ func (s *Linq) OrderBy(sorted bool, columns ...string) *Linq {
 /**
 * OrderByAsc
 * @param columns ...any
-* @return *Linq
+* @return *Ql
 **/
-func (s *Linq) OrderByAsc(columns ...string) *Linq {
+func (s *Ql) OrderByAsc(columns ...string) *Ql {
 	return s.OrderBy(true, columns...)
 }
 
 /**
 * OrderByDesc
 * @param columns ...any
-* @return *Linq
+* @return *Ql
 **/
-func (s *Linq) OrderByDesc(columns ...string) *Linq {
+func (s *Ql) OrderByDesc(columns ...string) *Ql {
 	return s.OrderBy(false, columns...)
 }
 
 /**
 * setOrders
 * @param orders []et.Json
-* @return *Linq
+* @return *Ql
 **/
-func (s *Linq) setOrders(orders []et.Json) *Linq {
+func (s *Ql) setOrders(orders []et.Json) *Ql {
 	for _, item := range orders {
 		sorted := item.Bool("sorted")
 		columns := item.ArrayStr("columns")
@@ -68,7 +68,7 @@ func (s *Linq) setOrders(orders []et.Json) *Linq {
 * listOrders
 * @return []string
 **/
-func (s *Linq) listOrders() []string {
+func (s *Ql) listOrders() []string {
 	result := []string{}
 	for _, sel := range s.Orders {
 		result = append(result, strs.Format(`%s, SORTED:%v`, sel.Field.AsField(), sel.Sorted))

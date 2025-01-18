@@ -2,8 +2,6 @@ package jdb
 
 import (
 	"slices"
-
-	"github.com/cgalvisleon/et/strs"
 )
 
 /**
@@ -22,25 +20,34 @@ func (s *Model) DefineColumn(name string, typeData TypeData) *Column {
 	idx := -1
 	def := typeData.DefaultValue()
 	col = newColumn(s, name, "", TpColumn, typeData, def)
-	if col.Up() == SourceField.Up() {
+	if col.Name == string(SourceField) {
 		s.SourceField = col
 	}
-	if col.Up() == SystemKeyField.Up() {
+	if col.Name == string(CreatedAtField) {
+		s.CreatedAtField = col
+	}
+	if col.Name == string(UpdatedAtField) {
+		s.UpdatedAtField = col
+	}
+	if col.Name == string(SystemKeyField) {
 		s.SystemKeyField = col
 	}
-	if col.Up() == IndexField.Up() {
+	if col.Name == string(IndexField) {
 		s.IndexField = col
 	}
-	if col.Up() == StateField.Up() {
+	if col.Name == string(StateField) {
 		s.StateField = col
 	}
-	if col.Up() == ClassField.Up() {
+	if col.Name == string(ClassField) {
 		s.ClassField = col
 	}
-	if col.Up() == KeyField.Up() {
+	if col.Name == string(KeyField) {
 		s.KeyField = col
 	}
-	if col.Up() == ProjectField.Up() {
+	if col.Name == string(FullTextField) {
+		s.FullTextField = col
+	}
+	if col.Name == string(ProjectField) {
 		idx = slices.IndexFunc(s.Columns, func(e *Column) bool { return e == s.SourceField })
 	}
 	if idx == -1 {
@@ -54,7 +61,7 @@ func (s *Model) DefineColumn(name string, typeData TypeData) *Column {
 	} else {
 		s.Columns = append(s.Columns[:idx], append([]*Column{col}, s.Columns[idx:]...)...)
 	}
-	if slices.Contains([]string{IndexField.Str(), ProjectField.Str(), CreatedAtField.Str(), UpdatedAtField.Str(), StateField.Str(), KeyField.Str(), SystemKeyField.Str(), SourceField.Str()}, name) {
+	if slices.Contains([]string{string(IndexField), string(ProjectField), string(CreatedAtField), string(UpdatedAtField), string(StateField), string(KeyField), string(SystemKeyField), string(SourceField)}, name) {
 		s.DefineIndex(true, name)
 	} else if slices.Contains([]TypeData{TypeDataObject, TypeDataArray, TypeDataKey, TypeDataGeometry}, typeData) {
 		s.DefineIndex(true, name)
@@ -76,10 +83,10 @@ func (s *Model) DefineAtribute(name string, typeData TypeData) *Column {
 		return col
 	}
 
-	s.DefineColumn(SourceField.Up(), SourceField.TypeData())
+	s.DefineColumn(string(SourceField), SourceField.TypeData())
 	def := typeData.DefaultValue()
 	col = newColumn(s, name, "", TpAtribute, typeData, def)
-	col.Field = SourceField.Low()
+	col.Field = string(SourceField)
 	s.Columns = append(s.Columns, col)
 
 	return col
@@ -90,8 +97,8 @@ func (s *Model) DefineAtribute(name string, typeData TypeData) *Column {
 * @return *Column
 **/
 func (s *Model) DefineCreatedAtField() *Column {
-	result := s.DefineColumn(CreatedAtField.Low(), CreatedAtField.TypeData())
-	s.DefineIndex(true, CreatedAtField.Low())
+	result := s.DefineColumn(string(CreatedAtField), CreatedAtField.TypeData())
+	s.DefineIndex(true, string(CreatedAtField))
 
 	return result
 }
@@ -101,8 +108,8 @@ func (s *Model) DefineCreatedAtField() *Column {
 * @return *Column
 **/
 func (s *Model) DefineUpdatedAtField() *Column {
-	result := s.DefineColumn(UpdatedAtField.Low(), UpdatedAtField.TypeData())
-	s.DefineIndex(true, UpdatedAtField.Low())
+	result := s.DefineColumn(string(UpdatedAtField), UpdatedAtField.TypeData())
+	s.DefineIndex(true, string(UpdatedAtField))
 
 	return result
 }
@@ -112,8 +119,8 @@ func (s *Model) DefineUpdatedAtField() *Column {
 * @return *Column
 **/
 func (s *Model) DefineStateField() *Column {
-	result := s.DefineColumn(StateField.Low(), StateField.TypeData())
-	s.DefineIndex(true, StateField.Low())
+	result := s.DefineColumn(string(StateField), StateField.TypeData())
+	s.DefineIndex(true, string(StateField))
 
 	return result
 }
@@ -123,8 +130,8 @@ func (s *Model) DefineStateField() *Column {
 * @return *Column
 **/
 func (s *Model) DefineKeyField() *Column {
-	result := s.DefineColumn(KeyField.Low(), KeyField.TypeData())
-	s.DefineKey(KeyField.Low())
+	result := s.DefineColumn(string(KeyField), KeyField.TypeData())
+	s.DefineKey(string(KeyField))
 
 	return result
 }
@@ -134,8 +141,8 @@ func (s *Model) DefineKeyField() *Column {
 * @return *Column
 **/
 func (s *Model) DefineSystemKeyField() *Column {
-	result := s.DefineColumn(SystemKeyField.Low(), SystemKeyField.TypeData())
-	s.DefineKey(SystemKeyField.Low())
+	result := s.DefineColumn(string(SystemKeyField), SystemKeyField.TypeData())
+	s.DefineKey(string(SystemKeyField))
 
 	return result
 }
@@ -145,8 +152,8 @@ func (s *Model) DefineSystemKeyField() *Column {
 * @return *Column
 **/
 func (s *Model) DefineIndexField() *Column {
-	result := s.DefineColumn(IndexField.Low(), IndexField.TypeData())
-	s.DefineIndex(true, IndexField.Low())
+	result := s.DefineColumn(string(IndexField), IndexField.TypeData())
+	s.DefineIndex(true, string(IndexField))
 
 	return result
 }
@@ -156,9 +163,9 @@ func (s *Model) DefineIndexField() *Column {
 * @return *Column
 **/
 func (s *Model) DefineClassField() *Column {
-	result := s.DefineColumn(ClassField.Low(), ClassField.TypeData())
+	result := s.DefineColumn(string(ClassField), ClassField.TypeData())
 	result.Default = s.Low()
-	s.DefineIndex(true, ClassField.Low())
+	s.DefineIndex(true, string(ClassField))
 
 	return result
 }
@@ -168,8 +175,8 @@ func (s *Model) DefineClassField() *Column {
 * @return *Column
 **/
 func (s *Model) DefineProjectField() *Column {
-	result := s.DefineColumn(ProjectField.Low(), ProjectField.TypeData())
-	s.DefineIndex(true, ProjectField.Low())
+	result := s.DefineColumn(string(ProjectField), ProjectField.TypeData())
+	s.DefineIndex(true, string(ProjectField))
 
 	return result
 }
@@ -179,8 +186,21 @@ func (s *Model) DefineProjectField() *Column {
 * @return *Column
 **/
 func (s *Model) DefineSourceField() *Column {
-	result := s.DefineColumn(SourceField.Low(), SourceField.TypeData())
-	s.DefineIndex(true, SourceField.Low())
+	result := s.DefineColumn(string(SourceField), SourceField.TypeData())
+	s.DefineIndex(true, string(SourceField))
+
+	return result
+}
+
+/**
+* DefineFullText
+* @param fields []string
+* @return *Column
+**/
+func (s *Model) DefineFullText(fields []string) *Column {
+	result := s.DefineColumn(string(FullTextField), FullTextField.TypeData())
+	result.FullText = fields
+	s.DefineIndex(true, string(FullTextField))
 
 	return result
 }
@@ -287,45 +307,19 @@ func (s *Model) DefineRequired(requireds ...string) *Model {
 }
 
 /**
-* DefineTrigger
-* @param tp TypeTrigger
-* @param trigger Trigger
+* DefineEvent
+* @param tp TypeEvent
+* @param event Event
 * @return *Model
 **/
-func (s *Model) DefineTrigger(tp TypeTrigger, trigger Trigger) *Model {
-	name := strs.Format(`%s_%s`, s.Name, tp.Name())
-	name = strs.Uppcase(name)
+func (s *Model) DefineEvent(tp TypeEvent, event Event) *Model {
 	switch tp {
-	case BeforeInsert:
-		idx := len(s.BeforeInsert) + 1
-		name := strs.Format(`%s_%d`, name, idx)
-		Triggers[name] = trigger
-		s.BeforeInsert = append(s.BeforeInsert, name)
-	case AfterInsert:
-		idx := len(s.AfterInsert) + 1
-		name := strs.Format(`%s_%d`, name, idx)
-		Triggers[name] = trigger
-		s.AfterInsert = append(s.AfterInsert, name)
-	case BeforeUpdate:
-		idx := len(s.BeforeUpdate) + 1
-		name := strs.Format(`%s_%d`, name, idx)
-		Triggers[name] = trigger
-		s.BeforeUpdate = append(s.BeforeUpdate, name)
-	case AfterUpdate:
-		idx := len(s.AfterUpdate) + 1
-		name := strs.Format(`%s_%d`, name, idx)
-		Triggers[name] = trigger
-		s.AfterUpdate = append(s.AfterUpdate, name)
-	case BeforeDelete:
-		idx := len(s.BeforeDelete) + 1
-		name := strs.Format(`%s_%d`, name, idx)
-		Triggers[name] = trigger
-		s.BeforeDelete = append(s.BeforeDelete, name)
-	case AfterDelete:
-		idx := len(s.AfterDelete) + 1
-		name := strs.Format(`%s_%d`, name, idx)
-		Triggers[name] = trigger
-		s.AfterDelete = append(s.AfterDelete, name)
+	case EventInsert:
+		s.EventsInsert = append(s.EventsInsert, event)
+	case EventUpdate:
+		s.EventsUpdate = append(s.EventsUpdate, event)
+	case EventDelete:
+		s.EventsDelete = append(s.EventsDelete, event)
 	}
 	return s
 }

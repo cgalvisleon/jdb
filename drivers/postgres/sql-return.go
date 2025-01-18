@@ -6,7 +6,7 @@ import (
 )
 
 func (s *Postgres) sqlReturn(command *jdb.Command) string {
-	var selects = []*jdb.LinqSelect{}
+	var selects = []*jdb.QlSelect{}
 	frm := command.From
 	for _, col := range frm.Columns {
 		if col.TypeColumn != jdb.TpColumn {
@@ -14,7 +14,7 @@ func (s *Postgres) sqlReturn(command *jdb.Command) string {
 		}
 		field := col.GetField()
 		field.As = frm.As
-		selects = append(selects, &jdb.LinqSelect{
+		selects = append(selects, &jdb.QlSelect{
 			From:  frm,
 			Field: field,
 		})

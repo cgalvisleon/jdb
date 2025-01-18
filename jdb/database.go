@@ -227,10 +227,10 @@ func (s *DB) One(sql string, params ...any) (et.Item, error) {
 
 /**
 * Query
-* @param linq *Linq
+* @param linq *Ql
 * @return et.Items, error
 **/
-func (s *DB) Query(linq *Linq) (et.Items, error) {
+func (s *DB) Query(linq *Ql) (et.Items, error) {
 	if s.driver == nil {
 		return et.Items{}, mistake.New(MSG_DRIVER_NOT_DEFINED)
 	}
@@ -240,10 +240,10 @@ func (s *DB) Query(linq *Linq) (et.Items, error) {
 
 /**
 * Count
-* @param linq *Linq
+* @param linq *Ql
 * @return int, error
 **/
-func (s *DB) Count(linq *Linq) (int, error) {
+func (s *DB) Count(linq *Ql) (int, error) {
 	if s.driver == nil {
 		return 0, mistake.New(MSG_DRIVER_NOT_DEFINED)
 	}
@@ -253,10 +253,10 @@ func (s *DB) Count(linq *Linq) (int, error) {
 
 /**
 * Last
-* @param linq *Linq
+* @param linq *Ql
 * @return et.Items, error
 **/
-func (s *DB) Last(linq *Linq) (et.Items, error) {
+func (s *DB) Last(linq *Ql) (et.Items, error) {
 	if s.driver == nil {
 		return et.Items{}, mistake.New(MSG_DRIVER_NOT_DEFINED)
 	}
@@ -265,26 +265,13 @@ func (s *DB) Last(linq *Linq) (et.Items, error) {
 }
 
 /**
-* Current
-* @param command *Command
-* @return et.Items, error
-**/
-func (s *DB) Current(command *Command) (et.Items, error) {
-	if s.driver == nil {
-		return et.Items{}, mistake.New(MSG_DRIVER_NOT_DEFINED)
-	}
-
-	return s.driver.Current(command)
-}
-
-/**
 * Command
 * @param command *Command
 * @return et.Item, error
 **/
-func (s *DB) Command(command *Command) (et.Item, error) {
+func (s *DB) Command(command *Command) (et.Items, error) {
 	if s.driver == nil {
-		return et.Item{}, mistake.New(MSG_DRIVER_NOT_DEFINED)
+		return et.Items{}, mistake.New(MSG_DRIVER_NOT_DEFINED)
 	}
 
 	return s.driver.Command(command)

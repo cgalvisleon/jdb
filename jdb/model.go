@@ -30,18 +30,18 @@ type Model struct {
 	References     []*Reference                `json:"references"`
 	Dictionaries   map[interface{}]*Dictionary `json:"-"`
 	ColRequired    map[string]bool             `json:"col_required"`
+	CreatedAtField *Column                     `json:"created_at_field"`
+	UpdatedAtField *Column                     `json:"updated_at_field"`
 	KeyField       *Column                     `json:"key_field"`
 	SourceField    *Column                     `json:"source_field"`
 	SystemKeyField *Column                     `json:"system_key_field"`
 	StateField     *Column                     `json:"state_field"`
 	IndexField     *Column                     `json:"index_field"`
 	ClassField     *Column                     `json:"class_field"`
-	BeforeInsert   []string                    `json:"-"`
-	AfterInsert    []string                    `json:"-"`
-	BeforeUpdate   []string                    `json:"-"`
-	AfterUpdate    []string                    `json:"-"`
-	BeforeDelete   []string                    `json:"-"`
-	AfterDelete    []string                    `json:"-"`
+	FullTextField  *Column                     `json:"full_text_field"`
+	EventsInsert   []Event                     `json:"-"`
+	EventsUpdate   []Event                     `json:"-"`
+	EventsDelete   []Event                     `json:"-"`
 	Details        map[string]*Model           `json:"-"`
 	Functions      map[string]*Function        `json:"-"`
 	Integrity      bool                        `json:"integrity"`
@@ -81,12 +81,9 @@ func NewModel(schema *Schema, name string, version int) *Model {
 		References:   make([]*Reference, 0),
 		Dictionaries: make(map[interface{}]*Dictionary),
 		ColRequired:  make(map[string]bool),
-		BeforeInsert: []string{},
-		AfterInsert:  []string{},
-		BeforeUpdate: []string{},
-		AfterUpdate:  []string{},
-		BeforeDelete: []string{},
-		AfterDelete:  []string{},
+		EventsInsert: make([]Event, 0),
+		EventsUpdate: make([]Event, 0),
+		EventsDelete: make([]Event, 0),
 		Details:      make(map[string]*Model),
 		Functions:    make(map[string]*Function),
 		Integrity:    false,
@@ -179,7 +176,7 @@ func (s *Model) Init() error {
 **/
 func (s *Model) GetColumn(name string) *Column {
 	for _, col := range s.Columns {
-		if col.Low() == strs.Lowcase(name) {
+		if col.Name == name {
 			return col
 		}
 	}

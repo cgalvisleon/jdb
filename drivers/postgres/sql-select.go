@@ -46,7 +46,7 @@ func jsonbBuildObject(result, obj string) string {
 	return strs.Append(result, strs.Format("jsonb_build_object(\n%s)", obj), "||\n")
 }
 
-func (s *Postgres) sqlData(frm *jdb.LinqFrom, selects []*jdb.LinqSelect, orders []*jdb.LinqOrder) string {
+func (s *Postgres) sqlData(frm *jdb.QlFrom, selects []*jdb.QlSelect, orders []*jdb.QlOrder) string {
 	result := ""
 	if frm != nil {
 		def := strs.Append("", frm.As, ".")
@@ -93,7 +93,7 @@ func (s *Postgres) sqlData(frm *jdb.LinqFrom, selects []*jdb.LinqSelect, orders 
 	return result
 }
 
-func (s *Postgres) sqlColumns(frm *jdb.LinqFrom, tp jdb.TypeSelect, selects []*jdb.LinqSelect, orders []*jdb.LinqOrder) string {
+func (s *Postgres) sqlColumns(frm *jdb.QlFrom, tp jdb.TypeSelect, selects []*jdb.QlSelect, orders []*jdb.QlOrder) string {
 	if tp == jdb.Data {
 		return s.sqlData(frm, selects, orders)
 	}
@@ -116,14 +116,14 @@ func (s *Postgres) sqlColumns(frm *jdb.LinqFrom, tp jdb.TypeSelect, selects []*j
 	return result
 }
 
-func (s *Postgres) sqlSelect(linq *jdb.Linq) string {
+func (s *Postgres) sqlSelect(linq *jdb.Ql) string {
 	froms := linq.Froms
 	if len(froms) == 0 {
 		return ""
 	}
 
 	var result string
-	var selects = []*jdb.LinqSelect{}
+	var selects = []*jdb.QlSelect{}
 	for _, frm := range froms {
 		selects = append(selects, frm.Selects...)
 	}
@@ -136,7 +136,7 @@ func (s *Postgres) sqlSelect(linq *jdb.Linq) string {
 			}
 			field := col.GetField()
 			field.As = frm.As
-			selects = append(selects, &jdb.LinqSelect{
+			selects = append(selects, &jdb.QlSelect{
 				From:  frm,
 				Field: field,
 			})

@@ -14,25 +14,25 @@ const (
 	Data
 )
 
-type Linq struct {
-	*LinqFilter
-	Db         *DB           `json:"-"`
-	TypeSelect TypeSelect    `json:"type_select"`
-	Froms      []*LinqFrom   `json:"froms"`
-	Joins      []*LinqJoin   `json:"joins"`
-	Groups     []*LinqSelect `json:"group_bys"`
-	Havings    *LinqHaving   `json:"havings"`
-	Orders     []*LinqOrder  `json:"orders"`
-	Sheet      int           `json:"sheet"`
-	Offset     int           `json:"offset"`
-	Limit      int           `json:"limit"`
-	Show       bool          `json:"show"`
-	Sql        string        `json:"sql"`
-	Result     et.Items      `json:"result"`
-	index      int           `json:"-"`
+type Ql struct {
+	*QlFilter
+	Db         *DB         `json:"-"`
+	TypeSelect TypeSelect  `json:"type_select"`
+	Froms      []*QlFrom   `json:"froms"`
+	Joins      []*QlJoin   `json:"joins"`
+	Groups     []*QlSelect `json:"group_bys"`
+	Havings    *QlHaving   `json:"havings"`
+	Orders     []*QlOrder  `json:"orders"`
+	Sheet      int         `json:"sheet"`
+	Offset     int         `json:"offset"`
+	Limit      int         `json:"limit"`
+	Show       bool        `json:"show"`
+	Sql        string      `json:"sql"`
+	Result     et.Items    `json:"result"`
+	index      int         `json:"-"`
 }
 
-func (s *Linq) Describe() et.Json {
+func (s *Ql) Describe() et.Json {
 	result, err := et.Object(s)
 	if err != nil {
 		return et.Json{}
@@ -44,14 +44,14 @@ func (s *Linq) Describe() et.Json {
 /**
 * addFrom
 * @param m *Model
-* @return *LinqFrom
+* @return *QlFrom
 **/
-func (s *Linq) addFrom(m *Model) *LinqFrom {
+func (s *Ql) addFrom(m *Model) *QlFrom {
 	as := string(rune(s.index))
-	from := &LinqFrom{
+	from := &QlFrom{
 		Model:   m,
 		As:      as,
-		Selects: make([]*LinqSelect, 0),
+		Selects: make([]*QlSelect, 0),
 	}
 
 	s.Froms = append(s.Froms, from)
@@ -63,9 +63,9 @@ func (s *Linq) addFrom(m *Model) *LinqFrom {
 /**
 * getFrom
 * @param m interface{}
-* @return *LinqFrom
+* @return *QlFrom
 **/
-func (s *Linq) getFrom(m interface{}) *LinqFrom {
+func (s *Ql) getFrom(m interface{}) *QlFrom {
 	switch v := m.(type) {
 	case Model:
 		for _, from := range s.Froms {
@@ -101,7 +101,7 @@ func (s *Linq) getFrom(m interface{}) *LinqFrom {
 * @param name string, isCreated bool
 * @return *Field
 **/
-func (s *Linq) GetField(name string, isCreated bool) *Field {
+func (s *Ql) GetField(name string, isCreated bool) *Field {
 	var field *Field
 	for _, from := range s.Froms {
 		field = from.GetField(name, isCreated)
@@ -119,7 +119,7 @@ func (s *Linq) GetField(name string, isCreated bool) *Field {
 * @params name string
 * @return *Field
 **/
-func (s *Linq) GetAgregation(name string) *Field {
+func (s *Ql) GetAgregation(name string) *Field {
 	for tp, ag := range agregations {
 		if ag.re.MatchString(name) {
 			name = strs.ReplaceAll(name, []string{ag.Agregation, "(", ")"}, "")
@@ -137,13 +137,13 @@ func (s *Linq) GetAgregation(name string) *Field {
 /**
 * GetSelect
 * @param name string
-* @return *LinqSelect
+* @return *QlSelect
 *
  */
-func (s *Linq) GetSelect(name string) *LinqSelect {
+func (s *Ql) GetSelect(name string) *QlSelect {
 	field := s.GetAgregation(name)
 	if field != nil {
-		return NewLinqSelect(field.Owner.(*LinqFrom), field)
+		return NewQlSelect(field.Owner.(*QlFrom), field)
 	}
 
 	field = s.GetField(name, true)
@@ -160,14 +160,14 @@ func (s *Linq) GetSelect(name string) *LinqSelect {
 			On(model.Name).Eq(fk)
 	}
 
-	return NewLinqSelect(field.Owner.(*LinqFrom), field)
+	return NewQlSelect(field.Owner.(*QlFrom), field)
 }
 
 /**
 * Debug
-* @return *Linq
+* @return *Ql
 **/
-func (s *Linq) Debug() *Linq {
+func (s *Ql) Debug() *Ql {
 	s.Show = true
 
 	return s

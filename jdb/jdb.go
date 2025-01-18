@@ -42,7 +42,6 @@ func Load() (*DB, error) {
 			"ClassField":     "_class",
 			"CreatedToField": "created_to",
 			"UpdatedToField": "updated_to",
-			"FullTextField":  "_fulltext",
 		},
 	})
 	if err != nil {

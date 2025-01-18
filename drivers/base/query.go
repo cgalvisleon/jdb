@@ -13,7 +13,7 @@ func (s *Base) SQL(sql string, params ...any) (et.Items, error) {
 	return et.Items{}, nil
 }
 
-func (s *Base) Query(linq *jdb.Linq) (et.Items, error) {
+func (s *Base) Query(linq *jdb.Ql) (et.Items, error) {
 	return et.Items{}, nil
 }
 
@@ -21,10 +21,10 @@ func (s *Base) One(sql string, params ...any) (et.Item, error) {
 	return et.Item{}, nil
 }
 
-func (s *Base) Count(linq *jdb.Linq) (int, error) {
+func (s *Base) Count(linq *jdb.Ql) (int, error) {
 	return 0, nil
 }
 
-func (s *Base) Last(linq *jdb.Linq) (et.Items, error) {
+func (s *Base) Last(linq *jdb.Ql) (et.Items, error) {
 	return et.Items{}, nil
 }

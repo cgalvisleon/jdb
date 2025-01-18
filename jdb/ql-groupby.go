@@ -7,9 +7,9 @@ import (
 /**
 * GroupBy
 * @param fields ...string
-* @return *Linq
+* @return *Ql
 **/
-func (s *Linq) GroupBy(fields ...string) *Linq {
+func (s *Ql) GroupBy(fields ...string) *Ql {
 	for _, field := range fields {
 		sel := s.GetSelect(field)
 		if sel != nil {
@@ -23,9 +23,9 @@ func (s *Linq) GroupBy(fields ...string) *Linq {
 /**
 * setGroupBy
 * @param fields ...string
-* @return *Linq
+* @return *Ql
 **/
-func (s *Linq) setGroupBy(fields ...string) *Linq {
+func (s *Ql) setGroupBy(fields ...string) *Ql {
 	return s.GroupBy(fields...)
 }
 
@@ -33,7 +33,7 @@ func (s *Linq) setGroupBy(fields ...string) *Linq {
 * listGroups
 * @return []string
 **/
-func (s *Linq) listGroups() []string {
+func (s *Ql) listGroups() []string {
 	result := []string{}
 	for _, sel := range s.Groups {
 		result = append(result, strs.Format(`%s, %s`, sel.Field.TableField(), sel.Field.Caption()))

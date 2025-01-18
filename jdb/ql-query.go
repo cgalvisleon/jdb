@@ -11,7 +11,7 @@ import (
 * @param n int
 * @return et.Items, error
 **/
-func (s *Linq) First(n int) (et.Items, error) {
+func (s *Ql) First(n int) (et.Items, error) {
 	if s.Db == nil {
 		return et.Items{}, mistake.New(MSG_DATABASE_NOT_FOUND)
 	}
@@ -33,7 +33,7 @@ func (s *Linq) First(n int) (et.Items, error) {
 * All
 * @return et.Items, error
 **/
-func (s *Linq) All() (et.Items, error) {
+func (s *Ql) All() (et.Items, error) {
 	return s.First(0)
 }
 
@@ -42,7 +42,7 @@ func (s *Linq) All() (et.Items, error) {
 * @param n int
 * @return et.Items, error
 **/
-func (s *Linq) Last(n int) (et.Items, error) {
+func (s *Ql) Last(n int) (et.Items, error) {
 	if s.Db == nil {
 		return et.Items{}, mistake.New(MSG_DATABASE_NOT_FOUND)
 	}
@@ -60,7 +60,7 @@ func (s *Linq) Last(n int) (et.Items, error) {
 * One
 * @return et.Item, error
 **/
-func (s *Linq) One() (et.Item, error) {
+func (s *Ql) One() (et.Item, error) {
 	result, err := s.First(1)
 	if err != nil {
 		return et.Item{}, err
@@ -79,9 +79,9 @@ func (s *Linq) One() (et.Item, error) {
 /**
 * Offset
 * @param offset int
-* @return *Linq
+* @return *Ql
 **/
-func (s *Linq) Page(val int) *Linq {
+func (s *Ql) Page(val int) *Ql {
 	s.Sheet = val
 	s.calcOffset()
 	return s
@@ -90,9 +90,9 @@ func (s *Linq) Page(val int) *Linq {
 /**
 * Limit
 * @param limit int
-* @return *Linq
+* @return *Ql
 **/
-func (s *Linq) Rows(val int) (et.Items, error) {
+func (s *Ql) Rows(val int) (et.Items, error) {
 	if s.Db == nil {
 		return et.Items{}, mistake.New(MSG_DATABASE_NOT_FOUND)
 	}
@@ -106,7 +106,7 @@ func (s *Linq) Rows(val int) (et.Items, error) {
 * @param rows int
 * @return et.List, error
 **/
-func (s *Linq) List(page, rows int) (et.List, error) {
+func (s *Ql) List(page, rows int) (et.List, error) {
 	if s.Db == nil {
 		return et.List{}, mistake.New(MSG_DATABASE_NOT_FOUND)
 	}
@@ -128,9 +128,9 @@ func (s *Linq) List(page, rows int) (et.List, error) {
 /**
 * Query
 * @param params []string
-* @return Linq
+* @return Ql
 **/
-func (s *Linq) Query(params et.Json) (et.Items, error) {
+func (s *Ql) Query(params et.Json) (et.Items, error) {
 	joins := params.ArrayJson("join")
 	where := params.ArrayJson("where")
 	groups := params.ArrayStr("group_by")

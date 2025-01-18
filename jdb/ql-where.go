@@ -75,20 +75,21 @@ func (s Operator) Str() string {
 	}
 }
 
-type LinqWhere struct {
+type QlWhere struct {
 	Conector Connector
 	Key      interface{}
 	Operator Operator
 	Values   []interface{}
+	Language string
 }
 
 /**
-* NewLinqWhere
+* NewQlWhere
 * @params key interface{}
-* @return LinqWhere
+* @return QlWhere
 **/
-func NewLinqWhere(key interface{}) *LinqWhere {
-	return &LinqWhere{
+func NewQlWhere(key interface{}) *QlWhere {
+	return &QlWhere{
 		Conector: NoC,
 		Key:      key,
 		Operator: NoP,
@@ -101,9 +102,9 @@ func NewLinqWhere(key interface{}) *LinqWhere {
 * @param val interface{}
 * @return string
 **/
-func (s *LinqWhere) GetValue(val interface{}) string {
+func (s *QlWhere) GetValue(val interface{}) string {
 	switch v := val.(type) {
-	case *LinqSelect:
+	case *QlSelect:
 		return v.Field.AsField()
 	case *Field:
 		return v.AsField()
@@ -123,7 +124,7 @@ func (s *LinqWhere) GetValue(val interface{}) string {
 * GetKey
 * @return string
 **/
-func (s *LinqWhere) GetKey() string {
+func (s *QlWhere) GetKey() string {
 	return s.GetValue(s.Key)
 }
 
@@ -131,7 +132,7 @@ func (s *LinqWhere) GetKey() string {
 * String
 * @return string
 **/
-func (s *LinqWhere) String() string {
+func (s *QlWhere) String() string {
 	var result string
 
 	if s.Conector != NoC {
@@ -150,51 +151,51 @@ func (s *LinqWhere) String() string {
 /**
 * Where
 * @param val interface{}
-* @return *LinqFilter
+* @return *QlFilter
 **/
-func (s *Linq) Where(val interface{}) *Linq {
-	field, ok := val.(string)
-	if ok {
-		field := s.GetField(field, false)
+func (s *Ql) Where(val interface{}) *Ql {
+	switch v := val.(type) {
+	case string:
+		field := s.GetField(v, false)
 		if field != nil {
-			s.where = NewLinqWhere(field)
+			s.where = NewQlWhere(field)
 			return s
 		}
 	}
 
-	s.where = NewLinqWhere(val)
+	s.where = NewQlWhere(val)
 	return s
 }
 
 /**
 * And
 * @param val interface{}
-* @return *LinqFilter
+* @return *QlFilter
 **/
-func (s *Linq) And(val interface{}) *LinqFilter {
+func (s *Ql) And(val interface{}) *QlFilter {
 	result := s.Where(val)
 	result.where.Conector = And
 
-	return result.LinqFilter
+	return result.QlFilter
 }
 
 /**
 * And
 * @param val interface{}
-* @return *LinqFilter
+* @return *QlFilter
 **/
-func (s *Linq) Or(val interface{}) *LinqFilter {
+func (s *Ql) Or(val interface{}) *QlFilter {
 	result := s.Where(val)
 	result.where.Conector = Or
 
-	return result.LinqFilter
+	return result.QlFilter
 }
 
 /**
 * setWheres
 * @param wheres []et.Json
 **/
-func (s *Linq) setWheres(wheres []et.Json) *Linq {
+func (s *Ql) setWheres(wheres []et.Json) *Ql {
 	for _, item := range wheres {
 		if item["key"] != nil {
 			s.Where(item["key"])
@@ -214,7 +215,7 @@ func (s *Linq) setWheres(wheres []et.Json) *Linq {
 * listWheres
 * @return []string
 **/
-func (s *Linq) listWheres() []string {
+func (s *Ql) listWheres() []string {
 	result := []string{}
 	for _, val := range s.Wheres {
 		result = append(result, val.String())

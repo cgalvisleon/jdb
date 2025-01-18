@@ -63,7 +63,7 @@ func (s *Postgres) One(sql string, params ...any) (et.Item, error) {
 	return result, nil
 }
 
-func (s *Postgres) Query(linq *jdb.Linq) (et.Items, error) {
+func (s *Postgres) Query(linq *jdb.Ql) (et.Items, error) {
 	linq.Sql = ""
 	linq.Sql = strs.Append(linq.Sql, s.sqlSelect(linq), "\n")
 	linq.Sql = strs.Append(linq.Sql, s.sqlFrom(linq.Froms), "\n")
@@ -81,10 +81,10 @@ func (s *Postgres) Query(linq *jdb.Linq) (et.Items, error) {
 	return et.Items{}, nil
 }
 
-func (s *Postgres) Count(linq *jdb.Linq) (int, error) {
+func (s *Postgres) Count(linq *jdb.Ql) (int, error) {
 	return 0, nil
 }
 
-func (s *Postgres) Last(linq *jdb.Linq) (et.Items, error) {
+func (s *Postgres) Last(linq *jdb.Ql) (et.Items, error) {
 	return et.Items{}, nil
 }

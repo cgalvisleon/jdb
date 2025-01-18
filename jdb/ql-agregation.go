@@ -48,9 +48,9 @@ func init() {
 /**
 * Sum
 * @param field string
-* @return *Linq
+* @return *Ql
 **/
-func (s *Linq) Sum(field string) *Linq {
+func (s *Ql) Sum(field string) *Ql {
 	sel := s.GetSelect(field)
 	if sel != nil {
 		sel.Field.Agregation = AgregationSum
@@ -63,9 +63,9 @@ func (s *Linq) Sum(field string) *Linq {
 /**
 * Count
 * @param field string
-* @return *Linq
+* @return *Ql
 **/
-func (s *Linq) Count(field string) *Linq {
+func (s *Ql) Count(field string) *Ql {
 	sel := s.GetSelect(field)
 	if sel != nil {
 		sel.Field.Agregation = AgregationCount
@@ -78,9 +78,9 @@ func (s *Linq) Count(field string) *Linq {
 /**
 * Avg
 * @param field string
-* @return *Linq
+* @return *Ql
 **/
-func (s *Linq) Avg(field string) *Linq {
+func (s *Ql) Avg(field string) *Ql {
 	sel := s.GetSelect(field)
 	if sel != nil {
 		sel.Field.Agregation = AgregationAvg
@@ -93,9 +93,9 @@ func (s *Linq) Avg(field string) *Linq {
 /**
 * Min
 * @param field string
-* @return *Linq
+* @return *Ql
 **/
-func (s *Linq) Min(field string) *Linq {
+func (s *Ql) Min(field string) *Ql {
 	sel := s.GetSelect(field)
 	if sel != nil {
 		sel.Field.Agregation = AgregationMin
@@ -108,9 +108,9 @@ func (s *Linq) Min(field string) *Linq {
 /**
 * Max
 * @param field string
-* @return *Linq
+* @return *Ql
 **/
-func (s *Linq) Max(field string) *Linq {
+func (s *Ql) Max(field string) *Ql {
 	sel := s.GetSelect(field)
 	if sel != nil {
 		sel.Field.Agregation = AgregationMax

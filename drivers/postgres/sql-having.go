@@ -5,7 +5,7 @@ import (
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
-func (s *Postgres) sqlHaving(linq *jdb.Linq) string {
+func (s *Postgres) sqlHaving(linq *jdb.Ql) string {
 	wheres := linq.Havings.Wheres
 	where := whereFilters(wheres)
 	result := "HAVING %s"

@@ -2,58 +2,40 @@ package jdb
 
 import (
 	"github.com/cgalvisleon/et/et"
-	"github.com/cgalvisleon/et/mistake"
+	"github.com/cgalvisleon/et/utility"
 )
 
-func (s *Command) updated() (et.Items, error) {
-	current, err := s.Db.Current(s)
-	if err != nil {
-		return et.Items{}, err
+func (s *Command) beforeUpdate(data et.Json) et.Json {
+	now := utility.Now()
+	from := s.From
+	if from.UpdatedAtField != nil && data[from.UpdatedAtField.Name] == nil {
+		data.Set(from.UpdatedAtField.Name, now)
 	}
-	data := s.Origin[0]
+
+	return data
+}
+
+func (s *Command) updated(data et.Json) (et.Items, error) {
+	data = s.beforeInsert(data)
 	s.consolidate(data)
-	results := et.Items{}
 
-	if !current.Ok {
-		return et.Items{}, mistake.New(MSG_NOT_DATA)
-	}
-
-	if current.Count > 1 {
-		result, err := s.Db.Command(s)
-		if err != nil {
-			return et.Items{}, err
-		}
-
-		new := &result.Result
-		s.From.GetDetails(new)
-		results.Add(*new)
-
-		return results, nil
-	}
-
-	old := current.Result[0]
-	for _, trigger := range s.From.BeforeUpdate {
-		err := Triggers[trigger](old, s.New, data)
-		if err != nil {
-			return et.Items{}, err
-		}
-	}
-
-	result, err := s.Db.Command(s)
+	results, err := s.Db.Command(s)
 	if err != nil {
 		return et.Items{}, err
 	}
 
-	new := &result.Result
-	for _, trigger := range s.From.AfterUpdate {
-		err := Triggers[trigger](old, new, data)
-		if err != nil {
-			return et.Items{}, err
+	model := s.From.Model
+	for _, result := range results.Result {
+		before := result.Json("before")
+		after := result.Json("after")
+
+		for _, event := range s.From.EventsUpdate {
+			err := event(model, before, &after, data)
+			if err != nil {
+				return et.Items{}, err
+			}
 		}
 	}
-
-	s.From.GetDetails(new)
-	results.Add(*new)
 
 	return results, nil
 }

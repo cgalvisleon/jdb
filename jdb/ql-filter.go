@@ -3,21 +3,21 @@ package jdb
 import "github.com/cgalvisleon/et/et"
 
 type FilterTo interface {
-	And(val interface{}) *LinqFilter
-	Or(val interface{}) *LinqFilter
-	Select(fields ...string) *Linq
-	Data(fields ...string) *Linq
+	And(val interface{}) *QlFilter
+	Or(val interface{}) *QlFilter
+	Select(fields ...string) *Ql
+	Data(fields ...string) *Ql
 	Exec() (et.Items, error)
 	One() (et.Item, error)
 }
 
-type LinqFilter struct {
+type QlFilter struct {
 	main   FilterTo
-	where  *LinqWhere
-	Wheres []*LinqWhere
+	where  *QlWhere
+	Wheres []*QlWhere
 }
 
-func (s *LinqFilter) setCondition(where et.Json) *LinqFilter {
+func (s *QlFilter) setCondition(where et.Json) *QlFilter {
 	if where["eq"] != nil {
 		s.Eq(where["eq"])
 	} else if where["neg"] != nil {
@@ -35,7 +35,8 @@ func (s *LinqFilter) setCondition(where et.Json) *LinqFilter {
 	} else if where["lessEq"] != nil {
 		s.LessEs(where["lessEq"])
 	} else if where["search"] != nil {
-		s.Search(where["search"])
+		language := where.Str("language")
+		s.Search(language, where["search"])
 	} else if where["between"] != nil {
 		s.Between(where["between"])
 	} else if where["isNull"] != nil {
@@ -50,10 +51,10 @@ func (s *LinqFilter) setCondition(where et.Json) *LinqFilter {
 /**
 * AddValue
 * @param val interface{}
-* @return *LinqFilter
+* @return *QlFilter
 **/
-func (s *LinqFilter) AddValue(val interface{}) FilterTo {
-	appendValue := func(linq *Linq, value interface{}) {
+func (s *QlFilter) AddValue(val interface{}) FilterTo {
+	appendValue := func(linq *Ql, value interface{}) {
 		switch v := value.(type) {
 		case string:
 			field := linq.GetField(v, false)
@@ -68,14 +69,14 @@ func (s *LinqFilter) AddValue(val interface{}) FilterTo {
 	}
 
 	switch m := s.main.(type) {
-	case *Linq:
+	case *Ql:
 		appendValue(m, val)
 	case *Command:
 		s.where.Values = append(s.where.Values, val)
-	case *LinqJoin:
-		appendValue(m.Linq, val)
-	case *LinqHaving:
-		appendValue(m.Linq, val)
+	case *QlJoin:
+		appendValue(m.Ql, val)
+	case *QlHaving:
+		appendValue(m.Ql, val)
 	}
 
 	s.Wheres = append(s.Wheres, s.where)
@@ -87,7 +88,7 @@ func (s *LinqFilter) AddValue(val interface{}) FilterTo {
 * @param val interface{}
 * @return FilterTo
 **/
-func (s *LinqFilter) Eq(val interface{}) FilterTo {
+func (s *QlFilter) Eq(val interface{}) FilterTo {
 	s.where.Operator = Equal
 	return s.AddValue(val)
 }
@@ -97,7 +98,7 @@ func (s *LinqFilter) Eq(val interface{}) FilterTo {
 * @param val interface{}
 * @return FilterTo
 **/
-func (s *LinqFilter) Neg(val interface{}) FilterTo {
+func (s *QlFilter) Neg(val interface{}) FilterTo {
 	s.where.Operator = Neg
 	return s.AddValue(val)
 }
@@ -107,7 +108,7 @@ func (s *LinqFilter) Neg(val interface{}) FilterTo {
 * @param val ...any
 * @return FilterTo
 **/
-func (s *LinqFilter) In(val ...any) FilterTo {
+func (s *QlFilter) In(val ...any) FilterTo {
 	s.where.Operator = In
 	return s.AddValue(val)
 }
@@ -117,7 +118,7 @@ func (s *LinqFilter) In(val ...any) FilterTo {
 * @param val interface{}
 * @return FilterTo
 **/
-func (s *LinqFilter) Like(val interface{}) FilterTo {
+func (s *QlFilter) Like(val interface{}) FilterTo {
 	s.where.Operator = Like
 	return s.AddValue(val)
 }
@@ -127,7 +128,7 @@ func (s *LinqFilter) Like(val interface{}) FilterTo {
 * @param val interface{}
 * @return FilterTo
 **/
-func (s *LinqFilter) More(val interface{}) FilterTo {
+func (s *QlFilter) More(val interface{}) FilterTo {
 	s.where.Operator = More
 	return s.AddValue(val)
 }
@@ -137,7 +138,7 @@ func (s *LinqFilter) More(val interface{}) FilterTo {
 * @param val interface{}
 * @return FilterTo
 **/
-func (s *LinqFilter) Less(val interface{}) FilterTo {
+func (s *QlFilter) Less(val interface{}) FilterTo {
 	s.where.Operator = Less
 	return s.AddValue(val)
 }
@@ -147,7 +148,7 @@ func (s *LinqFilter) Less(val interface{}) FilterTo {
 * @param val interface{}
 * @return FilterTo
 **/
-func (s *LinqFilter) MoreEq(val interface{}) FilterTo {
+func (s *QlFilter) MoreEq(val interface{}) FilterTo {
 	s.where.Operator = MoreEq
 	return s.AddValue(val)
 }
@@ -157,7 +158,7 @@ func (s *LinqFilter) MoreEq(val interface{}) FilterTo {
 * @param val interface{}
 * @return FilterTo
 **/
-func (s *LinqFilter) LessEs(val interface{}) FilterTo {
+func (s *QlFilter) LessEs(val interface{}) FilterTo {
 	s.where.Operator = LessEq
 	return s.AddValue(val)
 }
@@ -167,8 +168,9 @@ func (s *LinqFilter) LessEs(val interface{}) FilterTo {
 * @param val interface{}
 * @return FilterTo
 **/
-func (s *LinqFilter) Search(val interface{}) FilterTo {
+func (s *QlFilter) Search(language string, val interface{}) FilterTo {
 	s.where.Operator = Search
+	s.where.Language = language
 	return s.AddValue(val)
 }
 
@@ -177,7 +179,7 @@ func (s *LinqFilter) Search(val interface{}) FilterTo {
 * @param val1, val2 interface{}
 * @return FilterTo
 **/
-func (s *LinqFilter) Between(val interface{}) FilterTo {
+func (s *QlFilter) Between(val interface{}) FilterTo {
 	s.where.Operator = Between
 	vals, ok := val.([]interface{})
 	if !ok {
@@ -197,18 +199,18 @@ func (s *LinqFilter) Between(val interface{}) FilterTo {
 
 /**
 * IsNull
-* @return *LinqFilter
+* @return *QlFilter
 **/
-func (s *LinqFilter) IsNull() *LinqFilter {
+func (s *QlFilter) IsNull() *QlFilter {
 	s.where.Operator = IsNull
 	return s
 }
 
 /**
 * NotNull
-* @return *LinqFilter
+* @return *QlFilter
 **/
-func (s *LinqFilter) NotNull() *LinqFilter {
+func (s *QlFilter) NotNull() *QlFilter {
 	s.where.Operator = NotNull
 	return s
 }
@@ -218,16 +220,16 @@ func (s *LinqFilter) NotNull() *LinqFilter {
 * @param n int
 * @return et.Items, error
 **/
-func (s *LinqFilter) First(n int) (et.Items, error) {
-	return s.main.(*Linq).First(n)
+func (s *QlFilter) First(n int) (et.Items, error) {
+	return s.main.(*Ql).First(n)
 }
 
 /**
 * All
 * @return et.Items, error
 **/
-func (s *LinqFilter) All() (et.Items, error) {
-	return s.main.(*Linq).All()
+func (s *QlFilter) All() (et.Items, error) {
+	return s.main.(*Ql).All()
 }
 
 /**
@@ -235,25 +237,25 @@ func (s *LinqFilter) All() (et.Items, error) {
 * @param n int
 * @return et.Items, error
 **/
-func (s *LinqFilter) Last(n int) (et.Items, error) {
-	return s.main.(*Linq).Last(n)
+func (s *QlFilter) Last(n int) (et.Items, error) {
+	return s.main.(*Ql).Last(n)
 }
 
 /**
 * One
 * @return et.Item, error
 **/
-func (s *LinqFilter) One() (et.Item, error) {
-	return s.main.(*Linq).One()
+func (s *QlFilter) One() (et.Item, error) {
+	return s.main.(*Ql).One()
 }
 
 /**
 * Page
 * @param val int
-* @return *Linq
+* @return *Ql
 **/
-func (s *LinqFilter) Page(val int) *Linq {
-	return s.main.(*Linq).Page(val)
+func (s *QlFilter) Page(val int) *Ql {
+	return s.main.(*Ql).Page(val)
 }
 
 /**
@@ -261,8 +263,8 @@ func (s *LinqFilter) Page(val int) *Linq {
 * @param val int
 * @return et.Items, error
 **/
-func (s *LinqFilter) Rows(val int) (et.Items, error) {
-	return s.main.(*Linq).Rows(val)
+func (s *QlFilter) Rows(val int) (et.Items, error) {
+	return s.main.(*Ql).Rows(val)
 }
 
 /**
@@ -270,8 +272,8 @@ func (s *LinqFilter) Rows(val int) (et.Items, error) {
 * @param page, rows int
 * @return et.List, error
 **/
-func (s *LinqFilter) List(page, rows int) (et.List, error) {
-	return s.main.(*Linq).List(page, rows)
+func (s *QlFilter) List(page, rows int) (et.List, error) {
+	return s.main.(*Ql).List(page, rows)
 }
 
 /**
@@ -279,6 +281,6 @@ func (s *LinqFilter) List(page, rows int) (et.List, error) {
 * @param params et.Json
 * @return (et.Items, error)
 **/
-func (s *LinqFilter) Query(params et.Json) (et.Items, error) {
-	return s.main.(*Linq).Query(params)
+func (s *QlFilter) Query(params et.Json) (et.Items, error) {
+	return s.main.(*Ql).Query(params)
 }

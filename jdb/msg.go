@@ -12,4 +12,7 @@ const (
 	MSG_QUERY_FROM_REQUIRED      = "Query 'from' is required"
 	MSG_SYSTEMKEYFIELD_NOT_FOUND = "SystemKeyField not found"
 	MSG_NOT_DATA                 = "No data"
+	MSG_NOT_INSERT_DATA          = "No insert data"
+	MSG_NOT_UPDATE_DATA          = "No update data"
+	MSG_NOT_DELETE_DATA          = "No delete data"
 )

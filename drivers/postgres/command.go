@@ -7,16 +7,6 @@ import (
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
-func (s *Postgres) Current(command *jdb.Command) (et.Items, error) {
-	command.Sql = ""
-	command.Sql = strs.Append(command.Sql, s.sqlCurrent(command), "\n")
-	if command.Show {
-		console.Debug(command.Sql)
-	}
-
-	return et.Items{}, nil
-}
-
 func (s *Postgres) Command(command *jdb.Command) (et.Item, error) {
 	command.Sql = ""
 	switch command.Command {

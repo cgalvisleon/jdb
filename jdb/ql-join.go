@@ -29,32 +29,32 @@ func (s TypeJoin) Str() string {
 	return ""
 }
 
-type LinqJoin struct {
-	*LinqFilter
-	Linq     *Linq
+type QlJoin struct {
+	*QlFilter
+	Ql       *Ql
 	TypeJoin TypeJoin
-	From     *LinqFrom
+	From     *QlFrom
 }
 
 /**
-* LinqJoin
+* QlJoin
 * @param m *Model
-* @return *Linq
+* @return *Ql
 **/
-func (s *Linq) Join(m *Model) *LinqJoin {
+func (s *Ql) Join(m *Model) *QlJoin {
 	from := s.addFrom(m)
 	if from == nil {
 		return nil
 	}
 
-	result := &LinqJoin{
-		Linq:     s,
+	result := &QlJoin{
+		Ql:       s,
 		TypeJoin: JoinInner,
 		From:     from,
 	}
-	result.LinqFilter = &LinqFilter{
+	result.QlFilter = &QlFilter{
 		main:   result,
-		Wheres: make([]*LinqWhere, 0),
+		Wheres: make([]*QlWhere, 0),
 	}
 
 	s.Joins = append(s.Joins, result)
@@ -65,9 +65,9 @@ func (s *Linq) Join(m *Model) *LinqJoin {
 /**
 * LeftJoin
 * @param m *Model
-* @return *Linq
+* @return *Ql
 **/
-func (s *Linq) LeftJoin(m *Model) *LinqJoin {
+func (s *Ql) LeftJoin(m *Model) *QlJoin {
 	result := s.Join(m)
 	result.TypeJoin = JoinLeft
 
@@ -77,9 +77,9 @@ func (s *Linq) LeftJoin(m *Model) *LinqJoin {
 /**
 * RightJoin
 * @param m *Model
-* @return *Linq
+* @return *Ql
 **/
-func (s *Linq) RightJoin(m *Model) *LinqJoin {
+func (s *Ql) RightJoin(m *Model) *QlJoin {
 	result := s.Join(m)
 	result.TypeJoin = JoinRight
 
@@ -89,9 +89,9 @@ func (s *Linq) RightJoin(m *Model) *LinqJoin {
 /**
 * FullJoin
 * @param m *Model
-* @return *Linq
+* @return *Ql
 **/
-func (s *Linq) FullJoin(m *Model) *LinqJoin {
+func (s *Ql) FullJoin(m *Model) *QlJoin {
 	result := s.Join(m)
 	result.TypeJoin = JoinFull
 
@@ -101,72 +101,72 @@ func (s *Linq) FullJoin(m *Model) *LinqJoin {
 /**
 * On
 * @param name string
-* @return *Linq
+* @return *Ql
 **/
-func (s *LinqJoin) On(field string) *LinqFilter {
+func (s *QlJoin) On(field string) *QlFilter {
 	col := s.From.GetField(field, false)
 	if col != nil {
-		s.where = NewLinqWhere(col)
+		s.where = NewQlWhere(col)
 	} else {
-		s.where = NewLinqWhere(field)
+		s.where = NewQlWhere(field)
 	}
 
-	return s.LinqFilter
+	return s.QlFilter
 }
 
 /**
 * And
 * @param field string
-* @return *LinqFilter
+* @return *QlFilter
 **/
-func (s *LinqJoin) And(val interface{}) *LinqFilter {
+func (s *QlJoin) And(val interface{}) *QlFilter {
 	field, ok := val.(string)
 	if ok {
 		result := s.On(field)
 		result.where.Conector = And
 	}
 
-	return s.LinqFilter
+	return s.QlFilter
 }
 
 /**
 * Or
 * @param field string
-* @return *LinqFilter
+* @return *QlFilter
 **/
-func (s *LinqJoin) Or(val interface{}) *LinqFilter {
+func (s *QlJoin) Or(val interface{}) *QlFilter {
 	field, ok := val.(string)
 	if ok {
 		result := s.On(field)
 		result.where.Conector = Or
 	}
 
-	return s.LinqFilter
+	return s.QlFilter
 }
 
 /**
 * Select
 * @param fields ...string
-* @return *Linq
+* @return *Ql
 **/
-func (s *LinqJoin) Select(fields ...string) *Linq {
-	return s.Linq
+func (s *QlJoin) Select(fields ...string) *Ql {
+	return s.Ql
 }
 
 /**
 * Data
 * @param fields ...string
-* @return *Linq
+* @return *Ql
 **/
-func (s *LinqJoin) Data(fields ...string) *Linq {
-	return s.Linq
+func (s *QlJoin) Data(fields ...string) *Ql {
+	return s.Ql
 }
 
 /**
 * Exec
 * @return et.Items, error
 **/
-func (s *LinqJoin) Exec() (et.Items, error) {
+func (s *QlJoin) Exec() (et.Items, error) {
 	return et.Items{}, nil
 }
 
@@ -174,7 +174,7 @@ func (s *LinqJoin) Exec() (et.Items, error) {
 * One
 * @return et.Item, error
 **/
-func (s *LinqJoin) One() (et.Item, error) {
+func (s *QlJoin) One() (et.Item, error) {
 	return et.Item{}, nil
 }
 
@@ -182,7 +182,7 @@ func (s *LinqJoin) One() (et.Item, error) {
 * SetJoins
 * @param joins []et.Json
 **/
-func (s *Linq) setJoins(joins []et.Json) *Linq {
+func (s *Ql) setJoins(joins []et.Json) *Ql {
 	for _, val := range joins {
 		from := val.Str("from")
 		model := models[from]
@@ -204,7 +204,7 @@ func (s *Linq) setJoins(joins []et.Json) *Linq {
 * listJoins
 * @return []string
 **/
-func (s *Linq) listJoins() []string {
+func (s *Ql) listJoins() []string {
 	result := []string{}
 	for _, join := range s.Joins {
 		result = append(result, strs.Format(`%s %s AS %s`, join.TypeJoin.Str(), join.From.Table, join.From.As))

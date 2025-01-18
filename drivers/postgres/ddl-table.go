@@ -1,6 +1,8 @@
 package postgres
 
 import (
+	"slices"
+
 	"github.com/cgalvisleon/et/strs"
 	"github.com/cgalvisleon/et/utility"
 	jdb "github.com/cgalvisleon/jdb/jdb"
@@ -36,6 +38,8 @@ func (s *Postgres) typeColumn(tp jdb.TypeData) interface{} {
 		return "TIMESTAMP"
 	case jdb.TypeDataGeometry:
 		return "JSONB"
+	case jdb.TypeDataFullText:
+		return "TSVECTOR"
 	default:
 		return "VARCHAR(250)"
 	}
@@ -77,7 +81,7 @@ func (s *Postgres) defaultValue(tp jdb.TypeData) interface{} {
 func (s *Postgres) ddlTable(model *jdb.Model) string {
 	var columnsDef string
 	for _, column := range model.Columns {
-		if column == model.SystemKeyField {
+		if slices.Contains([]*jdb.Column{model.SystemKeyField, model.FullTextField}, column) {
 			columnsDef += strs.Format("\n\t%s %s INVISIBLE DEFAULT %v,", column.Name, s.typeColumn(column.TypeData), s.defaultValue(column.TypeData))
 		} else if column.TypeColumn == jdb.TpColumn {
 			columnsDef += strs.Format("\n\t%s %s DEFAULT %v,", column.Name, s.typeColumn(column.TypeData), s.defaultValue(column.TypeData))

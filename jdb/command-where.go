@@ -12,52 +12,52 @@ func (s *Command) Where(val interface{}) *Command {
 	case string:
 		field := s.From.GetField(v, false)
 		if field != nil {
-			s.where = NewLinqWhere(field)
+			s.where = NewQlWhere(field)
 			return s
 		}
 	}
 
-	s.where = NewLinqWhere(val)
+	s.where = NewQlWhere(val)
 	return s
 }
 
 /**
 * And
 * @param val interface{}
-* @return *LinqFilter
+* @return *QlFilter
 **/
-func (s *Command) And(val interface{}) *LinqFilter {
+func (s *Command) And(val interface{}) *QlFilter {
 	result := s.Where(val)
 	result.where.Conector = And
-	return s.LinqFilter
+	return s.QlFilter
 }
 
 /**
 * And
 * @param field string
-* @return *LinqFilter
+* @return *QlFilter
 **/
-func (s *Command) Or(val interface{}) *LinqFilter {
+func (s *Command) Or(val interface{}) *QlFilter {
 	result := s.Where(val)
 	result.where.Conector = Or
-	return s.LinqFilter
+	return s.QlFilter
 }
 
 /**
 * Select
 * @param fields ...string
-* @return *Linq
+* @return *Ql
 **/
-func (s *Command) Select(fields ...string) *Linq {
+func (s *Command) Select(fields ...string) *Ql {
 	return nil
 }
 
 /**
 * Data
 * @param fields ...string
-* @return *Linq
+* @return *Ql
 **/
-func (s *Command) Data(fields ...string) *Linq {
+func (s *Command) Data(fields ...string) *Ql {
 	return nil
 }
 

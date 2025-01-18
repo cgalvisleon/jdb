@@ -6,9 +6,9 @@ import (
 
 /**
 * calcOffset
-* @return *Linq
+* @return *Ql
 **/
-func (s *Linq) calcOffset() *Linq {
+func (s *Ql) calcOffset() *Ql {
 	s.Offset = (s.Sheet - 1) * s.Limit
 	if s.Offset < 0 {
 		s.Offset = 0
@@ -20,9 +20,9 @@ func (s *Linq) calcOffset() *Linq {
 /**
 * SetLimit
 * @param limit int
-* @return *Linq
+* @return *Ql
 **/
-func (s *Linq) setLimit(limit int) *Linq {
+func (s *Ql) setLimit(limit int) *Ql {
 	s.Limit = limit
 	return s
 }
@@ -30,9 +30,9 @@ func (s *Linq) setLimit(limit int) *Linq {
 /**
 * SetPage
 * @param page int
-* @return *Linq
+* @return *Ql
 **/
-func (s *Linq) setPage(page int) *Linq {
+func (s *Ql) setPage(page int) *Ql {
 	return s.Page(page)
 }
 
@@ -40,7 +40,7 @@ func (s *Linq) setPage(page int) *Linq {
 * listLimit
 * @return interface{}
 **/
-func (s *Linq) listLimit() interface{} {
+func (s *Ql) listLimit() interface{} {
 	if s.Sheet > 0 {
 		return et.Json{
 			"limit": s.Limit,
