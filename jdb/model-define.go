@@ -38,9 +38,6 @@ func (s *Model) DefineColumn(name string, typeData TypeData) *Column {
 	if col.Name == string(StateField) {
 		s.StateField = col
 	}
-	if col.Name == string(ClassField) {
-		s.ClassField = col
-	}
 	if col.Name == string(KeyField) {
 		s.KeyField = col
 	}
@@ -154,18 +151,6 @@ func (s *Model) DefineSystemKeyField() *Column {
 func (s *Model) DefineIndexField() *Column {
 	result := s.DefineColumn(string(IndexField), IndexField.TypeData())
 	s.DefineIndex(true, string(IndexField))
-
-	return result
-}
-
-/**
-* DefineClassField
-* @return *Column
-**/
-func (s *Model) DefineClassField() *Column {
-	result := s.DefineColumn(string(ClassField), ClassField.TypeData())
-	result.Default = s.Low()
-	s.DefineIndex(true, string(ClassField))
 
 	return result
 }

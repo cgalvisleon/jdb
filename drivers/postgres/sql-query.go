@@ -76,6 +76,8 @@ func (s *Postgres) Query(ql *jdb.Ql) (et.Items, error) {
 
 	if ql.Show {
 		console.Debug(ql.Sql)
+	} else {
+		console.Debug(ql.Sql)
 	}
 
 	return et.Items{}, nil

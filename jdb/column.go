@@ -115,7 +115,6 @@ const (
 	STATUS     = "status"
 	KEY        = "id"
 	SYSID      = "jdbid"
-	CLASS      = "_class"
 	CREATED_TO = "created_to"
 	UPDATED_TO = "updated_to"
 	FULLTEXT   = "fulltext"
@@ -130,7 +129,6 @@ var (
 	StateField     ColumnField = STATUS
 	KeyField       ColumnField = KEY
 	SystemKeyField ColumnField = SYSID
-	ClassField     ColumnField = CLASS
 	CreatedToField ColumnField = CREATED_TO
 	UpdatedToField ColumnField = UPDATED_TO
 	FullTextField  ColumnField = FULLTEXT

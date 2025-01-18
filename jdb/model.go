@@ -37,7 +37,6 @@ type Model struct {
 	SystemKeyField *Column                     `json:"system_key_field"`
 	StateField     *Column                     `json:"state_field"`
 	IndexField     *Column                     `json:"index_field"`
-	ClassField     *Column                     `json:"class_field"`
 	FullTextField  *Column                     `json:"full_text_field"`
 	EventsInsert   []Event                     `json:"-"`
 	EventsUpdate   []Event                     `json:"-"`
@@ -318,7 +317,6 @@ func (s *Model) MakeCollection() *Model {
 	s.DefineUpdatedAtField()
 	s.DefineStateField()
 	s.DefineKeyField()
-	s.DefineClassField()
 	s.DefineSourceField()
 	s.DefineSystemKeyField()
 	s.DefineIndexField()

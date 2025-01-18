@@ -94,8 +94,6 @@ func ConnectTo(params et.Json) (*DB, error) {
 			KeyField = value.(ColumnField)
 		case "SystemKeyField":
 			SystemKeyField = value.(ColumnField)
-		case "ClassField":
-			ClassField = value.(ColumnField)
 		case "CreatedToField":
 			CreatedToField = value.(ColumnField)
 		case "UpdatedToField":
