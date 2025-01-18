@@ -4,12 +4,39 @@ import (
 	"encoding/gob"
 	"encoding/json"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/strs"
+	"github.com/cgalvisleon/et/utility"
 )
+
+type RID struct {
+	Id     string `json:"id"`
+	Schema string `json:"schema"`
+	Table  string `json:"table"`
+	Model  string `json:"model"`
+}
+
+func GetRID(id string) *RID {
+	result := &RID{
+		Id: id,
+	}
+
+	split := strings.Split(id, ":")
+	if len(split) == 2 {
+		result.Table = split[0]
+		split = strings.Split(split[0], ".")
+		if len(split) == 2 {
+			result.Schema = split[0]
+			result.Model = split[1]
+		}
+	}
+
+	return result
+}
 
 func TableName(schema, name string) string {
 	return strs.Format(`%s.%s`, strs.Lowcase(schema), strs.Lowcase(name))
@@ -97,6 +124,26 @@ func NewModel(schema *Schema, name string, version int) *Model {
 
 func init() {
 	gob.Register(&Column{})
+}
+
+/**
+* GenId
+* @param id string
+* @return string
+**/
+func (s *Model) GenId(id string) string {
+	id = utility.GenId(id)
+	return strs.Format(`%s:%s`, s.Table, id)
+}
+
+/**
+* GenKey
+* @param id string
+* @return string
+**/
+func (s *Model) GenKey(id string) string {
+	id = utility.GenKey(id)
+	return strs.Format(`%s:%s`, s.Table, id)
 }
 
 /**
