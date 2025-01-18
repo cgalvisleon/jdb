@@ -34,7 +34,7 @@ func (s *Postgres) defineRecycling() error {
   CREATE INDEX IF NOT EXISTS RECYCLING__IDT_IDX ON core.RECYCLING(_IDT);
 	CREATE INDEX IF NOT EXISTS RECYCLING_INDEX_IDX ON core.RECYCLING(INDEX);`,
 		[]string{"date_create", "date_update", "_id", "_idt", "_data"},
-		[]string{jdb.CreatedAtField.Str(), jdb.UpdatedAtField.Str(), jdb.KeyField.Str(), jdb.SystemKeyField.Str(), jdb.SourceField.Str()})
+		[]string{string(jdb.CreatedAtField), string(jdb.UpdatedAtField), string(jdb.KeyField), string(jdb.SystemKeyField), string(jdb.SourceField)})
 
 	err = s.Exec(sql)
 	if err != nil {
@@ -88,7 +88,7 @@ func (s *Postgres) defineRecyclingFunction() error {
   END;
   $$ LANGUAGE plpgsql;`,
 		[]string{"date_create", "date_update", "_id", "_idt", "_data"},
-		[]string{jdb.CreatedAtField.Str(), jdb.UpdatedAtField.Str(), jdb.KeyField.Str(), jdb.SystemKeyField.Str(), jdb.SourceField.Str()})
+		[]string{string(jdb.CreatedAtField), string(jdb.UpdatedAtField), string(jdb.KeyField), string(jdb.SystemKeyField), string(jdb.SourceField)})
 
 	err := s.Exec(sql)
 	if err != nil {
@@ -112,7 +112,7 @@ func defineRecyclingTrigger(table string) string {
 	FOR EACH ROW
 	EXECUTE PROCEDURE core.RECYCLING_DELETE();`,
 		[]string{"_STATE", "$1"},
-		[]string{jdb.StateField.Str(), table})
+		[]string{string(jdb.StateField), table})
 
 	result = strs.Replace(result, "\t", "")
 

@@ -51,7 +51,7 @@ func (s *Postgres) defineDDL() error {
 	FOR EACH ROW
 	EXECUTE PROCEDURE core.RECORDS_BEFORE_DELETE();`,
 		[]string{"date_create", "date_update", "_id", "_idt", "_data"},
-		[]string{jdb.CreatedAtField.Str(), jdb.UpdatedAtField.Str(), jdb.KeyField.Str(), jdb.SystemKeyField.Str(), jdb.SourceField.Str()})
+		[]string{string(jdb.CreatedAtField), string(jdb.UpdatedAtField), string(jdb.KeyField), string(jdb.SystemKeyField), string(jdb.SourceField)})
 
 	err = s.Exec(sql)
 	if err != nil {

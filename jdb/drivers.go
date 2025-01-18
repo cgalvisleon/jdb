@@ -31,9 +31,8 @@ type Driver interface {
 	Exec(sql string, params ...any) error
 	SQL(sql string, params ...any) (et.Items, error)
 	One(sql string, params ...any) (et.Item, error)
-	Query(linq *Ql) (et.Items, error)
-	Count(linq *Ql) (int, error)
-	Last(linq *Ql) (et.Items, error)
+	Query(ql *Ql) (et.Items, error)
+	Count(ql *Ql) (int, error)
 	// Command
 	Command(command *Command) (et.Items, error)
 	// Series

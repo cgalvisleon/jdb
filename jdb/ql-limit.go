@@ -1,6 +1,7 @@
 package jdb
 
 import (
+	"github.com/cgalvisleon/et/envar"
 	"github.com/cgalvisleon/et/et"
 )
 
@@ -23,7 +24,12 @@ func (s *Ql) calcOffset() *Ql {
 * @return *Ql
 **/
 func (s *Ql) setLimit(limit int) *Ql {
+	max := envar.GetInt(1000, "QUERY_LIMIT")
+	if limit > max {
+		limit = max
+	}
 	s.Limit = limit
+
 	return s
 }
 

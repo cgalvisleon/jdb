@@ -54,10 +54,10 @@ func (s *QlFilter) setCondition(where et.Json) *QlFilter {
 * @return *QlFilter
 **/
 func (s *QlFilter) AddValue(val interface{}) FilterTo {
-	appendValue := func(linq *Ql, value interface{}) {
+	appendValue := func(ql *Ql, value interface{}) {
 		switch v := value.(type) {
 		case string:
-			field := linq.GetField(v, false)
+			field := ql.GetField(v, false)
 			if field != nil {
 				s.where.Values = append(s.where.Values, field)
 			} else {

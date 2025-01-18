@@ -212,7 +212,7 @@ func (s *Model) DefineFullText(fields []string) *Column {
 * @return *Model
 **/
 func (s *Model) DefineGenerated(name string, f FuncGenerated) {
-	col := newColumn(s, name, "", TpGenerate, TypeDataNone, TypeDataNone.DefaultValue())
+	col := newColumn(s, name, "", TpGenerated, TypeDataNone, TypeDataNone.DefaultValue())
 	col.FuncGenerated = f
 	s.Columns = append(s.Columns, col)
 }

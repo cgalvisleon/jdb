@@ -32,7 +32,7 @@ func (s *Postgres) defineModel() error {
 	CREATE INDEX IF NOT EXISTS MODELS_TABLENAME_IDX ON core.MODELS(TABLENAME);
 	CREATE INDEX IF NOT EXISTS MODELS_INDEX_IDX ON core.MODELS(INDEX);`,
 		[]string{"date_create", "date_update", "_id", "_idt", "_data"},
-		[]string{jdb.CreatedAtField.Str(), jdb.UpdatedAtField.Str(), jdb.KeyField.Str(), jdb.SystemKeyField.Str(), jdb.SourceField.Str()})
+		[]string{string(jdb.CreatedAtField), string(jdb.UpdatedAtField), string(jdb.KeyField), string(jdb.SystemKeyField), string(jdb.SourceField)})
 
 	err = s.Exec(sql)
 	if err != nil {

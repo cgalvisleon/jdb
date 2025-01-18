@@ -41,7 +41,7 @@ func (s *Postgres) defineRecords() error {
   CREATE INDEX IF NOT EXISTS RECORDS__IDT_IDX ON core.RECORDS(_IDT);  
 	CREATE INDEX IF NOT EXISTS RECORDS_INDEX_IDX ON core.RECORDS(INDEX);`,
 		[]string{"date_create", "date_update", "_id", "_idt", "_data"},
-		[]string{jdb.CreatedAtField.Str(), jdb.UpdatedAtField.Str(), jdb.KeyField.Str(), jdb.SystemKeyField.Str(), jdb.SourceField.Str()})
+		[]string{string(jdb.CreatedAtField), string(jdb.UpdatedAtField), string(jdb.KeyField), string(jdb.SystemKeyField), string(jdb.SourceField)})
 
 	err = s.Exec(sql)
 	if err != nil {
@@ -231,7 +231,7 @@ func (s *Postgres) defineRecordsFunction() error {
 	END;
 	$$ LANGUAGE plpgsql;`,
 		[]string{"date_create", "date_update", "_id", "_idt", "_data"},
-		[]string{jdb.CreatedAtField.Str(), jdb.UpdatedAtField.Str(), jdb.KeyField.Str(), jdb.SystemKeyField.Str(), jdb.SourceField.Str()})
+		[]string{string(jdb.CreatedAtField), string(jdb.UpdatedAtField), string(jdb.KeyField), string(jdb.SystemKeyField), string(jdb.SourceField)})
 	err := s.Exec(sql)
 	if err != nil {
 		return console.Panic(err)

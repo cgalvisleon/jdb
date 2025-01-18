@@ -108,7 +108,7 @@ func (s *Postgres) ddlTableInsert(old *jdb.Model) string {
 	fields := ""
 	for _, column := range old.Columns {
 		if column.TypeColumn == jdb.TpColumn {
-			fields = strs.Append(fields, strs.Format("%s", column.Up()), ", ")
+			fields = strs.Append(fields, strs.Format("%s", column.Name), ", ")
 		}
 	}
 	result := strs.Format("INSERT INTO %s (%s)\nSELECT %s FROM %s;", old.Table, fields, fields, backupTable)

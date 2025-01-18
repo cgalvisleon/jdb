@@ -6,12 +6,12 @@ import (
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
-func (s *Postgres) sqlLimit(linq *jdb.Ql) string {
+func (s *Postgres) sqlLimit(ql *jdb.Ql) string {
 	result := ""
-	if linq.Sheet > 0 {
-		result = strs.Format(`LIMIT %d OFFSET %d`, linq.Limit, linq.Offset)
-	} else if linq.Limit > 0 {
-		result = strs.Format(`LIMIT %d`, linq.Limit)
+	if ql.Sheet > 0 {
+		result = strs.Format(`LIMIT %d OFFSET %d`, ql.Limit, ql.Offset)
+	} else if ql.Limit > 0 {
+		result = strs.Format(`LIMIT %d`, ql.Limit)
 	} else {
 		limit := envar.GetInt(1000, "QUERY_LIMIT")
 		result = strs.Format(`LIMIT %d`, limit)

@@ -227,41 +227,28 @@ func (s *DB) One(sql string, params ...any) (et.Item, error) {
 
 /**
 * Query
-* @param linq *Ql
+* @param ql *Ql
 * @return et.Items, error
 **/
-func (s *DB) Query(linq *Ql) (et.Items, error) {
+func (s *DB) Query(ql *Ql) (et.Items, error) {
 	if s.driver == nil {
 		return et.Items{}, mistake.New(MSG_DRIVER_NOT_DEFINED)
 	}
 
-	return s.driver.Query(linq)
+	return s.driver.Query(ql)
 }
 
 /**
 * Count
-* @param linq *Ql
+* @param ql *Ql
 * @return int, error
 **/
-func (s *DB) Count(linq *Ql) (int, error) {
+func (s *DB) Count(ql *Ql) (int, error) {
 	if s.driver == nil {
 		return 0, mistake.New(MSG_DRIVER_NOT_DEFINED)
 	}
 
-	return s.driver.Count(linq)
-}
-
-/**
-* Last
-* @param linq *Ql
-* @return et.Items, error
-**/
-func (s *DB) Last(linq *Ql) (et.Items, error) {
-	if s.driver == nil {
-		return et.Items{}, mistake.New(MSG_DRIVER_NOT_DEFINED)
-	}
-
-	return s.driver.Last(linq)
+	return s.driver.Count(ql)
 }
 
 /**

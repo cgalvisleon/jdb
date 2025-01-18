@@ -14,6 +14,19 @@ const (
 	Bulk
 )
 
+type Value struct {
+	Columns et.Json
+	Atribs  et.Json
+	Data    et.Json
+}
+
+func NewValue() *Value {
+	return &Value{
+		Columns: et.Json{},
+		Atribs:  et.Json{},
+	}
+}
+
 type Command struct {
 	*QlFilter
 	Db         *DB
@@ -21,9 +34,7 @@ type Command struct {
 	From       *QlFrom
 	Command    TypeCommand
 	Origin     []et.Json
-	Atribs     et.Json
-	Fields     et.Json
-	New        et.Json
+	Values     []*Value
 	Sql        string
 	Result     et.Items
 	Show       bool
@@ -44,10 +55,8 @@ func NewCommand(model *Model, data []et.Json, command TypeCommand) *Command {
 	result := &Command{
 		TypeSelect: tp,
 		Command:    command,
-		Atribs:     et.Json{},
-		Fields:     et.Json{},
 		Origin:     data,
-		New:        et.Json{},
+		Values:     make([]*Value, 0),
 		Show:       false,
 		Sql:        "",
 		Result:     et.Items{},
@@ -90,26 +99,6 @@ func (s *Command) Describe() et.Json {
 	return result
 }
 
-func (s *Command) consolidate(data et.Json) et.Json {
-	for k, v := range data {
-		field := s.From.GetField(k, true)
-		if field != nil {
-			s.New[k] = v
-			switch field.Column.TypeColumn {
-			case TpAtribute:
-				s.Atribs[k] = v
-			case TpColumn:
-				s.Fields[k] = v
-			}
-		} else if !s.From.Integrity {
-			s.New[k] = v
-			s.Atribs[k] = v
-		}
-	}
-
-	return s.New
-}
-
 /**
 * Debug
 * @return *Command
@@ -131,8 +120,7 @@ func (s *Command) Exec() (et.Items, error) {
 			return et.Items{}, mistake.New(MSG_NOT_DATA)
 		}
 
-		data := s.Origin[0]
-		result, err := s.inserted(data)
+		result, err := s.inserted()
 		if err != nil {
 			return et.Items{}, err
 		}
@@ -142,8 +130,7 @@ func (s *Command) Exec() (et.Items, error) {
 			return et.Items{}, mistake.New(MSG_NOT_DATA)
 		}
 
-		data := s.Origin[0]
-		result, err := s.updated(data)
+		result, err := s.updated()
 		if err != nil {
 			return et.Items{}, err
 		}
@@ -163,7 +150,7 @@ func (s *Command) Exec() (et.Items, error) {
 		if err != nil {
 			return et.Items{}, err
 		}
-		s.Result.Add(result.Result)
+		s.Result = result
 	}
 
 	return s.Result, nil

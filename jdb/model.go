@@ -262,55 +262,6 @@ func (s *Model) GetKeys() []*Column {
 }
 
 /**
-* GetDetails
-* @return []et.Json
-**/
-func (s *Model) GetDetails(data *et.Json) *et.Json {
-	if data == nil {
-		data = &et.Json{}
-	} else if data.IsEmpty() {
-		data = &et.Json{}
-	}
-
-	for _, col := range s.Columns {
-		switch col.TypeColumn {
-		case TpGenerate:
-			if col.FuncGenerated != nil {
-				col.FuncGenerated(col, data)
-			}
-		case TpDetail:
-			model := col.Detail
-			if model == nil {
-				continue
-			}
-			var filter FilterTo
-			linq := From(model)
-			for _, key := range col.Model.Keys {
-				val := (*data)[key.Field]
-				if val == nil {
-					break
-				}
-				if filter == nil {
-					filter = linq.Where(key.Fk()).Eq(val)
-				} else {
-					filter = linq.And(key.Fk()).Eq(val)
-				}
-			}
-			result, err := linq.
-				Page(1).
-				Rows(col.Limit)
-			if err != nil {
-				data.Set(col.Name, result)
-			} else {
-				data.Set(col.Name, []et.Json{})
-			}
-		}
-	}
-
-	return data
-}
-
-/**
 * New
 * @param data et.Json
 * @return et.Json
@@ -329,7 +280,7 @@ func (s *Model) New(data et.Json) et.Json {
 				}
 			case TpAtribute:
 				result.Set(col.Name, col.DefaultValue())
-			case TpGenerate:
+			case TpGenerated:
 				if col.FuncGenerated != nil {
 					col.FuncGenerated(col, result)
 				}

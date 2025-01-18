@@ -19,10 +19,12 @@ type Ql struct {
 	Db         *DB         `json:"-"`
 	TypeSelect TypeSelect  `json:"type_select"`
 	Froms      []*QlFrom   `json:"froms"`
+	Selects    []*QlSelect `json:"selects"`
 	Joins      []*QlJoin   `json:"joins"`
 	Groups     []*QlSelect `json:"group_bys"`
 	Havings    *QlHaving   `json:"havings"`
 	Orders     []*QlOrder  `json:"orders"`
+	Details    []*QlSelect `json:"details"`
 	Sheet      int         `json:"sheet"`
 	Offset     int         `json:"offset"`
 	Limit      int         `json:"limit"`

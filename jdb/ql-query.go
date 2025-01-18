@@ -1,10 +1,48 @@
 package jdb
 
 import (
-	"github.com/cgalvisleon/et/envar"
+	"slices"
+
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/mistake"
 )
+
+/**
+* GetDetails
+* @return et.Json
+**/
+func (s *Ql) GetDetails(data et.Json) et.Json {
+
+	return data
+}
+
+func (s *Ql) prepare() *Ql {
+	for _, frm := range s.Froms {
+		s.Selects = append(s.Selects, frm.Selects...)
+	}
+
+	if len(s.Selects) == 0 {
+		frm := s.Froms[0]
+		for _, col := range frm.Columns {
+			if slices.Contains([]TypeColumn{TpAtribute, TpGenerated}, col.TypeColumn) {
+				continue
+			}
+			field := col.GetField()
+			field.As = frm.As
+			sel := &QlSelect{
+				From:  frm,
+				Field: field,
+			}
+			if col.TypeColumn == TpDetail {
+				s.Details = append(s.Details, sel)
+			} else {
+				s.Selects = append(s.Selects, sel)
+			}
+		}
+	}
+
+	return s
+}
 
 /**
 * First
@@ -16,14 +54,15 @@ func (s *Ql) First(n int) (et.Items, error) {
 		return et.Items{}, mistake.New(MSG_DATABASE_NOT_FOUND)
 	}
 
-	limit := envar.GetInt(1000, "QUERY_LIMIT")
-	if n > limit {
-		n = limit
-	}
 	s.setLimit(n)
+	s.prepare()
 	result, err := s.Db.Query(s)
 	if err != nil {
 		return et.Items{}, err
+	}
+
+	for i, item := range result.Result {
+		result.Result[i] = s.GetDetails(item)
 	}
 
 	return result, nil
@@ -47,13 +86,7 @@ func (s *Ql) Last(n int) (et.Items, error) {
 		return et.Items{}, mistake.New(MSG_DATABASE_NOT_FOUND)
 	}
 
-	s.Limit = n
-	result, err := s.Db.Last(s)
-	if err != nil {
-		return et.Items{}, err
-	}
-
-	return result, nil
+	return s.First(n * -1)
 }
 
 /**

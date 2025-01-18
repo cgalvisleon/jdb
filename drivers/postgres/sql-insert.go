@@ -7,24 +7,35 @@ import (
 )
 
 func (s *Postgres) sqlInsert(command *jdb.Command) string {
-	result := "INSERT INTO %s(%s)\nVALUES (%s)"
+	result := "INSERT INTO %s(%s)\nVALUE\n%s\nRETURNING jsonb_build_object() AS before,\n%s AS after;"
 	columns := ""
 	values := ""
-	for key, val := range command.Fields {
-		column := strs.Uppcase(key)
-		value := utility.Quote(val)
+	for i, value := range command.Values {
+		record := ""
+		for key, val := range value.Columns {
+			if i == 0 {
+				column := key
+				columns = strs.Append(columns, column, ", ")
+			}
 
-		columns = strs.Append(columns, column, ", ")
-		values = strs.Append(values, strs.Format(`%v`, value), ", ")
+			value := utility.Quote(val)
+			def := strs.Format(`%v`, value)
+			record = strs.Append(record, def, ", ")
+		}
+		if command.From.SourceField != nil && len(value.Atribs) > 0 {
+			if i == 0 {
+				column := command.From.SourceField.Name
+				columns = strs.Append(columns, column, ", ")
+			}
+
+			value := value.Atribs.ToString()
+			def := strs.Format(`'%v'::jsonb`, value)
+			record = strs.Append(record, def, ", ")
+		}
+		def := strs.Format(`(%s)`, record)
+		values = strs.Append(values, def, "\n")
 	}
-	if len(command.Atribs) > 0 {
-		columns = strs.Append(columns, command.From.SourceField.Up(), ", ")
-		value := command.Atribs.ToString()
 
-		values = strs.Append(values, strs.Format(`'%v'::jsonb`, value), ", ")
-	}
-
-	result = strs.Format(result, command.From.Table, columns, values)
-
-	return result
+	objects := s.sqlJsonObject(command.From)
+	return strs.Format(result, command.From.Table, columns, values, objects)
 }

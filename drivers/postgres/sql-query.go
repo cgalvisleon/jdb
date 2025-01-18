@@ -63,28 +63,20 @@ func (s *Postgres) One(sql string, params ...any) (et.Item, error) {
 	return result, nil
 }
 
-func (s *Postgres) Query(linq *jdb.Ql) (et.Items, error) {
-	linq.Sql = ""
-	linq.Sql = strs.Append(linq.Sql, s.sqlSelect(linq), "\n")
-	linq.Sql = strs.Append(linq.Sql, s.sqlFrom(linq.Froms), "\n")
-	linq.Sql = strs.Append(linq.Sql, s.sqlJoin(linq.Joins), "\n")
-	linq.Sql = strs.Append(linq.Sql, s.sqlWhere(linq.Wheres), "\n")
-	linq.Sql = strs.Append(linq.Sql, s.sqlGroupBy(linq), "\n")
-	linq.Sql = strs.Append(linq.Sql, s.sqlHaving(linq), "\n")
-	linq.Sql = strs.Append(linq.Sql, s.sqlOrderBy(linq), "\n")
-	linq.Sql = strs.Append(linq.Sql, s.sqlLimit(linq), "\n")
+func (s *Postgres) Query(ql *jdb.Ql) (et.Items, error) {
+	ql.Sql = ""
+	ql.Sql = strs.Append(ql.Sql, s.sqlSelect(ql), "\n")
+	ql.Sql = strs.Append(ql.Sql, s.sqlFrom(ql.Froms), "\n")
+	ql.Sql = strs.Append(ql.Sql, s.sqlJoin(ql.Joins), "\n")
+	ql.Sql = strs.Append(ql.Sql, s.sqlWhere(ql.Wheres), "\n")
+	ql.Sql = strs.Append(ql.Sql, s.sqlGroupBy(ql), "\n")
+	ql.Sql = strs.Append(ql.Sql, s.sqlHaving(ql), "\n")
+	ql.Sql = strs.Append(ql.Sql, s.sqlOrderBy(ql), "\n")
+	ql.Sql = strs.Append(ql.Sql, s.sqlLimit(ql), "\n")
 
-	if linq.Show {
-		console.Debug(linq.Sql)
+	if ql.Show {
+		console.Debug(ql.Sql)
 	}
 
-	return et.Items{}, nil
-}
-
-func (s *Postgres) Count(linq *jdb.Ql) (int, error) {
-	return 0, nil
-}
-
-func (s *Postgres) Last(linq *jdb.Ql) (et.Items, error) {
 	return et.Items{}, nil
 }

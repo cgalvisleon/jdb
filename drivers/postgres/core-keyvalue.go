@@ -32,7 +32,7 @@ func (s *Postgres) defineKeyValue() error {
 	CREATE INDEX IF NOT EXISTS KEYVALUES__IDT_IDX ON core.KEYVALUES(_IDT);
 	CREATE INDEX IF NOT EXISTS KEYVALUES_INDEX_IDX ON core.KEYVALUES(INDEX);`,
 		[]string{"date_create", "date_update", "_id", "_idt", "_data"},
-		[]string{jdb.CreatedAtField.Str(), jdb.UpdatedAtField.Str(), jdb.KeyField.Str(), jdb.SystemKeyField.Str(), jdb.SourceField.Str()})
+		[]string{string(jdb.CreatedAtField), string(jdb.UpdatedAtField), string(jdb.KeyField), string(jdb.SystemKeyField), string(jdb.SourceField)})
 	sql = strs.Append(sql, defineRecordTrigger("core.KEYVALUES"), "\n")
 	sql = strs.Append(sql, defineSeriesTrigger("core.KEYVALUES"), "\n")
 

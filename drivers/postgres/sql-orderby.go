@@ -5,9 +5,9 @@ import (
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
-func (s *Postgres) sqlOrderBy(linq *jdb.Ql) string {
+func (s *Postgres) sqlOrderBy(ql *jdb.Ql) string {
 	result := ""
-	for _, ord := range linq.Orders {
+	for _, ord := range ql.Orders {
 		def := selectField(ord.Field)
 		if ord.Sorted {
 			def = strs.Append(def, "ASC", " ")

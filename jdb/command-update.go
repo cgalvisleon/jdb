@@ -2,26 +2,19 @@ package jdb
 
 import (
 	"github.com/cgalvisleon/et/et"
-	"github.com/cgalvisleon/et/utility"
+	"github.com/cgalvisleon/et/mistake"
 )
 
-func (s *Command) beforeUpdate(data et.Json) et.Json {
-	now := utility.Now()
-	from := s.From
-	if from.UpdatedAtField != nil && data[from.UpdatedAtField.Name] == nil {
-		data.Set(from.UpdatedAtField.Name, now)
-	}
-
-	return data
-}
-
-func (s *Command) updated(data et.Json) (et.Items, error) {
-	data = s.beforeInsert(data)
-	s.consolidate(data)
+func (s *Command) updated() (et.Items, error) {
+	s.consolidate()
 
 	results, err := s.Db.Command(s)
 	if err != nil {
 		return et.Items{}, err
+	}
+
+	if !results.Ok {
+		return et.Items{}, mistake.New(MSG_NOT_UPDATE_DATA)
 	}
 
 	model := s.From.Model
@@ -30,7 +23,7 @@ func (s *Command) updated(data et.Json) (et.Items, error) {
 		after := result.Json("after")
 
 		for _, event := range s.From.EventsUpdate {
-			err := event(model, before, &after, data)
+			err := event(model, before, after)
 			if err != nil {
 				return et.Items{}, err
 			}

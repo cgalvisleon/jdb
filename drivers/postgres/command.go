@@ -7,7 +7,7 @@ import (
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
-func (s *Postgres) Command(command *jdb.Command) (et.Item, error) {
+func (s *Postgres) Command(command *jdb.Command) (et.Items, error) {
 	command.Sql = ""
 	switch command.Command {
 	case jdb.Insert:
@@ -19,11 +19,10 @@ func (s *Postgres) Command(command *jdb.Command) (et.Item, error) {
 	case jdb.Bulk:
 		command.Sql = strs.Append(command.Sql, s.sqlBulk(command), "\n")
 	}
-	command.Sql = strs.Append(command.Sql, s.sqlReturn(command), "\n")
 
 	if command.Show {
 		console.Debug(command.Sql)
 	}
 
-	return et.Item{}, nil
+	return et.Items{}, nil
 }

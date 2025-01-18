@@ -46,11 +46,11 @@ func jsonbBuildObject(result, obj string) string {
 	return strs.Append(result, strs.Format("jsonb_build_object(\n%s)", obj), "||\n")
 }
 
-func (s *Postgres) sqlData(frm *jdb.QlFrom, selects []*jdb.QlSelect, orders []*jdb.QlOrder) string {
+func (s *Postgres) sqlData(frm *jdb.QlFrom, selects []*jdb.QlSelect) string {
 	result := ""
-	if frm != nil {
+	if frm != nil && frm.SourceField != nil {
 		def := strs.Append("", frm.As, ".")
-		def = strs.Append(def, jdb.SourceField.Up(), ".")
+		def = strs.Append(def, frm.SourceField.Name, ".")
 		def = strs.Format(`%s`, def)
 		result = strs.Append(result, def, "")
 	}
@@ -80,11 +80,12 @@ func (s *Postgres) sqlData(frm *jdb.QlFrom, selects []*jdb.QlSelect, orders []*j
 		result = jsonbBuildObject(result, obj)
 	}
 
-	result = strs.Append(result, jdb.SourceField.Up(), " AS ")
-	if orders == nil {
-		return result
-	}
+	return result
+}
 
+func (s *Postgres) sqlDataOrders(frm *jdb.QlFrom, selects []*jdb.QlSelect, as string, orders []*jdb.QlOrder) string {
+	result := s.sqlData(frm, selects)
+	result = strs.Append(result, as, " AS ")
 	for _, ord := range orders {
 		def := selectField(ord.Field)
 		result = strs.Append(result, def, ",\n")
@@ -93,11 +94,7 @@ func (s *Postgres) sqlData(frm *jdb.QlFrom, selects []*jdb.QlSelect, orders []*j
 	return result
 }
 
-func (s *Postgres) sqlColumns(frm *jdb.QlFrom, tp jdb.TypeSelect, selects []*jdb.QlSelect, orders []*jdb.QlOrder) string {
-	if tp == jdb.Data {
-		return s.sqlData(frm, selects, orders)
-	}
-
+func (s *Postgres) sqlColumns(selects []*jdb.QlSelect) string {
 	result := ""
 	for _, sel := range selects {
 		if sel.TypeColumn() == jdb.TpColumn {
@@ -116,34 +113,17 @@ func (s *Postgres) sqlColumns(frm *jdb.QlFrom, tp jdb.TypeSelect, selects []*jdb
 	return result
 }
 
-func (s *Postgres) sqlSelect(linq *jdb.Ql) string {
-	froms := linq.Froms
+func (s *Postgres) sqlSelect(ql *jdb.Ql) string {
+	froms := ql.Froms
 	if len(froms) == 0 {
 		return ""
 	}
 
 	var result string
-	var selects = []*jdb.QlSelect{}
-	for _, frm := range froms {
-		selects = append(selects, frm.Selects...)
-	}
-
-	if len(selects) == 0 {
-		frm := froms[0]
-		for _, col := range frm.Columns {
-			if col.TypeColumn != jdb.TpColumn {
-				continue
-			}
-			field := col.GetField()
-			field.As = frm.As
-			selects = append(selects, &jdb.QlSelect{
-				From:  frm,
-				Field: field,
-			})
-		}
-		result = s.sqlColumns(frm, linq.TypeSelect, selects, linq.Orders)
+	if ql.TypeSelect == jdb.Data {
+		result = s.sqlDataOrders(nil, ql.Selects, string(jdb.SourceField), ql.Orders)
 	} else {
-		result = s.sqlColumns(nil, linq.TypeSelect, selects, linq.Orders)
+		result = s.sqlColumns(ql.Selects)
 	}
 
 	result = strs.Append("\nSELECT DISTINCT", result, "\n")

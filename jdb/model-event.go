@@ -24,4 +24,4 @@ func (s TypeEvent) Name() string {
 	return ""
 }
 
-type Event func(model *Model, before et.Json, after *et.Json, data et.Json) error
+type Event func(model *Model, before et.Json, after et.Json) error

@@ -12,8 +12,8 @@ type TypeColumn int
 const (
 	TpColumn TypeColumn = iota
 	TpAtribute
-	TpGenerate
 	TpDetail
+	TpGenerated
 )
 
 type TypeData int

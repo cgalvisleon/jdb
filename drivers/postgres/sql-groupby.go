@@ -1,10 +1,14 @@
 package postgres
 
-import jdb "github.com/cgalvisleon/jdb/jdb"
+import (
+	"github.com/cgalvisleon/et/strs"
+	jdb "github.com/cgalvisleon/jdb/jdb"
+)
 
-func (s *Postgres) sqlGroupBy(linq *jdb.Ql) string {
+func (s *Postgres) sqlGroupBy(ql *jdb.Ql) string {
 	result := "GROUP BY %s"
-	result = s.sqlColumns(nil, linq.TypeSelect, linq.Groups, nil)
+	columns := s.sqlColumns(ql.Groups)
+	result = strs.Format(result, columns)
 
 	return result
 }
