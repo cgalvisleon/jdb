@@ -1,6 +1,8 @@
 package postgres
 
 import (
+	"database/sql"
+
 	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/strs"
@@ -44,17 +46,17 @@ func (s *Postgres) defineKeyValue() error {
 /**
 * SetKey - Set key value
 * @params key string
-* @params value string
+* @params value []byte
 * @return error
 **/
-func (s *Postgres) SetKey(key, value string) error {
+func (s *Postgres) SetKey(key string, value []byte) error {
 	sql := parceSQL(`
 	UPDATE core.KEYVALUES SET
 	VALUE = $2
 	WHERE _ID = $1
 	RETURNING *;`)
 
-	item, err := s.One(sql, key, []byte(value))
+	item, err := s.One(sql, key, value)
 	if err != nil {
 		return err
 	}
@@ -82,21 +84,27 @@ func (s *Postgres) SetKey(key, value string) error {
 * @return KeyValue, error
 **/
 func (s *Postgres) GetKey(key string) (et.KeyValue, error) {
-	sql := parceSQL(`
-	SELECT *
+	query := parceSQL(`
+	SELECT VALUE, INDEX
 	FROM core.KEYVALUES
 	WHERE _ID = $1
 	LIMIT 1;`)
 
-	item, err := s.One(sql, key)
+	var ok bool
+	var value []byte
+	var index int
+	err := s.db.QueryRow(query, key).Scan(&value, &index)
 	if err != nil {
-		return et.KeyValue{}, err
+		ok = err == sql.ErrNoRows
+		if !ok {
+			return et.KeyValue{}, err
+		}
 	}
 
 	return et.KeyValue{
-		Ok:    item.Ok,
-		Value: item.Str("value"),
-		Imdex: item.Int("index"),
+		Ok:    !ok,
+		Value: value,
+		Imdex: index,
 	}, nil
 }
 

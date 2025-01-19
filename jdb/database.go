@@ -109,15 +109,27 @@ func (s *DB) SetMain(params et.Json) error {
 }
 
 /**
-* SetAdmin
+* CreateUser
 * @return error
 **/
-func (s *DB) SetUser(username, password, confirmation string) error {
+func (s *DB) CreateUser(username, password, confirmation string) error {
 	if s.driver == nil {
 		return mistake.New(MSG_DRIVER_NOT_DEFINED)
 	}
 
-	return s.driver.SetUser(username, password, confirmation)
+	return s.driver.CreateUser(username, password, confirmation)
+}
+
+/**
+* ChangePassword
+* @return error
+**/
+func (s *DB) ChangePassword(username, password, confirmation string) error {
+	if s.driver == nil {
+		return mistake.New(MSG_DRIVER_NOT_DEFINED)
+	}
+
+	return s.driver.ChangePassword(username, password, confirmation)
 }
 
 /**
@@ -318,10 +330,10 @@ func (s *DB) CurrentSerie(tag string) int64 {
 /**
 * SetKey
 * @param key string
-* @param value string
+* @param value value []byte
 * @return error
 **/
-func (s *DB) SetKey(key, value string) error {
+func (s *DB) SetKey(key string, value []byte) error {
 	if s.driver == nil {
 		return mistake.New(MSG_DRIVER_NOT_DEFINED)
 	}

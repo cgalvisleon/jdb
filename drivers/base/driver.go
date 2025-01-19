@@ -33,7 +33,7 @@ func (s *Base) SetMain(params et.Json) error {
 	return nil
 }
 
-func (s *Base) SetKey(key, value string) error {
+func (s *Base) SetKey(key string, value []byte) error {
 
 	return nil
 }

@@ -20,7 +20,8 @@ type Driver interface {
 	// Core
 	CreateCore() error
 	// User
-	SetUser(username, password, confirmation string) error
+	CreateUser(username, password, confirmation string) error
+	ChangePassword(username, password, confirmation string) error
 	DeleteUser(username string) error
 	// Schema
 	CreateSchema(name string) error
@@ -41,7 +42,7 @@ type Driver interface {
 	SetSerie(tag string, val int) int64
 	CurrentSerie(tag string) int64
 	// Key Value
-	SetKey(key, value string) error
+	SetKey(key string, value []byte) error
 	GetKey(key string) (et.KeyValue, error)
 	DeleteKey(key string) error
 	FindKeys(search string, page, rows int) (et.List, error)

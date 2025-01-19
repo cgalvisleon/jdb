@@ -1,6 +1,10 @@
 package base
 
-func (s *Base) SetUser(username, password, confirmation string) error {
+func (s *Base) CreateUser(username, password, confirmation string) error {
+	return nil
+}
+
+func (s *Base) ChangePassword(username, password, confirmation string) error {
 	return nil
 }
 
