@@ -2,6 +2,8 @@ package postgres
 
 import (
 	"database/sql"
+	"strconv"
+	"strings"
 
 	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
@@ -18,12 +20,12 @@ func (s *Postgres) ExistDatabase(name string) (bool, error) {
 	SELECT 1
 	FROM pg_database
 	WHERE UPPER(datname) = UPPER($1));`
-	items, err := s.SQL(sql, name)
+	item, err := s.One(sql, name)
 	if err != nil {
 		return false, err
 	}
 
-	return items.Ok, nil
+	return item.Bool("exists"), nil
 }
 
 func (s *Postgres) chain(params et.Json) (string, error) {
@@ -92,6 +94,7 @@ func (s *Postgres) connect(params et.Json) error {
 	s.params = params
 	s.connStr = connStr
 	s.connected = s.db != nil
+	s.Version()
 
 	return nil
 }
@@ -180,4 +183,34 @@ func (s *Postgres) Disconnect() error {
 	}
 
 	return nil
+}
+
+func (s *Postgres) Version() int {
+	if !s.connected {
+		return 0
+	}
+
+	if s.db == nil {
+		return 0
+	}
+
+	if s.version != 0 {
+		return s.version
+	}
+
+	var version string
+	err := s.db.QueryRow("SELECT version();").Scan(&version)
+	if err != nil {
+		return 0
+	}
+
+	split := strings.Split(version, ".")
+	v, err := strconv.Atoi(split[0])
+	if err != nil {
+		v = 13
+	}
+
+	s.version = v
+
+	return s.version
 }

@@ -4,7 +4,6 @@ import (
 	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/strs"
-	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
 /**
@@ -21,18 +20,16 @@ func (s *Postgres) defineKeyValue() error {
 		return nil
 	}
 
-	sql := strs.Change(`
+	sql := parceSQL(`
   CREATE TABLE IF NOT EXISTS core.KEYVALUES(
 		_ID VARCHAR(80) DEFAULT '',
-		VALUE TEXT,
-		_IDT VARCHAR(80) DEFAULT '-1' INVISIBLE,
+		VALUE BYTEA,
+		_IDT VARCHAR(80) DEFAULT '-1',
 		INDEX BIGINT DEFAULT 0,
 		PRIMARY KEY(_ID)
 	);
 	CREATE INDEX IF NOT EXISTS KEYVALUES__IDT_IDX ON core.KEYVALUES(_IDT);
-	CREATE INDEX IF NOT EXISTS KEYVALUES_INDEX_IDX ON core.KEYVALUES(INDEX);`,
-		[]string{"date_create", "date_update", "_id", "_idt", "_data"},
-		[]string{string(jdb.CreatedAtField), string(jdb.UpdatedAtField), string(jdb.KeyField), string(jdb.SystemKeyField), string(jdb.SourceField)})
+	CREATE INDEX IF NOT EXISTS KEYVALUES_INDEX_IDX ON core.KEYVALUES(INDEX);`)
 	sql = strs.Append(sql, defineRecordTrigger("core.KEYVALUES"), "\n")
 	sql = strs.Append(sql, defineSeriesTrigger("core.KEYVALUES"), "\n")
 
@@ -51,13 +48,13 @@ func (s *Postgres) defineKeyValue() error {
 * @return error
 **/
 func (s *Postgres) SetKey(key, value string) error {
-	sql := `
+	sql := parceSQL(`
 	UPDATE core.KEYVALUES SET
 	VALUE = $2
 	WHERE _ID = $1
-	RETURNING *;`
+	RETURNING *;`)
 
-	item, err := s.One(sql, key, value)
+	item, err := s.One(sql, key, []byte(value))
 	if err != nil {
 		return err
 	}
@@ -66,12 +63,12 @@ func (s *Postgres) SetKey(key, value string) error {
 		return nil
 	}
 
-	sql = `
+	sql = parceSQL(`
 	INSERT INTO core.KEYVALUES(_ID, VALUE, INDEX)
-	VALUES ($1, $2, $3);`
+	VALUES ($1, $2, $3);`)
 
 	index := s.GetSerie("core.KEYVALUES")
-	err = s.Exec(sql, key, value, index)
+	err = s.Exec(sql, key, []byte(value), index)
 	if err != nil {
 		return err
 	}
@@ -85,11 +82,11 @@ func (s *Postgres) SetKey(key, value string) error {
 * @return KeyValue, error
 **/
 func (s *Postgres) GetKey(key string) (et.KeyValue, error) {
-	sql := `
+	sql := parceSQL(`
 	SELECT *
 	FROM core.KEYVALUES
 	WHERE _ID = $1
-	LIMIT 1;`
+	LIMIT 1;`)
 
 	item, err := s.One(sql, key)
 	if err != nil {
@@ -109,10 +106,10 @@ func (s *Postgres) GetKey(key string) (et.KeyValue, error) {
 * @return error
 **/
 func (s *Postgres) DeleteKey(key string) error {
-	sql := `
+	sql := parceSQL(`
 	DELETE 
 	FROM core.KEYVALUES
-	WHERE _ID = $1;`
+	WHERE _ID = $1;`)
 
 	err := s.Exec(sql)
 	if err != nil {

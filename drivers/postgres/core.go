@@ -1,5 +1,10 @@
 package postgres
 
+import (
+	"github.com/cgalvisleon/et/strs"
+	jdb "github.com/cgalvisleon/jdb/jdb"
+)
+
 func (s *Postgres) CreateCore() error {
 	if err := s.defineRecords(); err != nil {
 		return err
@@ -40,4 +45,10 @@ func (s *Postgres) existTable(schema, name string) (bool, error) {
 	}
 
 	return item.Bool("exists"), nil
+}
+
+func parceSQL(sql string) string {
+	return strs.Change(sql,
+		[]string{"date_make", "date_update", "_id", "_idt", "_data", "_state"},
+		[]string{jdb.CREATED_AT, jdb.UPDATED_AT, jdb.KEY, jdb.SYSID, jdb.SOURCE, jdb.STATUS})
 }

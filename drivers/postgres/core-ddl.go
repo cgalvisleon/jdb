@@ -5,7 +5,6 @@ import (
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/strs"
 	"github.com/cgalvisleon/et/utility"
-	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
 /**
@@ -22,36 +21,18 @@ func (s *Postgres) defineDDL() error {
 		return nil
 	}
 
-	sql := strs.Change(`
+	sql := parceSQL(`
   CREATE TABLE IF NOT EXISTS core.DDL(
 		_ID VARCHAR(80) DEFAULT '-1',
 		SQL BYTEA,
-		_IDT VARCHAR(80) DEFAULT '-1' INVISIBLE,
+		_IDT VARCHAR(80) DEFAULT '-1',
 		INDEX BIGINT DEFAULT 0,
 		PRIMARY KEY(_ID)
 	);
 	CREATE INDEX IF NOT EXISTS DDL__IDT_IDX ON core.DDL(_IDT);
-	CREATE INDEX IF NOT EXISTS DDL_INDEX_IDX ON core.DDL(INDEX);
-
-	DROP TRIGGER IF EXISTS RECORDS_BEFORE_INSERT ON core.DDL CASCADE;
-	CREATE TRIGGER RECORDS_BEFORE_INSERT
-	BEFORE INSERT ON core.DDL
-	FOR EACH ROW
-	EXECUTE PROCEDURE core.RECORDS_BEFORE_INSERT();
-
-	DROP TRIGGER IF EXISTS RECORDS_BEFORE_UPDATE ON core.DDL CASCADE;
-	CREATE TRIGGER RECORDS_BEFORE_UPDATE
-	BEFORE UPDATE ON core.DDL
-	FOR EACH ROW
-	EXECUTE PROCEDURE core.RECORDS_BEFORE_UPDATE();
-
-	DROP TRIGGER IF EXISTS RECORDS_BEFORE_DELETE ON core.DDL CASCADE;
-	CREATE TRIGGER RECORDS_BEFORE_DELETE
-	BEFORE DELETE ON core.DDL
-	FOR EACH ROW
-	EXECUTE PROCEDURE core.RECORDS_BEFORE_DELETE();`,
-		[]string{"date_create", "date_update", "_id", "_idt", "_data"},
-		[]string{string(jdb.CreatedAtField), string(jdb.UpdatedAtField), string(jdb.KeyField), string(jdb.SystemKeyField), string(jdb.SourceField)})
+	CREATE INDEX IF NOT EXISTS DDL_INDEX_IDX ON core.DDL(INDEX);`)
+	sql = strs.Append(sql, defineRecordTrigger("core.DDL"), "\n")
+	sql = strs.Append(sql, defineSeriesTrigger("core.DDL"), "\n")
 
 	err = s.Exec(sql)
 	if err != nil {
@@ -66,11 +47,11 @@ func (s *Postgres) defineDDL() error {
 * @params query string
 **/
 func (s *Postgres) upsertDDL(id string, query string) error {
-	sql := `
+	sql := parceSQL(`
 	UPDATE core.DDL SET
 	SQL = $2
 	WHERE _ID = $1
-	RETURNING _ID;`
+	RETURNING _ID;`)
 
 	item, err := s.One(sql, id, []byte(query))
 	if err != nil {
@@ -81,9 +62,9 @@ func (s *Postgres) upsertDDL(id string, query string) error {
 		return nil
 	}
 
-	sql = `
+	sql = parceSQL(`
 	INSERT INTO core.DDL(_ID, SQL, INDEX)
-	VALUES ($1, $2, $3);`
+	VALUES ($1, $2, $3);`)
 
 	id = utility.GenKey(id)
 	index := s.GetSerie("ddl")
@@ -104,9 +85,9 @@ func (s *Postgres) upsertDDL(id string, query string) error {
 * @params query string
 **/
 func (s *Postgres) deleteDDL(id string) error {
-	sql := `
+	sql := parceSQL(`
 	DELETE FROM core.DDL
-	WHERE _ID = $1;`
+	WHERE _ID = $1;`)
 
 	err := s.Exec(sql, id)
 	if err != nil {

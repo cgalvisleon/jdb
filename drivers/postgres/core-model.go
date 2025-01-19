@@ -3,8 +3,6 @@ package postgres
 import (
 	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
-	"github.com/cgalvisleon/et/strs"
-	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
 /**
@@ -21,7 +19,7 @@ func (s *Postgres) defineModel() error {
 		return nil
 	}
 
-	sql := strs.Change(`
+	sql := parceSQL(`
   CREATE TABLE IF NOT EXISTS core.MODELS(
 		TABLENAME VARCHAR(80) DEFAULT '',
 		VERSION INTEGER DEFAULT 0,
@@ -30,9 +28,7 @@ func (s *Postgres) defineModel() error {
 		PRIMARY KEY(TABLENAME)
 	);
 	CREATE INDEX IF NOT EXISTS MODELS_TABLENAME_IDX ON core.MODELS(TABLENAME);
-	CREATE INDEX IF NOT EXISTS MODELS_INDEX_IDX ON core.MODELS(INDEX);`,
-		[]string{"date_create", "date_update", "_id", "_idt", "_data"},
-		[]string{string(jdb.CreatedAtField), string(jdb.UpdatedAtField), string(jdb.KeyField), string(jdb.SystemKeyField), string(jdb.SourceField)})
+	CREATE INDEX IF NOT EXISTS MODELS_INDEX_IDX ON core.MODELS(INDEX);`)
 
 	err = s.Exec(sql)
 	if err != nil {

@@ -16,6 +16,7 @@ type Postgres struct {
 	db        *sql.DB
 	master    *sql.DB
 	connected bool
+	version   int
 }
 
 func NewDriver() jdb.Driver {

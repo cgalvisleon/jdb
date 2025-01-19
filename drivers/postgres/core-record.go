@@ -16,7 +16,7 @@ func (s *Postgres) defineRecords() error {
 		return s.defineRecordsFunction()
 	}
 
-	sql := strs.Change(`
+	sql := parceSQL(`
 	CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 	CREATE EXTENSION IF NOT EXISTS pgcrypto;
 	CREATE SCHEMA IF NOT EXISTS core;
@@ -39,9 +39,7 @@ func (s *Postgres) defineRecords() error {
 	CREATE INDEX IF NOT EXISTS RECORDS_OPTION_IDX ON core.RECORDS(OPTION);
 	CREATE INDEX IF NOT EXISTS RECORDS_SYNC_IDX ON core.RECORDS(SYNC);
   CREATE INDEX IF NOT EXISTS RECORDS__IDT_IDX ON core.RECORDS(_IDT);  
-	CREATE INDEX IF NOT EXISTS RECORDS_INDEX_IDX ON core.RECORDS(INDEX);`,
-		[]string{"date_create", "date_update", "_id", "_idt", "_data"},
-		[]string{string(jdb.CreatedAtField), string(jdb.UpdatedAtField), string(jdb.KeyField), string(jdb.SystemKeyField), string(jdb.SourceField)})
+	CREATE INDEX IF NOT EXISTS RECORDS_INDEX_IDX ON core.RECORDS(INDEX);`)
 
 	err = s.Exec(sql)
 	if err != nil {
@@ -52,7 +50,7 @@ func (s *Postgres) defineRecords() error {
 }
 
 func (s *Postgres) defineRecordsFunction() error {
-	sql := strs.Change(`
+	sql := parceSQL(`
 	CREATE OR REPLACE FUNCTION core.SYNC_NOTIFY()
   RETURNS
     TRIGGER AS $$  
@@ -91,7 +89,7 @@ func (s *Postgres) defineRecordsFunction() error {
 		VSYNC BOOLEAN;
   BEGIN
     IF NEW._IDT = '-1' THEN
-      NEW._IDT = CONCAT(TABLE_SCHEMA, ".", TG_TABLE_NAME, ":", uuid_generate_v4());
+			SELECT CONCAT(TG_TABLE_SCHEMA, '.',  TG_TABLE_NAME, ':', uuid_generate_v4()) INTO NEW._IDT;
 			VSYNC = FALSE;
 		ELSE
 			VSYNC = TRUE;
@@ -229,9 +227,7 @@ func (s *Postgres) defineRecordsFunction() error {
 
 	RETURN OLD;
 	END;
-	$$ LANGUAGE plpgsql;`,
-		[]string{"date_create", "date_update", "_id", "_idt", "_data"},
-		[]string{string(jdb.CreatedAtField), string(jdb.UpdatedAtField), string(jdb.KeyField), string(jdb.SystemKeyField), string(jdb.SourceField)})
+	$$ LANGUAGE plpgsql;`)
 	err := s.Exec(sql)
 	if err != nil {
 		return console.Panic(err)

@@ -16,7 +16,7 @@ func (s *Postgres) defineRecycling() error {
 		return s.defineRecyclingFunction()
 	}
 
-	sql := strs.Change(`
+	sql := parceSQL(`
   CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 	CREATE EXTENSION IF NOT EXISTS pgcrypto;
 	CREATE SCHEMA IF NOT EXISTS core;
@@ -32,9 +32,7 @@ func (s *Postgres) defineRecycling() error {
   CREATE INDEX IF NOT EXISTS RECYCLING_TABLE_SCHEMA_IDX ON core.RECYCLING(TABLE_SCHEMA);
   CREATE INDEX IF NOT EXISTS RECYCLING_TABLE_NAME_IDX ON core.RECYCLING(TABLE_NAME);
   CREATE INDEX IF NOT EXISTS RECYCLING__IDT_IDX ON core.RECYCLING(_IDT);
-	CREATE INDEX IF NOT EXISTS RECYCLING_INDEX_IDX ON core.RECYCLING(INDEX);`,
-		[]string{"date_create", "date_update", "_id", "_idt", "_data"},
-		[]string{string(jdb.CreatedAtField), string(jdb.UpdatedAtField), string(jdb.KeyField), string(jdb.SystemKeyField), string(jdb.SourceField)})
+	CREATE INDEX IF NOT EXISTS RECYCLING_INDEX_IDX ON core.RECYCLING(INDEX);`)
 
 	err = s.Exec(sql)
 	if err != nil {
@@ -45,7 +43,7 @@ func (s *Postgres) defineRecycling() error {
 }
 
 func (s *Postgres) defineRecyclingFunction() error {
-	sql := strs.Change(`  
+	sql := parceSQL(`  
   CREATE OR REPLACE FUNCTION core.RECYCLING_UPDATE()
   RETURNS
     TRIGGER AS $$
@@ -86,9 +84,7 @@ func (s *Postgres) defineRecyclingFunction() error {
 
   RETURN NEW;
   END;
-  $$ LANGUAGE plpgsql;`,
-		[]string{"date_create", "date_update", "_id", "_idt", "_data"},
-		[]string{string(jdb.CreatedAtField), string(jdb.UpdatedAtField), string(jdb.KeyField), string(jdb.SystemKeyField), string(jdb.SourceField)})
+  $$ LANGUAGE plpgsql;`)
 
 	err := s.Exec(sql)
 	if err != nil {
@@ -112,7 +108,7 @@ func defineRecyclingTrigger(table string) string {
 	FOR EACH ROW
 	EXECUTE PROCEDURE core.RECYCLING_DELETE();`,
 		[]string{"_STATE", "$1"},
-		[]string{string(jdb.StateField), table})
+		[]string{jdb.STATUS, table})
 
 	result = strs.Replace(result, "\t", "")
 
