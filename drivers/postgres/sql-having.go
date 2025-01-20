@@ -6,10 +6,12 @@ import (
 )
 
 func (s *Postgres) sqlHaving(ql *jdb.Ql) string {
+	result := ""
 	wheres := ql.Havings.Wheres
 	where := whereFilters(wheres)
-	result := "HAVING %s"
-	result = strs.Format(result, where)
+	if where != "" {
+		result = strs.Format("HAVING %s", where)
+	}
 
 	return result
 }

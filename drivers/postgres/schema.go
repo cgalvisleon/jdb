@@ -22,13 +22,12 @@ func (s *Postgres) CreateSchema(name string) error {
 		return nil
 	}
 
+	id := strs.Format(`create_schema_%s`, name)
 	sql := jdb.SQLDDL(`CREATE SCHEMA IF NOT EXISTS $1`, name)
-	err = s.Exec(sql)
+	err = s.ExecDDL(id, sql)
 	if err != nil {
 		return err
 	}
-
-	go s.upsertDDL(strs.Format(`create_schema_%s`, name), sql)
 
 	console.Logf(jdb.Postgres, `Schema %s created`, name)
 
@@ -40,13 +39,12 @@ func (s *Postgres) DropSchema(name string) error {
 		return mistake.Newf(msg.NOT_DRIVER_DB)
 	}
 
+	id := strs.Format(`drop_schema_%s`, name)
 	sql := jdb.SQLDDL(`DROP SCHEMA IF EXISTS $1 CASCADE`, name)
-	err := s.Exec(sql)
+	err := s.ExecDDL(id, sql)
 	if err != nil {
 		return err
 	}
-
-	go s.upsertDDL(strs.Format(`drop_schema_%s`, name), sql)
 
 	console.Logf(jdb.Postgres, `Schema %s droped`, name)
 

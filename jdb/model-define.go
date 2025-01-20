@@ -139,7 +139,7 @@ func (s *Model) DefineKeyField() *Column {
 **/
 func (s *Model) DefineSystemKeyField() *Column {
 	result := s.DefineColumn(string(SystemKeyField), SystemKeyField.TypeData())
-	s.DefineKey(string(SystemKeyField))
+	s.DefineIndex(true, string(SystemKeyField))
 
 	return result
 }

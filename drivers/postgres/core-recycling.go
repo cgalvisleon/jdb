@@ -95,7 +95,7 @@ func (s *Postgres) defineRecyclingFunction() error {
 }
 
 func defineRecyclingTrigger(table string) string {
-	result := strs.Change(`
+	result := jdb.SQLDDL(`
   DROP TRIGGER IF EXISTS RECYCLING ON $1 CASCADE;
 	CREATE TRIGGER RECYCLING
 	AFTER UPDATE ON $1
@@ -106,9 +106,10 @@ func defineRecyclingTrigger(table string) string {
 	CREATE TRIGGER RECYCLING_DELETE
 	AFTER DELETE ON $1
 	FOR EACH ROW
-	EXECUTE PROCEDURE core.RECYCLING_DELETE();`,
-		[]string{"_STATE", "$1"},
-		[]string{jdb.STATUS, table})
+	EXECUTE PROCEDURE core.RECYCLING_DELETE();`, table)
+	result = strs.Change(result,
+		[]string{"_STATE"},
+		[]string{jdb.STATUS})
 
 	result = strs.Replace(result, "\t", "")
 

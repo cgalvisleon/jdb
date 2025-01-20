@@ -125,3 +125,21 @@ func (s *Postgres) ddlTableDrop(table string) string {
 
 	return result
 }
+
+func (s *Postgres) tableExists(schema, tableName string) (bool, error) {
+	query := `
+		SELECT EXISTS (
+			SELECT 1
+			FROM information_schema.tables
+			WHERE table_schema = $1
+			AND table_name = $2
+		);`
+
+	var exists bool
+	err := s.db.QueryRow(query, schema, tableName).Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+
+	return exists, nil
+}

@@ -82,3 +82,14 @@ func (s *Postgres) Query(ql *jdb.Ql) (et.Items, error) {
 
 	return et.Items{}, nil
 }
+
+func (s *Postgres) ExecDDL(id, sql string, params ...any) error {
+	err := s.Exec(sql, params...)
+	if err != nil {
+		return err
+	}
+
+	go s.upsertDDL(id, sql)
+
+	return nil
+}
