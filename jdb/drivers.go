@@ -20,6 +20,7 @@ type Driver interface {
 	// Core
 	CreateCore() error
 	// User
+	GrantPrivileges(username, dbName string) error
 	CreateUser(username, password, confirmation string) error
 	ChangePassword(username, password, confirmation string) error
 	DeleteUser(username string) error

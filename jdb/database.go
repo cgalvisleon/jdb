@@ -109,6 +109,18 @@ func (s *DB) SetMain(params et.Json) error {
 }
 
 /**
+* GrantPrivileges
+* @return error
+**/
+func (s *DB) GrantPrivileges(username, dbName string) error {
+	if s.driver == nil {
+		return mistake.New(MSG_DRIVER_NOT_DEFINED)
+	}
+
+	return s.driver.GrantPrivileges(username, dbName)
+}
+
+/**
 * CreateUser
 * @return error
 **/
