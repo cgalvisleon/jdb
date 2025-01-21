@@ -7,7 +7,7 @@ import (
 func (s *Postgres) sqlJsonObject(from *jdb.QlFrom) string {
 	var selects = []*jdb.QlSelect{}
 	for _, col := range from.Columns {
-		if col.TypeColumn != jdb.TpColumn {
+		if col.TypeColumn != jdb.TpColumn || col.Hidden {
 			continue
 		}
 		field := col.GetField()
@@ -18,5 +18,5 @@ func (s *Postgres) sqlJsonObject(from *jdb.QlFrom) string {
 		})
 	}
 
-	return s.sqlData(from, selects)
+	return s.sqlObject(from, selects)
 }

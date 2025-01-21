@@ -7,7 +7,7 @@ import (
 )
 
 func (s *Postgres) sqlInsert(command *jdb.Command) string {
-	result := "INSERT INTO %s(%s)\nVALUE\n%s\nRETURNING jsonb_build_object() AS before,\n%s AS after;"
+	result := "INSERT INTO %s(%s)\nVALUE %s\nRETURNING jsonb_build_object() AS before,\n%s AS after;"
 	columns := ""
 	values := ""
 	for i, value := range command.Values {

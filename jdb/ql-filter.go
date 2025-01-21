@@ -15,6 +15,7 @@ type QlFilter struct {
 	main   FilterTo
 	where  *QlWhere
 	Wheres []*QlWhere
+	Show   bool
 }
 
 func (s *QlFilter) setCondition(where et.Json) *QlFilter {

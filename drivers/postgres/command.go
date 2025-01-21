@@ -8,6 +8,7 @@ import (
 )
 
 func (s *Postgres) Command(command *jdb.Command) (et.Items, error) {
+	s.typeSelect = command.TypeSelect
 	command.Sql = ""
 	switch command.Command {
 	case jdb.Insert:
@@ -23,6 +24,8 @@ func (s *Postgres) Command(command *jdb.Command) (et.Items, error) {
 	if command.Show {
 		console.Debug(command.Sql)
 	}
+
+	console.Debug(command.Sql)
 
 	return et.Items{}, nil
 }

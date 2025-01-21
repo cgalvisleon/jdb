@@ -44,7 +44,7 @@ func (s *Model) DefineColumn(name string, typeData TypeData) *Column {
 	if col.Name == string(FullTextField) {
 		s.FullTextField = col
 	}
-	if col.Name == string(ProjectField) {
+	if idx == -1 {
 		idx = slices.IndexFunc(s.Columns, func(e *Column) bool { return e == s.SourceField })
 	}
 	if idx == -1 {
@@ -80,13 +80,24 @@ func (s *Model) DefineAtribute(name string, typeData TypeData) *Column {
 		return col
 	}
 
-	s.DefineColumn(string(SourceField), SourceField.TypeData())
+	s.DefineSourceField()
 	def := typeData.DefaultValue()
 	col = newColumn(s, name, "", TpAtribute, typeData, def)
 	col.Field = string(SourceField)
 	s.Columns = append(s.Columns, col)
 
 	return col
+}
+
+/**
+* DefineSourceField
+* @return *Column
+**/
+func (s *Model) DefineSourceField() *Column {
+	result := s.DefineColumn(string(SourceField), SourceField.TypeData())
+	s.DefineIndex(true, string(SourceField))
+
+	return result
 }
 
 /**
@@ -140,6 +151,7 @@ func (s *Model) DefineKeyField() *Column {
 func (s *Model) DefineSystemKeyField() *Column {
 	result := s.DefineColumn(string(SystemKeyField), SystemKeyField.TypeData())
 	s.DefineIndex(true, string(SystemKeyField))
+	result.Hidden = true
 
 	return result
 }
@@ -162,17 +174,6 @@ func (s *Model) DefineIndexField() *Column {
 func (s *Model) DefineProjectField() *Column {
 	result := s.DefineColumn(string(ProjectField), ProjectField.TypeData())
 	s.DefineIndex(true, string(ProjectField))
-
-	return result
-}
-
-/**
-* DefineSourceField
-* @return *Column
-**/
-func (s *Model) DefineSourceField() *Column {
-	result := s.DefineColumn(string(SourceField), SourceField.TypeData())
-	s.DefineIndex(true, string(SourceField))
 
 	return result
 }
@@ -231,7 +232,7 @@ func (s *Model) DefineKey(colums ...string) *Model {
 	}
 
 	for _, col := range cols {
-		s.Keys[col.Field] = col
+		s.Keys[col.Name] = col
 	}
 
 	return s
@@ -249,8 +250,10 @@ func (s *Model) DefineIndex(sort bool, colums ...string) *Model {
 	}
 
 	for _, col := range cols {
-		idx := NewIndex(col, sort)
-		s.Indices[col.Field] = idx
+		if col.TypeColumn == TpColumn {
+			idx := NewIndex(col, sort)
+			s.Indices[col.Name] = idx
+		}
 	}
 
 	return s
@@ -269,7 +272,25 @@ func (s *Model) DefineUnique(colums ...string) *Model {
 
 	for _, col := range cols {
 		idx := NewIndex(col, true)
-		s.Uniques[col.Field] = idx
+		s.Uniques[col.Name] = idx
+	}
+
+	return s
+}
+
+/**
+* DefineHidden
+* @param colums ...string
+* @return *Model
+**/
+func (s *Model) DefineHidden(colums ...string) *Model {
+	cols := s.GetColumns(colums...)
+	if len(cols) == 0 {
+		return s
+	}
+
+	for _, col := range cols {
+		col.Hidden = true
 	}
 
 	return s
@@ -284,7 +305,7 @@ func (s *Model) DefineRequired(requireds ...string) *Model {
 	for _, required := range requireds {
 		col := s.GetColumn(required)
 		if col != nil {
-			s.ColRequired[col.Field] = true
+			s.ColRequired[col.Name] = true
 		}
 	}
 
@@ -297,7 +318,7 @@ func (s *Model) DefineRequired(requireds ...string) *Model {
 * @param event Event
 * @return *Model
 **/
-func (s *Model) DefineEvent(tp TypeEvent, event Event) *Model {
+func (s *Model) DefineEvent(tp TypeEvent, event Event) {
 	switch tp {
 	case EventInsert:
 		s.EventsInsert = append(s.EventsInsert, event)
@@ -306,7 +327,6 @@ func (s *Model) DefineEvent(tp TypeEvent, event Event) *Model {
 	case EventDelete:
 		s.EventsDelete = append(s.EventsDelete, event)
 	}
-	return s
 }
 
 /**

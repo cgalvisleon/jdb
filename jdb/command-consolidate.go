@@ -51,8 +51,8 @@ func (s *Command) beforeUpdate(value *Value) *Value {
 func (s *Command) consolidate() []*Value {
 	from := s.From
 	for _, data := range s.Origin {
+		value := NewValue()
 		for k, v := range data {
-			value := NewValue()
 			field := from.GetField(k, true)
 			if field != nil {
 				setValue(value, field.Column, v)
@@ -61,6 +61,7 @@ func (s *Command) consolidate() []*Value {
 				value.Data[k] = v
 			}
 		}
+		s.Values = append(s.Values, value)
 	}
 
 	return s.Values

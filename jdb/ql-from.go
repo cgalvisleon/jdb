@@ -20,13 +20,13 @@ func From(m *Model) *Ql {
 		Details:    make([]*QlSelect, 0),
 		Offset:     0,
 		Limit:      0,
-		Show:       false,
 		Sheet:      0,
 		index:      65,
 	}
 	result.QlFilter = &QlFilter{
 		main:   result,
 		Wheres: make([]*QlWhere, 0),
+		Show:   m.Show,
 	}
 	result.Havings = &QlHaving{
 		Ql: result,

@@ -69,7 +69,7 @@ func SQLParse(sql string, args ...any) string {
 * @return et.Items
 **/
 func RowsToItems(rows *sql.Rows) et.Items {
-	var result et.Items = et.Items{}
+	var result = et.Items{Result: []et.Json{}}
 	for rows.Next() {
 		var item et.Json
 		item.ScanRows(rows)
@@ -88,7 +88,7 @@ func RowsToItems(rows *sql.Rows) et.Items {
 * @return et.Item
 **/
 func RowsToItem(rows *sql.Rows) et.Item {
-	var result et.Item = et.Item{}
+	var result = et.Item{Result: et.Json{}}
 	for rows.Next() {
 		var item et.Json
 		item.ScanRows(rows)
@@ -102,39 +102,37 @@ func RowsToItem(rows *sql.Rows) et.Item {
 }
 
 /**
-* DataItems return a items from a sql rows and source field
+* SourceToItems return a items from a sql rows and source field
 * @param rows *sql.Rows
-* @param source string
 * @return et.Items
 **/
-func DataToItems(rows *sql.Rows, source string) et.Items {
-	var result et.Items = et.Items{}
+func SourceToItems(rows *sql.Rows) et.Items {
+	var result = et.Items{Result: []et.Json{}}
 	for rows.Next() {
 		var item et.Json
 		item.ScanRows(rows)
 
 		result.Ok = true
 		result.Count++
-		result.Result = append(result.Result, item.Json(source))
+		result.Result = append(result.Result, item.Json(SOURCE))
 	}
 
 	return result
 }
 
 /**
-* DataItem return a item from a sql rows and source field
+* SourceToItem return a item from a sql rows and source field
 * @param rows *sql.Rows
-* @param source string
-* @return et.Item
+* @return et.Items
 **/
-func DataToItem(rows *sql.Rows, source string) et.Item {
-	var result et.Item = et.Item{}
+func SourceToItem(rows *sql.Rows) et.Item {
+	var result = et.Item{Result: et.Json{}}
 	for rows.Next() {
 		var item et.Json
 		item.ScanRows(rows)
 
 		result.Ok = true
-		result.Result = item.Json(source)
+		result.Result = item.Json(SOURCE)
 		break
 	}
 

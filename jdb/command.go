@@ -24,6 +24,7 @@ func NewValue() *Value {
 	return &Value{
 		Columns: et.Json{},
 		Atribs:  et.Json{},
+		Data:    et.Json{},
 	}
 }
 
@@ -37,7 +38,6 @@ type Command struct {
 	Values     []*Value
 	Sql        string
 	Result     et.Items
-	Show       bool
 }
 
 /**
@@ -57,7 +57,6 @@ func NewCommand(model *Model, data []et.Json, command TypeCommand) *Command {
 		Command:    command,
 		Origin:     data,
 		Values:     make([]*Value, 0),
-		Show:       false,
 		Sql:        "",
 		Result:     et.Items{},
 	}

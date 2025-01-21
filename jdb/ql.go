@@ -28,7 +28,6 @@ type Ql struct {
 	Sheet      int         `json:"sheet"`
 	Offset     int         `json:"offset"`
 	Limit      int         `json:"limit"`
-	Show       bool        `json:"show"`
 	Sql        string      `json:"sql"`
 	Result     et.Items    `json:"result"`
 	index      int         `json:"-"`

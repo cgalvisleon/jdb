@@ -24,7 +24,7 @@ func (s *Ql) prepare() *Ql {
 	if len(s.Selects) == 0 {
 		frm := s.Froms[0]
 		for _, col := range frm.Columns {
-			if slices.Contains([]TypeColumn{TpAtribute, TpGenerated}, col.TypeColumn) {
+			if col.Hidden || slices.Contains([]TypeColumn{TpAtribute, TpGenerated}, col.TypeColumn) {
 				continue
 			}
 			field := col.GetField()
@@ -100,7 +100,7 @@ func (s *Ql) One() (et.Item, error) {
 	}
 
 	if !result.Ok {
-		return et.Item{}, nil
+		return et.Item{Result: et.Json{}}, nil
 	}
 
 	return et.Item{
@@ -149,7 +149,7 @@ func (s *Ql) List(page, rows int) (et.List, error) {
 		return et.List{}, err
 	}
 
-	s.Sheet = page
+	s.Page(page)
 	result, err := s.First(rows)
 	if err != nil {
 		return et.List{}, err

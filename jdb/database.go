@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/cgalvisleon/et/console"
+	"github.com/cgalvisleon/et/envar"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/mistake"
 	"github.com/cgalvisleon/et/strs"
@@ -25,6 +26,7 @@ type DB struct {
 	Description string             `json:"description"`
 	Schemas     map[string]*Schema `json:"schemas"`
 	UseCore     bool               `json:"use_core"`
+	Node        int64              `json:"node"`
 	driver      Driver
 }
 
@@ -50,9 +52,10 @@ func NewDatabase(name, driver string) (*DB, error) {
 		Name:        Name(name),
 		Description: "",
 		Schemas:     map[string]*Schema{},
+		Node:        envar.GetInt64(1, "DB_NODE"),
 		driver:      drivers[driver](),
 	}
-
+	utility.SetSnowflakeNode(result.Node)
 	JDBS = append(JDBS, result)
 
 	return result, nil

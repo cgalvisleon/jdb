@@ -46,7 +46,7 @@ func jsonbBuildObject(result, obj string) string {
 	return strs.Append(result, strs.Format("jsonb_build_object(\n%s)", obj), "||\n")
 }
 
-func (s *Postgres) sqlData(frm *jdb.QlFrom, selects []*jdb.QlSelect) string {
+func (s *Postgres) sqlObject(frm *jdb.QlFrom, selects []*jdb.QlSelect) string {
 	result := ""
 	if frm != nil && frm.SourceField != nil {
 		def := strs.Append("", frm.As, ".")
@@ -57,9 +57,13 @@ func (s *Postgres) sqlData(frm *jdb.QlFrom, selects []*jdb.QlSelect) string {
 	l := 20
 	n := 0
 	obj := ""
+	var sourceField *jdb.Field
 	for _, sel := range selects {
 		n++
-		if sel.Field.Column == sel.From.SourceField {
+		if sel.Field.Column.Hidden {
+			continue
+		} else if sel.Field.Column == sel.From.SourceField {
+			sourceField = sel.Field
 			continue
 		} else if sel.TypeColumn() == jdb.TpColumn {
 			def := selectField(sel.Field)
@@ -79,12 +83,16 @@ func (s *Postgres) sqlData(frm *jdb.QlFrom, selects []*jdb.QlSelect) string {
 	if n > 0 {
 		result = jsonbBuildObject(result, obj)
 	}
+	if sourceField != nil {
+		def := selectField(sourceField)
+		result = strs.Format(`%s||%s`, def, result)
+	}
 
 	return result
 }
 
-func (s *Postgres) sqlDataOrders(frm *jdb.QlFrom, selects []*jdb.QlSelect, as string, orders []*jdb.QlOrder) string {
-	result := s.sqlData(frm, selects)
+func (s *Postgres) sqlObjectOrders(frm *jdb.QlFrom, selects []*jdb.QlSelect, as string, orders []*jdb.QlOrder) string {
+	result := s.sqlObject(frm, selects)
 	result = strs.Append(result, as, " AS ")
 	for _, ord := range orders {
 		def := selectField(ord.Field)
@@ -97,7 +105,9 @@ func (s *Postgres) sqlDataOrders(frm *jdb.QlFrom, selects []*jdb.QlSelect, as st
 func (s *Postgres) sqlColumns(selects []*jdb.QlSelect) string {
 	result := ""
 	for _, sel := range selects {
-		if sel.TypeColumn() == jdb.TpColumn {
+		if sel.Field.Column.Hidden {
+			continue
+		} else if sel.TypeColumn() == jdb.TpColumn {
 			def := selectField(sel.Field)
 			if sel.Field.Agregation != jdb.Nag {
 				def = strs.Format(`%s AS %s`, def, sel.Field.Alias)
@@ -121,7 +131,7 @@ func (s *Postgres) sqlSelect(ql *jdb.Ql) string {
 
 	var result string
 	if ql.TypeSelect == jdb.Data {
-		result = s.sqlDataOrders(nil, ql.Selects, string(jdb.SourceField), ql.Orders)
+		result = s.sqlObjectOrders(nil, ql.Selects, string(jdb.SourceField), ql.Orders)
 	} else {
 		result = s.sqlColumns(ql.Selects)
 	}

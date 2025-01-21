@@ -72,6 +72,7 @@ type Model struct {
 	Functions      map[string]*Function        `json:"-"`
 	Integrity      bool                        `json:"integrity"`
 	Version        int                         `json:"version"`
+	Show           bool                        `json:"-"`
 }
 
 /**
@@ -115,7 +116,10 @@ func NewModel(schema *Schema, name string, version int) *Model {
 		Integrity:    false,
 		Version:      version,
 	}
-
+	if schema.Db.UseCore {
+		result.DefineSystemKeyField()
+		result.DefineIndexField()
+	}
 	schema.Models[result.Name] = result
 	models[table] = result
 
@@ -132,17 +136,16 @@ func init() {
 * @return string
 **/
 func (s *Model) GenId(id string) string {
-	id = utility.GenId(id)
-	return strs.Format(`%s:%s`, s.Table, id)
-}
+	if !map[string]bool{"": true, "*": true, "new": true}[id] {
+		split := strings.Split(id, ":")
+		if len(split) == 1 {
+			return strs.Format(`%s:%s`, s.Table, id)
+		}
 
-/**
-* GenKey
-* @param id string
-* @return string
-**/
-func (s *Model) GenKey(id string) string {
-	id = utility.GenKey(id)
+		return id
+	}
+
+	id = utility.Snowflake()
 	return strs.Format(`%s:%s`, s.Table, id)
 }
 
@@ -201,6 +204,16 @@ func (s *Model) Describe() et.Json {
 	result["dictionaries"] = dictionaries
 
 	return result
+}
+
+/**
+* Debug
+* @return *Model
+**/
+func (s *Model) Debug() *Model {
+	s.Show = true
+
+	return s
 }
 
 /**
@@ -360,12 +373,12 @@ func (s *Model) New(data et.Json) et.Json {
 * @return *Model
 **/
 func (s *Model) MakeCollection() *Model {
+	s.DefineSystemKeyField()
 	s.DefineCreatedAtField()
 	s.DefineUpdatedAtField()
 	s.DefineStateField()
 	s.DefineKeyField()
 	s.DefineSourceField()
-	s.DefineSystemKeyField()
 	s.DefineIndexField()
 
 	return s
@@ -385,8 +398,6 @@ func (s *Model) MakeDetailRelation(owner *Model) *Model {
 	ref.OnDeleteCascade = true
 	ref.OnUpdateCascade = true
 	s.DefineRequired(fkn)
-	s.DefineSystemKeyField()
-	s.DefineIndexField()
 
 	return s
 }

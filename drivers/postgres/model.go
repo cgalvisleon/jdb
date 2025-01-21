@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/cgalvisleon/et/console"
+	"github.com/cgalvisleon/et/strs"
 	"github.com/cgalvisleon/jdb/jdb"
 )
 
@@ -49,13 +50,15 @@ func (s *Postgres) LoadModel(model *jdb.Model) error {
 		return err
 	}
 
-	console.Debug("LoadModel:", sql)
+	id := strs.Format(`load_model_%s`, model.Table)
+	err = s.ExecDDL(id, sql)
+	if err != nil {
+		return err
+	}
 
-	// id := strs.Format(`load_model_%s`, model.Table)
-	// err = s.ExecDDL(id, sql)
-	// if err != nil {
-	// 	return err
-	// }
+	if model.Show {
+		console.Debug(sql)
+	}
 
 	go s.upsertModel(model.Table, model.Version, serialized)
 
