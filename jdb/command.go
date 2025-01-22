@@ -3,6 +3,7 @@ package jdb
 import (
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/mistake"
+	"github.com/cgalvisleon/et/utility"
 )
 
 type TypeCommand int
@@ -12,6 +13,7 @@ const (
 	Update
 	Delete
 	Bulk
+	Undo
 )
 
 type Value struct {
@@ -30,14 +32,18 @@ func NewValue() *Value {
 
 type Command struct {
 	*QlFilter
+	Id         string
 	Db         *DB
 	TypeSelect TypeSelect `json:"type_select"`
 	From       *QlFrom
 	Command    TypeCommand
 	Origin     []et.Json
 	Values     []*Value
+	Undo       *UndoRecord
 	Sql        string
 	Result     et.Items
+	Commit     []et.Json
+	Commands   []*Command
 }
 
 /**
@@ -53,12 +59,15 @@ func NewCommand(model *Model, data []et.Json, command TypeCommand) *Command {
 		tp = Data
 	}
 	result := &Command{
+		Id:         utility.RecordId("command", ""),
 		TypeSelect: tp,
 		Command:    command,
 		Origin:     data,
 		Values:     make([]*Value, 0),
 		Sql:        "",
 		Result:     et.Items{},
+		Commit:     make([]et.Json, 0),
+		Commands:   make([]*Command, 0),
 	}
 	result.QlFilter = &QlFilter{
 		main:   result,
@@ -119,40 +128,38 @@ func (s *Command) Exec() (et.Items, error) {
 			return et.Items{}, mistake.New(MSG_NOT_DATA)
 		}
 
-		result, err := s.inserted()
+		err := s.inserted()
 		if err != nil {
 			return et.Items{}, err
 		}
-
-		s.Result.Add(result.Result)
 	case Update:
 		if len(s.Origin) == 0 {
 			return et.Items{}, mistake.New(MSG_NOT_DATA)
 		}
 
-		result, err := s.updated()
+		err := s.updated()
 		if err != nil {
 			return et.Items{}, err
 		}
-
-		s.Result = result
 	case Delete:
-		result, err := s.delete()
+		err := s.delete()
 		if err != nil {
 			return et.Items{}, err
 		}
-		s.Result = result
 	case Bulk:
 		if len(s.Origin) == 0 {
 			return et.Items{}, mistake.New(MSG_NOT_DATA)
 		}
 
-		result, err := s.bulk()
+		err := s.bulk()
 		if err != nil {
 			return et.Items{}, err
 		}
-
-		s.Result = result
+	case Undo:
+		err := s.undo()
+		if err != nil {
+			return et.Items{}, err
+		}
 	}
 
 	return s.Result, nil

@@ -46,24 +46,33 @@ func EventUpdateDefault(model *Model, before et.Json, after et.Json) error {
 		"after":  after,
 	})
 
-	if model.History != nil {
-		key := before.Key(model.KeyField.Name)
-		if key == "-1" {
-			return nil
-		}
+	return nil
+}
 
-		index := model.Db.GetSerie(key)
-		before["history_index"] = index
-		go model.History.Insert(before).
-			Exec()
-
-		limit := index - model.HistoryLimit
-		if limit > 0 {
-			model.History.Delete().
-				Where("history_index").LessEq(limit).
-				Exec()
-		}
+func EventHistoryDefault(model *Model, before et.Json, after et.Json) error {
+	if model.History == nil {
+		return nil
 	}
+
+	key := before.Key(model.KeyField.Name)
+	if key == "-1" {
+		return nil
+	}
+
+	index := model.Db.GetSerie(key)
+	before[HISTORY_INDEX] = index
+	go model.History.Insert(before).
+		Exec()
+
+	limit := index - model.HistoryLimit
+	if limit <= 0 {
+		return nil
+	}
+
+	go model.History.Delete().
+		Where(model.KeyField.Name).Eq(key).
+		And(HISTORY_INDEX).LessEq(limit).
+		Exec()
 
 	return nil
 }

@@ -41,6 +41,22 @@ func (s *Model) Bulk(data []et.Json) *Command {
 }
 
 /**
+* Undo
+* @param key string
+* @param index int64
+* @return *Command
+**/
+func (s *Model) Undo(key string, index int64) *Command {
+	result := NewCommand(s, []et.Json{}, Undo)
+	result.Undo = &UndoRecord{
+		Key:   key,
+		Index: index,
+	}
+
+	return result
+}
+
+/**
 * Command
 * @param params et.Json
 * @return et.Items, error

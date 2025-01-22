@@ -142,19 +142,7 @@ func init() {
 * @return string
 **/
 func (s *Model) GenId(id string) string {
-	if !map[string]bool{"": true, "*": true, "new": true}[id] {
-		split := strings.Split(id, ":")
-		if len(split) == 1 {
-			return strs.Format(`%s:%s`, s.Table, id)
-		} else if len(split) == 2 && split[0] != s.Table {
-			return strs.Format(`%s:%s`, s.Table, split[1])
-		}
-
-		return id
-	}
-
-	id = utility.Snowflake()
-	return strs.Format(`%s:%s`, s.Table, id)
+	return utility.RecordId(s.Table, id)
 }
 
 /**

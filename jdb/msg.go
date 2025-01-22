@@ -15,4 +15,8 @@ const (
 	MSG_NOT_INSERT_DATA          = "No insert data"
 	MSG_NOT_UPDATE_DATA          = "No update data"
 	MSG_NOT_DELETE_DATA          = "No delete data"
+	MSG_KEY_NOT_FOUND            = "Key not found"
+	MSG_HISTORY_NOT_DEFINED      = "History not defined"
+	MSG_HISTORY_NOT_FOUND        = "History not found"
+	MSG_UNDO_NOT_DEFINED         = "Undo record not defined"
 )
