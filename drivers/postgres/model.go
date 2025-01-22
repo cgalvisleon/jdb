@@ -60,9 +60,33 @@ func (s *Postgres) LoadModel(model *jdb.Model) error {
 		console.Debug(sql)
 	}
 
+	for _, detail := range model.Details {
+		err = s.LoadModel(detail)
+		if err != nil {
+			s.DropModel(model)
+			return err
+		}
+	}
+
 	go s.upsertModel(model.Table, model.Version, serialized)
 
 	console.Logf(model.Db.Name, `Model %s %s`, model.Name, action)
 
 	return nil
+}
+
+/**
+* DropModel
+* @param model *jdb.Model
+* @return error
+**/
+func (s *Postgres) DropModel(model *jdb.Model) error {
+	for _, detail := range model.Details {
+		err := s.DropModel(detail)
+		if err != nil {
+			return err
+		}
+	}
+
+	return s.deleteModel(model.Table)
 }

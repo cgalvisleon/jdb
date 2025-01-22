@@ -34,7 +34,7 @@ func (s *QlFilter) setCondition(where et.Json) *QlFilter {
 	} else if where["moreEq"] != nil {
 		s.MoreEq(where["moreEq"])
 	} else if where["lessEq"] != nil {
-		s.LessEs(where["lessEq"])
+		s.LessEq(where["lessEq"])
 	} else if where["search"] != nil {
 		language := where.Str("language")
 		s.Search(language, where["search"])
@@ -159,7 +159,7 @@ func (s *QlFilter) MoreEq(val interface{}) FilterTo {
 * @param val interface{}
 * @return FilterTo
 **/
-func (s *QlFilter) LessEs(val interface{}) FilterTo {
+func (s *QlFilter) LessEq(val interface{}) FilterTo {
 	s.where.Operator = LessEq
 	return s.AddValue(val)
 }

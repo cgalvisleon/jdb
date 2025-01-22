@@ -31,7 +31,7 @@ func (s *Command) beforeInsert(value *Value) *Value {
 		setValue(value, from.UpdatedAtField, now)
 	}
 	if from.IndexField != nil {
-		index := s.Db.GetSerie(from.Table)
+		index := from.GetSerie()
 		setValue(value, from.IndexField, index)
 	}
 

@@ -2,6 +2,8 @@ package jdb
 
 import (
 	"slices"
+
+	"github.com/cgalvisleon/et/mistake"
 )
 
 /**
@@ -408,4 +410,29 @@ func (s *Model) DefineDictionary(name, key, value string) *Dictionary {
 	s.Dictionaries[value] = result
 
 	return result
+}
+
+/**
+* DefineHistory
+* @param n int
+**/
+func (s *Model) DefineHistory(n int64) error {
+	if s.KeyField == nil {
+		return mistake.New("KeyField is required")
+	}
+
+	s.HistoryLimit = n
+	if s.HistoryLimit > 0 {
+		name := s.Name + "_history"
+		detail := NewModel(s.Schema, name, 1)
+		col := newColumn(s, "hisory", "", TpDetail, TypeDataNone, TypeDataNone.DefaultValue())
+		col.Detail = detail
+		s.Columns = append(s.Columns, col)
+		s.Details[name] = detail
+		s.History = detail
+		detail.DefineReference(s, s.KeyField.Name)
+		s.History.DefineSourceField()
+	}
+
+	return nil
 }

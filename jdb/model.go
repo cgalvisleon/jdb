@@ -71,6 +71,8 @@ type Model struct {
 	Details        map[string]*Model           `json:"-"`
 	Functions      map[string]*Function        `json:"-"`
 	Integrity      bool                        `json:"integrity"`
+	History        *Model                      `json:"-"`
+	HistoryLimit   int64                       `json:"history_limit"`
 	Version        int                         `json:"version"`
 	Show           bool                        `json:"-"`
 }
@@ -114,6 +116,7 @@ func NewModel(schema *Schema, name string, version int) *Model {
 		Details:      make(map[string]*Model),
 		Functions:    make(map[string]*Function),
 		Integrity:    false,
+		HistoryLimit: 0,
 		Version:      version,
 	}
 	result.DefineEvent(EventInsert, EventInsertDefault)
@@ -176,6 +179,14 @@ func (s *Model) Low() string {
 **/
 func (s *Model) Serialized() ([]byte, error) {
 	return json.Marshal(s)
+}
+
+/**
+* GetSerie
+* @return int
+**/
+func (s *Model) GetSerie() int64 {
+	return s.Db.GetSerie(s.Table)
 }
 
 /**
