@@ -181,11 +181,14 @@ func (s *Model) DefineProjectField() *Column {
 /**
 * DefineFullText
 * @param fields []string
+* @return language string
 * @return *Column
 **/
-func (s *Model) DefineFullText(fields []string) *Column {
+func (s *Model) DefineFullText(language string, fields []string) *Column {
 	result := s.DefineColumn(string(FullTextField), FullTextField.TypeData())
 	result.FullText = fields
+	result.Hidden = true
+	result.Language = language
 	s.DefineIndex(true, string(FullTextField))
 
 	return result
@@ -215,9 +218,54 @@ func (s *Model) DefineDetail(name string) *Model {
 	col.Detail = detail
 	s.Columns = append(s.Columns, col)
 	s.Details[name] = detail
-	detail.MakeDetailRelation(s)
+	detail.DefineManyToOne(s)
 
 	return detail
+}
+
+/**
+* DefineOneToMany
+* @param to *Model
+* @return *Model
+**/
+func (s *Model) DefineOneToMany(to *Model) *Model {
+	key := s.KeyField
+	fkn := s.Name
+	fk := to.DefineColumn(fkn, key.TypeData)
+	NewReference(fk, RelationManyToOne, key)
+	ref := NewReference(key, RelationOneToMany, fk)
+	ref.OnDeleteCascade = true
+	ref.OnUpdateCascade = true
+	s.DefineRequired(fkn)
+
+	return s
+}
+
+/**
+* MakeManyToOne
+* @param to *Model
+* @return *Model
+**/
+func (s *Model) DefineManyToOne(to *Model) *Model {
+	fkn := to.Name
+	return s.DefineReference(to, fkn)
+}
+
+/**
+* MakeManyToOne
+* @param to *Model
+* @return *Model
+**/
+func (s *Model) DefineReference(to *Model, fkn string) *Model {
+	key := to.KeyField
+	fk := s.DefineColumn(fkn, key.TypeData)
+	NewReference(fk, RelationManyToOne, key)
+	ref := NewReference(key, RelationOneToMany, fk)
+	ref.OnDeleteCascade = true
+	ref.OnUpdateCascade = true
+	to.DefineRequired(fkn)
+
+	return s
 }
 
 /**

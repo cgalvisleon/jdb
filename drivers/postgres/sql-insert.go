@@ -8,6 +8,7 @@ import (
 
 func (s *Postgres) sqlInsert(command *jdb.Command) string {
 	result := "INSERT INTO %s(%s)\nVALUE %s\nRETURNING jsonb_build_object() AS before,\n%s AS after;"
+	from := command.From
 	columns := ""
 	values := ""
 	for i, value := range command.Values {
@@ -22,9 +23,9 @@ func (s *Postgres) sqlInsert(command *jdb.Command) string {
 			def := strs.Format(`%v`, value)
 			record = strs.Append(record, def, ", ")
 		}
-		if command.From.SourceField != nil && len(value.Atribs) > 0 {
+		if from.SourceField != nil && len(value.Atribs) > 0 {
 			if i == 0 {
-				column := command.From.SourceField.Name
+				column := from.SourceField.Name
 				columns = strs.Append(columns, column, ", ")
 			}
 
@@ -32,10 +33,26 @@ func (s *Postgres) sqlInsert(command *jdb.Command) string {
 			def := strs.Format(`'%v'::jsonb`, value)
 			record = strs.Append(record, def, ", ")
 		}
+		if from.FullTextField != nil {
+			if i == 0 {
+				column := from.FullTextField.Name
+				columns = strs.Append(columns, column, ", ")
+			}
+
+			tsvector := ""
+			for _, key := range from.FullTextField.FullText {
+				if value.Data[key] != nil {
+					val := utility.Quote(value.Data[key])
+					tsvector = strs.Append(tsvector, strs.Format(`%v`, val), " || '' || ")
+				}
+			}
+			def := strs.Format(`to_tsvector('%s', %s)`, from.FullTextField.Language, value)
+			record = strs.Append(record, def, ", ")
+		}
 		def := strs.Format(`(%s)`, record)
 		values = strs.Append(values, def, "\n")
 	}
 
-	objects := s.sqlJsonObject(command.From)
-	return strs.Format(result, command.From.Table, columns, values, objects)
+	objects := s.sqlJsonObject(from)
+	return strs.Format(result, from.Table, columns, values, objects)
 }

@@ -8,6 +8,7 @@ import (
 
 func (s *Postgres) sqlUpdate(command *jdb.Command) string {
 	result := "WITH updated_rows AS (\n\tSELECT\n\t\t%s AS _data\n\tFROM %s\n\tWHERE %s\n)\nUPDATE %s SET\n%s\nWHERE %sRETURNING\n\t(SELECT _data FROM updated_rows) AS before,\n%s AS after;"
+	from := command.From
 	set := ""
 	atribs := ""
 	where := ""
@@ -34,9 +35,20 @@ func (s *Postgres) sqlUpdate(command *jdb.Command) string {
 			def := strs.Format(`%s = %v`, string(jdb.SourceField), atribs)
 			set = strs.Append(set, def, ",\n")
 		}
+		if from.FullTextField != nil {
+			tsvector := ""
+			for _, key := range from.FullTextField.FullText {
+				if value.Data[key] != nil {
+					val := utility.Quote(value.Data[key])
+					tsvector = strs.Append(tsvector, strs.Format(`%v`, val), " || '' || ")
+				}
+			}
+			def := strs.Format(`to_tsvector('%s', %s)`, from.FullTextField.Language, value)
+			def = strs.Format(`%s = %v`, from.FullTextField.Name, def)
+			set = strs.Append(set, def, ",\n")
+		}
 	}
 
-	from := command.From
 	where = whereFilters(command.Wheres)
 	objects := s.sqlJsonObject(from)
 	result = strs.Format(result, objects, from.Table, where, from.Table, set, where, objects)

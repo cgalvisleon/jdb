@@ -116,6 +116,9 @@ func NewModel(schema *Schema, name string, version int) *Model {
 		Integrity:    false,
 		Version:      version,
 	}
+	result.DefineEvent(EventInsert, EventInsertDefault)
+	result.DefineEvent(EventUpdate, EventUpdateDefault)
+	result.DefineEvent(EventDelete, EventDeleteDefault)
 	if schema.Db.UseCore {
 		result.DefineSystemKeyField()
 		result.DefineIndexField()
@@ -140,6 +143,8 @@ func (s *Model) GenId(id string) string {
 		split := strings.Split(id, ":")
 		if len(split) == 1 {
 			return strs.Format(`%s:%s`, s.Table, id)
+		} else if len(split) == 2 && split[0] != s.Table {
+			return strs.Format(`%s:%s`, s.Table, split[1])
 		}
 
 		return id
@@ -380,24 +385,6 @@ func (s *Model) MakeCollection() *Model {
 	s.DefineKeyField()
 	s.DefineSourceField()
 	s.DefineIndexField()
-
-	return s
-}
-
-/**
-* MakeDetailRelation
-* @param fkeys []*Column
-* @return *Model
-**/
-func (s *Model) MakeDetailRelation(owner *Model) *Model {
-	key := owner.KeyField
-	fkn := owner.Name
-	fk := s.DefineColumn(fkn, key.TypeData)
-	NewReference(fk, RelationManyToOne, key)
-	ref := NewReference(key, RelationOneToMany, fk)
-	ref.OnDeleteCascade = true
-	ref.OnUpdateCascade = true
-	s.DefineRequired(fkn)
 
 	return s
 }

@@ -123,6 +123,7 @@ func (s *Command) Exec() (et.Items, error) {
 		if err != nil {
 			return et.Items{}, err
 		}
+
 		s.Result.Add(result.Result)
 	case Update:
 		if len(s.Origin) == 0 {
@@ -133,6 +134,7 @@ func (s *Command) Exec() (et.Items, error) {
 		if err != nil {
 			return et.Items{}, err
 		}
+
 		s.Result = result
 	case Delete:
 		result, err := s.delete()
@@ -149,6 +151,7 @@ func (s *Command) Exec() (et.Items, error) {
 		if err != nil {
 			return et.Items{}, err
 		}
+
 		s.Result = result
 	}
 

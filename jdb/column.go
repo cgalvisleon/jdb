@@ -179,6 +179,7 @@ type Column struct {
 	Detail        *Model        `json:"detail"`
 	FuncGenerated FuncGenerated `json:"-"`
 	Limit         int           `json:"limit"`
+	Language      string        `json:"language"`
 }
 
 func newColumn(model *Model, name string, description string, typeColumn TypeColumn, typeData TypeData, def interface{}) *Column {

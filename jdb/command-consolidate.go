@@ -54,12 +54,20 @@ func (s *Command) consolidate() []*Value {
 		value := NewValue()
 		for k, v := range data {
 			field := from.GetField(k, true)
-			if field != nil {
+			if field.Column == from.FullTextField {
+				continue
+			} else if field != nil {
 				setValue(value, field.Column, v)
 			} else if from.SourceField != nil && !from.Integrity {
 				value.Atribs[k] = v
 				value.Data[k] = v
 			}
+		}
+		switch s.Command {
+		case Insert:
+			value = s.beforeInsert(value)
+		case Update:
+			value = s.beforeUpdate(value)
 		}
 		s.Values = append(s.Values, value)
 	}
