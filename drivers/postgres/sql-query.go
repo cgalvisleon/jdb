@@ -39,7 +39,7 @@ func (s *Postgres) Exec(sql string, params ...any) error {
 
 }
 
-func (s *Postgres) SQL(sql string, params ...any) (et.Items, error) {
+func (s *Postgres) All(tp jdb.TypeSelect, sql string, params ...any) (et.Items, error) {
 	rows, err := s.query(s.db, sql, params...)
 	if err != nil {
 		return et.Items{}, err
@@ -47,7 +47,7 @@ func (s *Postgres) SQL(sql string, params ...any) (et.Items, error) {
 	defer rows.Close()
 
 	var result = et.Items{Result: []et.Json{}}
-	if s.typeSelect == jdb.Select {
+	if tp == jdb.Select {
 		result = jdb.RowsToItems(rows)
 	} else {
 		result = jdb.SourceToItems(rows)
@@ -56,7 +56,7 @@ func (s *Postgres) SQL(sql string, params ...any) (et.Items, error) {
 	return result, nil
 }
 
-func (s *Postgres) One(sql string, params ...any) (et.Item, error) {
+func (s *Postgres) One(tp jdb.TypeSelect, sql string, params ...any) (et.Item, error) {
 	rows, err := s.query(s.db, sql, params...)
 	if err != nil {
 		return et.Item{}, err
@@ -64,7 +64,7 @@ func (s *Postgres) One(sql string, params ...any) (et.Item, error) {
 	defer rows.Close()
 
 	var result = et.Item{Result: et.Json{}}
-	if s.typeSelect == jdb.Select {
+	if tp == jdb.Select {
 		result = jdb.RowsToItem(rows)
 	} else {
 		result = jdb.SourceToItem(rows)
@@ -73,7 +73,6 @@ func (s *Postgres) One(sql string, params ...any) (et.Item, error) {
 }
 
 func (s *Postgres) Query(ql *jdb.Ql) (et.Items, error) {
-	s.typeSelect = ql.TypeSelect
 	ql.Sql = ""
 	ql.Sql = strs.Append(ql.Sql, s.sqlSelect(ql), "\n")
 	ql.Sql = strs.Append(ql.Sql, s.sqlFrom(ql.Froms), "\n")
@@ -89,7 +88,7 @@ func (s *Postgres) Query(ql *jdb.Ql) (et.Items, error) {
 		console.Debug(ql.Sql)
 	}
 
-	result, err := s.SQL(ql.Sql)
+	result, err := s.All(ql.TypeSelect, ql.Sql)
 	if err != nil {
 		return et.Items{}, err
 	}

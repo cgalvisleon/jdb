@@ -58,8 +58,6 @@ func (s *Command) undo() error {
 				return err
 			}
 		}
-
-		s.Commit = append(s.Commit, after)
 	}
 
 	return nil

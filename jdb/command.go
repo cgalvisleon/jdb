@@ -3,7 +3,6 @@ package jdb
 import (
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/mistake"
-	"github.com/cgalvisleon/et/utility"
 )
 
 type TypeCommand int
@@ -32,7 +31,6 @@ func NewValue() *Value {
 
 type Command struct {
 	*QlFilter
-	Id         string
 	Db         *DB
 	TypeSelect TypeSelect `json:"type_select"`
 	From       *QlFrom
@@ -42,8 +40,6 @@ type Command struct {
 	Undo       *UndoRecord
 	Sql        string
 	Result     et.Items
-	Commit     []et.Json
-	Commands   []*Command
 }
 
 /**
@@ -59,15 +55,12 @@ func NewCommand(model *Model, data []et.Json, command TypeCommand) *Command {
 		tp = Data
 	}
 	result := &Command{
-		Id:         utility.RecordId("command", ""),
 		TypeSelect: tp,
 		Command:    command,
 		Origin:     data,
 		Values:     make([]*Value, 0),
 		Sql:        "",
 		Result:     et.Items{},
-		Commit:     make([]et.Json, 0),
-		Commands:   make([]*Command, 0),
 	}
 	result.QlFilter = &QlFilter{
 		main:   result,

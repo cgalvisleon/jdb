@@ -93,10 +93,7 @@ func (s *Postgres) ddlTable(model *jdb.Model) string {
 	}
 	columnsDef = strs.Append(columnsDef, s.ddlPrimaryKey(model), "\n\t")
 	result := strs.Format("\nCREATE TABLE IF NOT EXISTS %s (%s\n);", model.Table, columnsDef)
-	result = strs.Append(result, s.ddlIndex(model), "\n")
-	result = strs.Append(result, s.ddlUniqueIndex(model), "\n\n")
-	result = strs.Append(result, s.ddlForeignKeys(model), "\n\n")
-	result = strs.Append(result, s.ddlTriggers(model), "\n\n")
+	result = strs.Append(result, s.ddlIndexFunction(model), "\n")
 
 	return result
 }

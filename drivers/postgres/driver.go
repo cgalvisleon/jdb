@@ -11,13 +11,13 @@ import (
 var driver Postgres
 
 type Postgres struct {
-	params     et.Json
-	connStr    string
-	db         *sql.DB
-	master     *sql.DB
-	connected  bool
-	version    int
-	typeSelect jdb.TypeSelect
+	params    et.Json
+	connStr   string
+	db        *sql.DB
+	master    *sql.DB
+	connected bool
+	version   int
+	nodeId    int
 }
 
 func NewDriver() jdb.Driver {

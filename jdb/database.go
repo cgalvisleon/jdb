@@ -225,17 +225,17 @@ func (s *DB) Exec(sql string, params ...any) error {
 }
 
 /**
-* SQL
+* All
 * @param sql string
 * @param params ...any
 * @return et.Items, error
 **/
-func (s *DB) SQL(sql string, params ...any) (et.Items, error) {
+func (s *DB) All(tp TypeSelect, sql string, params ...any) (et.Items, error) {
 	if s.driver == nil {
 		return et.Items{}, mistake.New(MSG_DRIVER_NOT_DEFINED)
 	}
 
-	return s.driver.SQL(sql, params...)
+	return s.driver.All(tp, sql, params...)
 }
 
 /**
@@ -244,12 +244,12 @@ func (s *DB) SQL(sql string, params ...any) (et.Items, error) {
 * @param params ...any
 * @return et.Item, error
 **/
-func (s *DB) One(sql string, params ...any) (et.Item, error) {
+func (s *DB) One(tp TypeSelect, sql string, params ...any) (et.Item, error) {
 	if s.driver == nil {
 		return et.Item{}, mistake.New(MSG_DRIVER_NOT_DEFINED)
 	}
 
-	return s.driver.One(sql, params...)
+	return s.driver.One(tp, sql, params...)
 }
 
 /**

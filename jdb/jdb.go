@@ -30,6 +30,7 @@ func Load() (*DB, error) {
 		"password": envar.GetStr("", "DB_PASSWORD"),
 		"app":      envar.GetStr("jdb", "DB_APP_NAME"),
 		"core":     result.UseCore,
+		"nodeId":   result.Node,
 		"fields": et.Json{
 			"IndexField":     "index",
 			"SourceField":    "_data",

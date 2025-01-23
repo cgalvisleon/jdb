@@ -1,8 +1,6 @@
 package jdb
 
 import (
-	"slices"
-
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/mistake"
 )
@@ -23,22 +21,7 @@ func (s *Ql) prepare() *Ql {
 
 	if len(s.Selects) == 0 {
 		frm := s.Froms[0]
-		for _, col := range frm.Columns {
-			if col.Hidden || slices.Contains([]TypeColumn{TpAtribute, TpGenerated}, col.TypeColumn) {
-				continue
-			}
-			field := col.GetField()
-			field.As = frm.As
-			sel := &QlSelect{
-				From:  frm,
-				Field: field,
-			}
-			if col.TypeColumn == TpDetail {
-				s.Details = append(s.Details, sel)
-			} else {
-				s.Selects = append(s.Selects, sel)
-			}
-		}
+		frm.GetSelect(&s.Selects, &s.Details)
 	}
 
 	return s

@@ -3,6 +3,7 @@ package postgres
 import (
 	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
+	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
 /**
@@ -50,7 +51,7 @@ func (s *Postgres) getModel(table string) (et.Item, error) {
 	WHERE TABLENAME = $1
 	LIMIT 1;`
 
-	return s.One(sql, table)
+	return s.One(jdb.Select, sql, table)
 }
 
 /**
@@ -68,7 +69,7 @@ func (s *Postgres) upsertModel(table string, version int, model []byte) error {
 	WHERE TABLENAME = $1
 	RETURNING *;`
 
-	item, err := s.One(sql, table, version, model)
+	item, err := s.One(jdb.Select, sql, table, version, model)
 	if err != nil {
 		return err
 	}

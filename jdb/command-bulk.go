@@ -27,15 +27,6 @@ func (s *Command) bulk() error {
 				return err
 			}
 		}
-
-		s.Commit = append(s.Commit, after)
-	}
-
-	for _, command := range s.Commands {
-		_, err := command.Exec()
-		if err != nil {
-			break
-		}
 	}
 
 	s.Result = results

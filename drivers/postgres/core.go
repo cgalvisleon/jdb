@@ -21,7 +21,7 @@ func (s *Postgres) CreateCore() error {
 	if err := s.defineModel(); err != nil {
 		return err
 	}
-	if err := s.defineFunctions(); err != nil {
+	if err := s.defineFunctions(s.nodeId); err != nil {
 		return err
 	}
 	if err := s.defineKeyValue(); err != nil {
@@ -39,7 +39,7 @@ func (s *Postgres) existTable(schema, name string) (bool, error) {
 		WHERE UPPER(table_schema) = UPPER($1)
 		AND UPPER(table_name) = UPPER($2));`
 
-	item, err := s.One(sql, schema, name)
+	item, err := s.One(jdb.Select, sql, schema, name)
 	if err != nil {
 		return false, err
 	}

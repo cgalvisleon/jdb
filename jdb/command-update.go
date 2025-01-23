@@ -39,20 +39,11 @@ func (s *Command) updated() error {
 			}
 		}
 
-		s.Commit = append(s.Commit, after)
-
 		if model.History != nil {
 			err := EventHistoryDefault(model, before, after)
 			if err != nil {
 				return err
 			}
-		}
-	}
-
-	for _, command := range s.Commands {
-		_, err := command.Exec()
-		if err != nil {
-			break
 		}
 	}
 

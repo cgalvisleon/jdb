@@ -46,14 +46,8 @@ func jsonbBuildObject(result, obj string) string {
 	return strs.Append(result, strs.Format("jsonb_build_object(\n%s)", obj), "||\n")
 }
 
-func (s *Postgres) sqlObject(frm *jdb.QlFrom, selects []*jdb.QlSelect) string {
+func (s *Postgres) sqlObject(selects []*jdb.QlSelect) string {
 	result := ""
-	if frm != nil && frm.SourceField != nil {
-		def := strs.Append("", frm.As, ".")
-		def = strs.Append(def, frm.SourceField.Name, ".")
-		def = strs.Format(`%s`, def)
-		result = strs.Append(result, def, "")
-	}
 	l := 20
 	n := 0
 	obj := ""
@@ -91,8 +85,8 @@ func (s *Postgres) sqlObject(frm *jdb.QlFrom, selects []*jdb.QlSelect) string {
 	return result
 }
 
-func (s *Postgres) sqlObjectOrders(frm *jdb.QlFrom, selects []*jdb.QlSelect, as string, orders []*jdb.QlOrder) string {
-	result := s.sqlObject(frm, selects)
+func (s *Postgres) sqlObjectOrders(selects []*jdb.QlSelect, as string, orders []*jdb.QlOrder) string {
+	result := s.sqlObject(selects)
 	result = strs.Append(result, as, " AS ")
 	for _, ord := range orders {
 		def := selectField(ord.Field)
@@ -131,7 +125,7 @@ func (s *Postgres) sqlSelect(ql *jdb.Ql) string {
 
 	var result string
 	if ql.TypeSelect == jdb.Data {
-		result = s.sqlObjectOrders(nil, ql.Selects, string(jdb.SourceField), ql.Orders)
+		result = s.sqlObjectOrders(ql.Selects, string(jdb.SourceField), ql.Orders)
 	} else {
 		result = s.sqlColumns(ql.Selects)
 	}

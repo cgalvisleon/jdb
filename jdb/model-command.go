@@ -11,7 +11,10 @@ import (
 * @return *Command
 **/
 func (s *Model) Insert(data et.Json) *Command {
-	return NewCommand(s, []et.Json{data}, Insert)
+	result := NewCommand(s, []et.Json{data}, Insert)
+	result.Show = s.Show
+
+	return result
 }
 
 /**
@@ -20,7 +23,10 @@ func (s *Model) Insert(data et.Json) *Command {
 * @return *Command
 **/
 func (s *Model) Update(data et.Json) *Command {
-	return NewCommand(s, []et.Json{data}, Update)
+	result := NewCommand(s, []et.Json{data}, Update)
+	result.Show = s.Show
+
+	return result
 }
 
 /**
@@ -28,7 +34,10 @@ func (s *Model) Update(data et.Json) *Command {
 * @return *Command
 **/
 func (s *Model) Delete() *Command {
-	return NewCommand(s, []et.Json{}, Delete)
+	result := NewCommand(s, []et.Json{}, Delete)
+	result.Show = s.Show
+
+	return result
 }
 
 /**
@@ -37,7 +46,10 @@ func (s *Model) Delete() *Command {
 * @return *Command
 **/
 func (s *Model) Bulk(data []et.Json) *Command {
-	return NewCommand(s, data, Bulk)
+	result := NewCommand(s, data, Bulk)
+	result.Show = s.Show
+
+	return result
 }
 
 /**
@@ -48,6 +60,7 @@ func (s *Model) Bulk(data []et.Json) *Command {
 **/
 func (s *Model) Undo(key string, index int64) *Command {
 	result := NewCommand(s, []et.Json{}, Undo)
+	result.Show = s.Show
 	result.Undo = &UndoRecord{
 		Key:   key,
 		Index: index,

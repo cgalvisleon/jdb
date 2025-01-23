@@ -5,6 +5,7 @@ import (
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/strs"
 	"github.com/cgalvisleon/et/utility"
+	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
 /**
@@ -53,7 +54,7 @@ func (s *Postgres) upsertDDL(id string, query string) error {
 	WHERE _ID = $1
 	RETURNING _ID;`)
 
-	item, err := s.One(sql, id, []byte(query))
+	item, err := s.One(jdb.Select, sql, id, []byte(query))
 	if err != nil {
 		return err
 	}

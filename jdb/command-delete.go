@@ -27,15 +27,6 @@ func (s *Command) delete() error {
 				return err
 			}
 		}
-
-		s.Commit = append(s.Commit, before)
-	}
-
-	for _, command := range s.Commands {
-		_, err := command.Exec()
-		if err != nil {
-			break
-		}
 	}
 
 	return nil

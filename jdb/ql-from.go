@@ -1,6 +1,10 @@
 package jdb
 
-import "github.com/cgalvisleon/et/strs"
+import (
+	"slices"
+
+	"github.com/cgalvisleon/et/strs"
+)
 
 type QlFrom struct {
 	*Model
@@ -53,6 +57,30 @@ func (s *QlFrom) GetField(name string, isCreated bool) *Field {
 	}
 
 	return result
+}
+
+/**
+* GetSelect
+* @param selects []*QlSelect, details []*QlSelect
+**/
+func (s *QlFrom) GetSelect(selects, details *[]*QlSelect) {
+	for _, col := range s.Columns {
+		if col.Hidden || slices.Contains([]TypeColumn{TpAtribute, TpGenerated}, col.TypeColumn) {
+			continue
+		}
+		field := col.GetField()
+		field.As = s.As
+		sel := &QlSelect{
+			From:  s,
+			Field: field,
+		}
+		if details != nil && col.TypeColumn == TpDetail {
+			*details = append(*details, sel)
+		} else if selects != nil {
+			*selects = append(*selects, sel)
+		}
+	}
+
 }
 
 /**

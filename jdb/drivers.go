@@ -31,8 +31,8 @@ type Driver interface {
 	LoadModel(model *Model) error
 	// Query
 	Exec(sql string, params ...any) error
-	SQL(sql string, params ...any) (et.Items, error)
-	One(sql string, params ...any) (et.Item, error)
+	All(tp TypeSelect, sql string, params ...any) (et.Items, error)
+	One(tp TypeSelect, sql string, params ...any) (et.Item, error)
 	Query(ql *Ql) (et.Items, error)
 	Count(ql *Ql) (int, error)
 	// Command

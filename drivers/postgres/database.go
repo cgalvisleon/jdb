@@ -20,7 +20,7 @@ func (s *Postgres) ExistDatabase(name string) (bool, error) {
 	SELECT 1
 	FROM pg_database
 	WHERE UPPER(datname) = UPPER($1));`
-	item, err := s.One(sql, name)
+	item, err := s.One(jdb.Select, sql, name)
 	if err != nil {
 		return false, err
 	}
@@ -94,6 +94,7 @@ func (s *Postgres) connect(params et.Json) error {
 	s.params = params
 	s.connStr = connStr
 	s.connected = s.db != nil
+	s.nodeId = params.Int("node_id")
 	s.Version()
 
 	return nil
