@@ -3,11 +3,11 @@ package jdb
 import "github.com/cgalvisleon/et/et"
 
 type Dictionary struct {
-	Column  *Column
-	Name    string
-	Key     string
-	Value   interface{}
-	Columns []*Column
+	Column     *Column
+	Key        string
+	Value      interface{}
+	Columns    []*Column
+	Dictionary map[string][]*Dictionary
 }
 
 /**
@@ -16,11 +16,10 @@ type Dictionary struct {
 * @param value interface{}
 * @return *Dictionary
 **/
-func NewDictionary(model *Model, name, key string, value interface{}) *Dictionary {
+func NewDictionary(model *Model, key string, value interface{}) *Dictionary {
 	col := model.GetColumn(key)
 	return &Dictionary{
 		Column:  col,
-		Name:    name,
 		Key:     key,
 		Value:   value,
 		Columns: []*Column{},
@@ -29,7 +28,6 @@ func NewDictionary(model *Model, name, key string, value interface{}) *Dictionar
 
 func (s *Dictionary) Describe() et.Json {
 	result := map[string]interface{}{
-		"name":  s.Name,
 		"key":   s.Key,
 		"value": s.Value,
 	}

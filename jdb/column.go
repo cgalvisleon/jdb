@@ -36,6 +36,7 @@ const (
 	TypeDataGeometry
 	TypeDataFullText
 	TypeDataNone
+	TypeListValues
 )
 
 func (s TypeData) DefaultValue() interface{} {
@@ -181,6 +182,7 @@ type Column struct {
 	FuncGenerated FuncGenerated `json:"-"`
 	Limit         int           `json:"limit"`
 	Language      string        `json:"language"`
+	Values        []interface{} `json:"values"`
 }
 
 func newColumn(model *Model, name string, description string, typeColumn TypeColumn, typeData TypeData, def interface{}) *Column {

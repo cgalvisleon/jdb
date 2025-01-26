@@ -1,7 +1,11 @@
 package jdb
 
 import (
+	"slices"
+
+	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/mistake"
+	"github.com/cgalvisleon/et/utility"
 )
 
 func (s *Command) update() error {
@@ -27,10 +31,28 @@ func (s *Command) updated() error {
 		return err
 	}
 
+	changed := func(before, after et.Json, exclude []string) bool {
+		for k, v := range before {
+			if slices.Contains(exclude, k) {
+				continue
+			}
+
+			if utility.Quote(after[k]) != utility.Quote(v) {
+				return false
+			}
+		}
+
+		return true
+	}
+
 	model := s.From.Model
 	for _, result := range s.Result.Result {
 		before := result.Json("before")
 		after := result.Json("after")
+
+		if !changed(before, after, []string{CREATED_AT, UPDATED_AT}) {
+			continue
+		}
 
 		for _, event := range s.From.EventsUpdate {
 			err := event(model, before, after)

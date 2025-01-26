@@ -117,9 +117,8 @@ func (s *Postgres) GetSerie(tag string) int64 {
 	}
 
 	sql := `SELECT core.nextserie($1) AS SERIE;`
-	rows, err := s.query(db, sql, tag)
+	rows, err := db.Query(sql, tag)
 	if err != nil {
-		console.Error(err)
 		return 0
 	}
 	defer rows.Close()
@@ -141,9 +140,8 @@ func (s *Postgres) SetSerie(tag string, val int) int64 {
 	}
 
 	sql := `SELECT core.setserie($1) AS SERIE;`
-	rows, err := s.query(db, sql, tag)
+	rows, err := db.Query(sql, tag)
 	if err != nil {
-		console.Error(err)
 		return 0
 	}
 	defer rows.Close()
@@ -165,9 +163,8 @@ func (s *Postgres) CurrentSerie(tag string) int64 {
 	}
 
 	sql := `SELECT core.currserie($1) AS SERIE;`
-	rows, err := s.query(db, sql, tag)
+	rows, err := db.Query(sql, tag)
 	if err != nil {
-		console.Error(err)
 		return 0
 	}
 	defer rows.Close()

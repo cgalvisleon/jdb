@@ -71,7 +71,7 @@ func (s *Postgres) SetKey(key string, value []byte) error {
 	VALUES ($1, $2, $3);`)
 
 	index := s.GetSerie("core.KEYVALUES")
-	err = s.Exec(sql, key, []byte(value), index)
+	err = s.Exec(sql, key, value, index)
 	if err != nil {
 		return err
 	}

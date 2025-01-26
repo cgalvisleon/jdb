@@ -7,7 +7,7 @@ import (
 )
 
 func (s *Postgres) sqlInsert(command *jdb.Command) string {
-	result := "INSERT INTO %s(%s)\nVALUES %s\nRETURNING jsonb_build_object() AS before,\n%s AS after;"
+	result := "INSERT INTO %s(%s)\nVALUES %s\nRETURNING\njsonb_build_object(\n'before', jsonb_build_object(),\n'after', (%s),\n'%s', %s) AS %s;"
 	from := command.From
 	columns := ""
 	values := ""
@@ -54,5 +54,5 @@ func (s *Postgres) sqlInsert(command *jdb.Command) string {
 	}
 
 	objects := s.sqlJsonObject(from)
-	return strs.Format(result, from.Table, columns, values, objects)
+	return strs.Format(result, from.Table, columns, values, objects, jdb.SYSID, jdb.SYSID, jdb.SOURCE)
 }

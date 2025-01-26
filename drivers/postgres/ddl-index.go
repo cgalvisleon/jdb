@@ -31,6 +31,7 @@ func ddlUniqueIndex(col *jdb.Column) string {
 }
 
 func (s *Postgres) ddlPrimaryKey(model *jdb.Model) string {
+	var result string
 	primaryKeys := func() []string {
 		var result []string
 		for _, v := range model.Keys {
@@ -40,7 +41,9 @@ func (s *Postgres) ddlPrimaryKey(model *jdb.Model) string {
 		return result
 	}
 
-	result := strs.Format("PRIMARY KEY (%s)", strings.Join(primaryKeys(), ", "))
+	if len(primaryKeys()) > 0 {
+		result = strs.Format("PRIMARY KEY (%s)", strings.Join(primaryKeys(), ", "))
+	}
 
 	return result
 }
@@ -88,7 +91,7 @@ func (s *Postgres) ddlUniqueIndex(model *jdb.Model) string {
 }
 
 func (s *Postgres) ddlIndexFunction(model *jdb.Model) string {
-	result := "\n"
+	result := ""
 	result = strs.Append(result, s.ddlIndex(model), "\n")
 	result = strs.Append(result, s.ddlUniqueIndex(model), "\n")
 	result = strs.Append(result, s.ddlForeignKeys(model), "\n\n")

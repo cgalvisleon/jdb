@@ -7,7 +7,7 @@ import (
 )
 
 func (s *Postgres) sqlUpdate(command *jdb.Command) string {
-	result := "WITH updated_rows AS (\n\tSELECT\n\t\t%s AS _data\n\tFROM %s\n\tWHERE %s\n)\nUPDATE %s SET\n%s\nWHERE %sRETURNING\n\t(SELECT _data FROM updated_rows) AS before,\n%s AS after;"
+	result := "WITH updated_rows AS (\nSELECT\n%s AS _data\nFROM %s\nWHERE %s)\nUPDATE %s SET\n%s\nWHERE %sRETURNING\njsonb_build_object(\n'before', (SELECT _data FROM updated_rows),\n'after', (%s),\n'%s', %s) AS %s;"
 	from := command.From
 	set := ""
 	atribs := ""
@@ -23,12 +23,12 @@ func (s *Postgres) sqlUpdate(command *jdb.Command) string {
 			set = strs.Append(set, def, ",\n")
 		}
 		for key, val := range value.Atribs {
-			val := utility.Quote(val)
+			val := JsonQuote(val)
 			if len(atribs) == 0 {
 				atribs = string(jdb.SourceField)
-				atribs = strs.Format("jsonb_set(%s, '{%s}', %v, true)", atribs, key, val)
+				atribs = strs.Format("jsonb_set(%s, '{%s}', %v::jsonb, true)", atribs, key, val)
 			} else {
-				atribs = strs.Format("jsonb_set(\n%s, \n'{%s}', %v, true)", atribs, key, val)
+				atribs = strs.Format("jsonb_set(\n%s, \n'{%s}', %v::jsonb, true)", atribs, key, val)
 			}
 		}
 		if len(atribs) > 0 {
@@ -38,8 +38,9 @@ func (s *Postgres) sqlUpdate(command *jdb.Command) string {
 		if from.FullTextField != nil {
 			tsvector := ""
 			for _, key := range from.FullTextField.FullText {
-				if value.Data[key] != nil {
-					val := utility.Quote(value.Data[key])
+				v := value.Data[key]
+				if v != nil {
+					val := utility.Quote(v)
 					tsvector = strs.Append(tsvector, strs.Format(`%v`, val), " || '' || ")
 				}
 			}
@@ -51,7 +52,7 @@ func (s *Postgres) sqlUpdate(command *jdb.Command) string {
 
 	where = whereFilters(command.Wheres)
 	objects := s.sqlJsonObject(from)
-	result = strs.Format(result, objects, from.Table, where, from.Table, set, where, objects)
+	result = strs.Format(result, objects, from.Table, where, from.Table, set, where, objects, jdb.SYSID, jdb.SYSID, jdb.SOURCE)
 
 	return result
 }

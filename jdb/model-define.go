@@ -46,8 +46,20 @@ func (s *Model) DefineColumn(name string, typeData TypeData) *Column {
 	if col.Name == string(FullTextField) {
 		s.FullTextField = col
 	}
+	if col.Name == CREATED_AT {
+		idx = 0
+	}
+	if col.Name == UPDATED_AT {
+		idx = slices.IndexFunc(s.Columns, func(e *Column) bool { return e == s.CreatedAtField }) + 1
+	}
 	if idx == -1 {
 		idx = slices.IndexFunc(s.Columns, func(e *Column) bool { return e == s.SourceField })
+	}
+	if idx == -1 {
+		idx = slices.IndexFunc(s.Columns, func(e *Column) bool { return e == s.StateField })
+	}
+	if idx == -1 {
+		idx = slices.IndexFunc(s.Columns, func(e *Column) bool { return e == s.KeyField })
 	}
 	if idx == -1 {
 		idx = slices.IndexFunc(s.Columns, func(e *Column) bool { return e == s.SystemKeyField })
@@ -211,16 +223,18 @@ func (s *Model) DefineGenerated(name string, f FuncGenerated) {
 /**
 * DefineDetail
 * @param name string
+* @param fkn string
+* @param version int
 * @param detail Detail
 * @return *Model
 **/
-func (s *Model) DefineDetail(name string) *Model {
-	detail := NewModel(s.Schema, name, 1)
+func (s *Model) DefineDetail(name, fkn string, version int) *Model {
+	detail := NewModel(s.Schema, name, version)
 	col := newColumn(s, name, "", TpDetail, TypeDataNone, TypeDataNone.DefaultValue())
 	col.Detail = detail
 	s.Columns = append(s.Columns, col)
 	s.Details[name] = detail
-	detail.DefineManyToOne(s)
+	detail.DefineManyToOne(s, fkn)
 
 	return detail
 }
@@ -248,8 +262,7 @@ func (s *Model) DefineOneToMany(to *Model) *Model {
 * @param to *Model
 * @return *Model
 **/
-func (s *Model) DefineManyToOne(to *Model) *Model {
-	fkn := to.Name
+func (s *Model) DefineManyToOne(to *Model, fkn string) *Model {
 	return s.DefineReference(to, fkn)
 }
 
@@ -400,14 +413,15 @@ func (s *Model) DefineFunction(name string, tp TypeFunction, definition string) 
 * @param value interface{}
 * @return *Dictionary
 **/
-func (s *Model) DefineDictionary(name, key, value string) *Dictionary {
-	result := s.Dictionaries[value]
-	if result != nil {
-		return result
+func (s *Model) DefineDictionary(key, value string) *Dictionary {
+	results := s.Dictionaries[value]
+	idx := slices.IndexFunc(results, func(e *Dictionary) bool { return e.Key == key })
+	if idx != -1 {
+		return results[idx]
 	}
 
-	result = NewDictionary(s, name, key, value)
-	s.Dictionaries[value] = result
+	result := NewDictionary(s, key, value)
+	s.Dictionaries[value] = append(results, result)
 
 	return result
 }

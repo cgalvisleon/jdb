@@ -211,6 +211,18 @@ func (s *DB) LoadModel(model *Model) error {
 }
 
 /**
+* DropModel
+* @param model *Model
+**/
+func (s *DB) DropModel(model *Model) error {
+	if s.driver == nil {
+		return mistake.New(MSG_DRIVER_NOT_DEFINED)
+	}
+
+	return s.driver.DropModel(model)
+}
+
+/**
 * Exec
 * @param sql string
 * @param params ...any

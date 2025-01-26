@@ -110,5 +110,11 @@ func (s *Postgres) deleteModel(table string) error {
 		return err
 	}
 
+	sql = s.ddlTableDrop(table)
+	err = s.Exec(sql)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

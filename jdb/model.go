@@ -3,6 +3,7 @@ package jdb
 import (
 	"encoding/gob"
 	"encoding/json"
+	"net/http"
 	"slices"
 	"strings"
 	"time"
@@ -43,38 +44,38 @@ func TableName(schema, name string) string {
 }
 
 type Model struct {
-	Db             *DB                         `json:"-"`
-	Schema         *Schema                     `json:"-"`
-	CreatedAt      time.Time                   `json:"created_date"`
-	UpdateAt       time.Time                   `json:"update_date"`
-	Name           string                      `json:"name"`
-	Table          string                      `json:"table"`
-	Description    string                      `json:"description"`
-	Columns        []*Column                   `json:"columns"`
-	Indices        map[string]*Index           `json:"indices"`
-	Uniques        map[string]*Index           `json:"uniques"`
-	Keys           map[string]*Column          `json:"keys"`
-	References     []*Reference                `json:"references"`
-	Dictionaries   map[interface{}]*Dictionary `json:"-"`
-	ColRequired    map[string]bool             `json:"col_required"`
-	CreatedAtField *Column                     `json:"created_at_field"`
-	UpdatedAtField *Column                     `json:"updated_at_field"`
-	KeyField       *Column                     `json:"key_field"`
-	SourceField    *Column                     `json:"source_field"`
-	SystemKeyField *Column                     `json:"system_key_field"`
-	StateField     *Column                     `json:"state_field"`
-	IndexField     *Column                     `json:"index_field"`
-	FullTextField  *Column                     `json:"full_text_field"`
-	EventsInsert   []Event                     `json:"-"`
-	EventsUpdate   []Event                     `json:"-"`
-	EventsDelete   []Event                     `json:"-"`
-	Details        map[string]*Model           `json:"-"`
-	Functions      map[string]*Function        `json:"-"`
-	Integrity      bool                        `json:"integrity"`
-	History        *Model                      `json:"-"`
-	HistoryLimit   int64                       `json:"history_limit"`
-	Version        int                         `json:"version"`
-	Show           bool                        `json:"-"`
+	Db             *DB                      `json:"-"`
+	Schema         *Schema                  `json:"-"`
+	CreatedAt      time.Time                `json:"created_date"`
+	UpdateAt       time.Time                `json:"update_date"`
+	Name           string                   `json:"name"`
+	Table          string                   `json:"table"`
+	Description    string                   `json:"description"`
+	Columns        []*Column                `json:"columns"`
+	Indices        map[string]*Index        `json:"indices"`
+	Uniques        map[string]*Index        `json:"uniques"`
+	Keys           map[string]*Column       `json:"keys"`
+	References     []*Reference             `json:"references"`
+	Dictionaries   map[string][]*Dictionary `json:"dictionaries"`
+	ColRequired    map[string]bool          `json:"col_required"`
+	CreatedAtField *Column                  `json:"created_at_field"`
+	UpdatedAtField *Column                  `json:"updated_at_field"`
+	KeyField       *Column                  `json:"key_field"`
+	SourceField    *Column                  `json:"source_field"`
+	SystemKeyField *Column                  `json:"system_key_field"`
+	StateField     *Column                  `json:"state_field"`
+	IndexField     *Column                  `json:"index_field"`
+	FullTextField  *Column                  `json:"full_text_field"`
+	EventsInsert   []Event                  `json:"-"`
+	EventsUpdate   []Event                  `json:"-"`
+	EventsDelete   []Event                  `json:"-"`
+	Details        map[string]*Model        `json:"-"`
+	Functions      map[string]*Function     `json:"-"`
+	Integrity      bool                     `json:"integrity"`
+	History        *Model                   `json:"-"`
+	HistoryLimit   int64                    `json:"history_limit"`
+	Version        int                      `json:"version"`
+	Show           bool                     `json:"-"`
 }
 
 /**
@@ -108,7 +109,7 @@ func NewModel(schema *Schema, name string, version int) *Model {
 		Uniques:      make(map[string]*Index),
 		Keys:         make(map[string]*Column),
 		References:   make([]*Reference, 0),
-		Dictionaries: make(map[interface{}]*Dictionary),
+		Dictionaries: make(map[string][]*Dictionary),
 		ColRequired:  make(map[string]bool),
 		EventsInsert: make([]Event, 0),
 		EventsUpdate: make([]Event, 0),
@@ -123,8 +124,10 @@ func NewModel(schema *Schema, name string, version int) *Model {
 	result.DefineEvent(EventUpdate, EventUpdateDefault)
 	result.DefineEvent(EventDelete, EventDeleteDefault)
 	if schema.Db.UseCore {
-		result.DefineSystemKeyField()
 		result.DefineIndexField()
+		result.DefineSystemKeyField()
+		result.DefineSourceField()
+		result.DefineKeyField()
 	}
 	schema.Models[result.Name] = result
 	models[table] = result
@@ -162,11 +165,28 @@ func (s *Model) Low() string {
 }
 
 /**
+* Describe
+* @return et.Json
+**/
+func (s *Model) Describe() et.Json {
+	result, err := et.Object(s)
+	if err != nil {
+		return et.Json{}
+	}
+
+	return result
+}
+
+/**
 * Serialized
 * @return []byte, error
 **/
 func (s *Model) Serialized() ([]byte, error) {
-	return json.Marshal(s)
+	obj := s.Describe()
+
+	console.Debug(obj.ToString())
+
+	return json.Marshal(obj)
 }
 
 /**
@@ -192,25 +212,6 @@ func (s *Model) Load(data []byte) error {
 }
 
 /**
-* Describe
-* @return et.Json
-**/
-func (s *Model) Describe() et.Json {
-	result, err := et.Object(s)
-	if err != nil {
-		return et.Json{}
-	}
-
-	dictionaries := map[interface{}]et.Json{}
-	for key, value := range s.Dictionaries {
-		dictionaries[key] = value.Describe()
-	}
-	result["dictionaries"] = dictionaries
-
-	return result
-}
-
-/**
 * Debug
 * @return *Model
 **/
@@ -230,6 +231,17 @@ func (s *Model) Init() error {
 	}
 
 	return s.Db.LoadModel(s)
+}
+
+/**
+* Drop
+**/
+func (s *Model) Drop() {
+	if s.Db == nil {
+		return
+	}
+
+	s.Db.DropModel(s)
 }
 
 /**
@@ -353,10 +365,14 @@ func (s *Model) New(data et.Json) et.Json {
 
 	defaultColValue(s.Columns)
 
-	for _, value := range data {
-		dictionary := s.Dictionaries[value]
-		if dictionary != nil {
-			defaultColValue(dictionary.Columns)
+	for key, value := range data {
+		dictionaries := s.Dictionaries[key]
+		if dictionaries != nil {
+			idx := slices.IndexFunc(dictionaries, func(e *Dictionary) bool { return e.Value == value })
+			if idx != -1 {
+				dictionary := dictionaries[idx]
+				defaultColValue(dictionary.Columns)
+			}
 		}
 	}
 
@@ -377,13 +393,30 @@ func (s *Model) New(data et.Json) et.Json {
 * @return *Model
 **/
 func (s *Model) MakeCollection() *Model {
-	s.DefineSystemKeyField()
 	s.DefineCreatedAtField()
 	s.DefineUpdatedAtField()
+	s.DefineSystemKeyField()
 	s.DefineStateField()
 	s.DefineKeyField()
 	s.DefineSourceField()
 	s.DefineIndexField()
 
 	return s
+}
+
+/**
+* UpsertDictionary
+* @param w http.ResponseWriter
+* @param r *http.Request
+**/
+func UpsertDictionary(w http.ResponseWriter, r *http.Request) {
+	// body, err := response.GetBody(r)
+	// if err != nil {
+	// 	response.HTTPError(w, r, http.StatusBadRequest, err.Error())
+	// 	return
+	// }
+
+	// model := body.Str("model")
+	// atrib := body.Json("atrib")
+
 }

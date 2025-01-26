@@ -10,13 +10,13 @@ import (
 )
 
 func (s *Postgres) query(db *sql.DB, sql string, params ...any) (*sql.Rows, error) {
-	rows, err := db.Query(sql, params...)
+	result, err := db.Query(sql, params...)
 	if err != nil {
 		sql = jdb.SQLParse(sql, params...)
 		return nil, console.QueryError(err, sql)
 	}
 
-	return rows, nil
+	return result, nil
 }
 
 func (s *Postgres) exec(db *sql.DB, sql string, params ...any) (sql.Result, error) {
@@ -42,7 +42,7 @@ func (s *Postgres) Exec(sql string, params ...any) error {
 func (s *Postgres) All(tp jdb.TypeSelect, sql string, params ...any) (et.Items, error) {
 	rows, err := s.query(s.db, sql, params...)
 	if err != nil {
-		return et.Items{}, err
+		return et.Items{}, console.QueryError(err, sql)
 	}
 	defer rows.Close()
 
@@ -59,7 +59,7 @@ func (s *Postgres) All(tp jdb.TypeSelect, sql string, params ...any) (et.Items, 
 func (s *Postgres) One(tp jdb.TypeSelect, sql string, params ...any) (et.Item, error) {
 	rows, err := s.query(s.db, sql, params...)
 	if err != nil {
-		return et.Item{}, err
+		return et.Item{}, console.QueryError(err, sql)
 	}
 	defer rows.Close()
 

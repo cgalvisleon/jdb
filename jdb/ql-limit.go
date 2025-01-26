@@ -24,13 +24,13 @@ func (s *Ql) calcOffset() *Ql {
 * @return *Ql
 **/
 func (s *Ql) setLimit(limit int) *Ql {
-	max := envar.GetInt(1000, "QUERY_LIMIT")
+	max := envar.GetInt(10000, "QUERY_LIMIT")
 	if limit > max {
 		limit = max
 	}
 	s.Limit = limit
 
-	return s
+	return s.calcOffset()
 }
 
 /**

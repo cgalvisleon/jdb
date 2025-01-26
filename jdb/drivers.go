@@ -29,6 +29,7 @@ type Driver interface {
 	DropSchema(name string) error
 	// Model
 	LoadModel(model *Model) error
+	DropModel(model *Model) error
 	// Query
 	Exec(sql string, params ...any) error
 	All(tp TypeSelect, sql string, params ...any) (et.Items, error)
