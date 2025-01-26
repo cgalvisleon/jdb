@@ -363,16 +363,31 @@ func (s *Model) New(data et.Json) et.Json {
 		}
 	}
 
+	defaultDictoinary := func(mapa map[string][]*Dictionary, key string, value interface{}) map[string][]*Dictionary {
+		dictionaries := mapa[key]
+		if dictionaries == nil {
+			return nil
+		}
+
+		idx := slices.IndexFunc(dictionaries, func(e *Dictionary) bool { return e.Value == value })
+		if idx != -1 {
+			dictionary := dictionaries[idx]
+			defaultColValue(dictionary.Columns)
+			if len(dictionary.Dictionaries) != 0 {
+				return dictionary.Dictionaries
+			}
+		}
+
+		return mapa
+	}
+
 	defaultColValue(s.Columns)
 
+	dictionaries := s.Dictionaries
 	for key, value := range data {
-		dictionaries := s.Dictionaries[key]
-		if dictionaries != nil {
-			idx := slices.IndexFunc(dictionaries, func(e *Dictionary) bool { return e.Value == value })
-			if idx != -1 {
-				dictionary := dictionaries[idx]
-				defaultColValue(dictionary.Columns)
-			}
+		dictionaries = defaultDictoinary(dictionaries, key, value)
+		if dictionaries == nil {
+			dictionaries = s.Dictionaries
 		}
 	}
 

@@ -1,13 +1,17 @@
 package jdb
 
-import "github.com/cgalvisleon/et/et"
+import (
+	"slices"
+
+	"github.com/cgalvisleon/et/et"
+)
 
 type Dictionary struct {
-	Column     *Column
-	Key        string
-	Value      interface{}
-	Columns    []*Column
-	Dictionary map[string][]*Dictionary
+	Column       *Column
+	Key          string
+	Value        interface{}
+	Columns      []*Column
+	Dictionaries map[string][]*Dictionary
 }
 
 /**
@@ -19,13 +23,18 @@ type Dictionary struct {
 func NewDictionary(model *Model, key string, value interface{}) *Dictionary {
 	col := model.GetColumn(key)
 	return &Dictionary{
-		Column:  col,
-		Key:     key,
-		Value:   value,
-		Columns: []*Column{},
+		Column:       col,
+		Key:          key,
+		Value:        value,
+		Columns:      []*Column{},
+		Dictionaries: map[string][]*Dictionary{},
 	}
 }
 
+/**
+* Describe
+* @return et.Json
+**/
 func (s *Dictionary) Describe() et.Json {
 	result := map[string]interface{}{
 		"key":   s.Key,
@@ -37,6 +46,26 @@ func (s *Dictionary) Describe() et.Json {
 		columns = append(columns, col.Describe())
 	}
 	result["columns"] = columns
+
+	return result
+}
+
+/**
+* DefineDictionary
+* @param name string
+* @param key string
+* @param value interface{}
+* @return *Dictionary
+**/
+func (s *Dictionary) DefineDictionary(key, value string) *Dictionary {
+	results := s.Dictionaries[value]
+	idx := slices.IndexFunc(results, func(e *Dictionary) bool { return e.Key == key })
+	if idx != -1 {
+		return results[idx]
+	}
+
+	result := NewDictionary(s.Column.Model, key, value)
+	s.Dictionaries[value] = append(results, result)
 
 	return result
 }
