@@ -50,12 +50,12 @@ func (s *Postgres) ddlPrimaryKey(model *jdb.Model) string {
 
 func (s *Postgres) ddlForeignKeys(model *jdb.Model) string {
 	var result string
-	for _, ref := range model.References {
-		field := ref.Key.Field
+	for _, ref := range model.ForeignKeys {
+		field := ref.To.Field
 		key := field + "_FKEY"
 		key = strs.Replace(key, "-", "_")
-		key = strs.Uppcase(key)
-		def := strs.Format(`ALTER TABLE IF EXISTS %s ADD CONSTRAINT %s FOREIGN KEY (%s) REFERENCES %s(%s);`, model.Table, key, field, ref.To.Table, ref.To.Field)
+		key = strs.Lowcase(key)
+		def := strs.Format(`ALTER TABLE IF EXISTS %s ADD CONSTRAINT %s FOREIGN KEY (%s) REFERENCES %s(%s)`, model.Table, key, field, ref.Key.Table, ref.Key.Field)
 		if ref.OnDeleteCascade {
 			def = def + " ON DELETE CASCADE"
 		}

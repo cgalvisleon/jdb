@@ -83,3 +83,18 @@ func (s *Dictionary) DefineAtribute(name string, typeData TypeData, def interfac
 
 	return col
 }
+
+/**
+* DefineAtribute
+* @param name string
+* @param typeData TypeData
+* @param def interface{}
+* @return *Model
+**/
+func (s *Dictionary) DefineLitAtribute(name string, typeData TypeData, values []interface{}, def interface{}) *Column {
+	col := newColumn(s.Column.Model, name, "", TpAtribute, typeData, def)
+	col.Values = values
+	s.Columns = append(s.Columns, col)
+
+	return col
+}

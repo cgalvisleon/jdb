@@ -98,24 +98,6 @@ func (s *Ql) getFrom(m interface{}) *QlFrom {
 }
 
 /**
-* GetField
-* @param name string, isCreated bool
-* @return *Field
-**/
-func (s *Ql) GetField(name string, isCreated bool) *Field {
-	var field *Field
-	for _, from := range s.Froms {
-		field = from.GetField(name, isCreated)
-		if field != nil {
-			field.Owner = from
-			return field
-		}
-	}
-
-	return nil
-}
-
-/**
 * GetAgregation
 * @params name string
 * @return *Field
@@ -129,6 +111,24 @@ func (s *Ql) GetAgregation(name string) *Field {
 				field.Agregation = tp
 				return field
 			}
+		}
+	}
+
+	return nil
+}
+
+/**
+* GetField
+* @param name string, isCreated bool
+* @return *Field
+**/
+func (s *Ql) GetField(name string, isCreated bool) *Field {
+	var field *Field
+	for _, from := range s.Froms {
+		field = from.GetField(name, isCreated)
+		if field != nil {
+			field.Owner = from
+			return field
 		}
 	}
 

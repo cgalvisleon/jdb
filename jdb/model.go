@@ -55,6 +55,7 @@ type Model struct {
 	Indices        map[string]*Index        `json:"indices"`
 	Uniques        map[string]*Index        `json:"uniques"`
 	Keys           map[string]*Column       `json:"keys"`
+	ForeignKeys    map[string]*Reference    `json:"foreign_keys"`
 	References     []*Reference             `json:"references"`
 	Dictionaries   map[string][]*Dictionary `json:"dictionaries"`
 	ColRequired    map[string]bool          `json:"col_required"`
@@ -108,6 +109,7 @@ func NewModel(schema *Schema, name string, version int) *Model {
 		Indices:      make(map[string]*Index),
 		Uniques:      make(map[string]*Index),
 		Keys:         make(map[string]*Column),
+		ForeignKeys:  make(map[string]*Reference),
 		References:   make([]*Reference, 0),
 		Dictionaries: make(map[string][]*Dictionary),
 		ColRequired:  make(map[string]bool),

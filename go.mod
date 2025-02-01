@@ -18,7 +18,10 @@ require (
 	github.com/nats-io/nkeys v0.4.7 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
+	github.com/robertkrimen/otto v0.5.1 // indirect
 	golang.org/x/crypto v0.26.0 // indirect
 	golang.org/x/exp v0.0.0-20240119083558-1b970713d09a // indirect
 	golang.org/x/sys v0.24.0 // indirect
+	golang.org/x/text v0.21.0 // indirect
+	gopkg.in/sourcemap.v1 v1.0.5 // indirect
 )

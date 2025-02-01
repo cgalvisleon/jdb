@@ -7,19 +7,22 @@ import (
 )
 
 /**
-* DefineColumn
+* DefineIdxColumn
 * @param name string
 * @param typeData TypeData
+* @param idx int
 * @param def interface{}
 * @return *Model
 **/
-func (s *Model) DefineColumn(name string, typeData TypeData) *Column {
+func (s *Model) DefineIdxColumn(name string, typeData TypeData, idx int) *Column {
 	col := s.GetColumn(name)
 	if col != nil {
 		return col
 	}
 
-	idx := -1
+	if idx > len(s.Columns) {
+		idx = -1
+	}
 	def := typeData.DefaultValue()
 	col = newColumn(s, name, "", TpColumn, typeData, def)
 	if col.Name == string(SourceField) {
@@ -79,6 +82,17 @@ func (s *Model) DefineColumn(name string, typeData TypeData) *Column {
 	}
 
 	return col
+}
+
+/**
+* DefineColumn
+* @param name string
+* @param typeData TypeData
+* @param def interface{}
+* @return *Model
+**/
+func (s *Model) DefineColumn(name string, typeData TypeData) *Column {
+	return s.DefineIdxColumn(name, typeData, -1)
 }
 
 /**
@@ -221,6 +235,18 @@ func (s *Model) DefineGenerated(name string, f FuncGenerated) {
 }
 
 /**
+* DefineRelation
+* @param name string
+* @param fkn string
+* @param tag string
+**/
+func (s *Model) DefineRelation(name string, fkn, tag string) {
+	col := newColumn(s, name, "", TpRelation, TypeDataNone, TypeDataNone.DefaultValue())
+
+	s.Columns = append(s.Columns, col)
+}
+
+/**
 * DefineDetail
 * @param name string
 * @param fkn string
@@ -234,7 +260,7 @@ func (s *Model) DefineDetail(name, fkn string, version int) *Model {
 	col.Detail = detail
 	s.Columns = append(s.Columns, col)
 	s.Details[name] = detail
-	detail.DefineManyToOne(s, fkn)
+	s.DefineOneToMany(detail, fkn)
 
 	return detail
 }
@@ -242,45 +268,46 @@ func (s *Model) DefineDetail(name, fkn string, version int) *Model {
 /**
 * DefineOneToMany
 * @param to *Model
+* @param fkn string
 * @return *Model
 **/
-func (s *Model) DefineOneToMany(to *Model) *Model {
+func (s *Model) DefineOneToMany(to *Model, fkn string) *Model {
 	key := s.KeyField
-	fkn := s.Name
 	fk := to.DefineColumn(fkn, key.TypeData)
 	NewReference(fk, RelationManyToOne, key)
 	ref := NewReference(key, RelationOneToMany, fk)
 	ref.OnDeleteCascade = true
 	ref.OnUpdateCascade = true
-	s.DefineRequired(fkn)
-
-	return s
-}
-
-/**
-* MakeManyToOne
-* @param to *Model
-* @return *Model
-**/
-func (s *Model) DefineManyToOne(to *Model, fkn string) *Model {
-	return s.DefineReference(to, fkn)
-}
-
-/**
-* MakeManyToOne
-* @param to *Model
-* @return *Model
-**/
-func (s *Model) DefineReference(to *Model, fkn string) *Model {
-	key := to.KeyField
-	fk := s.DefineColumn(fkn, key.TypeData)
-	NewReference(fk, RelationManyToOne, key)
-	ref := NewReference(key, RelationOneToMany, fk)
-	ref.OnDeleteCascade = true
-	ref.OnUpdateCascade = true
+	to.ForeignKeys[fkn] = ref
 	to.DefineRequired(fkn)
 
 	return s
+}
+
+/**
+* DefineHistory
+* @param n int
+* @param fkn string
+* @param version int
+* @return error
+**/
+func (s *Model) DefineHistory(n int64, fkn string, version int) error {
+	if s.KeyField == nil {
+		return mistake.New("KeyField is required")
+	}
+
+	s.HistoryLimit = n
+	if s.HistoryLimit > 0 {
+		name := s.Name + "_history"
+		detail := NewModel(s.Schema, name, version)
+		col := newColumn(s, "history", "", TpDetail, TypeDataNone, TypeDataNone.DefaultValue())
+		col.Detail = detail
+		s.Columns = append(s.Columns, col)
+		s.Details[name] = detail
+		s.DefineOneToMany(detail, fkn)
+	}
+
+	return nil
 }
 
 /**
@@ -424,29 +451,4 @@ func (s *Model) DefineDictionary(key, value string) *Dictionary {
 	s.Dictionaries[value] = append(results, result)
 
 	return result
-}
-
-/**
-* DefineHistory
-* @param n int
-**/
-func (s *Model) DefineHistory(n int64) error {
-	if s.KeyField == nil {
-		return mistake.New("KeyField is required")
-	}
-
-	s.HistoryLimit = n
-	if s.HistoryLimit > 0 {
-		name := s.Name + "_history"
-		detail := NewModel(s.Schema, name, 1)
-		col := newColumn(s, "hisory", "", TpDetail, TypeDataNone, TypeDataNone.DefaultValue())
-		col.Detail = detail
-		s.Columns = append(s.Columns, col)
-		s.Details[name] = detail
-		s.History = detail
-		detail.DefineReference(s, s.KeyField.Name)
-		s.History.DefineSourceField()
-	}
-
-	return nil
 }

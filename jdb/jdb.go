@@ -4,13 +4,15 @@ import (
 	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/envar"
 	"github.com/cgalvisleon/et/et"
+	"github.com/cgalvisleon/et/strs"
 )
 
 var (
-	drivers map[string]func() Driver
-	dbs     map[string]*DB
-	schemas map[string]*Schema
-	models  map[string]*Model
+	drivers   map[string]func() Driver
+	dbs       map[string]*DB
+	schemas   map[string]*Schema
+	models    map[string]*Model
+	functions map[string]func(et.Json) (et.Json, error)
 )
 
 func Load() (*DB, error) {
@@ -105,6 +107,99 @@ func ConnectTo(params et.Json) (*DB, error) {
 	dbs[name] = result
 
 	return result, nil
+}
+
+/**
+* GetShema
+* @param name string
+* @param isCreate bool
+* @return *Schema
+**/
+func GetShema(name string, isCreate bool) *Schema {
+	list := strs.Split(name, ".")
+	switch len(list) {
+	case 1:
+		return schemas[strs.Lowcase(name)]
+	case 2:
+		schema := schemas[list[1]]
+		if schema != nil {
+			return schema
+		}
+		if isCreate {
+			db := dbs[list[0]]
+			if db == nil {
+				return nil
+			}
+
+			result, err := NewSchema(db, list[1])
+			if err != nil {
+				return nil
+			}
+
+			return result
+		}
+	}
+
+	return nil
+}
+
+/**
+* GetModel
+* @param name string
+* @param isCreated bool
+* @return *Model
+**/
+func GetModel(name string, isCreated bool) *Model {
+	list := strs.Split(name, ".")
+	switch len(list) {
+	case 1:
+		for _, model := range models {
+			if model.Name == strs.Lowcase(name) {
+				return model
+			}
+		}
+	case 2:
+		table := strs.Format(`%s.%s`, list[0], list[1])
+		result := models[strs.Lowcase(table)]
+		if result != nil {
+			return result
+		}
+		schema := schemas[list[0]]
+		if schema == nil {
+			return nil
+		}
+		if isCreated {
+			return NewModel(schema, table, 1)
+		}
+	}
+
+	return nil
+}
+
+/**
+* GetField
+* @param name string, isCreated bool
+* @return *Field
+**/
+func GetField(name string, isCreated bool) *Field {
+	list := strs.Split(name, ".")
+	switch len(list) {
+	case 2:
+		model := GetModel(list[0], isCreated)
+		if model == nil {
+			return nil
+		}
+		return model.GetField(list[1], isCreated)
+	case 3:
+		table := strs.Format(`%s.%s`, list[0], list[1])
+		model := GetModel(table, isCreated)
+		if model == nil {
+			return nil
+		}
+		return model.GetField(list[2], isCreated)
+	default:
+		return nil
+	}
 }
 
 func init() {

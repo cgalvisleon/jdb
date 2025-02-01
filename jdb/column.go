@@ -14,6 +14,8 @@ const (
 	TpAtribute
 	TpDetail
 	TpGenerated
+	TpRelation
+	TpRollup
 )
 
 type TypeData int
@@ -30,6 +32,7 @@ const (
 	TypeDataSerie
 	TypeDataBool
 	TypeDataTime
+	TypeDataBytes
 	// Special
 	TypeDataObject
 	TypeDataArray
@@ -96,6 +99,8 @@ func (s TypeData) Str() string {
 		return "text"
 	case TypeDataTime:
 		return "time"
+	case TypeDataBytes:
+		return "bytes"
 	case TypeDataGeometry:
 		return "geometry"
 	case TypeDataFullText:
@@ -200,6 +205,7 @@ func newColumn(model *Model, name string, description string, typeColumn TypeCol
 		Hidden:      false,
 		FullText:    []string{},
 		Limit:       30,
+		Values:      []interface{}{},
 	}
 }
 

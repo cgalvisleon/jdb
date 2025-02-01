@@ -1,6 +1,7 @@
 package jdb
 
 import (
+	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/utility"
 )
 
@@ -34,4 +35,13 @@ func NewFunction(name string, tp TypeFunction) *Function {
 		TypeFunction: tp,
 		Definition:   ``,
 	}
+}
+
+/**
+* Exec
+* @param params et.Json
+* @return et.Json
+**/
+func (s *Function) Exec(params et.Json) et.Json {
+	return et.Json{}
 }

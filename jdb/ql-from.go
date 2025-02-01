@@ -65,19 +65,21 @@ func (s *QlFrom) GetField(name string, isCreated bool) *Field {
 **/
 func (s *QlFrom) GetSelect(selects, details *[]*QlSelect) {
 	for _, col := range s.Columns {
-		if col.Hidden || slices.Contains([]TypeColumn{TpAtribute, TpGenerated}, col.TypeColumn) {
+		if col.Hidden {
 			continue
 		}
-		field := col.GetField()
-		field.As = s.As
-		sel := &QlSelect{
-			From:  s,
-			Field: field,
-		}
-		if details != nil && col.TypeColumn == TpDetail {
-			*details = append(*details, sel)
-		} else if selects != nil {
-			*selects = append(*selects, sel)
+		if slices.Contains([]TypeColumn{TpColumn}, col.TypeColumn) {
+			field := col.GetField()
+			field.As = s.As
+			sel := &QlSelect{
+				From:  s,
+				Field: field,
+			}
+			if details != nil && col.TypeColumn == TpDetail {
+				*details = append(*details, sel)
+			} else if selects != nil {
+				*selects = append(*selects, sel)
+			}
 		}
 	}
 

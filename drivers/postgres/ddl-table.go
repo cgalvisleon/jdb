@@ -36,6 +36,8 @@ func (s *Postgres) typeColumn(tp jdb.TypeData) interface{} {
 		return "VARCHAR(250)"
 	case jdb.TypeDataTime:
 		return "TIMESTAMP"
+	case jdb.TypeDataBytes:
+		return "BYTEA"
 	case jdb.TypeDataGeometry:
 		return "JSONB"
 	case jdb.TypeDataFullText:
@@ -71,6 +73,8 @@ func (s *Postgres) defaultValue(tp jdb.TypeData) interface{} {
 		return utility.Quote("")
 	case jdb.TypeDataTime:
 		return utility.Quote("NOW()")
+	case jdb.TypeDataBytes:
+		return utility.Quote("")
 	case jdb.TypeDataGeometry:
 		return utility.Quote("{type: 'Point', coordinates: [0, 0]}")
 	default:
