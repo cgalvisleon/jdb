@@ -12,6 +12,7 @@ import (
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/strs"
 	"github.com/cgalvisleon/et/utility"
+	"github.com/dop251/goja"
 )
 
 type RID struct {
@@ -57,6 +58,7 @@ type Model struct {
 	Keys           map[string]*Column       `json:"keys"`
 	ForeignKeys    map[string]*Reference    `json:"foreign_keys"`
 	References     []*Reference             `json:"references"`
+	Relations      []*Relation              `json:"relations"`
 	Dictionaries   map[string][]*Dictionary `json:"dictionaries"`
 	ColRequired    map[string]bool          `json:"col_required"`
 	CreatedAtField *Column                  `json:"created_at_field"`
@@ -75,6 +77,7 @@ type Model struct {
 	Integrity      bool                     `json:"integrity"`
 	History        *Model                   `json:"-"`
 	HistoryLimit   int64                    `json:"history_limit"`
+	Vmj            *goja.Runtime            `json:"-"`
 	Version        int                      `json:"version"`
 	Show           bool                     `json:"-"`
 }
@@ -111,6 +114,7 @@ func NewModel(schema *Schema, name string, version int) *Model {
 		Keys:         make(map[string]*Column),
 		ForeignKeys:  make(map[string]*Reference),
 		References:   make([]*Reference, 0),
+		Relations:    make([]*Relation, 0),
 		Dictionaries: make(map[string][]*Dictionary),
 		ColRequired:  make(map[string]bool),
 		EventsInsert: make([]Event, 0),
@@ -131,6 +135,7 @@ func NewModel(schema *Schema, name string, version int) *Model {
 		result.DefineSourceField()
 		result.DefineKeyField()
 	}
+	result.Vmj = NewVmj(result)
 	schema.Models[result.Name] = result
 	models[table] = result
 

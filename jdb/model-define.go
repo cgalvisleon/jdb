@@ -242,8 +242,36 @@ func (s *Model) DefineGenerated(name string, f FuncGenerated) {
 **/
 func (s *Model) DefineRelation(name string, fkn, tag string) {
 	col := newColumn(s, name, "", TpRelation, TypeDataNone, TypeDataNone.DefaultValue())
+	fk := GetField(fkn, false)
+	if fk != nil {
+		relation := &Relation{
+			Type:   TpRelation,
+			Column: col,
+			To:     fk.Column,
+		}
+		s.Relations = append(s.Relations, relation)
+		s.Columns = append(s.Columns, col)
+	}
+}
 
-	s.Columns = append(s.Columns, col)
+/**
+* DefineRollup
+* @param name string
+* @param fkn string
+* @param tag string
+**/
+func (s *Model) DefineRollup(name string, fkn, tag string) {
+	col := newColumn(s, name, "", TpRollup, TypeDataNone, TypeDataNone.DefaultValue())
+	fk := GetField(fkn, false)
+	if fk != nil {
+		relation := &Relation{
+			Type:   TpRollup,
+			Column: col,
+			To:     fk.Column,
+		}
+		s.Relations = append(s.Relations, relation)
+		s.Columns = append(s.Columns, col)
+	}
 }
 
 /**
