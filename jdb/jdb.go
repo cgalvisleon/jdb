@@ -8,11 +8,10 @@ import (
 )
 
 var (
-	drivers   map[string]func() Driver
-	dbs       map[string]*DB
-	schemas   map[string]*Schema
-	models    map[string]*Model
-	functions map[string]func(et.Json) (et.Json, error)
+	drivers map[string]func() Driver
+	dbs     map[string]*DB
+	schemas map[string]*Schema
+	models  map[string]*Model
 )
 
 func Load() (*DB, error) {

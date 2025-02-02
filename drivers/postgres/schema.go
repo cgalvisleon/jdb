@@ -57,7 +57,7 @@ func (s *Postgres) ExistSchema(name string) (bool, error) {
 	}
 
 	sql := jdb.SQLDDL(`SELECT 1 FROM pg_namespace WHERE nspname = '$1';`, name)
-	items, err := s.All(jdb.Select, sql)
+	items, err := s.Query(sql)
 	if err != nil {
 		return false, err
 	}

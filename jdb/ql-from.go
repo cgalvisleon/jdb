@@ -22,10 +22,12 @@ func From(m *Model) *Ql {
 		Groups:     make([]*QlSelect, 0),
 		Orders:     make([]*QlOrder, 0),
 		Details:    make([]*QlSelect, 0),
+		Generateds: make([]*FuncGenerated, 0),
 		Offset:     0,
 		Limit:      0,
 		Sheet:      0,
 		index:      65,
+		Source:     SOURCE,
 	}
 	result.QlFilter = &QlFilter{
 		main:   result,
@@ -60,29 +62,44 @@ func (s *QlFrom) GetField(name string, isCreated bool) *Field {
 }
 
 /**
-* GetSelect
+* SetSelectByColumns
 * @param selects []*QlSelect, details []*QlSelect
 **/
-func (s *QlFrom) GetSelect(selects, details *[]*QlSelect) {
+func (s *QlFrom) SetSelectByColumns(selects, details *[]*QlSelect) {
 	for _, col := range s.Columns {
 		if col.Hidden {
 			continue
 		}
-		if slices.Contains([]TypeColumn{TpColumn}, col.TypeColumn) {
+		if !slices.Contains([]TypeColumn{TpAtribute}, col.TypeColumn) {
 			field := col.GetField()
 			field.As = s.As
 			sel := &QlSelect{
 				From:  s,
 				Field: field,
 			}
-			if details != nil && col.TypeColumn == TpDetail {
-				*details = append(*details, sel)
-			} else if selects != nil {
+			if selects != nil && slices.Contains([]TypeColumn{TpColumn}, col.TypeColumn) {
 				*selects = append(*selects, sel)
+			} else if details != nil {
+				*details = append(*details, sel)
 			}
 		}
 	}
 
+}
+
+/**
+* SetSelectBySelects
+* @param selects []*QlSelect, details []*QlSelect
+**/
+func (s *QlFrom) SetSelectBySelects(selects, details *[]*QlSelect) {
+	for _, sel := range s.Selects {
+		col := sel.Field.Column
+		if selects != nil && slices.Contains([]TypeColumn{TpColumn, TpAtribute}, col.TypeColumn) {
+			*selects = append(*selects, sel)
+		} else if details != nil {
+			*details = append(*details, sel)
+		}
+	}
 }
 
 /**

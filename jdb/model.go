@@ -64,6 +64,7 @@ type Model struct {
 	CreatedAtField *Column                  `json:"created_at_field"`
 	UpdatedAtField *Column                  `json:"updated_at_field"`
 	KeyField       *Column                  `json:"key_field"`
+	Source         string                   `json:"source"`
 	SourceField    *Column                  `json:"source_field"`
 	SystemKeyField *Column                  `json:"system_key_field"`
 	StateField     *Column                  `json:"state_field"`
@@ -122,6 +123,7 @@ func NewModel(schema *Schema, name string, version int) *Model {
 		EventsDelete: make([]Event, 0),
 		Details:      make(map[string]*Model),
 		Functions:    make(map[string]*Function),
+		Source:       SOURCE,
 		Integrity:    false,
 		HistoryLimit: 0,
 		Version:      version,
@@ -132,8 +134,6 @@ func NewModel(schema *Schema, name string, version int) *Model {
 	if schema.Db.UseCore {
 		result.DefineIndexField()
 		result.DefineSystemKeyField()
-		result.DefineSourceField()
-		result.DefineKeyField()
 	}
 	result.Vmj = NewVmj(result)
 	schema.Models[result.Name] = result
@@ -152,6 +152,19 @@ func init() {
 * @return string
 **/
 func (s *Model) GenId(id string) string {
+	if !map[string]bool{"": true, "*": true, "new": true}[id] {
+		return id
+	}
+
+	return utility.RecordId(s.Table, id)
+}
+
+/**
+* GenKey
+* @param id string
+* @return string
+**/
+func (s *Model) GenKey(id string) string {
 	return utility.RecordId(s.Table, id)
 }
 
@@ -191,7 +204,9 @@ func (s *Model) Describe() et.Json {
 func (s *Model) Serialized() ([]byte, error) {
 	obj := s.Describe()
 
-	console.Debug(obj.ToString())
+	if s.Show {
+		console.Debug(obj.ToString())
+	}
 
 	return json.Marshal(obj)
 }
@@ -246,6 +261,10 @@ func (s *Model) Init() error {
 func (s *Model) Drop() {
 	if s.Db == nil {
 		return
+	}
+
+	for _, detail := range s.Details {
+		detail.Drop()
 	}
 
 	s.Db.DropModel(s)
@@ -420,7 +439,7 @@ func (s *Model) MakeCollection() *Model {
 	s.DefineSystemKeyField()
 	s.DefineStateField()
 	s.DefineKeyField()
-	s.DefineSourceField()
+	s.DefineSourceField(s.Source)
 	s.DefineIndexField()
 
 	return s

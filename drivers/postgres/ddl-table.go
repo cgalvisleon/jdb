@@ -87,15 +87,19 @@ func (s *Postgres) ddlTable(model *jdb.Model) string {
 	for _, column := range model.Columns {
 		if slices.Contains([]*jdb.Column{model.SystemKeyField, model.FullTextField}, column) {
 			if s.version > 13 {
-				columnsDef += strs.Format("\n\t%s %s INVISIBLE DEFAULT %v,", column.Name, s.typeColumn(column.TypeData), s.defaultValue(column.TypeData))
+				def := strs.Format("\n\t%s %s INVISIBLE DEFAULT %v", column.Name, s.typeColumn(column.TypeData), s.defaultValue(column.TypeData))
+				columnsDef = strs.Append(columnsDef, def, ",")
 			} else {
-				columnsDef += strs.Format("\n\t%s %s DEFAULT %v,", column.Name, s.typeColumn(column.TypeData), s.defaultValue(column.TypeData))
+				def := strs.Format("\n\t%s %s DEFAULT %v", column.Name, s.typeColumn(column.TypeData), s.defaultValue(column.TypeData))
+				columnsDef = strs.Append(columnsDef, def, ",")
 			}
 		} else if column.TypeColumn == jdb.TpColumn {
-			columnsDef += strs.Format("\n\t%s %s DEFAULT %v,", column.Name, s.typeColumn(column.TypeData), s.defaultValue(column.TypeData))
+			def := strs.Format("\n\t%s %s DEFAULT %v", column.Name, s.typeColumn(column.TypeData), s.defaultValue(column.TypeData))
+			columnsDef = strs.Append(columnsDef, def, ",")
 		}
 	}
-	columnsDef = strs.Append(columnsDef, s.ddlPrimaryKey(model), "\n\t")
+	def := s.ddlPrimaryKey(model)
+	columnsDef = strs.Append(columnsDef, def, ",\n\t")
 	result := strs.Format("\nCREATE TABLE IF NOT EXISTS %s (%s\n);", model.Table, columnsDef)
 	result = strs.Append(result, s.ddlIndexFunction(model), "\n")
 

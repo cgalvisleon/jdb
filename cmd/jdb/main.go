@@ -85,7 +85,6 @@ func main() {
 		}
 	case CMD_Start:
 		result := _app.Start()
-		console.Debug(result.ToString())
 		message := result.Str("message")
 		if result.Ok {
 			console.Log(PackageName, result.Str("message"))

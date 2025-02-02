@@ -5,7 +5,7 @@ import (
 )
 
 func (s *Command) bulk() error {
-	s.consolidate()
+	s.prepare()
 
 	results, err := s.Db.Command(s)
 	if err != nil {

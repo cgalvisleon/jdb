@@ -54,5 +54,5 @@ func (s *Postgres) sqlInsert(command *jdb.Command) string {
 	}
 
 	objects := s.sqlJsonObject(from)
-	return strs.Format(result, from.Table, columns, values, objects, jdb.SYSID, jdb.SYSID, jdb.SOURCE)
+	return strs.Format(result, from.Table, columns, values, objects, jdb.SYSID, jdb.SYSID, command.Source)
 }

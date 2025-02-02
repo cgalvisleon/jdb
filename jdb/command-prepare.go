@@ -48,7 +48,7 @@ func (s *Command) beforeUpdate(value *Value) *Value {
 	return value
 }
 
-func (s *Command) consolidate() []*Value {
+func (s *Command) prepare() []*Value {
 	from := s.From
 	for _, data := range s.Origin {
 		value := NewValue()

@@ -16,21 +16,23 @@ const (
 
 type Ql struct {
 	*QlFilter
-	Db         *DB         `json:"-"`
-	TypeSelect TypeSelect  `json:"type_select"`
-	Froms      []*QlFrom   `json:"froms"`
-	Selects    []*QlSelect `json:"selects"`
-	Joins      []*QlJoin   `json:"joins"`
-	Groups     []*QlSelect `json:"group_bys"`
-	Havings    *QlHaving   `json:"havings"`
-	Orders     []*QlOrder  `json:"orders"`
-	Details    []*QlSelect `json:"details"`
-	Sheet      int         `json:"sheet"`
-	Offset     int         `json:"offset"`
-	Limit      int         `json:"limit"`
-	Sql        string      `json:"sql"`
-	Result     et.Items    `json:"result"`
-	index      int         `json:"-"`
+	Db         *DB              `json:"-"`
+	TypeSelect TypeSelect       `json:"type_select"`
+	Froms      []*QlFrom        `json:"froms"`
+	Selects    []*QlSelect      `json:"selects"`
+	Joins      []*QlJoin        `json:"joins"`
+	Groups     []*QlSelect      `json:"group_bys"`
+	Havings    *QlHaving        `json:"havings"`
+	Orders     []*QlOrder       `json:"orders"`
+	Details    []*QlSelect      `json:"details"`
+	Generateds []*FuncGenerated `json:"generateds"`
+	Sheet      int              `json:"sheet"`
+	Offset     int              `json:"offset"`
+	Limit      int              `json:"limit"`
+	Sql        string           `json:"sql"`
+	Source     string           `json:"source"`
+	Result     et.Items         `json:"result"`
+	index      int              `json:"-"`
 }
 
 func (s *Ql) Describe() et.Json {
@@ -55,6 +57,7 @@ func (s *Ql) addFrom(m *Model) *QlFrom {
 		Selects: make([]*QlSelect, 0),
 	}
 
+	s.Source = m.Source
 	s.Froms = append(s.Froms, from)
 	s.index++
 

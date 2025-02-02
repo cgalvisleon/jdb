@@ -39,6 +39,7 @@ type Command struct {
 	Values     []*Value
 	Undo       *UndoRecord
 	Sql        string
+	Source     string
 	Result     et.Items
 }
 
@@ -60,6 +61,7 @@ func NewCommand(model *Model, data []et.Json, command TypeCommand) *Command {
 		Origin:     data,
 		Values:     make([]*Value, 0),
 		Sql:        "",
+		Source:     model.Source,
 		Result:     et.Items{},
 	}
 	result.QlFilter = &QlFilter{

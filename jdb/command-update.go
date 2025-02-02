@@ -9,7 +9,7 @@ import (
 )
 
 func (s *Command) update() error {
-	s.consolidate()
+	s.prepare()
 
 	results, err := s.Db.Command(s)
 	if err != nil {

@@ -63,7 +63,7 @@ func (s *Postgres) LoadModel(model *jdb.Model) error {
 	for _, detail := range model.Details {
 		err = s.LoadModel(detail)
 		if err != nil {
-			s.DropModel(model)
+			model.Drop()
 			return err
 		}
 	}

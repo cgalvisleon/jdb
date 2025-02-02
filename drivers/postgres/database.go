@@ -20,12 +20,16 @@ func (s *Postgres) ExistDatabase(name string) (bool, error) {
 	SELECT 1
 	FROM pg_database
 	WHERE UPPER(datname) = UPPER($1));`
-	item, err := s.One(jdb.Select, sql, name)
+	items, err := s.Query(sql, name)
 	if err != nil {
 		return false, err
 	}
 
-	return item.Bool("exists"), nil
+	if items.Count == 0 {
+		return false, nil
+	}
+
+	return items.Bool(0, "exists"), nil
 }
 
 func (s *Postgres) chain(params et.Json) (string, error) {

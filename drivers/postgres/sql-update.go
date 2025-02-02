@@ -52,7 +52,7 @@ func (s *Postgres) sqlUpdate(command *jdb.Command) string {
 
 	where = whereFilters(command.Wheres)
 	objects := s.sqlJsonObject(from)
-	result = strs.Format(result, objects, from.Table, where, from.Table, set, where, objects, jdb.SYSID, jdb.SYSID, jdb.SOURCE)
+	result = strs.Format(result, objects, from.Table, where, from.Table, set, where, objects, jdb.SYSID, jdb.SYSID, command.Source)
 
 	return result
 }

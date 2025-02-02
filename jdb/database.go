@@ -237,44 +237,45 @@ func (s *DB) Exec(sql string, params ...any) error {
 }
 
 /**
-* All
+* Query
 * @param sql string
 * @param params ...any
 * @return et.Items, error
 **/
-func (s *DB) All(tp TypeSelect, sql string, params ...any) (et.Items, error) {
+func (s *DB) Query(sql string, params ...any) (et.Items, error) {
 	if s.driver == nil {
 		return et.Items{}, mistake.New(MSG_DRIVER_NOT_DEFINED)
 	}
 
-	return s.driver.All(tp, sql, params...)
+	return s.driver.Query(sql, params...)
 }
 
 /**
-* One
+* Data
+* @param source string
 * @param sql string
 * @param params ...any
 * @return et.Item, error
 **/
-func (s *DB) One(tp TypeSelect, sql string, params ...any) (et.Item, error) {
-	if s.driver == nil {
-		return et.Item{}, mistake.New(MSG_DRIVER_NOT_DEFINED)
-	}
-
-	return s.driver.One(tp, sql, params...)
-}
-
-/**
-* Query
-* @param ql *Ql
-* @return et.Items, error
-**/
-func (s *DB) Query(ql *Ql) (et.Items, error) {
+func (s *DB) Data(source, sql string, params ...any) (et.Items, error) {
 	if s.driver == nil {
 		return et.Items{}, mistake.New(MSG_DRIVER_NOT_DEFINED)
 	}
 
-	return s.driver.Query(ql)
+	return s.driver.Data(source, sql, params...)
+}
+
+/**
+* Select
+* @param ql *Ql
+* @return et.Items, error
+**/
+func (s *DB) Select(ql *Ql) (et.Items, error) {
+	if s.driver == nil {
+		return et.Items{}, mistake.New(MSG_DRIVER_NOT_DEFINED)
+	}
+
+	return s.driver.Select(ql)
 }
 
 /**

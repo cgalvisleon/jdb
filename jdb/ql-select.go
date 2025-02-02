@@ -61,9 +61,6 @@ func (s *Ql) Select(fields ...string) *Ql {
 		sel := s.GetSelect(field)
 		if sel != nil {
 			sel.From.Selects = append(sel.From.Selects, sel)
-			if sel.Field.Column.TypeColumn == TpDetail {
-				s.Details = append(s.Details, sel)
-			}
 		}
 	}
 

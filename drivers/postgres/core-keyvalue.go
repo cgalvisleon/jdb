@@ -6,7 +6,6 @@ import (
 	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/strs"
-	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
 /**
@@ -57,12 +56,12 @@ func (s *Postgres) SetKey(key string, value []byte) error {
 	WHERE _ID = $1
 	RETURNING *;`)
 
-	item, err := s.One(jdb.Select, sql, key, value)
+	items, err := s.Query(sql, key, value)
 	if err != nil {
 		return err
 	}
 
-	if item.Ok {
+	if items.Ok {
 		return nil
 	}
 
@@ -141,12 +140,12 @@ func (s *Postgres) FindKeys(search string, page, rows int) (et.List, error) {
 	FROM core.KEYVALUES A
 	WHERE A.VALUE ILIKE %$1%;`
 
-	result, err := s.One(jdb.Select, sql, search)
+	result, err := s.Query(sql, search)
 	if err != nil {
 		return et.List{}, err
 	}
 
-	all := result.Int("all")
+	all := result.Int(0, "all")
 
 	sql = `
 	SELECT A.*
@@ -156,7 +155,7 @@ func (s *Postgres) FindKeys(search string, page, rows int) (et.List, error) {
 	ORDER BY A.INDEX;`
 
 	offset := (page - 1) * rows
-	items, err := s.All(jdb.Select, sql, search, offset, rows)
+	items, err := s.Query(sql, search, offset, rows)
 	if err != nil {
 		return et.List{}, err
 	}

@@ -32,9 +32,9 @@ type Driver interface {
 	DropModel(model *Model) error
 	// Query
 	Exec(sql string, params ...any) error
-	All(tp TypeSelect, sql string, params ...any) (et.Items, error)
-	One(tp TypeSelect, sql string, params ...any) (et.Item, error)
-	Query(ql *Ql) (et.Items, error)
+	Query(sql string, params ...any) (et.Items, error)
+	Data(source, sql string, params ...any) (et.Items, error)
+	Select(ql *Ql) (et.Items, error)
 	Count(ql *Ql) (int, error)
 	// Command
 	Command(command *Command) (et.Items, error)

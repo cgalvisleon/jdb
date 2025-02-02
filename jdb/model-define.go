@@ -77,7 +77,7 @@ func (s *Model) DefineIdxColumn(name string, typeData TypeData, idx int) *Column
 	}
 	if slices.Contains([]string{string(IndexField), string(ProjectField), string(CreatedAtField), string(UpdatedAtField), string(StateField), string(KeyField), string(SystemKeyField), string(SourceField)}, name) {
 		s.DefineIndex(true, name)
-	} else if slices.Contains([]TypeData{TypeDataObject, TypeDataArray, TypeDataKey, TypeDataGeometry}, typeData) {
+	} else if slices.Contains([]TypeData{TypeDataObject, TypeDataArray, TypeDataKey, TypeDataGeometry, TypeDataTime}, typeData) {
 		s.DefineIndex(true, name)
 	}
 
@@ -96,6 +96,18 @@ func (s *Model) DefineColumn(name string, typeData TypeData) *Column {
 }
 
 /**
+* DefinePrimaryKey
+* @param name string
+* @return *Column
+**/
+func (s *Model) DefinePrimaryKey(name string) *Column {
+	result := s.DefineColumn(name, KeyField.TypeData())
+	s.DefineKey(name)
+
+	return result
+}
+
+/**
 * DefineAtribute
 * @param name string
 * @param typeData TypeData
@@ -108,7 +120,10 @@ func (s *Model) DefineAtribute(name string, typeData TypeData) *Column {
 		return col
 	}
 
-	s.DefineSourceField()
+	source := s.DefineSourceField(s.Source)
+	if source == nil {
+		return nil
+	}
 	def := typeData.DefaultValue()
 	col = newColumn(s, name, "", TpAtribute, typeData, def)
 	col.Field = string(SourceField)
@@ -121,9 +136,10 @@ func (s *Model) DefineAtribute(name string, typeData TypeData) *Column {
 * DefineSourceField
 * @return *Column
 **/
-func (s *Model) DefineSourceField() *Column {
-	result := s.DefineColumn(string(SourceField), SourceField.TypeData())
-	s.DefineIndex(true, string(SourceField))
+func (s *Model) DefineSourceField(name string) *Column {
+	result := s.DefineColumn(name, SourceField.TypeData())
+	s.Source = name
+	s.DefineIndex(true, name)
 
 	return result
 }
@@ -301,6 +317,10 @@ func (s *Model) DefineDetail(name, fkn string, version int) *Model {
 **/
 func (s *Model) DefineOneToMany(to *Model, fkn string) *Model {
 	key := s.KeyField
+	if key == nil {
+		return s
+	}
+
 	fk := to.DefineColumn(fkn, key.TypeData)
 	NewReference(fk, RelationManyToOne, key)
 	ref := NewReference(key, RelationOneToMany, fk)
@@ -328,6 +348,7 @@ func (s *Model) DefineHistory(n int64, fkn string, version int) error {
 	if s.HistoryLimit > 0 {
 		name := s.Name + "_history"
 		detail := NewModel(s.Schema, name, version)
+		detail.DefineSourceField(SOURCE)
 		col := newColumn(s, "history", "", TpDetail, TypeDataNone, TypeDataNone.DefaultValue())
 		col.Detail = detail
 		s.Columns = append(s.Columns, col)

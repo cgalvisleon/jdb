@@ -39,16 +39,20 @@ func (s *Postgres) existTable(schema, name string) (bool, error) {
 		WHERE UPPER(table_schema) = UPPER($1)
 		AND UPPER(table_name) = UPPER($2));`
 
-	item, err := s.One(jdb.Select, sql, schema, name)
+	items, err := s.Query(sql, schema, name)
 	if err != nil {
 		return false, err
 	}
 
-	return item.Bool("exists"), nil
+	if items.Count == 0 {
+		return false, nil
+	}
+
+	return items.Bool(0, "exists"), nil
 }
 
 func parceSQL(sql string) string {
 	return strs.Change(sql,
-		[]string{"date_make", "date_update", "_id", "_idt", "_data", "_state"},
-		[]string{jdb.CREATED_AT, jdb.UPDATED_AT, jdb.KEY, jdb.SYSID, jdb.SOURCE, jdb.STATUS})
+		[]string{"date_make", "date_update", "_id", "_idt", "_state"},
+		[]string{jdb.CREATED_AT, jdb.UPDATED_AT, jdb.KEY, jdb.SYSID, jdb.STATUS})
 }

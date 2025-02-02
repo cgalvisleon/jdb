@@ -14,19 +14,6 @@ func (s *Ql) GetDetails(data et.Json) et.Json {
 	return data
 }
 
-func (s *Ql) prepare() *Ql {
-	for _, frm := range s.Froms {
-		s.Selects = append(s.Selects, frm.Selects...)
-	}
-
-	if len(s.Selects) == 0 {
-		frm := s.Froms[0]
-		frm.GetSelect(&s.Selects, &s.Details)
-	}
-
-	return s
-}
-
 /**
 * First
 * @param n int
@@ -39,7 +26,7 @@ func (s *Ql) First(n int) (et.Items, error) {
 
 	s.setLimit(n)
 	s.prepare()
-	result, err := s.Db.Query(s)
+	result, err := s.Db.Select(s)
 	if err != nil {
 		return et.Items{}, err
 	}
@@ -169,7 +156,7 @@ func (s *Ql) Query(params et.Json) (et.Items, error) {
 	s.setOrders(orders)
 	s.setLimit(limit)
 	s.setPage(page)
-	s.Db.Query(s)
+	s.Db.Select(s)
 	return et.Items{
 		Ok: true,
 		Result: []et.Json{{

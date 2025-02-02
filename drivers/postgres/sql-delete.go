@@ -10,5 +10,5 @@ func (s *Postgres) sqlDelete(command *jdb.Command) string {
 	from := command.From
 	where := whereFilters(command.Wheres)
 	objects := s.sqlJsonObject(from)
-	return strs.Format(result, objects, from.Table, where, from.Table, where, objects, jdb.SYSID, jdb.SYSID, jdb.SOURCE)
+	return strs.Format(result, objects, from.Table, where, from.Table, where, objects, jdb.SYSID, jdb.SYSID, command.Source)
 }
