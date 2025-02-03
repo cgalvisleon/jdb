@@ -61,7 +61,7 @@ func (s *Postgres) LoadModel(model *jdb.Model) error {
 	}
 
 	for _, detail := range model.Details {
-		err = s.LoadModel(detail)
+		err = s.LoadModel(detail.Model)
 		if err != nil {
 			model.Drop()
 			return err
@@ -76,13 +76,40 @@ func (s *Postgres) LoadModel(model *jdb.Model) error {
 }
 
 /**
+* LoadByTable
+* @param model *jdb.Model
+* @return error
+**/
+func (s *Postgres) LoadByTable(model *jdb.Model) error {
+	sql := `
+	SELECT column_name, data_type, character_maximum_length, is_nullable, column_default
+	FROM information_schema.columns
+	WHERE table_schema = $1 
+  AND table_name = $2;`
+
+	items, err := s.Query(sql, model.Schema.Name, model.Name)
+	if err != nil {
+		return nil
+	}
+
+	for _, item := range items.Result {
+		name := item.Str("column_name")
+		dataType := item.Str("data_type")
+		typeData := s.strToTypeData(dataType)
+		model.DefineColumn(name, typeData)
+	}
+
+	return nil
+}
+
+/**
 * DropModel
 * @param model *jdb.Model
 * @return error
 **/
 func (s *Postgres) DropModel(model *jdb.Model) error {
 	for _, detail := range model.Details {
-		err := s.DropModel(detail)
+		err := s.DropModel(detail.Model)
 		if err != nil {
 			return err
 		}

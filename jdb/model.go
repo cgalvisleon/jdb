@@ -73,7 +73,7 @@ type Model struct {
 	EventsInsert   []Event                  `json:"-"`
 	EventsUpdate   []Event                  `json:"-"`
 	EventsDelete   []Event                  `json:"-"`
-	Details        map[string]*Model        `json:"-"`
+	Details        map[string]*Detail       `json:"-"`
 	Functions      map[string]*Function     `json:"-"`
 	Integrity      bool                     `json:"integrity"`
 	History        *Model                   `json:"-"`
@@ -121,7 +121,7 @@ func NewModel(schema *Schema, name string, version int) *Model {
 		EventsInsert: make([]Event, 0),
 		EventsUpdate: make([]Event, 0),
 		EventsDelete: make([]Event, 0),
-		Details:      make(map[string]*Model),
+		Details:      make(map[string]*Detail),
 		Functions:    make(map[string]*Function),
 		Source:       SOURCE,
 		Integrity:    false,
@@ -253,6 +253,18 @@ func (s *Model) Init() error {
 	}
 
 	return s.Db.LoadModel(s)
+}
+
+/**
+* LoadByTable
+* @return error
+**/
+func (s *Model) LoadByTable() error {
+	if s.Db == nil {
+		return console.Alertm(MSG_DATABASE_IS_REQUIRED)
+	}
+
+	return s.Db.LoadByTable(s)
 }
 
 /**

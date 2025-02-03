@@ -301,9 +301,12 @@ func (s *Model) DefineRollup(name string, fkn, tag string) {
 func (s *Model) DefineDetail(name, fkn string, version int) *Model {
 	detail := NewModel(s.Schema, name, version)
 	col := newColumn(s, name, "", TpDetail, TypeDataNone, TypeDataNone.DefaultValue())
-	col.Detail = detail
+	col.Detail = &Detail{
+		Model: detail,
+		Fkn:   fkn,
+	}
 	s.Columns = append(s.Columns, col)
-	s.Details[name] = detail
+	s.Details[name] = col.Detail
 	s.DefineOneToMany(detail, fkn)
 
 	return detail
@@ -350,9 +353,12 @@ func (s *Model) DefineHistory(n int64, fkn string, version int) error {
 		detail := NewModel(s.Schema, name, version)
 		detail.DefineSourceField(SOURCE)
 		col := newColumn(s, "history", "", TpDetail, TypeDataNone, TypeDataNone.DefaultValue())
-		col.Detail = detail
+		col.Detail = &Detail{
+			Model: detail,
+			Fkn:   fkn,
+		}
 		s.Columns = append(s.Columns, col)
-		s.Details[name] = detail
+		s.Details[name] = col.Detail
 		s.DefineOneToMany(detail, fkn)
 	}
 

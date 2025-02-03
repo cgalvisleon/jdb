@@ -8,7 +8,7 @@ import (
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
-func (s *Postgres) typeColumn(tp jdb.TypeData) interface{} {
+func (s *Postgres) typeData(tp jdb.TypeData) interface{} {
 	switch tp {
 	case jdb.TypeDataArray:
 		return "JSONB"
@@ -44,6 +44,41 @@ func (s *Postgres) typeColumn(tp jdb.TypeData) interface{} {
 		return "TSVECTOR"
 	default:
 		return "VARCHAR(250)"
+	}
+}
+
+func (s *Postgres) strToTypeData(tp string) jdb.TypeData {
+	switch tp {
+	case "ARRAY":
+		return jdb.TypeDataArray
+	case "BOOLEAN":
+		return jdb.TypeDataBool
+	case "INTEGER":
+		return jdb.TypeDataInt
+	case "VARCHAR(80)":
+		return jdb.TypeDataKey
+	case "VARCHAR(20)":
+		return jdb.TypeDataState
+	case "TEXT":
+		return jdb.TypeDataMemo
+	case "DECIMAL(18,2)":
+		return jdb.TypeDataNumber
+	case "DOUBLE PRECISION":
+		return jdb.TypeDataPrecision
+	case "JSONB":
+		return jdb.TypeDataObject
+	case "BIGINT":
+		return jdb.TypeDataSerie
+	case "VARCHAR(250)":
+		return jdb.TypeDataText
+	case "TIMESTAMP":
+		return jdb.TypeDataTime
+	case "BYTEA":
+		return jdb.TypeDataBytes
+	case "TSVECTOR":
+		return jdb.TypeDataFullText
+	default:
+		return jdb.TypeDataText
 	}
 }
 
@@ -87,14 +122,14 @@ func (s *Postgres) ddlTable(model *jdb.Model) string {
 	for _, column := range model.Columns {
 		if slices.Contains([]*jdb.Column{model.SystemKeyField, model.FullTextField}, column) {
 			if s.version > 13 {
-				def := strs.Format("\n\t%s %s INVISIBLE DEFAULT %v", column.Name, s.typeColumn(column.TypeData), s.defaultValue(column.TypeData))
+				def := strs.Format("\n\t%s %s INVISIBLE DEFAULT %v", column.Name, s.typeData(column.TypeData), s.defaultValue(column.TypeData))
 				columnsDef = strs.Append(columnsDef, def, ",")
 			} else {
-				def := strs.Format("\n\t%s %s DEFAULT %v", column.Name, s.typeColumn(column.TypeData), s.defaultValue(column.TypeData))
+				def := strs.Format("\n\t%s %s DEFAULT %v", column.Name, s.typeData(column.TypeData), s.defaultValue(column.TypeData))
 				columnsDef = strs.Append(columnsDef, def, ",")
 			}
 		} else if column.TypeColumn == jdb.TpColumn {
-			def := strs.Format("\n\t%s %s DEFAULT %v", column.Name, s.typeColumn(column.TypeData), s.defaultValue(column.TypeData))
+			def := strs.Format("\n\t%s %s DEFAULT %v", column.Name, s.typeData(column.TypeData), s.defaultValue(column.TypeData))
 			columnsDef = strs.Append(columnsDef, def, ",")
 		}
 	}

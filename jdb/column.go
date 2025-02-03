@@ -183,7 +183,7 @@ type Column struct {
 	Min           float64       `json:"min"`
 	Hidden        bool          `json:"hidden"`
 	FullText      []string      `json:"columns"`
-	Detail        *Model        `json:"detail"`
+	Detail        *Detail       `json:"detail"`
 	FuncGenerated FuncGenerated `json:"-"`
 	Limit         int           `json:"limit"`
 	Language      string        `json:"language"`

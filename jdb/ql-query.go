@@ -10,6 +10,40 @@ import (
 * @return et.Json
 **/
 func (s *Ql) GetDetails(data et.Json) et.Json {
+	for _, detail := range s.Details {
+		col := detail.Field.Column
+		switch col.TypeColumn {
+		case TpDetail:
+			if col.Detail == nil {
+				continue
+			}
+			if col.Detail.KeyField == nil {
+				continue
+			}
+			kn := col.Detail.KeyField.Name
+			key := data[kn]
+			if key == nil {
+				continue
+			}
+
+			model := col.Detail.Model
+			fkn := col.Detail.Fkn
+			result, err := model.
+				Where(fkn).Eq(key).
+				Data().
+				Page(1).
+				Rows(30)
+			if err != nil {
+				continue
+			}
+
+			data[col.Name] = result.Result
+		case TpGenerated:
+			if col.FuncGenerated != nil {
+				col.FuncGenerated(col, &data)
+			}
+		}
+	}
 
 	return data
 }

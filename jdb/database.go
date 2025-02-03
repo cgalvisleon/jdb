@@ -211,6 +211,19 @@ func (s *DB) LoadModel(model *Model) error {
 }
 
 /**
+* LoadByTable
+* @param model *Model
+* @return error
+**/
+func (s *DB) LoadByTable(model *Model) error {
+	if s.driver == nil {
+		return mistake.New(MSG_DRIVER_NOT_DEFINED)
+	}
+
+	return s.driver.LoadByTable(model)
+}
+
+/**
 * DropModel
 * @param model *Model
 **/

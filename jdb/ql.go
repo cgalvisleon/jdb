@@ -160,7 +160,7 @@ func (s *Ql) GetSelect(name string) *QlSelect {
 		model := col.Model
 		detail := col.Detail
 		fk := strs.Format(`%s.%s`, model.Name, col.Model.KeyField.Name)
-		s.Join(detail).
+		s.Join(detail.Model).
 			On(model.Name).Eq(fk)
 	}
 
