@@ -62,7 +62,8 @@ func (s *Postgres) ddlForeignKeys(model *jdb.Model) string {
 		if ref.OnUpdateCascade {
 			def = def + " ON UPDATE CASCADE"
 		}
-		result = strs.Format("SELECT core.add_constraint_if_not_exists('%s', '%s', '%s', '%s');\n", model.Schema.Low(), model.Low(), strs.Lowcase(key), def)
+		def = strs.Format("SELECT core.add_constraint_if_not_exists('%s', '%s', '%s', '%s');", model.Schema.Low(), model.Low(), strs.Lowcase(key), def)
+		result = strs.Append(result, def, "\n")
 	}
 
 	return result

@@ -44,7 +44,7 @@ func (s *Postgres) sqlUpdate(command *jdb.Command) string {
 					tsvector = strs.Append(tsvector, strs.Format(`%v`, val), " || '' || ")
 				}
 			}
-			def := strs.Format(`to_tsvector('%s', %s)`, from.FullTextField.Language, value)
+			def := strs.Format(`to_tsvector('%s', '%s')`, from.FullTextField.Language, value)
 			def = strs.Format(`%s = %v`, from.FullTextField.Name, def)
 			set = strs.Append(set, def, ",\n")
 		}

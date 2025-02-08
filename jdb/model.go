@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/cgalvisleon/et/console"
+	"github.com/cgalvisleon/et/dt"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/strs"
 	"github.com/cgalvisleon/et/utility"
@@ -76,6 +77,7 @@ type Model struct {
 	Details        map[string]*Detail       `json:"-"`
 	Functions      map[string]*Function     `json:"-"`
 	Integrity      bool                     `json:"integrity"`
+	Log            int64                    `json:"log"`
 	History        *Model                   `json:"-"`
 	HistoryLimit   int64                    `json:"history_limit"`
 	Vmj            *goja.Runtime            `json:"-"`
@@ -448,13 +450,45 @@ func (s *Model) New(data et.Json) et.Json {
 func (s *Model) MakeCollection() *Model {
 	s.DefineCreatedAtField()
 	s.DefineUpdatedAtField()
-	s.DefineSystemKeyField()
 	s.DefineStateField()
+	s.DefineSystemKeyField()
 	s.DefineKeyField()
 	s.DefineSourceField(s.Source)
 	s.DefineIndexField()
 
 	return s
+}
+
+/**
+* Object
+* @param id string
+* @return *dt.Object
+**/
+func (s *Model) Object(id string) *dt.Object {
+	id = s.GenId(id)
+	key := dt.GenId(s.Name, id)
+	result := dt.NewObject(key)
+	result.Load()
+
+	return result
+}
+
+/**
+* ObjectUp
+* @param id string
+* @return *dt.Object
+**/
+func (s *Model) ObjectUp(id string, item et.Item) *dt.Object {
+	id = s.GenId(id)
+	key := dt.GenId(s.Name, id)
+	result := dt.NewObject(key)
+	if item.Ok {
+		return result
+	}
+
+	result.Up(item.Result)
+
+	return result
 }
 
 /**

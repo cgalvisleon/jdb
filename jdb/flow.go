@@ -5,10 +5,26 @@ import (
 	"github.com/cgalvisleon/et/utility"
 )
 
-type Result struct {
-	Ok      bool
-	Message string
-	Data    interface{}
+type Message struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+}
+
+type Context struct {
+	Ok      bool        `json:"ok"`
+	Message Message     `json:"message"`
+	Data    interface{} `json:"data"`
+}
+
+/**
+* NewContext
+* @param data interface{}
+* @return *Context
+**/
+func NewContext(data interface{}) *Context {
+	return &Context{
+		Message: Message{},
+	}
 }
 
 type Step struct {
@@ -16,8 +32,24 @@ type Step struct {
 	Id          string `json:"id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
-	Execute     func(chan *Result) *Result
+	context     *Context
+	Execute     func(chan *Context) *Context
 	Rollback    func()
+}
+
+/**
+* NewStep
+* @param name string, description string, execute func(chan *Context) *Context, rollback func()
+* @return *Step
+**/
+func NewStep(name, description string, execute func(chan *Context) *Context, rollback func()) *Step {
+	return &Step{
+		Id:          utility.RecordId("step", ""),
+		Name:        name,
+		Description: description,
+		Execute:     execute,
+		Rollback:    rollback,
+	}
 }
 
 type Flow struct {
@@ -42,9 +74,9 @@ func NewFlow(name, description string) *Flow {
 	}
 }
 
-func (s *Flow) Run(status chan *Result) {
+func (s *Flow) Run(status chan *Context) {
 	if status == nil {
-		status = make(chan *Result)
+		status = make(chan *Context)
 		defer close(status)
 	}
 
@@ -53,7 +85,7 @@ func (s *Flow) Run(status chan *Result) {
 
 		result := <-status
 		if !result.Ok {
-			console.Logf("Flow", "\u274C Error in step: %s - %s, Begin rollback...", step.Name, result.Message)
+			console.Logf("Flow", "\u274C Error in step: %s - %s, Begin rollback...", step.Name, result.Message.Message)
 			s.rollback(i)
 			return
 		} else {

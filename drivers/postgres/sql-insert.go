@@ -46,7 +46,7 @@ func (s *Postgres) sqlInsert(command *jdb.Command) string {
 					tsvector = strs.Append(tsvector, strs.Format(`%v`, val), " || '' || ")
 				}
 			}
-			def := strs.Format(`to_tsvector('%s', %s)`, from.FullTextField.Language, value)
+			def := strs.Format(`to_tsvector('%s', '%s')`, from.FullTextField.Language, value)
 			record = strs.Append(record, def, ", ")
 		}
 		def := strs.Format(`(%s)`, record)

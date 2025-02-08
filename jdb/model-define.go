@@ -137,7 +137,7 @@ func (s *Model) DefineAtribute(name string, typeData TypeData) *Column {
 * @return *Column
 **/
 func (s *Model) DefineSourceField(name string) *Column {
-	result := s.DefineColumn(name, SourceField.TypeData())
+	result := s.DefineIdxColumn(name, SourceField.TypeData(), 4)
 	s.Source = name
 	s.DefineIndex(true, name)
 
@@ -149,7 +149,7 @@ func (s *Model) DefineSourceField(name string) *Column {
 * @return *Column
 **/
 func (s *Model) DefineCreatedAtField() *Column {
-	result := s.DefineColumn(string(CreatedAtField), CreatedAtField.TypeData())
+	result := s.DefineIdxColumn(string(CreatedAtField), CreatedAtField.TypeData(), 0)
 	s.DefineIndex(true, string(CreatedAtField))
 
 	return result
@@ -160,7 +160,7 @@ func (s *Model) DefineCreatedAtField() *Column {
 * @return *Column
 **/
 func (s *Model) DefineUpdatedAtField() *Column {
-	result := s.DefineColumn(string(UpdatedAtField), UpdatedAtField.TypeData())
+	result := s.DefineIdxColumn(string(UpdatedAtField), UpdatedAtField.TypeData(), 1)
 	s.DefineIndex(true, string(UpdatedAtField))
 
 	return result
@@ -171,7 +171,7 @@ func (s *Model) DefineUpdatedAtField() *Column {
 * @return *Column
 **/
 func (s *Model) DefineStateField() *Column {
-	result := s.DefineColumn(string(StateField), StateField.TypeData())
+	result := s.DefineIdxColumn(string(StateField), StateField.TypeData(), 2)
 	s.DefineIndex(true, string(StateField))
 
 	return result
@@ -182,7 +182,7 @@ func (s *Model) DefineStateField() *Column {
 * @return *Column
 **/
 func (s *Model) DefineKeyField() *Column {
-	result := s.DefineColumn(string(KeyField), KeyField.TypeData())
+	result := s.DefineIdxColumn(string(KeyField), KeyField.TypeData(), 3)
 	s.DefineKey(string(KeyField))
 
 	return result
@@ -336,6 +336,29 @@ func (s *Model) DefineOneToMany(to *Model, fkn string) *Model {
 }
 
 /**
+* DefineManyToOne
+* @param to *Model
+* @param fkn string
+* @return *Model
+**/
+func (s *Model) DefineManyToOne(to *Model, fkn string) *Model {
+	key := to.KeyField
+	if key == nil {
+		return s
+	}
+
+	fk := s.DefineColumn(fkn, key.TypeData)
+	NewReference(fk, RelationManyToOne, key)
+	ref := NewReference(key, RelationOneToMany, fk)
+	ref.OnDeleteCascade = true
+	ref.OnUpdateCascade = true
+	s.ForeignKeys[fkn] = ref
+	s.DefineRequired(fkn)
+
+	return s
+}
+
+/**
 * DefineHistory
 * @param n int
 * @param fkn string
@@ -363,6 +386,14 @@ func (s *Model) DefineHistory(n int64, fkn string, version int) error {
 	}
 
 	return nil
+}
+
+/**
+* DefineLog
+* @param n int64
+**/
+func (s *Model) DefineLog(n int64) {
+	s.Log = n
 }
 
 /**

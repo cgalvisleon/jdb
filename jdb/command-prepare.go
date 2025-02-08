@@ -54,13 +54,15 @@ func (s *Command) prepare() []*Value {
 		value := NewValue()
 		for k, v := range data {
 			field := from.GetField(k, true)
-			if field.Column == from.FullTextField {
+			if field == nil {
+				if from.SourceField != nil && !from.Integrity {
+					value.Atribs[k] = v
+					value.Data[k] = v
+				}
+			} else if field.Column == from.FullTextField {
 				continue
-			} else if field != nil {
+			} else {
 				setValue(value, field.Column, v)
-			} else if from.SourceField != nil && !from.Integrity {
-				value.Atribs[k] = v
-				value.Data[k] = v
 			}
 		}
 		switch s.Command {

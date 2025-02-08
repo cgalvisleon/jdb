@@ -3,6 +3,7 @@ package jdb
 import (
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/event"
+	"github.com/cgalvisleon/et/strs"
 )
 
 type TypeEvent int
@@ -59,6 +60,7 @@ func EventHistoryDefault(model *Model, before et.Json, after et.Json) error {
 		return nil
 	}
 
+	key = strs.Format("%s:%s", "history", key)
 	index := model.Db.GetSerie(key)
 	before[HISTORY_INDEX] = index
 	go model.History.Insert(before).
