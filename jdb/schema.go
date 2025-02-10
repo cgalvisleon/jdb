@@ -37,7 +37,7 @@ func NewSchema(db *DB, name string) (*Schema, error) {
 	}
 
 	db.Schemas[name] = result
-	schemas[name] = result
+	Jdb.Schemas[name] = result
 
 	return result, nil
 }

@@ -7,13 +7,70 @@ import (
 	"github.com/cgalvisleon/et/strs"
 )
 
-var (
-	drivers map[string]func() Driver
-	dbs     map[string]*DB
-	schemas map[string]*Schema
-	models  map[string]*Model
-)
+type JDB struct {
+	Drivers map[string]func() Driver
+	DBs     map[string]*DB
+	Schemas map[string]*Schema
+	Models  map[string]*Model
+	Flows   map[string]*Flow
+	Version string
+}
 
+var Jdb *JDB
+
+func init() {
+	Jdb = &JDB{
+		Drivers: map[string]func() Driver{},
+		DBs:     map[string]*DB{},
+		Schemas: map[string]*Schema{},
+		Models:  map[string]*Model{},
+		Flows:   map[string]*Flow{},
+		Version: "0.0.1",
+	}
+}
+
+/**
+* Describe
+* @return et.Json
+**/
+func (s *JDB) Describe() et.Json {
+	drivers := []string{}
+	for key := range s.Drivers {
+		drivers = append(drivers, key)
+	}
+	dbs := []string{}
+	for key := range s.DBs {
+		dbs = append(dbs, key)
+	}
+	schemas := []et.Json{}
+	for _, val := range s.Schemas {
+		schemas = append(schemas, val.Describe())
+	}
+	models := []et.Json{}
+	for _, val := range s.Models {
+		models = append(models, val.Describe())
+	}
+	flows := []et.Json{}
+	for _, val := range s.Flows {
+		flows = append(flows, val.Describe())
+	}
+
+	result := et.Json{
+		"drivers": drivers,
+		"dbs":     dbs,
+		"schemas": schemas,
+		"models":  models,
+		"flows":   flows,
+		"version": s.Version,
+	}
+
+	return result
+}
+
+/**
+* Load
+* @return *DB, error
+**/
 func Load() (*DB, error) {
 	name := envar.GetStr("", "DB_NAME")
 	result, err := NewDatabase(name, Postgres)
@@ -55,6 +112,11 @@ func Load() (*DB, error) {
 	return result, nil
 }
 
+/**
+* ConnectTo
+* @param params et.Json
+* @return *DB, error
+**/
 func ConnectTo(params et.Json) (*DB, error) {
 	driver := params.Str("driver")
 	if driver == "" {
@@ -103,7 +165,7 @@ func ConnectTo(params et.Json) (*DB, error) {
 		}
 	}
 
-	dbs[name] = result
+	Jdb.DBs[name] = result
 
 	return result, nil
 }
@@ -118,14 +180,14 @@ func GetShema(name string, isCreate bool) *Schema {
 	list := strs.Split(name, ".")
 	switch len(list) {
 	case 1:
-		return schemas[strs.Lowcase(name)]
+		return Jdb.Schemas[strs.Lowcase(name)]
 	case 2:
-		schema := schemas[list[1]]
+		schema := Jdb.Schemas[list[1]]
 		if schema != nil {
 			return schema
 		}
 		if isCreate {
-			db := dbs[list[0]]
+			db := Jdb.DBs[list[0]]
 			if db == nil {
 				return nil
 			}
@@ -152,18 +214,18 @@ func GetModel(name string, isCreated bool) *Model {
 	list := strs.Split(name, ".")
 	switch len(list) {
 	case 1:
-		for _, model := range models {
+		for _, model := range Jdb.Models {
 			if model.Name == strs.Lowcase(name) {
 				return model
 			}
 		}
 	case 2:
 		table := strs.Format(`%s.%s`, list[0], list[1])
-		result := models[strs.Lowcase(table)]
+		result := Jdb.Models[strs.Lowcase(table)]
 		if result != nil {
 			return result
 		}
-		schema := schemas[list[0]]
+		schema := Jdb.Schemas[list[0]]
 		if schema == nil {
 			return nil
 		}
@@ -201,9 +263,10 @@ func GetField(name string, isCreated bool) *Field {
 	}
 }
 
-func init() {
-	drivers = map[string]func() Driver{}
-	dbs = map[string]*DB{}
-	schemas = map[string]*Schema{}
-	models = map[string]*Model{}
+/**
+* Describe
+* @return et.Json
+**/
+func Describe() et.Json {
+	return Jdb.Describe()
 }

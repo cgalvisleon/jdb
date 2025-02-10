@@ -506,20 +506,6 @@ func (s *Model) DefineEvent(tp TypeEvent, event Event) {
 }
 
 /**
-* DefineFunction
-* @param name string
-* @param function string
-* @return *Model
-**/
-func (s *Model) DefineFunction(name string, tp TypeFunction, definition string) *Function {
-	f := NewFunction(name, tp)
-	f.Definition = definition
-	s.Functions[f.Id] = f
-
-	return f
-}
-
-/**
 * DefineDictionary
 * @param name string
 * @param key string

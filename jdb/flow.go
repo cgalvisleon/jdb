@@ -2,6 +2,7 @@ package jdb
 
 import (
 	"github.com/cgalvisleon/et/console"
+	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/utility"
 )
 
@@ -27,24 +28,25 @@ func NewContext(data interface{}) *Context {
 	}
 }
 
-type Step struct {
+type Function struct {
 	Flow        *Flow
 	Id          string `json:"id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
-	context     *Context
+	Code        string `json:"code"`
+	Context     *Context
 	Execute     func(chan *Context) *Context
 	Rollback    func()
 }
 
 /**
-* NewStep
+* NewFunction
 * @param name string, description string, execute func(chan *Context) *Context, rollback func()
-* @return *Step
+* @return *Function
 **/
-func NewStep(name, description string, execute func(chan *Context) *Context, rollback func()) *Step {
-	return &Step{
-		Id:          utility.RecordId("step", ""),
+func NewFunction(name, description string, execute func(chan *Context) *Context, rollback func()) *Function {
+	return &Function{
+		Id:          utility.RecordId("function", ""),
 		Name:        name,
 		Description: description,
 		Execute:     execute,
@@ -56,7 +58,7 @@ type Flow struct {
 	Id          string `json:"id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
-	Steps       []*Step
+	Functions   []*Function
 }
 
 /**
@@ -70,38 +72,60 @@ func NewFlow(name, description string) *Flow {
 		Id:          utility.RecordId("flow", ""),
 		Name:        name,
 		Description: description,
-		Steps:       []*Step{},
+		Functions:   []*Function{},
 	}
 }
 
+/**
+* Describe
+* @return et.Json
+**/
+func (s *Flow) Describe() et.Json {
+	return et.Json{
+		"id":          s.Id,
+		"name":        s.Name,
+		"description": s.Description,
+		"functions":   s.Functions,
+	}
+}
+
+/**
+* Run
+* @param status chan *Context
+**/
 func (s *Flow) Run(status chan *Context) {
 	if status == nil {
 		status = make(chan *Context)
 		defer close(status)
 	}
 
-	for i, step := range s.Steps {
-		go step.Execute(status)
+	for i, function := range s.Functions {
+		go function.Execute(status)
 
 		result := <-status
 		if !result.Ok {
-			console.Logf("Flow", "\u274C Error in step: %s - %s, Begin rollback...", step.Name, result.Message.Message)
-			s.rollback(i)
+			console.Logf("Flow", "\u274C Error in step: %s - %s, Begin rollback...", function.Name, result.Message.Message)
+			s.Rollback(i)
 			return
 		} else {
-			console.Logf("Flow", "\u2705 Complete step: %s", step.Name)
+			console.Logf("Flow", "\u2705 Complete step: %s", function.Name)
 		}
 	}
 
 	console.Logf("Flow", "\U0001F389 Executed successfully flow: %s", s.Name)
 }
 
-func (s *Flow) rollback(index int) {
+/**
+* Rollback
+* @param index int
+**/
+func (s *Flow) Rollback(index int) {
 	for i := index; i >= 0; i-- {
-		if s.Steps[i].Rollback != nil {
-			console.Logf("Flow", "\u21A9 Rollback step: (%d) %s", i, s.Steps[i].Name)
-			s.Steps[i].Rollback()
+		if s.Functions[i].Rollback != nil {
+			console.Logf("Flow", "\u21A9 Rollback step: (%d) %s", i, s.Functions[i].Name)
+			s.Functions[i].Rollback()
 		}
 	}
+
 	console.Logf("Flow", "\U0001F504 Rollback completed")
 }

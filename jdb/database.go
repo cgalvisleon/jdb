@@ -40,7 +40,7 @@ func NewDatabase(name, driver string) (*DB, error) {
 		return nil, console.Alertm(MSG_DRIVER_NOT_DEFINED)
 	}
 
-	if _, ok := drivers[driver]; !ok {
+	if _, ok := Jdb.Drivers[driver]; !ok {
 		return nil, console.Alertf(MSG_DRIVER_NOT_FOUND, driver)
 	}
 
@@ -53,7 +53,7 @@ func NewDatabase(name, driver string) (*DB, error) {
 		Description: "",
 		Schemas:     map[string]*Schema{},
 		Node:        envar.GetInt64(1, "DB_NODE"),
-		driver:      drivers[driver](),
+		driver:      Jdb.Drivers[driver](),
 	}
 	utility.SetSnowflakeNode(result.Node)
 	JDBS = append(JDBS, result)

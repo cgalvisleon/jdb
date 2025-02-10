@@ -185,7 +185,7 @@ func (s *QlJoin) One() (et.Item, error) {
 func (s *Ql) setJoins(joins []et.Json) *Ql {
 	for _, val := range joins {
 		from := val.Str("from")
-		model := models[from]
+		model := Jdb.Models[from]
 		if model != nil {
 			on := val.Json("on")
 			key := strs.Format(`%s.%s`, from, on.Str("key"))

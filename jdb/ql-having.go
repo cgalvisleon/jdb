@@ -107,7 +107,7 @@ func (s *QlHaving) One() (et.Item, error) {
 func (s *Ql) setHavings(havings []et.Json) *Ql {
 	for _, val := range havings {
 		from := val.Str("from")
-		model := models[from]
+		model := Jdb.Models[from]
 		if model != nil {
 			on := val.Json("on")
 			key := strs.Format(`%s.%s`, from, on.Str("key"))

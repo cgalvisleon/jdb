@@ -192,7 +192,7 @@ func Query(query et.Json) (et.Items, error) {
 		return et.Items{}, mistake.New(MSG_QUERY_FROM_REQUIRED)
 	}
 
-	model := models[from]
+	model := Jdb.Models[from]
 	if model == nil {
 		return et.Items{}, mistake.Newf(MSG_MODEL_NOT_FOUND, from)
 	}
@@ -217,7 +217,7 @@ func Commands(command et.Json) (et.Items, error) {
 		return et.Items{}, mistake.New(MSG_QUERY_FROM_REQUIRED)
 	}
 
-	model := models[from]
+	model := Jdb.Models[from]
 	if model == nil {
 		return et.Items{}, mistake.Newf(MSG_MODEL_NOT_FOUND, from)
 	}

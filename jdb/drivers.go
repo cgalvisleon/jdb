@@ -55,5 +55,5 @@ type Driver interface {
 * SetDriver
 **/
 func Register(name string, driver func() Driver) {
-	drivers[name] = driver
+	Jdb.Drivers[name] = driver
 }

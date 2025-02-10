@@ -13,7 +13,6 @@ import (
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/strs"
 	"github.com/cgalvisleon/et/utility"
-	"github.com/dop251/goja"
 )
 
 type RID struct {
@@ -80,7 +79,6 @@ type Model struct {
 	Log            int64                    `json:"log"`
 	History        *Model                   `json:"-"`
 	HistoryLimit   int64                    `json:"history_limit"`
-	Vmj            *goja.Runtime            `json:"-"`
 	Version        int                      `json:"version"`
 	Show           bool                     `json:"-"`
 }
@@ -98,7 +96,7 @@ func NewModel(schema *Schema, name string, version int) *Model {
 	now := time.Now()
 	name = Name(name)
 	table := TableName(schema.Name, name)
-	result := models[table]
+	result := Jdb.Models[table]
 	if result != nil {
 		return result
 	}
@@ -137,9 +135,8 @@ func NewModel(schema *Schema, name string, version int) *Model {
 		result.DefineIndexField()
 		result.DefineSystemKeyField()
 	}
-	result.Vmj = NewVmj(result)
 	schema.Models[result.Name] = result
-	models[table] = result
+	Jdb.Models[table] = result
 
 	return result
 }
