@@ -5,7 +5,7 @@ package jdb
 * @param val interface{}
 * @return *Ql
 **/
-func (s *Model) Where(val interface{}) *Ql {
+func (s *Model) Where(val interface{}) *QlWhere {
 	result := From(s)
 	if s.SourceField != nil {
 		result.TypeSelect = Data

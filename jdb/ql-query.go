@@ -10,8 +10,12 @@ import (
 * @return et.Json
 **/
 func (s *Ql) GetDetails(data et.Json) et.Json {
-	for _, detail := range s.Details {
-		col := detail.Field.Column
+	for _, field := range s.Details {
+		col := field.Column
+		if col == nil {
+			continue
+		}
+
 		switch col.TypeColumn {
 		case TpDetail:
 			if col.Detail == nil {
@@ -39,8 +43,8 @@ func (s *Ql) GetDetails(data et.Json) et.Json {
 
 			data[col.Name] = result.Result
 		case TpGenerated:
-			if col.FuncGenerated != nil {
-				col.FuncGenerated(col, &data)
+			if col.GeneratedFunction != nil {
+				col.GeneratedFunction(col, &data)
 			}
 		}
 	}
@@ -83,8 +87,8 @@ func (s *Ql) First(n int) (et.Items, error) {
 		return et.Items{}, err
 	}
 
-	for i, item := range result.Result {
-		result.Result[i] = s.GetDetails(item)
+	for i, data := range result.Result {
+		result.Result[i] = s.GetDetails(data)
 	}
 
 	return result, nil
@@ -187,7 +191,7 @@ func (s *Ql) List(page, rows int) (et.List, error) {
 **/
 func (s *Ql) Search(search et.Json) *Ql {
 	joins := search.ArrayJson("join")
-	where := search.ArrayJson("where")
+	where := search.Json("where")
 	groups := search.ArrayStr("group_by")
 	havings := search.ArrayJson("having")
 	orders := search.ArrayJson("order_by")

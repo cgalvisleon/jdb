@@ -1,9 +1,5 @@
 package jdb
 
-import (
-	"github.com/cgalvisleon/et/utility"
-)
-
 func setValue(value *Value, col *Column, v interface{}) *Value {
 	switch col.TypeColumn {
 	case TpAtribute:
@@ -22,27 +18,13 @@ func setValue(value *Value, col *Column, v interface{}) *Value {
 }
 
 func (s *Command) beforeInsert(value *Value) *Value {
-	now := utility.Now()
-	from := s.From
-	if from.CreatedAtField != nil {
-		setValue(value, from.CreatedAtField, now)
-	}
-	if from.UpdatedAtField != nil {
-		setValue(value, from.UpdatedAtField, now)
-	}
-	if from.IndexField != nil {
-		index := from.GetSerie()
-		setValue(value, from.IndexField, index)
+	if s.From == nil {
+		return value
 	}
 
-	return value
-}
-
-func (s *Command) beforeUpdate(value *Value) *Value {
-	now := utility.Now()
-	from := s.From
-	if from.UpdatedAtField != nil {
-		setValue(value, from.UpdatedAtField, now)
+	if s.From.IndexField != nil {
+		index := s.From.GetSerie()
+		setValue(value, s.From.IndexField, index)
 	}
 
 	return value
@@ -53,7 +35,7 @@ func (s *Command) prepare() []*Value {
 	for _, data := range s.Origin {
 		value := NewValue()
 		for k, v := range data {
-			field := from.GetField(k, true)
+			field := from.GetField(k)
 			if field == nil {
 				if from.SourceField != nil && !from.Integrity {
 					value.Atribs[k] = v
@@ -65,11 +47,8 @@ func (s *Command) prepare() []*Value {
 				setValue(value, field.Column, v)
 			}
 		}
-		switch s.Command {
-		case Insert:
+		if s.Command == Insert {
 			value = s.beforeInsert(value)
-		case Update:
-			value = s.beforeUpdate(value)
 		}
 		s.Values = append(s.Values, value)
 	}

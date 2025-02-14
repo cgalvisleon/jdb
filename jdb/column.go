@@ -4,7 +4,6 @@ import (
 	"encoding/gob"
 
 	"github.com/cgalvisleon/et/et"
-	"github.com/cgalvisleon/et/strs"
 	"github.com/cgalvisleon/et/timezone"
 	"github.com/cgalvisleon/et/utility"
 )
@@ -14,10 +13,9 @@ type TypeColumn int
 const (
 	TpColumn TypeColumn = iota
 	TpAtribute
-	TpDetail
 	TpGenerated
-	TpRelation
-	TpRollup
+	TpDetail
+	TpRelatedTo
 )
 
 type TypeData int
@@ -40,8 +38,8 @@ const (
 	TypeDataArray
 	TypeDataGeometry
 	TypeDataFullText
+	TypeDataSelect
 	TypeDataNone
-	TypeListValues
 )
 
 func (s TypeData) DefaultValue() interface{} {
@@ -107,6 +105,8 @@ func (s TypeData) Str() string {
 		return "geometry"
 	case TypeDataFullText:
 		return "full_text"
+	case TypeDataSelect:
+		return "select"
 	default:
 		return "text"
 	}
@@ -121,26 +121,26 @@ const (
 	CREATED_AT    = "created_at"
 	UPDATED_AT    = "update_at"
 	STATUS        = "status"
-	KEY           = "id"
+	PRIMARYKEY    = "id"
 	SYSID         = "jdbid"
 	CREATED_TO    = "created_to"
 	UPDATED_TO    = "updated_to"
 	FULLTEXT      = "fulltext"
-	HISTORY_INDEX = "history_index"
+	HISTORY_INDEX = "hindex"
 )
 
 var (
-	IndexField     ColumnField = INDEX
-	SourceField    ColumnField = SOURCE
-	ProjectField   ColumnField = PROJECT
-	CreatedAtField ColumnField = CREATED_AT
-	UpdatedAtField ColumnField = UPDATED_AT
-	StateField     ColumnField = STATUS
-	KeyField       ColumnField = KEY
-	SystemKeyField ColumnField = SYSID
-	CreatedToField ColumnField = CREATED_TO
-	UpdatedToField ColumnField = UPDATED_TO
-	FullTextField  ColumnField = FULLTEXT
+	IndexField      ColumnField = INDEX
+	SourceField     ColumnField = SOURCE
+	ProjectField    ColumnField = PROJECT
+	CreatedAtField  ColumnField = CREATED_AT
+	UpdatedAtField  ColumnField = UPDATED_AT
+	StateField      ColumnField = STATUS
+	PrimaryKeyField ColumnField = PRIMARYKEY
+	SystemKeyField  ColumnField = SYSID
+	CreatedToField  ColumnField = CREATED_TO
+	UpdatedToField  ColumnField = UPDATED_TO
+	FullTextField   ColumnField = FULLTEXT
 )
 
 func (s ColumnField) TypeData() TypeData {
@@ -157,7 +157,7 @@ func (s ColumnField) TypeData() TypeData {
 		return TypeDataTime
 	case StateField:
 		return TypeDataState
-	case KeyField:
+	case PrimaryKeyField:
 		return TypeDataKey
 	case SystemKeyField:
 		return TypeDataKey
@@ -172,24 +172,34 @@ func (s ColumnField) TypeData() TypeData {
 	return TypeDataText
 }
 
+type FullText struct {
+	Language string    `json:"language"`
+	Columns  []*Column `json:"columns"`
+}
+
+type GeneratedFunction func(col *Column, before, after *et.Json)
+
+type Relation struct {
+	With  *Model  `json:"with"`
+	Fk    *Column `json:"fk"`
+	Limit int     `json:"rows"`
+}
+
 type Column struct {
-	Model         *Model        `json:"-"`
-	Name          string        `json:"name"`
-	Field         string        `json:"field"`
-	Description   string        `json:"description"`
-	Table         string        `json:"table"`
-	TypeColumn    TypeColumn    `json:"type_column"`
-	TypeData      TypeData      `json:"type_data"`
-	Default       interface{}   `json:"default"`
-	Max           float64       `json:"max"`
-	Min           float64       `json:"min"`
-	Hidden        bool          `json:"hidden"`
-	FullText      []string      `json:"columns"`
-	Detail        *Detail       `json:"detail"`
-	FuncGenerated FuncGenerated `json:"-"`
-	Limit         int           `json:"limit"`
-	Language      string        `json:"language"`
-	Values        []interface{} `json:"values"`
+	Model             *Model            `json:"-"`
+	Source            *Column           `json:"-"`
+	Name              string            `json:"name"`
+	Description       string            `json:"description"`
+	TypeColumn        TypeColumn        `json:"type_column"`
+	TypeData          TypeData          `json:"type_data"`
+	Default           interface{}       `json:"default"`
+	Max               float64           `json:"max"`
+	Min               float64           `json:"min"`
+	Hidden            bool              `json:"hidden"`
+	Relation          *Relation         `json:"detail"`
+	FullText          *FullText         `json:"columns"`
+	GeneratedFunction GeneratedFunction `json:"-"`
+	Values            []interface{}     `json:"values"`
 }
 
 func init() {
@@ -200,17 +210,12 @@ func newColumn(model *Model, name string, description string, typeColumn TypeCol
 	return &Column{
 		Model:       model,
 		Name:        name,
-		Field:       name,
 		Description: description,
-		Table:       model.Table,
 		TypeColumn:  typeColumn,
 		TypeData:    typeData,
 		Default:     def,
 		Max:         0,
 		Min:         0,
-		Hidden:      false,
-		FullText:    []string{},
-		Limit:       30,
 		Values:      []interface{}{},
 	}
 }
@@ -229,28 +234,11 @@ func (s *Column) Describe() et.Json {
 }
 
 /**
-* Fk
-* @return string
-**/
-func (s *Column) Fk() string {
-	result := strs.ReplaceAll(s.Field, []string{"_"}, "")
-	result = s.Model.Name + "_" + result
-
-	return result
-}
-
-/**
 * DefaultValue
 * @return interface{}
 **/
 func (s *Column) DefaultValue() interface{} {
-	if s.Name == string(ProjectField) {
-		return "-1"
-	}
-	switch s.TypeData {
-	case TypeDataKey:
-		return utility.UUID()
-	case TypeDataTime:
+	if s.TypeData == TypeDataTime {
 		return timezone.Now()
 	}
 
@@ -273,17 +261,7 @@ func (s *Column) DefaultQuote() interface{} {
 * @return *Field
 **/
 func (s *Column) GetField() *Field {
-	result := &Field{
-		Column: s,
-		Schema: s.Model.Schema.Name,
-		Table:  s.Model.Name,
-		Field:  s.Field,
-		Name:   s.Name,
-		Alias:  s.Name,
-	}
-	if s.TypeColumn != TpColumn {
-		result.Atrib = s.Name
-	}
+	result := NewField(s)
 
 	return result
 }

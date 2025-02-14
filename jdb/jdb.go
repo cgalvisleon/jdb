@@ -154,8 +154,8 @@ func ConnectTo(params et.Json) (*DB, error) {
 			UpdatedAtField = value.(ColumnField)
 		case "StateField":
 			StateField = value.(ColumnField)
-		case "KeyField":
-			KeyField = value.(ColumnField)
+		case "PrimaryKeyField":
+			PrimaryKeyField = value.(ColumnField)
 		case "SystemKeyField":
 			SystemKeyField = value.(ColumnField)
 		case "CreatedToField":
@@ -210,7 +210,7 @@ func GetShema(name string, isCreate bool) *Schema {
 * @param isCreated bool
 * @return *Model
 **/
-func GetModel(name string, isCreated bool) *Model {
+func GetModel(name string) *Model {
 	list := strs.Split(name, ".")
 	switch len(list) {
 	case 1:
@@ -225,13 +225,6 @@ func GetModel(name string, isCreated bool) *Model {
 		if result != nil {
 			return result
 		}
-		schema := Jdb.Schemas[list[0]]
-		if schema == nil {
-			return nil
-		}
-		if isCreated {
-			return NewModel(schema, table, 1)
-		}
 	}
 
 	return nil
@@ -239,25 +232,25 @@ func GetModel(name string, isCreated bool) *Model {
 
 /**
 * GetField
-* @param name string, isCreated bool
+* @param name string
 * @return *Field
 **/
-func GetField(name string, isCreated bool) *Field {
+func GetField(name string) *Field {
 	list := strs.Split(name, ".")
 	switch len(list) {
 	case 2:
-		model := GetModel(list[0], isCreated)
+		model := GetModel(list[0])
 		if model == nil {
 			return nil
 		}
-		return model.GetField(list[1], isCreated)
+		return model.GetField(list[1])
 	case 3:
 		table := strs.Format(`%s.%s`, list[0], list[1])
-		model := GetModel(table, isCreated)
+		model := GetModel(table)
 		if model == nil {
 			return nil
 		}
-		return model.GetField(list[2], isCreated)
+		return model.GetField(list[2])
 	default:
 		return nil
 	}

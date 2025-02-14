@@ -1,7 +1,6 @@
 package jdb
 
 import (
-	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/mistake"
 )
 
@@ -17,48 +16,35 @@ func (s *Command) undo() error {
 
 	from := s.From
 	history := from.History
-	if history == nil {
+	if history.With == nil {
 		return mistake.New(MSG_HISTORY_NOT_DEFINED)
 	}
 
-	historyData, err := history.
-		Where(from.KeyField.Name).Eq(s.Undo.Key).
+	old, err := history.With.
+		Where(history.Fk.Name).Eq(s.Undo.Key).
 		And(HISTORY_INDEX).Eq(s.Undo.Index).
 		One()
 	if err != nil {
 		return err
 	}
 
-	if !historyData.Ok {
+	if !old.Ok {
 		return mistake.New(MSG_HISTORY_NOT_FOUND)
 	}
 
-	s.Origin = []et.Json{historyData.Result}
-	err = s.update()
+	model := from.Model
+	_, err = model.Update(old.Result).
+		Where(history.Fk.Name).Eq(s.Undo.Key).
+		History(false).
+		Exec()
 	if err != nil {
 		return err
 	}
 
-	if !s.Result.Ok {
-		return mistake.New(MSG_NOT_UPDATE_DATA)
-	}
-
-	go history.Delete().
-		Where(from.KeyField.Name).Eq(s.Undo.Key).
+	go history.With.Delete().
+		Where(history.Fk.Name).Eq(s.Undo.Key).
 		And(HISTORY_INDEX).More(s.Undo.Index).
 		Exec()
-
-	for _, result := range s.Result.Result {
-		before := result.Json("before")
-		after := result.Json("after")
-
-		for _, event := range s.From.EventsUpdate {
-			err := event(from.Model, before, after)
-			if err != nil {
-				return err
-			}
-		}
-	}
 
 	return nil
 }

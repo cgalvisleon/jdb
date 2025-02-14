@@ -3,6 +3,7 @@ package jdb
 import (
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/mistake"
+	"github.com/cgalvisleon/et/utility"
 )
 
 type TypeCommand int
@@ -32,15 +33,15 @@ func NewValue() *Value {
 type Command struct {
 	*QlFilter
 	Db         *DB
-	TypeSelect TypeSelect `json:"type_select"`
+	TypeSelect TypeSelect
 	From       *QlFrom
 	Command    TypeCommand
 	Origin     []et.Json
 	Values     []*Value
 	Undo       *UndoRecord
 	Sql        string
-	Source     string
 	Result     et.Items
+	history    bool
 }
 
 /**
@@ -61,7 +62,6 @@ func NewCommand(model *Model, data []et.Json, command TypeCommand) *Command {
 		Origin:     data,
 		Values:     make([]*Value, 0),
 		Sql:        "",
-		Source:     model.Source,
 		Result:     et.Items{},
 	}
 	result.QlFilter = &QlFilter{
@@ -81,9 +81,8 @@ func NewCommand(model *Model, data []et.Json, command TypeCommand) *Command {
 func (s *Command) addFrom(m *Model) *QlFrom {
 	s.Db = m.Db
 	s.From = &QlFrom{
-		Model:   m,
-		As:      "",
-		Selects: make([]*QlSelect, 0),
+		Model: m,
+		As:    "",
 	}
 
 	return s.From
@@ -192,4 +191,28 @@ func (s *Command) GetReturn(name string) *QlSelect {
 	}
 
 	return NewQlSelect(s.From, field)
+}
+
+/**
+* Commands
+* @param command et.Json
+* @return et.Items, error
+**/
+func Commands(command et.Json) (et.Items, error) {
+	if command.IsEmpty() {
+		return et.Items{}, mistake.New(MSG_QUERY_EMPTY)
+	}
+
+	from := command.Str("from")
+	if !utility.ValidStr(from, 0, []string{""}) {
+		return et.Items{}, mistake.New(MSG_QUERY_FROM_REQUIRED)
+	}
+
+	model := Jdb.Models[from]
+	if model == nil {
+		return et.Items{}, mistake.Newf(MSG_MODEL_NOT_FOUND, from)
+	}
+
+	return model.
+		Command(command)
 }

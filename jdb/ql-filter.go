@@ -12,10 +12,11 @@ type FilterTo interface {
 }
 
 type QlFilter struct {
-	main   FilterTo
-	where  *QlWhere
-	Wheres []*QlWhere
-	Show   bool
+	main    FilterTo
+	where   *QlWhere
+	Wheres  []*QlWhere
+	Show    bool
+	history bool
 }
 
 func (s *QlFilter) setCondition(where et.Json) *QlFilter {
@@ -196,6 +197,17 @@ func (s *QlFilter) Between(val interface{}) FilterTo {
 	default:
 		return s.main
 	}
+}
+
+/**
+* History
+* @param v bool
+* @return *Command
+**/
+func (s *QlFilter) History(v bool) FilterTo {
+	s.history = v
+
+	return s
 }
 
 /**

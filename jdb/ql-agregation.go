@@ -1,49 +1,8 @@
 package jdb
 
 import (
-	"regexp"
-
 	"github.com/cgalvisleon/et/strs"
 )
-
-type TypeAgregation int
-
-const (
-	Nag TypeAgregation = iota
-	AgregationSum
-	AgregationCount
-	AgregationAvg
-	AgregationMin
-	AgregationMax
-)
-
-type Agregation struct {
-	Agregation string
-	pattern    string
-	re         *regexp.Regexp
-}
-
-var agregations = map[TypeAgregation]*Agregation{
-	Nag:             {Agregation: "", pattern: ""},
-	AgregationSum:   {Agregation: "SUM", pattern: `SUM\([a-zA-Z0-9_]+\)$`},
-	AgregationCount: {Agregation: "COUNT", pattern: `COUNT\([a-zA-Z0-9_]+\)$`},
-	AgregationAvg:   {Agregation: "AVG", pattern: `AVG\([a-zA-Z0-9_]+\)$`},
-	AgregationMin:   {Agregation: "MIN", pattern: `MIN\([a-zA-Z0-9_]+\)$`},
-	AgregationMax:   {Agregation: "MAX", pattern: `MAX\([a-zA-Z0-9_]+\)$`},
-}
-
-/**
-* init
-**/
-func init() {
-	for _, agregation := range agregations {
-		re, err := regexp.Compile(agregation.pattern)
-		if err != nil {
-			continue
-		}
-		agregation.re = re
-	}
-}
 
 /**
 * Sum

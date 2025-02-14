@@ -10,20 +10,22 @@ const (
 )
 
 type Reference struct {
-	Key             *Column
+	Pk              []*Column
+	Fk              []*Column
+	Detail          *Model
 	TypeRelation    TypeRelation
-	To              *Column
 	OnDeleteCascade bool
 	OnUpdateCascade bool
 }
 
-func NewReference(key *Column, tp TypeRelation, to *Column) *Reference {
+func NewReference(from *Model, to *Model, tp TypeRelation, pks []*Column, fks []*Column) *Reference {
 	result := &Reference{
-		Key:          key,
+		Pk:           pks,
+		Fk:           fks,
+		Detail:       to,
 		TypeRelation: tp,
-		To:           to,
 	}
-	key.Model.References = append(key.Model.References, result)
+	from.References = append(from.References, result)
 
 	return result
 }

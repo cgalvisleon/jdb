@@ -30,11 +30,13 @@ func (s TypeJoin) Str() string {
 }
 
 type QlJoin struct {
-	*QlFilter
+	QlWhere
 	Ql       *Ql
 	TypeJoin TypeJoin
-	From     *QlFrom
+	With     *QlFrom
 }
+
+type QlJoins []*QlJoin
 
 /**
 * QlJoin
@@ -42,19 +44,15 @@ type QlJoin struct {
 * @return *Ql
 **/
 func (s *Ql) Join(m *Model) *QlJoin {
-	from := s.addFrom(m)
-	if from == nil {
+	with := s.addFrom(m)
+	if with == nil {
 		return nil
 	}
 
 	result := &QlJoin{
 		Ql:       s,
 		TypeJoin: JoinInner,
-		From:     from,
-	}
-	result.QlFilter = &QlFilter{
-		main:   result,
-		Wheres: make([]*QlWhere, 0),
+		With:     with,
 	}
 
 	s.Joins = append(s.Joins, result)
@@ -103,15 +101,18 @@ func (s *Ql) FullJoin(m *Model) *QlJoin {
 * @param name string
 * @return *Ql
 **/
-func (s *QlJoin) On(field string) *QlFilter {
-	col := s.From.GetField(field, false)
-	if col != nil {
-		s.where = NewQlWhere(col)
-	} else {
-		s.where = NewQlWhere(field)
+func (s *QlJoin) On(val interface{}) *QlJoin {
+	switch v := val.(type) {
+	case string:
+		field := s.Ql.GetField(v)
+		if field != nil {
+			s.Where(field)
+			return s
+		}
 	}
 
-	return s.QlFilter
+	s.Where(val)
+	return s
 }
 
 /**
@@ -119,14 +120,18 @@ func (s *QlJoin) On(field string) *QlFilter {
 * @param field string
 * @return *QlFilter
 **/
-func (s *QlJoin) And(val interface{}) *QlFilter {
-	field, ok := val.(string)
-	if ok {
-		result := s.On(field)
-		result.where.Conector = And
+func (s *QlJoin) And(val interface{}) *QlJoin {
+	switch v := val.(type) {
+	case string:
+		field := s.Ql.GetField(v)
+		if field != nil {
+			s.And(field)
+			return s
+		}
 	}
 
-	return s.QlFilter
+	s.And(val)
+	return s
 }
 
 /**
@@ -134,14 +139,18 @@ func (s *QlJoin) And(val interface{}) *QlFilter {
 * @param field string
 * @return *QlFilter
 **/
-func (s *QlJoin) Or(val interface{}) *QlFilter {
-	field, ok := val.(string)
-	if ok {
-		result := s.On(field)
-		result.where.Conector = Or
+func (s *QlJoin) Or(val interface{}) *QlJoin {
+	switch v := val.(type) {
+	case string:
+		field := s.Ql.GetField(v)
+		if field != nil {
+			s.Or(field)
+			return s
+		}
 	}
 
-	return s.QlFilter
+	s.Or(val)
+	return s
 }
 
 /**
@@ -150,7 +159,7 @@ func (s *QlJoin) Or(val interface{}) *QlFilter {
 * @return *Ql
 **/
 func (s *QlJoin) Select(fields ...string) *Ql {
-	return s.Ql
+	return s.Ql.Select(fields...)
 }
 
 /**
@@ -159,23 +168,7 @@ func (s *QlJoin) Select(fields ...string) *Ql {
 * @return *Ql
 **/
 func (s *QlJoin) Data(fields ...string) *Ql {
-	return s.Ql
-}
-
-/**
-* Exec
-* @return et.Items, error
-**/
-func (s *QlJoin) Exec() (et.Items, error) {
-	return et.Items{}, nil
-}
-
-/**
-* One
-* @return et.Item, error
-**/
-func (s *QlJoin) One() (et.Item, error) {
-	return et.Item{}, nil
+	return s.Ql.Data(fields...)
 }
 
 /**
@@ -207,7 +200,7 @@ func (s *Ql) setJoins(joins []et.Json) *Ql {
 func (s *Ql) listJoins() []string {
 	result := []string{}
 	for _, join := range s.Joins {
-		result = append(result, strs.Format(`%s %s AS %s`, join.TypeJoin.Str(), join.From.Table, join.From.As))
+		result = append(result, strs.Format(`%s %s AS %s`, join.TypeJoin.Str(), join.With.Table, join.With.As))
 		for _, where := range join.Wheres {
 			result = append(result, strs.Format(`%s`, where.String()))
 		}

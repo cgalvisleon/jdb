@@ -8,26 +8,27 @@ import (
 
 type QlFrom struct {
 	*Model
-	As      string
-	Selects []*QlSelect
+	As string
+}
+
+type QlFroms struct {
+	Froms []*QlFrom
+	index int
 }
 
 func From(m *Model) *Ql {
 	result := &Ql{
 		Db:         m.Db,
 		TypeSelect: Select,
-		Froms:      make([]*QlFrom, 0),
-		Selects:    make([]*QlSelect, 0),
+		Froms:      &QlFroms{index: 65, Froms: make([]*QlFrom, 0)},
 		Joins:      make([]*QlJoin, 0),
+		Selects:    make([]*QlSelect, 0),
 		Groups:     make([]*QlSelect, 0),
 		Orders:     make([]*QlOrder, 0),
 		Details:    make([]*QlSelect, 0),
-		Generateds: make([]*FuncGenerated, 0),
 		Offset:     0,
 		Limit:      0,
 		Sheet:      0,
-		index:      65,
-		Source:     SOURCE,
 	}
 	result.QlFilter = &QlFilter{
 		main:   result,
@@ -52,8 +53,8 @@ func From(m *Model) *Ql {
 * @param name string, isCreated bool
 * @return *Field
 **/
-func (s *QlFrom) GetField(name string, isCreated bool) *Field {
-	result := s.Model.GetField(name, isCreated)
+func (s *QlFrom) GetField(name string) *Field {
+	result := s.Model.GetField(name)
 	if result != nil {
 		result.As = s.As
 	}

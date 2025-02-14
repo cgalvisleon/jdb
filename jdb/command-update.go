@@ -39,7 +39,7 @@ func (s *Command) updated() error {
 			}
 		}
 
-		if model.History != nil {
+		if s.history && model.History.With != nil {
 			err := EventHistoryDefault(model, before, after)
 			if err != nil {
 				return err

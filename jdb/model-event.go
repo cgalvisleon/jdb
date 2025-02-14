@@ -29,7 +29,13 @@ func (s TypeEvent) Name() string {
 type Event func(model *Model, before et.Json, after et.Json) error
 
 func EventInsertDefault(model *Model, before et.Json, after et.Json) error {
+	schema := ""
+	if model.Schema != nil {
+		schema = model.Schema.Name
+	}
+
 	event.Publish("model:insert", et.Json{
+		"schema": schema,
 		"model":  model.Name,
 		"table":  model.Table,
 		"before": before,
@@ -40,7 +46,30 @@ func EventInsertDefault(model *Model, before et.Json, after et.Json) error {
 }
 
 func EventUpdateDefault(model *Model, before et.Json, after et.Json) error {
+	schema := ""
+	if model.Schema != nil {
+		schema = model.Schema.Name
+	}
+
 	event.Publish("model:update", et.Json{
+		"schema": schema,
+		"model":  model.Name,
+		"table":  model.Table,
+		"before": before,
+		"after":  after,
+	})
+
+	return nil
+}
+
+func EventDeleteDefault(model *Model, before et.Json, after et.Json) error {
+	schema := ""
+	if model.Schema != nil {
+		schema = model.Schema.Name
+	}
+
+	event.Publish("model:delete", et.Json{
+		"schema": schema,
 		"model":  model.Name,
 		"table":  model.Table,
 		"before": before,
@@ -55,37 +84,35 @@ func EventHistoryDefault(model *Model, before et.Json, after et.Json) error {
 		return nil
 	}
 
-	key := before.Key(model.KeyField.Name)
-	if key == "-1" {
+	history := model.History
+	if history == nil {
+		return nil
+	}
+
+	if history.Model == nil {
+		return nil
+	}
+
+	key := before.ValStr("", history.Pk.Name)
+	if key == "" {
 		return nil
 	}
 
 	key = strs.Format("%s:%s", "history", key)
 	index := model.Db.GetSerie(key)
 	before[HISTORY_INDEX] = index
-	go model.History.Insert(before).
+	go history.Model.Insert(before).
 		Exec()
 
-	limit := index - model.HistoryLimit
+	limit := index - model.History.Limit
 	if limit <= 0 {
 		return nil
 	}
 
-	go model.History.Delete().
-		Where(model.KeyField.Name).Eq(key).
+	go history.Model.Delete().
+		Where(history.Pk.Name).Eq(key).
 		And(HISTORY_INDEX).LessEq(limit).
 		Exec()
-
-	return nil
-}
-
-func EventDeleteDefault(model *Model, before et.Json, after et.Json) error {
-	event.Publish("model:delete", et.Json{
-		"model":  model.Name,
-		"table":  model.Table,
-		"before": before,
-		"after":  after,
-	})
 
 	return nil
 }

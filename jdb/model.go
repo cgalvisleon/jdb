@@ -2,7 +2,6 @@ package jdb
 
 import (
 	"encoding/json"
-	"slices"
 	"strings"
 	"time"
 
@@ -37,140 +36,92 @@ func GetRID(id string) *RID {
 	return result
 }
 
-func TableName(schema, name string) string {
-	return strs.Format(`%s.%s`, strs.Lowcase(schema), strs.Lowcase(name))
+func TableName(schema *Schema, name string) string {
+	if schema != nil {
+		return strs.Format(`%s.%s`, strs.Lowcase(schema.Name), strs.Lowcase(name))
+	}
+
+	return strs.Lowcase(name)
 }
 
-type TypeModel int
-
-const (
-	TpTable TypeModel = iota
-	TpModel
-	TpCollection
-)
-
 type Model struct {
-	Db             *DB                      `json:"-"`
-	Schema         *Schema                  `json:"-"`
-	Type           TypeModel                `json:"type"`
-	CreatedAt      time.Time                `json:"created_date"`
-	UpdateAt       time.Time                `json:"update_date"`
-	Name           string                   `json:"name"`
-	Table          string                   `json:"table"`
-	Description    string                   `json:"description"`
-	Columns        []*Column                `json:"columns"`
-	Indices        map[string]*Index        `json:"indices"`
-	Uniques        map[string]*Index        `json:"uniques"`
-	Keys           map[string]*Column       `json:"keys"`
-	ForeignKeys    map[string]*Reference    `json:"foreign_keys"`
-	References     []*Reference             `json:"references"`
-	Relations      []*Relation              `json:"relations"`
-	Dictionaries   map[string][]*Dictionary `json:"dictionaries"`
-	ColRequired    map[string]bool          `json:"col_required"`
-	CreatedAtField *Column                  `json:"created_at_field"`
-	UpdatedAtField *Column                  `json:"updated_at_field"`
-	KeyField       *Column                  `json:"key_field"`
-	Source         string                   `json:"source"`
-	SourceField    *Column                  `json:"source_field"`
-	SystemKeyField *Column                  `json:"system_key_field"`
-	StateField     *Column                  `json:"state_field"`
-	IndexField     *Column                  `json:"index_field"`
-	FullTextField  *Column                  `json:"full_text_field"`
-	EventsInsert   []Event                  `json:"-"`
-	EventsUpdate   []Event                  `json:"-"`
-	EventsDelete   []Event                  `json:"-"`
-	Details        map[string]*Detail       `json:"-"`
-	Integrity      bool                     `json:"integrity"`
-	Log            int64                    `json:"log"`
-	History        *Model                   `json:"-"`
-	HistoryLimit   int64                    `json:"history_limit"`
-	Version        int                      `json:"version"`
-	Show           bool                     `json:"-"`
+	Db              *DB                  `json:"-"`
+	Schema          *Schema              `json:"-"`
+	CreatedAt       time.Time            `json:"created_date"`
+	UpdateAt        time.Time            `json:"update_date"`
+	Name            string               `json:"name"`
+	Table           string               `json:"table"`
+	Description     string               `json:"description"`
+	Columns         []*Column            `json:"columns"`
+	GeneratedFields []*Column            `json:"generated_fields"`
+	PrimaryKeys     []*Column            `json:"primary_keys"`
+	ForeignKeys     []*Column            `json:"foreign_keys"`
+	Indices         []*Index             `json:"indices"`
+	Uniques         []*Index             `json:"uniques"`
+	Relations       map[string]*Relation `json:"Relations"`
+	Details         map[string]*Relation `json:"details"`
+	History         *Relation            `json:"history"`
+	ColRequired     map[string]bool      `json:"col_required"`
+	SystemKeyField  *Column              `json:"system_key_field"`
+	StateField      *Column              `json:"state_field"`
+	IndexField      *Column              `json:"index_field"`
+	SourceField     *Column              `json:"source_field"`
+	FullTextField   *Column              `json:"full_text_field"`
+	EventsInsert    []Event              `json:"-"`
+	EventsUpdate    []Event              `json:"-"`
+	EventsDelete    []Event              `json:"-"`
+	Integrity       bool                 `json:"integrity"`
+	Version         int                  `json:"version"`
+	Show            bool                 `json:"-"`
 }
 
 /**
-* newModel
+* NewModel
 * @param schema *Schema, name string, tp TypeModel, version int
 * @return *Model
 **/
-func newModel(schema *Schema, name string, tp TypeModel, version int) *Model {
+func NewModel(schema *Schema, name string, version int) *Model {
 	if version == 0 {
 		version = 1
 	}
 	now := time.Now()
 	name = Name(name)
-	table := TableName(schema.Name, name)
+	table := TableName(schema, name)
 	result := Jdb.Models[table]
 	if result != nil {
+		result.Version = version
+
 		return result
 	}
 
 	result = &Model{
-		Db:           schema.Db,
-		Schema:       schema,
-		Type:         tp,
-		CreatedAt:    now,
-		UpdateAt:     now,
-		Name:         name,
-		Description:  "",
-		Table:        table,
-		Columns:      make([]*Column, 0),
-		Indices:      make(map[string]*Index),
-		Uniques:      make(map[string]*Index),
-		Keys:         make(map[string]*Column),
-		ForeignKeys:  make(map[string]*Reference),
-		References:   make([]*Reference, 0),
-		Relations:    make([]*Relation, 0),
-		Dictionaries: make(map[string][]*Dictionary),
-		ColRequired:  make(map[string]bool),
-		EventsInsert: make([]Event, 0),
-		EventsUpdate: make([]Event, 0),
-		EventsDelete: make([]Event, 0),
-		Details:      make(map[string]*Detail),
-		Source:       SOURCE,
-		Integrity:    false,
-		HistoryLimit: 0,
-		Version:      version,
+		Db:              schema.Db,
+		Schema:          schema,
+		CreatedAt:       now,
+		UpdateAt:        now,
+		Name:            name,
+		Table:           table,
+		Description:     "",
+		Columns:         make([]*Column, 0),
+		GeneratedFields: make([]*Column, 0),
+		PrimaryKeys:     make([]*Column, 0),
+		ForeignKeys:     make([]*Column, 0),
+		Indices:         make([]*Index, 0),
+		Uniques:         make([]*Index, 0),
+		Relations:       make(map[string]*Relation),
+		Details:         make(map[string]*Relation),
+		History:         &Relation{Limit: -1},
+		ColRequired:     make(map[string]bool),
+		EventsInsert:    make([]Event, 0),
+		EventsUpdate:    make([]Event, 0),
+		EventsDelete:    make([]Event, 0),
+		Version:         version,
 	}
 	result.DefineEvent(EventInsert, EventInsertDefault)
 	result.DefineEvent(EventUpdate, EventUpdateDefault)
 	result.DefineEvent(EventDelete, EventDeleteDefault)
-	if slices.Contains([]TypeModel{TpModel, TpCollection}, tp) {
-		result.DefineIndexField()
-		result.DefineSystemKeyField()
-	}
 	schema.Models[result.Name] = result
 	Jdb.Models[table] = result
-
-	return result
-}
-
-/**
-* NewTable
-* @param schema *Schema, name string, version int
-* @return *Model
-**/
-func NewTable(schema *Schema, name string, version int) *Model {
-	return newModel(schema, name, TpTable, version)
-}
-
-/**
-* NewModel
-* @param schema *Schema, name string, version int
-* @return *Model
-**/
-func NewModel(schema *Schema, name string, version int) *Model {
-	return newModel(schema, name, TpModel, version)
-}
-
-/**
-* NewCollection
-* @param schema *Schema, name string, version int
-* @return *Model
-**/
-func NewCollection(schema *Schema, name string, version int) *Model {
-	result := newModel(schema, name, TpCollection, version)
-	result.DefineModel()
 
 	return result
 }
@@ -249,7 +200,7 @@ func (s *Model) GetSerie() int64 {
 }
 
 /**
-* Deserialize
+* Load
 * @param data []byte
 * @return error
 **/
@@ -293,7 +244,7 @@ func (s *Model) Drop() {
 	}
 
 	for _, detail := range s.Details {
-		detail.Drop()
+		detail.With.Drop()
 	}
 
 	s.Db.DropModel(s)
@@ -332,47 +283,46 @@ func (s *Model) GetColumns(names ...string) []*Column {
 }
 
 /**
-* SetField
+* getField
 * @param name string
 * @return *Field
 **/
-func (s *Model) SetField(name string, isCreated bool) *Field {
+func (s *Model) getField(name string) *Field {
 	col := s.GetColumn(name)
-	if col == nil && !isCreated {
+	if col == nil && s.Integrity {
 		return nil
 	}
 
-	if col == nil {
-		col = s.DefineAtribute(name, TypeDataText)
+	if s.SourceField == nil {
+		return nil
 	}
+
+	col = s.DefineAtribute(name, TypeDataText)
 
 	return col.GetField()
 }
 
 /**
 * GetField
-* @param name string, isCreated bool
+* @param name string
 * @return *Field
 **/
-func (s *Model) GetField(name string, isCreated bool) *Field {
+func (s *Model) GetField(name string) *Field {
 	list := strs.Split(name, ".")
 	switch len(list) {
 	case 1:
-		isCreated = isCreated && s.SourceField != nil
-		return s.SetField(list[0], isCreated)
+		return s.getField(list[0])
 	case 2:
 		if s.Name != strs.Lowcase(list[0]) {
 			return nil
 		}
-		isCreated = s.SourceField != nil && !s.Integrity
-		return s.SetField(list[1], isCreated)
+		return s.getField(list[1])
 	case 3:
 		table := strs.Format(`%s.%s`, list[0], list[1])
 		if s.Table != strs.Lowcase(table) {
 			return nil
 		}
-		isCreated = s.SourceField != nil && !s.Integrity
-		return s.SetField(list[2], isCreated)
+		return s.getField(list[2])
 	default:
 		return nil
 	}
@@ -384,76 +334,9 @@ func (s *Model) GetField(name string, isCreated bool) *Field {
 **/
 func (s *Model) GetKeys() []*Column {
 	result := []*Column{}
-	for _, col := range s.Keys {
+	for _, col := range s.PrimaryKeys {
 		result = append(result, col)
 	}
 
 	return result
-}
-
-/**
-* New
-* @param data et.Json
-* @return et.Json
-**/
-func (s *Model) New(data et.Json) et.Json {
-	var result = &et.Json{}
-	defaultColValue := func(cols []*Column) {
-		for _, col := range cols {
-			if slices.Contains([]*Column{s.SystemKeyField, s.IndexField}, col) {
-				continue
-			}
-			switch col.TypeColumn {
-			case TpColumn:
-				if col != s.SourceField {
-					result.Set(col.Name, col.DefaultValue())
-				}
-			case TpAtribute:
-				result.Set(col.Name, col.DefaultValue())
-			case TpGenerated:
-				if col.FuncGenerated != nil {
-					col.FuncGenerated(col, result)
-				}
-			}
-		}
-	}
-
-	defaultDictoinary := func(mapa map[string][]*Dictionary, key string, value interface{}) map[string][]*Dictionary {
-		dictionaries := mapa[key]
-		if dictionaries == nil {
-			return nil
-		}
-
-		idx := slices.IndexFunc(dictionaries, func(e *Dictionary) bool { return e.Value == value })
-		if idx != -1 {
-			dictionary := dictionaries[idx]
-			defaultColValue(dictionary.Columns)
-			if len(dictionary.Dictionaries) != 0 {
-				return dictionary.Dictionaries
-			}
-		}
-
-		return mapa
-	}
-
-	defaultColValue(s.Columns)
-
-	dictionaries := s.Dictionaries
-	for key, value := range data {
-		dictionaries = defaultDictoinary(dictionaries, key, value)
-		if dictionaries == nil {
-			dictionaries = s.Dictionaries
-		}
-	}
-
-	for _, detail := range s.Details {
-		dtl := detail.New(et.Json{})
-		for _, key := range detail.Keys {
-			val := (*result)[key.Field]
-			dtl.Set(key.Fk(), val)
-		}
-		result.Set(detail.Name, dtl)
-	}
-
-	return *result
 }
