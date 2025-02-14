@@ -29,7 +29,6 @@ type Driver interface {
 	DropSchema(name string) error
 	// Model
 	LoadModel(model *Model) error
-	LoadByTable(model *Model) error
 	DropModel(model *Model) error
 	// Query
 	Exec(sql string, params ...any) error
@@ -37,6 +36,7 @@ type Driver interface {
 	Data(source, sql string, params ...any) (et.Items, error)
 	Select(ql *Ql) (et.Items, error)
 	Count(ql *Ql) (int, error)
+	Exists(ql *Ql) (bool, error)
 	// Command
 	Command(command *Command) (et.Items, error)
 	// Series

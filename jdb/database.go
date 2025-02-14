@@ -211,19 +211,6 @@ func (s *DB) LoadModel(model *Model) error {
 }
 
 /**
-* LoadByTable
-* @param model *Model
-* @return error
-**/
-func (s *DB) LoadByTable(model *Model) error {
-	if s.driver == nil {
-		return mistake.New(MSG_DRIVER_NOT_DEFINED)
-	}
-
-	return s.driver.LoadByTable(model)
-}
-
-/**
 * DropModel
 * @param model *Model
 **/
@@ -289,6 +276,19 @@ func (s *DB) Select(ql *Ql) (et.Items, error) {
 	}
 
 	return s.driver.Select(ql)
+}
+
+/**
+* Exists
+* @param ql *Ql
+* @return bool, error
+**/
+func (s *DB) Exists(ql *Ql) (bool, error) {
+	if s.driver == nil {
+		return false, mistake.New(MSG_DRIVER_NOT_DEFINED)
+	}
+
+	return s.driver.Exists(ql)
 }
 
 /**

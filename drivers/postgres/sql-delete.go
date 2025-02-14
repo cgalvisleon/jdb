@@ -6,9 +6,10 @@ import (
 )
 
 func (s *Postgres) sqlDelete(command *jdb.Command) string {
-	result := "WITH updated_rows AS (\n\tSELECT\n\t\t%s AS _data\n\tFROM %s\n\tWHERE %s\n)\nDELETE FROM %s\nWHERE %s\nRETURNING\njsonb_build_object(\n'before', (%s),\n'after', jsonb_build_object(),\n'%s', %s) AS %s;"
 	from := command.From
 	where := whereFilters(command.Wheres)
 	objects := s.sqlJsonObject(from)
-	return strs.Format(result, objects, from.Table, where, from.Table, where, objects, jdb.SYSID, jdb.SYSID, command.Source)
+
+	result := "WITH deleted_rows AS (\nSELECT\nctid,\n%s AS old_data\nFROM %s\nWHERE %s\n)\nDELETE FROM %s AS oc\nUSING deleted_rows dr\nWHERE oc.ctid = dr.ctid\nRETURNING\njsonb_build_object(\n'before', (dr.old_data),\n'after', jsonb_build_object()) AS result;"
+	return strs.Format(result, objects, from.Table, where, from.Table)
 }

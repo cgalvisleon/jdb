@@ -524,3 +524,19 @@ func (s *Model) DefineDictionary(key, value string) *Dictionary {
 
 	return result
 }
+
+/**
+* DefineModel
+* @return *Model
+**/
+func (s *Model) DefineModel() *Model {
+	s.DefineCreatedAtField()
+	s.DefineUpdatedAtField()
+	s.DefineStateField()
+	s.DefineSystemKeyField()
+	s.DefineKeyField()
+	s.DefineSourceField(s.Source)
+	s.DefineIndexField()
+
+	return s
+}

@@ -29,6 +29,11 @@ func (s *Postgres) exec(db *sql.DB, sql string, params ...any) (sql.Result, erro
 	return result, nil
 }
 
+/**
+* Exec
+* @param sql string, params ...any
+* @return error
+**/
 func (s *Postgres) Exec(sql string, params ...any) error {
 	_, err := s.exec(s.db, sql, params...)
 	if err != nil {
@@ -39,6 +44,11 @@ func (s *Postgres) Exec(sql string, params ...any) error {
 
 }
 
+/**
+* Query
+* @param sql string, params ...any
+* @return et.Items, error
+**/
 func (s *Postgres) Query(sql string, params ...any) (et.Items, error) {
 	rows, err := s.query(s.db, sql, params...)
 	if err != nil {
@@ -51,6 +61,11 @@ func (s *Postgres) Query(sql string, params ...any) (et.Items, error) {
 	return result, nil
 }
 
+/**
+* Data
+* @param source, sql string, params ...any
+* @return et.Items, error
+**/
 func (s *Postgres) Data(source, sql string, params ...any) (et.Items, error) {
 	rows, err := s.query(s.db, sql, params...)
 	if err != nil {
@@ -63,6 +78,11 @@ func (s *Postgres) Data(source, sql string, params ...any) (et.Items, error) {
 	return result, nil
 }
 
+/**
+* Select
+* @param ql *jdb.Ql
+* @return et.Items, error
+**/
 func (s *Postgres) Select(ql *jdb.Ql) (et.Items, error) {
 	ql.Sql = ""
 	ql.Sql = strs.Append(ql.Sql, s.sqlSelect(ql), "\n")
@@ -96,6 +116,11 @@ func (s *Postgres) Select(ql *jdb.Ql) (et.Items, error) {
 	return result, nil
 }
 
+/**
+* ExecDDL
+* @param id, sql string, params ...any
+* @return error
+**/
 func (s *Postgres) ExecDDL(id, sql string, params ...any) error {
 	err := s.Exec(sql, params...)
 	if err != nil {

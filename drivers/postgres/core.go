@@ -27,6 +27,9 @@ func (s *Postgres) CreateCore() error {
 	if err := s.defineKeyValue(); err != nil {
 		return err
 	}
+	if err := s.defineFlows(); err != nil {
+		return err
+	}
 
 	return nil
 }

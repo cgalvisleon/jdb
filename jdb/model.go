@@ -1,15 +1,12 @@
 package jdb
 
 import (
-	"encoding/gob"
 	"encoding/json"
-	"net/http"
 	"slices"
 	"strings"
 	"time"
 
 	"github.com/cgalvisleon/et/console"
-	"github.com/cgalvisleon/et/dt"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/strs"
 	"github.com/cgalvisleon/et/utility"
@@ -44,9 +41,18 @@ func TableName(schema, name string) string {
 	return strs.Format(`%s.%s`, strs.Lowcase(schema), strs.Lowcase(name))
 }
 
+type TypeModel int
+
+const (
+	TpTable TypeModel = iota
+	TpModel
+	TpCollection
+)
+
 type Model struct {
 	Db             *DB                      `json:"-"`
 	Schema         *Schema                  `json:"-"`
+	Type           TypeModel                `json:"type"`
 	CreatedAt      time.Time                `json:"created_date"`
 	UpdateAt       time.Time                `json:"update_date"`
 	Name           string                   `json:"name"`
@@ -74,7 +80,6 @@ type Model struct {
 	EventsUpdate   []Event                  `json:"-"`
 	EventsDelete   []Event                  `json:"-"`
 	Details        map[string]*Detail       `json:"-"`
-	Functions      map[string]*Function     `json:"-"`
 	Integrity      bool                     `json:"integrity"`
 	Log            int64                    `json:"log"`
 	History        *Model                   `json:"-"`
@@ -84,12 +89,11 @@ type Model struct {
 }
 
 /**
-* NewModel
-* @param schema *Schema
-* @param name string
+* newModel
+* @param schema *Schema, name string, tp TypeModel, version int
 * @return *Model
 **/
-func NewModel(schema *Schema, name string, version int) *Model {
+func newModel(schema *Schema, name string, tp TypeModel, version int) *Model {
 	if version == 0 {
 		version = 1
 	}
@@ -104,6 +108,7 @@ func NewModel(schema *Schema, name string, version int) *Model {
 	result = &Model{
 		Db:           schema.Db,
 		Schema:       schema,
+		Type:         tp,
 		CreatedAt:    now,
 		UpdateAt:     now,
 		Name:         name,
@@ -122,7 +127,6 @@ func NewModel(schema *Schema, name string, version int) *Model {
 		EventsUpdate: make([]Event, 0),
 		EventsDelete: make([]Event, 0),
 		Details:      make(map[string]*Detail),
-		Functions:    make(map[string]*Function),
 		Source:       SOURCE,
 		Integrity:    false,
 		HistoryLimit: 0,
@@ -131,7 +135,7 @@ func NewModel(schema *Schema, name string, version int) *Model {
 	result.DefineEvent(EventInsert, EventInsertDefault)
 	result.DefineEvent(EventUpdate, EventUpdateDefault)
 	result.DefineEvent(EventDelete, EventDeleteDefault)
-	if schema.Db.UseCore {
+	if slices.Contains([]TypeModel{TpModel, TpCollection}, tp) {
 		result.DefineIndexField()
 		result.DefineSystemKeyField()
 	}
@@ -141,8 +145,34 @@ func NewModel(schema *Schema, name string, version int) *Model {
 	return result
 }
 
-func init() {
-	gob.Register(&Column{})
+/**
+* NewTable
+* @param schema *Schema, name string, version int
+* @return *Model
+**/
+func NewTable(schema *Schema, name string, version int) *Model {
+	return newModel(schema, name, TpTable, version)
+}
+
+/**
+* NewModel
+* @param schema *Schema, name string, version int
+* @return *Model
+**/
+func NewModel(schema *Schema, name string, version int) *Model {
+	return newModel(schema, name, TpModel, version)
+}
+
+/**
+* NewCollection
+* @param schema *Schema, name string, version int
+* @return *Model
+**/
+func NewCollection(schema *Schema, name string, version int) *Model {
+	result := newModel(schema, name, TpCollection, version)
+	result.DefineModel()
+
+	return result
 }
 
 /**
@@ -252,18 +282,6 @@ func (s *Model) Init() error {
 	}
 
 	return s.Db.LoadModel(s)
-}
-
-/**
-* LoadByTable
-* @return error
-**/
-func (s *Model) LoadByTable() error {
-	if s.Db == nil {
-		return console.Alertm(MSG_DATABASE_IS_REQUIRED)
-	}
-
-	return s.Db.LoadByTable(s)
 }
 
 /**
@@ -438,69 +456,4 @@ func (s *Model) New(data et.Json) et.Json {
 	}
 
 	return *result
-}
-
-/**
-* MakeCollection
-* @return *Model
-**/
-func (s *Model) MakeCollection() *Model {
-	s.DefineCreatedAtField()
-	s.DefineUpdatedAtField()
-	s.DefineStateField()
-	s.DefineSystemKeyField()
-	s.DefineKeyField()
-	s.DefineSourceField(s.Source)
-	s.DefineIndexField()
-
-	return s
-}
-
-/**
-* Object
-* @param id string
-* @return *dt.Object
-**/
-func (s *Model) Object(id string) *dt.Object {
-	id = s.GenId(id)
-	key := dt.GenId(s.Name, id)
-	result := dt.NewObject(key)
-	result.Load()
-
-	return result
-}
-
-/**
-* ObjectUp
-* @param id string
-* @return *dt.Object
-**/
-func (s *Model) ObjectUp(id string, item et.Item) *dt.Object {
-	id = s.GenId(id)
-	key := dt.GenId(s.Name, id)
-	result := dt.NewObject(key)
-	if item.Ok {
-		return result
-	}
-
-	result.Up(item.Result)
-
-	return result
-}
-
-/**
-* UpsertDictionary
-* @param w http.ResponseWriter
-* @param r *http.Request
-**/
-func UpsertDictionary(w http.ResponseWriter, r *http.Request) {
-	// body, err := response.GetBody(r)
-	// if err != nil {
-	// 	response.HTTPError(w, r, http.StatusBadRequest, err.Error())
-	// 	return
-	// }
-
-	// model := body.Str("model")
-	// atrib := body.Json("atrib")
-
 }

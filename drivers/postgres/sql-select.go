@@ -49,6 +49,9 @@ func jsonbBuildObject(result, obj string) string {
 func (s *Postgres) sqlObject(selects []*jdb.QlSelect) string {
 	result := ""
 	l := 20
+	if s.version >= 13 {
+		l = 100
+	}
 	n := 0
 	obj := ""
 	var sourceField *jdb.Field

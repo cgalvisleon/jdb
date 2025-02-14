@@ -24,3 +24,7 @@ func (s *Base) Select(ql *jdb.Ql) (et.Items, error) {
 func (s *Base) Count(ql *jdb.Ql) (int, error) {
 	return 0, nil
 }
+
+func (s *Base) Exists(ql *jdb.Ql) (bool, error) {
+	return false, nil
+}

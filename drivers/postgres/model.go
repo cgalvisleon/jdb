@@ -8,7 +8,56 @@ import (
 	"github.com/cgalvisleon/jdb/jdb"
 )
 
+/**
+* loadByTable
+* @param model *jdb.Model
+* @return error
+**/
+func (s *Postgres) loadByTable(model *jdb.Model) error {
+	sql := `
+	SELECT
+	a.attname AS column_name, 
+	t.typname AS data_type,
+	CASE 
+		WHEN a.attlen > 0 THEN a.attlen
+		WHEN a.attlen = -1 AND a.atttypmod > 0 THEN a.atttypmod - 4
+		ELSE NULL
+	END AS size
+	FROM pg_catalog.pg_attribute a
+	JOIN pg_catalog.pg_class c ON a.attrelid = c.oid
+	JOIN pg_catalog.pg_namespace n ON c.relnamespace = n.oid
+	JOIN pg_catalog.pg_type t ON a.atttypid = t.oid
+	WHERE n.nspname = $1
+	AND c.relname = $2
+	AND a.attnum > 0
+	AND NOT a.attisdropped;`
+
+	items, err := s.Query(sql, model.Schema.Name, model.Name)
+	if err != nil {
+		return nil
+	}
+
+	for _, item := range items.Result {
+		name := item.Str("column_name")
+		dataType := item.Str("data_type")
+		size := item.Int("size")
+		typeData := s.strToTypeData(dataType, size)
+		model.DefineColumn(name, typeData)
+	}
+
+	return nil
+}
+
+/**
+* LoadModel
+* @param model *jdb.Model
+* @return error
+**/
 func (s *Postgres) LoadModel(model *jdb.Model) error {
+	if model.Type == jdb.TpTable {
+		return s.loadByTable(model)
+	}
+
 	current, err := s.getModel(model.Table)
 	if err != nil {
 		return err
@@ -71,33 +120,6 @@ func (s *Postgres) LoadModel(model *jdb.Model) error {
 	go s.upsertModel(model.Table, model.Version, serialized)
 
 	console.Logf(model.Db.Name, `Model %s %s`, model.Name, action)
-
-	return nil
-}
-
-/**
-* LoadByTable
-* @param model *jdb.Model
-* @return error
-**/
-func (s *Postgres) LoadByTable(model *jdb.Model) error {
-	sql := `
-	SELECT column_name, data_type, character_maximum_length, is_nullable, column_default
-	FROM information_schema.columns
-	WHERE table_schema = $1 
-  AND table_name = $2;`
-
-	items, err := s.Query(sql, model.Schema.Name, model.Name)
-	if err != nil {
-		return nil
-	}
-
-	for _, item := range items.Result {
-		name := item.Str("column_name")
-		dataType := item.Str("data_type")
-		typeData := s.strToTypeData(dataType)
-		model.DefineColumn(name, typeData)
-	}
 
 	return nil
 }

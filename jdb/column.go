@@ -1,6 +1,8 @@
 package jdb
 
 import (
+	"encoding/gob"
+
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/strs"
 	"github.com/cgalvisleon/et/timezone"
@@ -188,6 +190,10 @@ type Column struct {
 	Limit         int           `json:"limit"`
 	Language      string        `json:"language"`
 	Values        []interface{} `json:"values"`
+}
+
+func init() {
+	gob.Register(&Column{})
 }
 
 func newColumn(model *Model, name string, description string, typeColumn TypeColumn, typeData TypeData, def interface{}) *Column {

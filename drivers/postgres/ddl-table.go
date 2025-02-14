@@ -47,7 +47,8 @@ func (s *Postgres) typeData(tp jdb.TypeData) interface{} {
 	}
 }
 
-func (s *Postgres) strToTypeData(tp string) jdb.TypeData {
+func (s *Postgres) strToTypeData(tp string, lenght int) jdb.TypeData {
+	tp = strs.Uppcase(tp)
 	switch tp {
 	case "ARRAY":
 		return jdb.TypeDataArray
@@ -55,6 +56,16 @@ func (s *Postgres) strToTypeData(tp string) jdb.TypeData {
 		return jdb.TypeDataBool
 	case "INTEGER":
 		return jdb.TypeDataInt
+	case "INT4":
+		return jdb.TypeDataInt
+	case "VARCHAR":
+		if lenght == 80 {
+			return jdb.TypeDataKey
+		} else if lenght == 20 {
+			return jdb.TypeDataShortText
+		} else {
+			return jdb.TypeDataText
+		}
 	case "VARCHAR(80)":
 		return jdb.TypeDataKey
 	case "VARCHAR(20)":
@@ -65,6 +76,8 @@ func (s *Postgres) strToTypeData(tp string) jdb.TypeData {
 		return jdb.TypeDataNumber
 	case "DOUBLE PRECISION":
 		return jdb.TypeDataPrecision
+	case "NUMERIC":
+		return jdb.TypeDataNumber
 	case "JSONB":
 		return jdb.TypeDataObject
 	case "BIGINT":
@@ -121,7 +134,7 @@ func (s *Postgres) ddlTable(model *jdb.Model) string {
 	var columnsDef string
 	for _, column := range model.Columns {
 		if slices.Contains([]*jdb.Column{model.SystemKeyField, model.FullTextField}, column) {
-			if s.version > 13 {
+			if s.version >= 13 {
 				def := strs.Format("\n\t%s %s INVISIBLE DEFAULT %v", column.Name, s.typeData(column.TypeData), s.defaultValue(column.TypeData))
 				columnsDef = strs.Append(columnsDef, def, ",")
 			} else {

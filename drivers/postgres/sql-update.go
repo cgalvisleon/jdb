@@ -7,7 +7,6 @@ import (
 )
 
 func (s *Postgres) sqlUpdate(command *jdb.Command) string {
-	result := "WITH updated_rows AS (\nSELECT\n%s AS _data\nFROM %s\nWHERE %s)\nUPDATE %s SET\n%s\nWHERE %sRETURNING\njsonb_build_object(\n'before', (SELECT _data FROM updated_rows),\n'after', (%s),\n'%s', %s) AS %s;"
 	from := command.From
 	set := ""
 	atribs := ""
@@ -52,7 +51,6 @@ func (s *Postgres) sqlUpdate(command *jdb.Command) string {
 
 	where = whereFilters(command.Wheres)
 	objects := s.sqlJsonObject(from)
-	result = strs.Format(result, objects, from.Table, where, from.Table, set, where, objects, jdb.SYSID, jdb.SYSID, command.Source)
-
-	return result
+	result := "WITH updated_rows AS (\nSELECT\noc.ctid,\n%s AS old_data\nFROM %s AS oc\nWHERE %s)\nUPDATE %s AS oc SET\n%s\nFROM updated_rows ur\nWHERE oc.ctid = ur.ctid\nRETURNING\njsonb_build_object(\n'before', (ur.old_data),\n'after', (%s)) AS result;"
+	return strs.Format(result, objects, from.Table, where, from.Table, set, objects)
 }

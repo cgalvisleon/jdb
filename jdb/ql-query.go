@@ -49,6 +49,24 @@ func (s *Ql) GetDetails(data et.Json) et.Json {
 }
 
 /**
+* Exist
+* @return bool, error
+**/
+func (s *Ql) Exist() (bool, error) {
+	if s.Db == nil {
+		return false, mistake.New(MSG_DATABASE_NOT_FOUND)
+	}
+
+	s.prepare()
+	result, err := s.Db.Exists(s)
+	if err != nil {
+		return false, err
+	}
+
+	return result, nil
+}
+
+/**
 * First
 * @param n int
 * @return et.Items, error
@@ -163,24 +181,22 @@ func (s *Ql) List(page, rows int) (et.List, error) {
 }
 
 /**
-* Query
-* @param params []string
+* Search
+* @param search et.Json
 * @return Ql
 **/
-func (s *Ql) Query(params et.Json) (et.Items, error) {
-	joins := params.ArrayJson("join")
-	where := params.ArrayJson("where")
-	groups := params.ArrayStr("group_by")
-	havings := params.ArrayJson("having")
-	orders := params.ArrayJson("order_by")
-	limit := params.ValInt(1000, "limit")
-	page := params.ValInt(0, "page")
+func (s *Ql) Search(search et.Json) *Ql {
+	joins := search.ArrayJson("join")
+	where := search.ArrayJson("where")
+	groups := search.ArrayStr("group_by")
+	havings := search.ArrayJson("having")
+	orders := search.ArrayJson("order_by")
 
-	if params["data"] != nil {
-		data := params.ArrayStr("data")
+	if search["data"] != nil {
+		data := search.ArrayStr("data")
 		s.Data(data...)
 	} else {
-		selects := params.ArrayStr("select")
+		selects := search.ArrayStr("select")
 		s.Select(selects...)
 	}
 	s.setJoins(joins)
@@ -188,6 +204,20 @@ func (s *Ql) Query(params et.Json) (et.Items, error) {
 	s.setGroupBy(groups...)
 	s.setHavings(havings)
 	s.setOrders(orders)
+
+	return s
+}
+
+/**
+* Query
+* @param params []string
+* @return Ql
+**/
+func (s *Ql) Query(params et.Json) (et.Items, error) {
+	s.Search(params)
+	limit := params.ValInt(1000, "limit")
+	page := params.ValInt(0, "page")
+
 	s.setLimit(limit)
 	s.setPage(page)
 	s.Db.Select(s)
