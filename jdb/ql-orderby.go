@@ -2,12 +2,11 @@ package jdb
 
 import (
 	"github.com/cgalvisleon/et/et"
-	"github.com/cgalvisleon/et/strs"
 )
 
 type QlOrder struct {
-	Field  *Field
-	Sorted bool
+	Asc  []*Field
+	Desc []*Field
 }
 
 /**
@@ -18,13 +17,13 @@ type QlOrder struct {
 **/
 func (s *Ql) OrderBy(sorted bool, columns ...string) *Ql {
 	for _, col := range columns {
-		field := s.GetField(col, true)
+		field := s.getField(col)
 		if field != nil {
-			order := &QlOrder{
-				Field:  field,
-				Sorted: sorted,
+			if sorted {
+				s.Orders.Asc = append(s.Orders.Asc, field)
+			} else {
+				s.Orders.Desc = append(s.Orders.Desc, field)
 			}
-			s.Orders = append(s.Orders, order)
 		}
 	}
 
@@ -54,11 +53,16 @@ func (s *Ql) OrderByDesc(columns ...string) *Ql {
 * @param orders []et.Json
 * @return *Ql
 **/
-func (s *Ql) setOrders(orders []et.Json) *Ql {
-	for _, item := range orders {
-		sorted := item.Bool("sorted")
-		columns := item.ArrayStr("columns")
-		s.OrderBy(sorted, columns...)
+func (s *Ql) setOrders(orders et.Json) *Ql {
+	for key, _ := range orders {
+		switch key {
+		case "asc":
+			val := orders.ArrayStr(key)
+			s.OrderByAsc(val...)
+		case "desc":
+			val := orders.ArrayStr(key)
+			s.OrderByDesc(val...)
+		}
 	}
 
 	return s
@@ -68,11 +72,18 @@ func (s *Ql) setOrders(orders []et.Json) *Ql {
 * listOrders
 * @return []string
 **/
-func (s *Ql) listOrders() []string {
-	result := []string{}
-	for _, sel := range s.Orders {
-		result = append(result, strs.Format(`%s, SORTED:%v`, sel.Field.AsField(), sel.Sorted))
+func (s *Ql) listOrders() et.Json {
+	asc := []string{}
+	desc := []string{}
+	for _, sel := range s.Orders.Asc {
+		asc = append(asc, sel.AsField())
+	}
+	for _, sel := range s.Orders.Desc {
+		desc = append(desc, sel.AsField())
 	}
 
-	return result
+	return et.Json{
+		"asc":  asc,
+		"desc": desc,
+	}
 }

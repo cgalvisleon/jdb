@@ -22,13 +22,12 @@ type Ql struct {
 	Details    []*Field   `json:"details"`
 	Groups     []*Field   `json:"group_bys"`
 	Havings    *QlHaving  `json:"havings"`
-	Orders     []*QlOrder `json:"orders"`
+	Orders     *QlOrder   `json:"orders"`
 	Sheet      int        `json:"sheet"`
 	Offset     int        `json:"offset"`
 	Limit      int        `json:"limit"`
 	Sql        string     `json:"sql"`
 	Result     et.Items   `json:"result"`
-	index      int        `json:"-"`
 }
 
 /**
@@ -63,48 +62,27 @@ func (s *Ql) addFrom(m *Model) *QlFrom {
 }
 
 /**
-* getFrom
-* @param v string
-* @return *QlFrom
-**/
-func (s *Ql) getFrom(v string) *QlFrom {
-	for _, from := range s.Froms.Froms {
-		if from.As == v && from.Model.Name == v {
-			return from
-		}
-	}
-
-	return nil
-}
-
-/**
-* GetField
+* getField
 * @param name string bool
 * @return *Field
 **/
-func (s *Ql) GetField(name string) *Field {
-	var field *Field
-	for _, from := range s.Froms.Froms {
-		field = from.GetField(name)
-		if field != nil {
-			field.As = from.As
-			return field
+func (s *Ql) getField(name string) *Field {
+	findField := func(name string) *Field {
+		for _, from := range s.Froms.Froms {
+			field := from.getField(name)
+			if field != nil {
+				field.As = from.As
+				return field
+			}
 		}
+
+		return nil
 	}
 
-	return nil
-}
-
-/**
-* GetAgregation
-* @params name string
-* @return *Field
-**/
-func (s *Ql) GetAgregation(name string) *Field {
 	for tp, ag := range agregations {
 		if ag.re.MatchString(name) {
-			name = strs.ReplaceAll(name, []string{ag.Agregation, "(", ")"}, "")
-			field := s.GetField(name)
+			n := strs.ReplaceAll(name, []string{ag.Agregation, "(", ")"}, "")
+			field := findField(n)
 			if field != nil {
 				field.Agregation = tp
 				return field
@@ -112,5 +90,18 @@ func (s *Ql) GetAgregation(name string) *Field {
 		}
 	}
 
-	return nil
+	return findField(name)
+}
+
+/**
+* asField
+* @param field *Field
+* @return string
+**/
+func (s *Ql) asField(field *Field) string {
+	if len(s.Froms.Froms) <= 1 {
+		return field.Name
+	}
+
+	return strs.Format("%s.%s", field.Table, field.Name)
 }

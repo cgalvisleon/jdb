@@ -2,27 +2,26 @@ package jdb
 
 import (
 	"github.com/cgalvisleon/et/et"
-	"github.com/cgalvisleon/et/strs"
 )
 
 type TypeJoin int
 
 const (
-	JoinInner TypeJoin = iota
-	JoinLeft
-	JoinRight
-	JoinFull
+	InnerJoin TypeJoin = iota
+	LeftJoin
+	RightJoin
+	FullJoin
 )
 
 func (s TypeJoin) Str() string {
 	switch s {
-	case JoinInner:
+	case InnerJoin:
 		return "INNER JOIN"
-	case JoinLeft:
+	case LeftJoin:
 		return "LEFT JOIN"
-	case JoinRight:
+	case RightJoin:
 		return "RIGHT JOIN"
-	case JoinFull:
+	case FullJoin:
 		return "FULL JOIN"
 	}
 
@@ -30,71 +29,13 @@ func (s TypeJoin) Str() string {
 }
 
 type QlJoin struct {
-	QlWhere
+	*QlWhere
 	Ql       *Ql
 	TypeJoin TypeJoin
 	With     *QlFrom
 }
 
 type QlJoins []*QlJoin
-
-/**
-* QlJoin
-* @param m *Model
-* @return *Ql
-**/
-func (s *Ql) Join(m *Model) *QlJoin {
-	with := s.addFrom(m)
-	if with == nil {
-		return nil
-	}
-
-	result := &QlJoin{
-		Ql:       s,
-		TypeJoin: JoinInner,
-		With:     with,
-	}
-
-	s.Joins = append(s.Joins, result)
-
-	return result
-}
-
-/**
-* LeftJoin
-* @param m *Model
-* @return *Ql
-**/
-func (s *Ql) LeftJoin(m *Model) *QlJoin {
-	result := s.Join(m)
-	result.TypeJoin = JoinLeft
-
-	return result
-}
-
-/**
-* RightJoin
-* @param m *Model
-* @return *Ql
-**/
-func (s *Ql) RightJoin(m *Model) *QlJoin {
-	result := s.Join(m)
-	result.TypeJoin = JoinRight
-
-	return result
-}
-
-/**
-* FullJoin
-* @param m *Model
-* @return *Ql
-**/
-func (s *Ql) FullJoin(m *Model) *QlJoin {
-	result := s.Join(m)
-	result.TypeJoin = JoinFull
-
-	return result
-}
 
 /**
 * On
@@ -104,14 +45,13 @@ func (s *Ql) FullJoin(m *Model) *QlJoin {
 func (s *QlJoin) On(val interface{}) *QlJoin {
 	switch v := val.(type) {
 	case string:
-		field := s.Ql.GetField(v)
+		field := s.Ql.getField(v)
 		if field != nil {
-			s.Where(field)
+			s.where(field)
 			return s
 		}
 	}
 
-	s.Where(val)
 	return s
 }
 
@@ -123,14 +63,13 @@ func (s *QlJoin) On(val interface{}) *QlJoin {
 func (s *QlJoin) And(val interface{}) *QlJoin {
 	switch v := val.(type) {
 	case string:
-		field := s.Ql.GetField(v)
+		field := s.Ql.getField(v)
 		if field != nil {
-			s.And(field)
+			s.and(field)
 			return s
 		}
 	}
 
-	s.And(val)
 	return s
 }
 
@@ -142,14 +81,13 @@ func (s *QlJoin) And(val interface{}) *QlJoin {
 func (s *QlJoin) Or(val interface{}) *QlJoin {
 	switch v := val.(type) {
 	case string:
-		field := s.Ql.GetField(v)
+		field := s.Ql.getField(v)
 		if field != nil {
-			s.Or(field)
+			s.or(field)
 			return s
 		}
 	}
 
-	s.Or(val)
 	return s
 }
 
@@ -172,21 +110,86 @@ func (s *QlJoin) Data(fields ...string) *Ql {
 }
 
 /**
+* QlJoin
+* @param m *Model
+* @return *Ql
+**/
+func (s *Ql) Join(m *Model) *QlJoin {
+	with := s.addFrom(m)
+	if with == nil {
+		return nil
+	}
+
+	result := &QlJoin{
+		Ql:       s,
+		TypeJoin: InnerJoin,
+		With:     with,
+	}
+
+	s.Joins = append(s.Joins, result)
+
+	return result
+}
+
+/**
+* LeftJoin
+* @param m *Model
+* @return *Ql
+**/
+func (s *Ql) LeftJoin(m *Model) *QlJoin {
+	result := s.Join(m)
+	result.TypeJoin = LeftJoin
+
+	return result
+}
+
+/**
+* RightJoin
+* @param m *Model
+* @return *Ql
+**/
+func (s *Ql) RightJoin(m *Model) *QlJoin {
+	result := s.Join(m)
+	result.TypeJoin = RightJoin
+
+	return result
+}
+
+/**
+* FullJoin
+* @param m *Model
+* @return *Ql
+**/
+func (s *Ql) FullJoin(m *Model) *QlJoin {
+	result := s.Join(m)
+	result.TypeJoin = FullJoin
+
+	return result
+}
+
+/**
+* SetValue
+* @param val et.Json
+* @return *QlJoin
+**/
+func (s *QlJoin) SetValue(val et.Json) *QlJoin {
+	s.setValue(val)
+
+	return s
+}
+
+/**
 * SetJoins
 * @param joins []et.Json
 **/
 func (s *Ql) setJoins(joins []et.Json) *Ql {
-	for _, val := range joins {
-		from := val.Str("from")
-		model := Jdb.Models[from]
-		if model != nil {
-			on := val.Json("on")
-			key := strs.Format(`%s.%s`, from, on.Str("key"))
-			to := on.Str("to")
-			foreign := on.Str("foreignKey")
-			foreignKey := strs.Format(`%s.%s`, to, foreign)
-			s.Join(model).On(key).
-				Eq(foreignKey)
+	for _, join := range joins {
+		for key, _ := range join {
+			with := GetModel(key)
+			if with != nil {
+				val := join.Json(key)
+				s.Join(with).SetValue(val)
+			}
 		}
 	}
 
@@ -195,15 +198,15 @@ func (s *Ql) setJoins(joins []et.Json) *Ql {
 
 /**
 * listJoins
-* @return []string
+* @return []et.Json
 **/
-func (s *Ql) listJoins() []string {
-	result := []string{}
+func (s *Ql) listJoins() []et.Json {
+	result := []et.Json{}
 	for _, join := range s.Joins {
-		result = append(result, strs.Format(`%s %s AS %s`, join.TypeJoin.Str(), join.With.Table, join.With.As))
-		for _, where := range join.Wheres {
-			result = append(result, strs.Format(`%s`, where.String()))
+		item := et.Json{
+			join.With.Name: join.listWheres(s.asField),
 		}
+		result = append(result, item)
 	}
 
 	return result

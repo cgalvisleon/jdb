@@ -5,14 +5,12 @@ package jdb
 * @return *Ql
 **/
 func (s *Ql) prepare() *Ql {
-	for _, frm := range s.Froms {
-		frm.SetSelectBySelects(&s.Selects, &s.Details)
-	}
-
-	isEmpty := len(s.Selects)+len(s.Details) == 0
+	isEmpty := len(s.Selects) == 0
 	if isEmpty {
-		frm := s.Froms[0]
-		frm.SetSelectByColumns(&s.Selects, &s.Details)
+		frm := s.Froms.Froms[0]
+		for _, col := range frm.Columns {
+			s.setSelect(col.GetField())
+		}
 	}
 
 	return s

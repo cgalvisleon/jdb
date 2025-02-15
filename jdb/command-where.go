@@ -10,7 +10,7 @@ import "github.com/cgalvisleon/et/et"
 func (s *Command) Where(val interface{}) *Command {
 	switch v := val.(type) {
 	case string:
-		field := s.From.GetField(v, false)
+		field := s.From.GetField(v)
 		if field != nil {
 			s.where = NewQlWhere(field)
 			return s

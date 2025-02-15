@@ -182,7 +182,7 @@ type GeneratedFunction func(col *Column, before, after *et.Json)
 type Relation struct {
 	With  *Model  `json:"with"`
 	Fk    *Column `json:"fk"`
-	Limit int     `json:"rows"`
+	Limit int64   `json:"rows"`
 }
 
 type Column struct {
@@ -196,7 +196,7 @@ type Column struct {
 	Max               float64           `json:"max"`
 	Min               float64           `json:"min"`
 	Hidden            bool              `json:"hidden"`
-	Relation          *Relation         `json:"detail"`
+	Detail            *Relation         `json:"detail"`
 	FullText          *FullText         `json:"columns"`
 	GeneratedFunction GeneratedFunction `json:"-"`
 	Values            []interface{}     `json:"values"`

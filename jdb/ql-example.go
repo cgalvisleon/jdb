@@ -1,15 +1,10 @@
 package jdb
 
 func example() {
-
-	From("table1.A").
-		Join("table2.B").On("A.id").Eq("B.id").
-		And("table3.id").Eq("1").
-		Or("table3.id").Eq("2").
-		LeftJoin("table4.B").On("A.id").Eq("C.id").
-		RightJoin("table5.B").On("A.id").Eq("C.id").
-		Select("A.id", "B.id").
+	ejemplo := NewModel(nil, "ejemplo", 1)
+	From(ejemplo).
 		Where("table1.id").Eq(1).
+		Select("A.id", "B.id").
 		And("table2.id").Eq(2).
 		All()
 

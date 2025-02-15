@@ -118,19 +118,35 @@ func (s *Field) Define() et.Json {
 	}
 }
 
+func (s *Field) SetAgregation(agr TypeAgregation) {
+	s.Agregation = agr
+	switch agr {
+	case AgregationSum:
+		s.Alias = strs.Format("sum_%s", s.Name)
+	case AgregationCount:
+		s.Alias = strs.Format("count_%s", s.Name)
+	case AgregationAvg:
+		s.Alias = strs.Format("avg_%s", s.Name)
+	case AgregationMin:
+		s.Alias = strs.Format("min_%s", s.Name)
+	case AgregationMax:
+		s.Alias = strs.Format("max_%s", s.Name)
+	}
+}
+
 /**
-* TableName
+* AsTable
 * @return string
 **/
-func (s *Field) TableName() string {
+func (s *Field) AsTable() string {
 	return strs.Format("%s.%s", s.Table, s.Name)
 }
 
 /**
-* TableField
+* AsField
 * @return string
 **/
-func (s *Field) TableField() string {
+func (s *Field) AsField() string {
 	result := ""
 	result = strs.Append(result, s.Schema, "")
 	result = strs.Append(result, s.Table, ".")
@@ -141,16 +157,13 @@ func (s *Field) TableField() string {
 }
 
 /**
-* AsField
+* AsName
 * @return string
 **/
-func (s *Field) AsField() string {
-	result := ""
-	result = strs.Append(result, s.As, "")
-	if s.Source != s.Name {
-		result = strs.Append(result, s.Source, ".")
+func (s *Field) AsName() string {
+	if s.As != "" {
+		return strs.Format("%s.%s", s.As, s.Name)
 	}
-	result = strs.Append(result, s.Name, ".")
 
-	return result
+	return s.Name
 }

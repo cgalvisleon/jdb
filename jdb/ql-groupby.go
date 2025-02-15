@@ -1,9 +1,5 @@
 package jdb
 
-import (
-	"github.com/cgalvisleon/et/strs"
-)
-
 /**
 * GroupBy
 * @param fields ...string
@@ -11,9 +7,9 @@ import (
 **/
 func (s *Ql) GroupBy(fields ...string) *Ql {
 	for _, field := range fields {
-		sel := s.GetSelect(field)
-		if sel != nil {
-			s.Groups = append(s.Groups, sel)
+		field := s.getField(field)
+		if field != nil {
+			s.Groups = append(s.Groups, field)
 		}
 	}
 
@@ -35,8 +31,9 @@ func (s *Ql) setGroupBy(fields ...string) *Ql {
 **/
 func (s *Ql) listGroups() []string {
 	result := []string{}
-	for _, sel := range s.Groups {
-		result = append(result, strs.Format(`%s, %s`, sel.Field.TableField(), sel.Field.Caption()))
+	for _, field := range s.Groups {
+		def := s.asField(field)
+		result = append(result, def)
 	}
 
 	return result

@@ -1,8 +1,25 @@
 package jdb
 
 import (
+	"slices"
+
 	"github.com/cgalvisleon/et/et"
 )
+
+/**
+* setSelect
+* @param field *Field
+* @return *Ql
+**/
+func (s *Ql) setSelect(field *Field) *Ql {
+	if field != nil {
+		s.Selects = append(s.Selects, field)
+		if field.Column != nil && !slices.Contains([]TypeColumn{}, field.Column.TypeColumn) {
+			s.Details = append(s.Details, field)
+		}
+	}
+	return s
+}
 
 /**
 * Select
@@ -11,10 +28,8 @@ import (
 **/
 func (s *Ql) Select(fields ...string) *Ql {
 	for _, field := range fields {
-		field := s.GetField(field)
-		if field != nil {
-			s.Selects = append(s.Selects, field)
-		}
+		field := s.getField(field)
+		s.setSelect(field)
 	}
 
 	return s

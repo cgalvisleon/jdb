@@ -89,28 +89,28 @@ func EventHistoryDefault(model *Model, before et.Json, after et.Json) error {
 		return nil
 	}
 
-	if history.Model == nil {
+	if history.With == nil {
 		return nil
 	}
 
-	key := before.ValStr("", history.Pk.Name)
+	key := before.ValStr("", history.Fk.Name)
 	if key == "" {
 		return nil
 	}
 
-	key = strs.Format("%s:%s", "history", key)
-	index := model.Db.GetSerie(key)
+	tag := strs.Format("%s:%s", "history", key)
+	index := model.Db.GetSerie(tag)
 	before[HISTORY_INDEX] = index
-	go history.Model.Insert(before).
+	go history.With.Insert(before).
 		Exec()
 
-	limit := index - model.History.Limit
+	limit := index - history.Limit
 	if limit <= 0 {
 		return nil
 	}
 
-	go history.Model.Delete().
-		Where(history.Pk.Name).Eq(key).
+	go history.With.Delete().
+		Where(history.Fk).Eq(key).
 		And(HISTORY_INDEX).LessEq(limit).
 		Exec()
 

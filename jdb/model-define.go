@@ -169,9 +169,10 @@ func (s *Model) DefineForeignKey(name string, with *Model) *Column {
 
 	pk := with.PrimaryKeys[0]
 	result := s.DefineColumn(name, pk.TypeData)
-	result.Relation = &Relation{
-		With: with,
-		Fk:   pk,
+	result.Detail = &Relation{
+		With:  with,
+		Fk:    pk,
+		Limit: -1,
 	}
 	s.DefineIndex(true, result.Name)
 	idx := slices.IndexFunc(s.ForeignKeys, func(e *Column) bool { return e == result })
@@ -346,7 +347,7 @@ func (s *Model) DefineRelation(name, relatedTo string) *Relation {
 		Fk:    pk,
 		Limit: -1,
 	}
-	col.Relation = result
+	col.Detail = result
 	s.Relations[name] = result
 
 	return result
@@ -377,7 +378,7 @@ func (s *Model) DefineDetail(name string) *Relation {
 		Fk:    pk,
 		Limit: -1,
 	}
-	col.Relation = result
+	col.Detail = result
 	s.Details[name] = result
 
 	return result
@@ -388,7 +389,7 @@ func (s *Model) DefineDetail(name string) *Relation {
 * @param limit int64
 * @return *Relation
 **/
-func (s *Model) DefineHistory(limit int) *Relation {
+func (s *Model) DefineHistory(limit int64) *Relation {
 	result := s.DefineDetail("historical")
 	result.Limit = limit
 

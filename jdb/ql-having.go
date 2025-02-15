@@ -2,67 +2,47 @@ package jdb
 
 import (
 	"github.com/cgalvisleon/et/et"
-	"github.com/cgalvisleon/et/strs"
 )
 
 type QlHaving struct {
-	*QlFilter
+	*QlWhere
 	Ql *Ql
 }
 
 /**
 * Having
-* @param field string
-* @return *QlWhere
+* @param val interface{}
+* @return *QlHaving
 **/
-func (s *Ql) Having(field string) *QlHaving {
-	return s.Havings.on(field)
-}
-
-/**
-* Having
-* @param field string
-* @return *QlWhere
-**/
-func (s *QlHaving) on(field string) *QlHaving {
-	sel := s.Ql.GetSelect(field)
-	if sel != nil {
-		s.where = NewQlWhere(sel)
-	} else {
-		s.where = NewQlWhere(field)
+func (s *QlHaving) And(val interface{}) *QlHaving {
+	switch v := val.(type) {
+	case string:
+		field := s.Ql.getField(v)
+		if field != nil {
+			s.and(field)
+			return s
+		}
 	}
 
 	return s
 }
 
 /**
-* And
-* @param field string
-* @return *QlFilter
-**/
-func (s *QlHaving) And(val interface{}) *QlFilter {
-	field, ok := val.(string)
-	if ok {
-		result := s.on(field)
-		result.where.Conector = And
-	}
-
-	return s.QlFilter
-}
-
-/**
 * Or
-* @param field string
-* @return *QlFilter
+* @param val interface{}
+* @return *QlHaving
 **/
-func (s *QlHaving) Or(val interface{}) *QlFilter {
-	field, ok := val.(string)
-	if ok {
-		result := s.on(field)
-		result.where.Conector = Or
+func (s *QlHaving) Or(val interface{}) *QlHaving {
+	switch v := val.(type) {
+	case string:
+		field := s.Ql.getField(v)
+		if field != nil {
+			s.or(field)
+			return s
+		}
 	}
 
-	return s.QlFilter
+	return s
 }
 
 /**
@@ -71,7 +51,7 @@ func (s *QlHaving) Or(val interface{}) *QlFilter {
 * @return *Ql
 **/
 func (s *QlHaving) Select(fields ...string) *Ql {
-	return s.Ql
+	return s.Ql.Select(fields...)
 }
 
 /**
@@ -80,43 +60,33 @@ func (s *QlHaving) Select(fields ...string) *Ql {
 * @return *Ql
 **/
 func (s *QlHaving) Data(fields ...string) *Ql {
-	return s.Ql
+	return s.Ql.Data(fields...)
 }
 
 /**
-* Exec
-* @return et.Items, error
+* Having
+* @param field string
+* @return *QlWhere
 **/
-func (s *QlHaving) Exec() (et.Items, error) {
-	return et.Items{}, nil
-}
+func (s *Ql) Having(val string) *QlHaving {
+	field := s.getField(val)
+	if field != nil {
+		s.Havings.where(field)
+	}
 
-/**
-* One
-* @return et.Item, error
-**/
-func (s *QlHaving) One() (et.Item, error) {
-	return et.Item{}, nil
+	return s.Havings
 }
 
 /**
 * setHavings
-* @param havings []et.Json
+* @param havings et.Json
 * @return *Ql
 **/
-func (s *Ql) setHavings(havings []et.Json) *Ql {
-	for _, val := range havings {
-		from := val.Str("from")
-		model := Jdb.Models[from]
-		if model != nil {
-			on := val.Json("on")
-			key := strs.Format(`%s.%s`, from, on.Str("key"))
-			to := on.Str("to")
-			foreign := on.Str("foreignKey")
-			foreignKey := strs.Format(`%s.%s`, to, foreign)
-			s.Join(model).On(key).
-				Eq(foreignKey)
-		}
+func (s *Ql) setHavings(havings et.Json) *Ql {
+	for key, _ := range havings {
+		val := havings.Json(key)
+		s.Having(key).
+			setValue(val)
 	}
 
 	return s
@@ -124,13 +94,8 @@ func (s *Ql) setHavings(havings []et.Json) *Ql {
 
 /**
 * listHavings
-* @return []string
+* @return et.Json
 **/
-func (s *Ql) listHavings() []string {
-	result := []string{}
-	for _, val := range s.Havings.Wheres {
-		result = append(result, val.String())
-	}
-
-	return result
+func (s *Ql) listHavings() et.Json {
+	return s.Havings.listWheres(s.asField)
 }
