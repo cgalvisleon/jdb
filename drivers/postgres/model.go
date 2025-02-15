@@ -9,11 +9,11 @@ import (
 )
 
 /**
-* loadByTable
+* LoadTable
 * @param model *jdb.Model
 * @return error
 **/
-func (s *Postgres) loadByTable(model *jdb.Model) error {
+func (s *Postgres) LoadTable(model *jdb.Model) (bool, error) {
 	sql := `
 	SELECT
 	a.attname AS column_name, 
@@ -34,7 +34,7 @@ func (s *Postgres) loadByTable(model *jdb.Model) error {
 
 	items, err := s.Query(sql, model.Schema.Name, model.Name)
 	if err != nil {
-		return nil
+		return false, err
 	}
 
 	for _, item := range items.Result {
@@ -45,7 +45,7 @@ func (s *Postgres) loadByTable(model *jdb.Model) error {
 		model.DefineColumn(name, typeData)
 	}
 
-	return nil
+	return items.Ok, nil
 }
 
 /**
@@ -54,10 +54,6 @@ func (s *Postgres) loadByTable(model *jdb.Model) error {
 * @return error
 **/
 func (s *Postgres) LoadModel(model *jdb.Model) error {
-	if model.Type == jdb.TpTable {
-		return s.loadByTable(model)
-	}
-
 	current, err := s.getModel(model.Table)
 	if err != nil {
 		return err
@@ -66,12 +62,7 @@ func (s *Postgres) LoadModel(model *jdb.Model) error {
 	var action string
 	var sql string
 	version := current.Int("version")
-	exists, err := s.tableExists(model.Schema.Name, model.Table)
-	if err != nil {
-		return err
-	}
-
-	if exists {
+	if model.IsCreated {
 		if version != model.Version {
 			action = "mutate"
 			bt, err := current.Byte("model")
@@ -105,12 +96,12 @@ func (s *Postgres) LoadModel(model *jdb.Model) error {
 		return err
 	}
 
-	if model.Show {
+	if model.IsDebug {
 		console.Debug(sql)
 	}
 
 	for _, detail := range model.Details {
-		err = s.LoadModel(detail.Model)
+		err = s.LoadModel(detail.With)
 		if err != nil {
 			model.Drop()
 			return err
@@ -131,7 +122,7 @@ func (s *Postgres) LoadModel(model *jdb.Model) error {
 **/
 func (s *Postgres) DropModel(model *jdb.Model) error {
 	for _, detail := range model.Details {
-		err := s.DropModel(detail.Model)
+		err := s.DropModel(detail.With)
 		if err != nil {
 			return err
 		}

@@ -71,8 +71,9 @@ type Model struct {
 	EventsUpdate    []Event              `json:"-"`
 	EventsDelete    []Event              `json:"-"`
 	Integrity       bool                 `json:"integrity"`
+	IsCreated       bool                 `json:"is_created"`
 	Version         int                  `json:"version"`
-	Show            bool                 `json:"-"`
+	IsDebug         bool                 `json:"-"`
 }
 
 /**
@@ -122,6 +123,7 @@ func NewModel(schema *Schema, name string, version int) *Model {
 	result.DefineEvent(EventDelete, EventDeleteDefault)
 	schema.Models[result.Name] = result
 	Jdb.Models[table] = result
+	result.IsCreated, _ = result.Db.LoadTable(result)
 
 	return result
 }
@@ -184,7 +186,7 @@ func (s *Model) Describe() et.Json {
 func (s *Model) Serialized() ([]byte, error) {
 	obj := s.Describe()
 
-	if s.Show {
+	if s.IsDebug {
 		console.Debug(obj.ToString())
 	}
 
@@ -218,7 +220,7 @@ func (s *Model) Load(data []byte) error {
 * @return *Model
 **/
 func (s *Model) Debug() *Model {
-	s.Show = true
+	s.IsDebug = true
 
 	return s
 }

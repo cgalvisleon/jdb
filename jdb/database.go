@@ -198,6 +198,19 @@ func (s *DB) CreateCore() error {
 }
 
 /**
+* LoadTable
+* @param model *Model
+* @return error
+**/
+func (s *DB) LoadTable(model *Model) (bool, error) {
+	if s.driver == nil {
+		return false, mistake.New(MSG_DRIVER_NOT_DEFINED)
+	}
+
+	return s.driver.LoadTable(model)
+}
+
+/**
 * LoadModel
 * @param model *Model
 * @return error

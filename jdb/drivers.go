@@ -28,6 +28,7 @@ type Driver interface {
 	CreateSchema(name string) error
 	DropSchema(name string) error
 	// Model
+	LoadTable(model *Model) (bool, error)
 	LoadModel(model *Model) error
 	DropModel(model *Model) error
 	// Query
