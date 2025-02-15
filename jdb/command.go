@@ -22,6 +22,7 @@ type Command struct {
 	From    *Model
 	Data    []et.Json
 	Values  []map[string]*Field
+	Undo    et.Json
 	Sql     string
 	Result  et.Items
 }
@@ -40,6 +41,7 @@ func NewCommand(model *Model, data []et.Json, command TypeCommand) *Command {
 		From:    model,
 		QlWhere: NewQlWhere(),
 		Data:    data,
+		Undo:    et.Json{},
 		Values:  []map[string]*Field{},
 		Result:  et.Items{},
 	}

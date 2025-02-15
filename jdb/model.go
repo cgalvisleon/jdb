@@ -334,9 +334,7 @@ func (s *Model) GetField(name string) *Field {
 **/
 func (s *Model) GetKeys() []*Column {
 	result := []*Column{}
-	for _, col := range s.PrimaryKeys {
-		result = append(result, col)
-	}
+	result = append(result, s.PrimaryKeys...)
 
 	return result
 }

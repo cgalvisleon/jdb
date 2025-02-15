@@ -440,7 +440,7 @@ func (s *QlWhere) setValue(val et.Json) *QlWhere {
 func (s *QlWhere) setWheres(wheres et.Json, findField func(name string) *Field) *QlWhere {
 	and := func(vals []et.Json) {
 		for _, val := range vals {
-			for key, _ := range val {
+			for key := range val {
 				field := findField(key)
 				if field != nil {
 					s.and(field)
@@ -452,7 +452,7 @@ func (s *QlWhere) setWheres(wheres et.Json, findField func(name string) *Field) 
 
 	or := func(vals []et.Json) {
 		for _, val := range vals {
-			for key, _ := range val {
+			for key := range val {
 				field := findField(key)
 				if field != nil {
 					s.or(field)
@@ -470,14 +470,15 @@ func (s *QlWhere) setWheres(wheres et.Json, findField func(name string) *Field) 
 		}
 	}
 
-	for key, _ := range wheres {
-		if key == "and" {
+	for key := range wheres {
+		switch key {
+		case "and":
 			vals := wheres.ArrayJson(key)
 			and(vals)
-		} else if key == "or" {
+		case "or":
 			vals := wheres.ArrayJson(key)
 			or(vals)
-		} else {
+		default:
 			val := wheres.Json(key)
 			where(key, val)
 		}

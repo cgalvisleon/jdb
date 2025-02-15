@@ -54,7 +54,7 @@ func (s *Ql) OrderByDesc(columns ...string) *Ql {
 * @return *Ql
 **/
 func (s *Ql) setOrders(orders et.Json) *Ql {
-	for key, _ := range orders {
+	for key := range orders {
 		switch key {
 		case "asc":
 			val := orders.ArrayStr(key)

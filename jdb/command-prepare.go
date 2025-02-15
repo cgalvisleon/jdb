@@ -35,6 +35,4 @@ func (s *Command) prepare() {
 
 		s.Values = append(s.Values, item)
 	}
-
-	return
 }

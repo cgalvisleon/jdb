@@ -8,9 +8,11 @@ const (
 	MSG_DATABASE_IS_REQUIRED     = "Database is required"
 	MSG_QUERY_FAILED             = "Query failed: %s\nSQL: %s"
 	MSG_MODEL_NOT_FOUND          = "Model not found (%s)"
+	MSG_MODEL_REQUIRED           = "Model is required"
 	MSG_QUERY_EMPTY              = "Query is empty"
 	MSG_QUERY_FROM_REQUIRED      = "Query 'from' is required"
 	MSG_SYSTEMKEYFIELD_NOT_FOUND = "SystemKeyField not found"
+	MSG_PRIMARYKEY_NOT_FOUND     = "PrimaryKey not found"
 	MSG_NOT_DATA                 = "No data"
 	MSG_NOT_INSERT_DATA          = "No insert data"
 	MSG_NOT_UPDATE_DATA          = "No update data"
@@ -19,4 +21,5 @@ const (
 	MSG_HISTORY_NOT_DEFINED      = "History not defined"
 	MSG_HISTORY_NOT_FOUND        = "History not found"
 	MSG_UNDO_NOT_DEFINED         = "Undo record not defined"
+	MSG_UNDO_KEY_NOT_DEFINED     = "Undo key not defined"
 )

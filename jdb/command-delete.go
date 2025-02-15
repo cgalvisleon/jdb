@@ -16,7 +16,7 @@ func (s *Command) delete() error {
 
 	s.Result = results
 
-	model := s.From.Model
+	model := s.From
 	for _, result := range results.Result {
 		before := result.Json("before")
 		after := result.Json("after")

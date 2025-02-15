@@ -47,23 +47,8 @@ func (s *Model) Bulk(data []et.Json) *Command {
 **/
 func (s *Model) Undo(key string, index int64) *Command {
 	result := NewCommand(s, []et.Json{}, Undo)
-	if len(s.PrimaryKeys) == 0 {
-		return result
-	}
-
-	pkn := s.PrimaryKeys[0].Name
-	data, err := s.History.With.
-		Where(pkn).Eq(key).
-		And(HISTORY_INDEX).Eq(index).
-		One()
-	if err != nil {
-		return result
-	}
-
-	result.Data = []et.Json{data.Result}
-	result.History(false)
-	result.Where(pkn).
-		Eq(key)
+	result.Undo.Set("key", key)
+	result.Undo.Set("index", index)
 
 	return result
 }

@@ -83,7 +83,7 @@ func (s *Ql) Having(val string) *QlHaving {
 * @return *Ql
 **/
 func (s *Ql) setHavings(havings et.Json) *Ql {
-	for key, _ := range havings {
+	for key := range havings {
 		val := havings.Json(key)
 		s.Having(key).
 			setValue(val)

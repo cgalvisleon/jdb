@@ -184,7 +184,7 @@ func (s *QlJoin) SetValue(val et.Json) *QlJoin {
 **/
 func (s *Ql) setJoins(joins []et.Json) *Ql {
 	for _, join := range joins {
-		for key, _ := range join {
+		for key := range join {
 			with := GetModel(key)
 			if with != nil {
 				val := join.Json(key)
