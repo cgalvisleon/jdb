@@ -11,10 +11,7 @@ import (
 * @return *Command
 **/
 func (s *Model) Insert(data et.Json) *Command {
-	result := NewCommand(s, []et.Json{data}, Insert)
-	result.Show = s.Show
-
-	return result
+	return NewCommand(s, []et.Json{data}, Insert)
 }
 
 /**
@@ -23,10 +20,7 @@ func (s *Model) Insert(data et.Json) *Command {
 * @return *Command
 **/
 func (s *Model) Update(data et.Json) *Command {
-	result := NewCommand(s, []et.Json{data}, Update)
-	result.Show = s.Show
-
-	return result
+	return NewCommand(s, []et.Json{data}, Update)
 }
 
 /**
@@ -34,10 +28,7 @@ func (s *Model) Update(data et.Json) *Command {
 * @return *Command
 **/
 func (s *Model) Delete() *Command {
-	result := NewCommand(s, []et.Json{}, Delete)
-	result.Show = s.Show
-
-	return result
+	return NewCommand(s, []et.Json{}, Delete)
 }
 
 /**
@@ -46,25 +37,33 @@ func (s *Model) Delete() *Command {
 * @return *Command
 **/
 func (s *Model) Bulk(data []et.Json) *Command {
-	result := NewCommand(s, data, Bulk)
-	result.Show = s.Show
-
-	return result
+	return NewCommand(s, data, Bulk)
 }
 
 /**
 * Undo
-* @param key string
 * @param index int64
 * @return *Command
 **/
 func (s *Model) Undo(key string, index int64) *Command {
 	result := NewCommand(s, []et.Json{}, Undo)
-	result.Show = s.Show
-	result.Undo = &UndoRecord{
-		Key:   key,
-		Index: index,
+	if len(s.PrimaryKeys) == 0 {
+		return result
 	}
+
+	pkn := s.PrimaryKeys[0].Name
+	data, err := s.History.With.
+		Where(pkn).Eq(key).
+		And(HISTORY_INDEX).Eq(index).
+		One()
+	if err != nil {
+		return result
+	}
+
+	result.Data = []et.Json{data.Result}
+	result.History(false)
+	result.Where(pkn).
+		Eq(key)
 
 	return result
 }
@@ -72,12 +71,10 @@ func (s *Model) Undo(key string, index int64) *Command {
 /**
 * Command
 * @param params et.Json
-* @return et.Items, error
+* @return interface{}, error
 **/
-func (s *Model) Command(params et.Json) (et.Items, error) {
+func (s *Model) setCommand(params et.Json) (et.Items, error) {
 	command := params.Str("command")
-	where := params.ArrayJson("where")
-	debug := params.ValBool(false, "debug")
 	var conm *Command
 	switch command {
 	case "insert":
@@ -91,22 +88,21 @@ func (s *Model) Command(params et.Json) (et.Items, error) {
 	case "bulk":
 		data := params.ArrayJson("data")
 		conm = s.Bulk(data)
+	case "undo":
+		key := params.Str("key")
+		index := params.Int64("index")
+		conm = s.Undo(key, index)
 	}
 	if conm == nil {
 		return et.Items{}, mistake.New("command not found")
 	}
 
-	conm.setWhere(where)
+	debug := params.ValBool(false, "debug")
 	if debug {
 		conm.Debug()
 	}
-	conm.Exec()
-	return et.Items{
-		Ok: true,
-		Result: []et.Json{{
-			"command": command,
-			"from":    s.Table,
-			"where":   conm.listWheres(),
-		}},
-	}, nil
+	where := params.Json("where")
+	conm.setWheres(where, conm.getField)
+
+	return conm.Exec()
 }

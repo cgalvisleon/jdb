@@ -1,91 +1,200 @@
 package jdb
 
-import "github.com/cgalvisleon/et/et"
+func (s *Command) getField(name string) *Field {
+	return s.From.getField(name)
+}
 
 /**
 * Where
 * @param field string
 * @return *Command
 **/
-func (s *Command) Where(val interface{}) *Command {
-	switch v := val.(type) {
-	case string:
-		field := s.From.GetField(v)
-		if field != nil {
-			s.where = NewQlWhere(field)
-			return s
-		}
+func (s *Command) Where(val string) *Command {
+	field := s.getField(val)
+	if field != nil {
+		s.where(field)
 	}
 
-	s.where = NewQlWhere(val)
 	return s
 }
 
 /**
 * And
+* @param val string
+* @return *Command
+**/
+func (s *Command) And(val string) *Command {
+	field := s.getField(val)
+	if field != nil {
+		s.and(field)
+	}
+
+	return s
+}
+
+/**
+* And
+* @param fval string
+* @return *Command
+**/
+func (s *Command) Or(val string) *Command {
+	field := s.getField(val)
+	if field != nil {
+		s.or(field)
+	}
+
+	return s
+}
+
+/**
+* Eq
 * @param val interface{}
-* @return *QlFilter
+* @return *Command
 **/
-func (s *Command) And(val interface{}) *QlFilter {
-	result := s.Where(val)
-	result.where.Conector = And
-	return s.QlFilter
-}
-
-/**
-* And
-* @param field string
-* @return *QlFilter
-**/
-func (s *Command) Or(val interface{}) *QlFilter {
-	result := s.Where(val)
-	result.where.Conector = Or
-	return s.QlFilter
-}
-
-/**
-* Select
-* @param fields ...string
-* @return *Ql
-**/
-func (s *Command) Select(fields ...string) *Ql {
-	return nil
-}
-
-/**
-* Data
-* @param fields ...string
-* @return *Ql
-**/
-func (s *Command) Data(fields ...string) *Ql {
-	return nil
-}
-
-func (s *Command) setWhere(wheres []et.Json) *Command {
-	for _, item := range wheres {
-		if item["key"] != nil {
-			s.Where(item["key"])
-		} else if item["and"] != nil {
-			s.And(item["and"])
-		} else if item["or"] != nil {
-			s.Or(item["or"])
-		}
-
-		s.setCondition(item)
-	}
+func (s *Command) Eq(val interface{}) *Command {
+	s.QlWhere.Eq(val)
 
 	return s
 }
 
 /**
-* listWheres
-* @return []string
+* Neg
+* @param val interface{}
+* @return *Command
 **/
-func (s *Command) listWheres() []string {
-	result := []string{}
-	for _, val := range s.Wheres {
-		result = append(result, val.String())
-	}
+func (s *Command) Neg(val interface{}) *Command {
+	s.QlWhere.Neg(val)
 
-	return result
+	return s
+}
+
+/**
+* In
+* @param val ...any
+* @return *Command
+**/
+func (s *Command) In(val ...any) *Command {
+	s.QlWhere.In(val...)
+
+	return s
+}
+
+/**
+* Like
+* @param val interface{}
+* @return *Command
+**/
+func (s *Command) Like(val interface{}) *Command {
+	s.QlWhere.Like(val)
+
+	return s
+}
+
+/**
+* More
+* @param val interface{}
+* @return *Command
+**/
+func (s *Command) More(val interface{}) *Command {
+	s.QlWhere.More(val)
+
+	return s
+}
+
+/**
+* Less
+* @param val interface{}
+* @return *Command
+**/
+func (s *Command) Less(val interface{}) *Command {
+	s.QlWhere.Less(val)
+
+	return s
+}
+
+/**
+* MoreEq
+* @param val interface{}
+* @return *Command
+**/
+func (s *Command) MoreEq(val interface{}) *Command {
+	s.QlWhere.MoreEq(val)
+
+	return s
+}
+
+/**
+* LessEq
+* @param val interface{}
+* @return *Command
+**/
+func (s *Command) LessEq(val interface{}) *Command {
+	s.QlWhere.LessEq(val)
+
+	return s
+}
+
+/*
+*
+* Between
+* @param vals interface{}
+* @return *Command
+**/
+func (s *Command) Between(vals interface{}) *Command {
+	s.QlWhere.Between(vals)
+
+	return s
+}
+
+/**
+* Search
+* @param language string, val interface{}
+* @return *Command
+**/
+func (s *Command) Search(language string, val interface{}) *Command {
+	s.QlWhere.Search(language, val)
+
+	return s
+}
+
+/**
+* IsNull
+* @return *Command
+**/
+func (s *Command) IsNull() *Command {
+	s.QlWhere.IsNull()
+
+	return s
+}
+
+/**
+* NotNull
+* @return *Command
+**/
+func (s *Command) NotNull() *Command {
+	s.QlWhere.NotNull()
+
+	return s
+}
+
+/**
+* History
+* @param v bool
+* @return *Command
+**/
+func (s *Command) History(v bool) *Command {
+	s.QlWhere.History(v)
+
+	return s
+}
+
+/**
+* Debug
+* @param v bool
+* @return *Command
+**/
+func (s *Command) Debug() *Command {
+	s.QlWhere.Debug()
+
+	return s
 }

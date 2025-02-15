@@ -156,7 +156,7 @@ func NewQlCondition(field *Field) *QlCondition {
 }
 
 type QlWhere struct {
-	Wheres   []*QlCondition
+	wheres   []*QlCondition
 	index    int
 	history  bool
 	debug    bool
@@ -169,7 +169,7 @@ type QlWhere struct {
 **/
 func NewQlWhere() *QlWhere {
 	return &QlWhere{
-		Wheres:  []*QlCondition{},
+		wheres:  []*QlCondition{},
 		index:   0,
 		history: false,
 		debug:   false,
@@ -182,7 +182,7 @@ func NewQlWhere() *QlWhere {
 **/
 func (s *QlWhere) String() string {
 	var result string
-	for _, val := range s.Wheres {
+	for _, val := range s.wheres {
 		result = strs.Append(result, val.String(), " ")
 	}
 
@@ -195,8 +195,8 @@ func (s *QlWhere) String() string {
 * @return *QlWhere
 **/
 func (s *QlWhere) where(field *Field) *QlWhere {
-	s.index = len(s.Wheres)
-	s.Wheres = append(s.Wheres, NewQlCondition(field))
+	s.index = len(s.wheres)
+	s.wheres = append(s.wheres, NewQlCondition(field))
 
 	return s
 }
@@ -207,10 +207,10 @@ func (s *QlWhere) where(field *Field) *QlWhere {
 * @return *QlWhere
 **/
 func (s *QlWhere) and(field *Field) *QlWhere {
-	s.index = len(s.Wheres)
+	s.index = len(s.wheres)
 	where := NewQlCondition(field)
 	where.Connector = And
-	s.Wheres = append(s.Wheres, where)
+	s.wheres = append(s.wheres, where)
 
 	return s
 }
@@ -221,10 +221,10 @@ func (s *QlWhere) and(field *Field) *QlWhere {
 * @return *QlWhere
 **/
 func (s *QlWhere) or(field *Field) *QlWhere {
-	s.index = len(s.Wheres)
+	s.index = len(s.wheres)
 	where := NewQlCondition(field)
 	where.Connector = Or
-	s.Wheres = append(s.Wheres, where)
+	s.wheres = append(s.wheres, where)
 
 	return s
 }
@@ -235,8 +235,8 @@ func (s *QlWhere) or(field *Field) *QlWhere {
 * @return QlWhere
 **/
 func (s *QlWhere) Eq(val interface{}) *QlWhere {
-	s.Wheres[s.index].Operator = Equal
-	s.Wheres[s.index].setVal(val)
+	s.wheres[s.index].Operator = Equal
+	s.wheres[s.index].setVal(val)
 
 	return s
 }
@@ -247,8 +247,8 @@ func (s *QlWhere) Eq(val interface{}) *QlWhere {
 * @return QlWhere
 **/
 func (s *QlWhere) Neg(val interface{}) *QlWhere {
-	s.Wheres[s.index].Operator = Neg
-	s.Wheres[s.index].setVal(val)
+	s.wheres[s.index].Operator = Neg
+	s.wheres[s.index].setVal(val)
 
 	return s
 }
@@ -259,8 +259,8 @@ func (s *QlWhere) Neg(val interface{}) *QlWhere {
 * @return QlWhere
 **/
 func (s *QlWhere) In(val ...any) *QlWhere {
-	s.Wheres[s.index].Operator = In
-	s.Wheres[s.index].setVal(val)
+	s.wheres[s.index].Operator = In
+	s.wheres[s.index].setVal(val)
 
 	return s
 }
@@ -271,8 +271,8 @@ func (s *QlWhere) In(val ...any) *QlWhere {
 * @return QlWhere
 **/
 func (s *QlWhere) Like(val interface{}) *QlWhere {
-	s.Wheres[s.index].Operator = Like
-	s.Wheres[s.index].setVal(val)
+	s.wheres[s.index].Operator = Like
+	s.wheres[s.index].setVal(val)
 
 	return s
 }
@@ -283,8 +283,8 @@ func (s *QlWhere) Like(val interface{}) *QlWhere {
 * @return QlWhere
 **/
 func (s *QlWhere) More(val interface{}) *QlWhere {
-	s.Wheres[s.index].Operator = More
-	s.Wheres[s.index].setVal(val)
+	s.wheres[s.index].Operator = More
+	s.wheres[s.index].setVal(val)
 
 	return s
 }
@@ -295,8 +295,8 @@ func (s *QlWhere) More(val interface{}) *QlWhere {
 * @return QlWhere
 **/
 func (s *QlWhere) Less(val interface{}) *QlWhere {
-	s.Wheres[s.index].Operator = Less
-	s.Wheres[s.index].setVal(val)
+	s.wheres[s.index].Operator = Less
+	s.wheres[s.index].setVal(val)
 
 	return s
 }
@@ -307,8 +307,8 @@ func (s *QlWhere) Less(val interface{}) *QlWhere {
 * @return QlWhere
 **/
 func (s *QlWhere) MoreEq(val interface{}) *QlWhere {
-	s.Wheres[s.index].Operator = MoreEq
-	s.Wheres[s.index].setVal(val)
+	s.wheres[s.index].Operator = MoreEq
+	s.wheres[s.index].setVal(val)
 
 	return s
 }
@@ -319,8 +319,8 @@ func (s *QlWhere) MoreEq(val interface{}) *QlWhere {
 * @return QlWhere
 **/
 func (s *QlWhere) LessEq(val interface{}) *QlWhere {
-	s.Wheres[s.index].Operator = LessEq
-	s.Wheres[s.index].setVal(val)
+	s.wheres[s.index].Operator = LessEq
+	s.wheres[s.index].setVal(val)
 
 	return s
 }
@@ -336,8 +336,8 @@ func (s *QlWhere) Between(vals interface{}) *QlWhere {
 		return s
 	}
 
-	s.Wheres[s.index].Operator = Between
-	s.Wheres[s.index].setVal(val)
+	s.wheres[s.index].Operator = Between
+	s.wheres[s.index].setVal(val)
 
 	return s
 }
@@ -348,9 +348,9 @@ func (s *QlWhere) Between(vals interface{}) *QlWhere {
 * @return QlWhere
 **/
 func (s *QlWhere) Search(language string, val interface{}) *QlWhere {
-	s.Wheres[s.index].Operator = Search
-	s.Wheres[s.index].Language = language
-	s.Wheres[s.index].setVal(val)
+	s.wheres[s.index].Operator = Search
+	s.wheres[s.index].Language = language
+	s.wheres[s.index].setVal(val)
 
 	return s
 }
@@ -360,7 +360,7 @@ func (s *QlWhere) Search(language string, val interface{}) *QlWhere {
 * @return *QlWhere
 **/
 func (s *QlWhere) IsNull() *QlWhere {
-	s.Wheres[s.index].Operator = IsNull
+	s.wheres[s.index].Operator = IsNull
 	return s
 }
 
@@ -369,7 +369,7 @@ func (s *QlWhere) IsNull() *QlWhere {
 * @return *QlWhere
 **/
 func (s *QlWhere) NotNull() *QlWhere {
-	s.Wheres[s.index].Operator = NotNull
+	s.wheres[s.index].Operator = NotNull
 	return s
 }
 
@@ -495,7 +495,7 @@ func (s *QlWhere) listWheres(asField func(field *Field) string) et.Json {
 	result := et.Json{}
 	and := []et.Json{}
 	or := []et.Json{}
-	for i, con := range s.Wheres {
+	for i, con := range s.wheres {
 		if con.Field == nil {
 			continue
 		}

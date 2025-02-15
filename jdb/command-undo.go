@@ -4,11 +4,6 @@ import (
 	"github.com/cgalvisleon/et/mistake"
 )
 
-type UndoRecord struct {
-	Key   string `json:"key"`
-	Index int64  `json:"index"`
-}
-
 func (s *Command) undo() error {
 	if s.Undo == nil {
 		return mistake.New(MSG_UNDO_NOT_DEFINED)

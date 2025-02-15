@@ -110,7 +110,7 @@ func EventHistoryDefault(model *Model, before et.Json, after et.Json) error {
 	}
 
 	go history.With.Delete().
-		Where(history.Fk).Eq(key).
+		Where(history.Fk.Name).Eq(key).
 		And(HISTORY_INDEX).LessEq(limit).
 		Exec()
 
