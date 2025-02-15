@@ -27,7 +27,7 @@ func (s *Command) updated() error {
 		return err
 	}
 
-	model := s.From.Model
+	model := s.From
 	for _, result := range s.Result.Result {
 		before := result.Json("before")
 		after := result.Json("after")

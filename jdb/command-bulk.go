@@ -16,7 +16,7 @@ func (s *Command) bulk() error {
 		return mistake.New(MSG_NOT_INSERT_DATA)
 	}
 
-	model := s.From.Model
+	model := s.From
 	for _, result := range results.Result {
 		before := result.Json("before")
 		after := result.Json("after")

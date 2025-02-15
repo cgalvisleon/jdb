@@ -1,57 +1,40 @@
 package jdb
 
-func setValue(value *Value, col *Column, v interface{}) *Value {
-	switch col.TypeColumn {
-	case TpAtribute:
-		if value.Atribs[col.Name] == nil {
-			value.Atribs[col.Name] = v
-			value.Data[col.Name] = v
-		}
-	case TpColumn:
-		if value.Columns[col.Name] == nil {
-			value.Columns[col.Name] = v
-			value.Data[col.Name] = v
-		}
-	}
-
-	return value
-}
-
-func (s *Command) beforeInsert(value *Value) *Value {
+func (s *Command) beforeInsert(item map[string]*Field) map[string]*Field {
 	if s.From == nil {
-		return value
+		return item
 	}
 
 	if s.From.IndexField != nil {
 		index := s.From.GetSerie()
-		setValue(value, s.From.IndexField, index)
+		field := s.From.IndexField.GetField()
+		if field != nil {
+			field.Value = index
+			item[field.Name] = field
+		}
 	}
 
-	return value
+	return item
 }
 
-func (s *Command) prepare() []*Value {
+func (s *Command) prepare() {
 	from := s.From
-	for _, data := range s.Origin {
-		value := NewValue()
+	for _, data := range s.Data {
+		item := make(map[string]*Field, 0)
 		for k, v := range data {
 			field := from.GetField(k)
 			if field == nil {
-				if from.SourceField != nil && !from.Integrity {
-					value.Atribs[k] = v
-					value.Data[k] = v
-				}
-			} else if field.Column == from.FullTextField {
 				continue
-			} else {
-				setValue(value, field.Column, v)
 			}
+			field.Value = v
+			item[field.Name] = field
 		}
 		if s.Command == Insert {
-			value = s.beforeInsert(value)
+			item = s.beforeInsert(item)
 		}
-		s.Values = append(s.Values, value)
+
+		s.Values = append(s.Values, item)
 	}
 
-	return s.Values
+	return
 }

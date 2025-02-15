@@ -21,7 +21,7 @@ type Command struct {
 	Db      *DB
 	From    *Model
 	Data    []et.Json
-	Values  []*Field
+	Values  []map[string]*Field
 	Sql     string
 	Result  et.Items
 }
@@ -40,7 +40,7 @@ func NewCommand(model *Model, data []et.Json, command TypeCommand) *Command {
 		From:    model,
 		QlWhere: NewQlWhere(),
 		Data:    data,
-		Values:  make([]*Field, 0),
+		Values:  []map[string]*Field{},
 		Result:  et.Items{},
 	}
 
@@ -95,6 +95,11 @@ func (s *Command) Exec() (et.Items, error) {
 		}
 
 		err := s.bulk()
+		if err != nil {
+			return et.Items{}, err
+		}
+	case Undo:
+		err := s.undo()
 		if err != nil {
 			return et.Items{}, err
 		}
