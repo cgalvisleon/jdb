@@ -167,3 +167,13 @@ func (s *Field) AsName() string {
 
 	return s.Name
 }
+
+/**
+* GetField
+* @return *Field
+**/
+func (s *Column) GetField() *Field {
+	result := NewField(s)
+
+	return result
+}

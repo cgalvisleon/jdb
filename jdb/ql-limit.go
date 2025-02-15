@@ -19,27 +19,41 @@ func (s *Ql) calcOffset() *Ql {
 }
 
 /**
-* SetLimit
-* @param limit int
-* @return *Ql
-**/
-func (s *Ql) setLimit(limit int) *Ql {
-	max := envar.GetInt(10000, "QUERY_LIMIT")
-	if limit > max {
-		limit = max
-	}
-	s.Limit = limit
-
-	return s.calcOffset()
-}
-
-/**
 * SetPage
 * @param page int
 * @return *Ql
 **/
 func (s *Ql) setPage(page int) *Ql {
-	return s.Page(page)
+	if page > 0 {
+		s.Page(page)
+	}
+
+	return s
+}
+
+/**
+* SetLimit
+* @param limit int
+* @return *Ql
+**/
+func (s *Ql) setLimit(limit int) (interface{}, error) {
+	max := envar.GetInt(1000, "QUERY_LIMIT")
+	if limit > max {
+		limit = max
+	}
+	s.Limit = limit
+	switch s.Limit {
+	case 0:
+		return s.All()
+	case 1:
+		return s.One()
+	}
+
+	if s.Sheet > 0 {
+		return s.Rows(s.Limit)
+	}
+
+	return s.First(s.Limit)
 }
 
 /**

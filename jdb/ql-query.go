@@ -17,34 +17,45 @@ func (s *Ql) GetDetails(data et.Json) et.Json {
 		}
 
 		switch col.TypeColumn {
-		case TpDetail:
+		case TpGenerated:
+			if col.GeneratedFunction != nil {
+				data = col.GeneratedFunction(col, data)
+			}
+		case TpRelatedTo:
 			if col.Detail == nil {
 				continue
 			}
-			if col.Detail.KeyField == nil {
+			if col.Detail.Fk == nil {
 				continue
 			}
-			kn := col.Detail.KeyField.Name
-			key := data[kn]
+			fkn := col.Detail.Fk.Name
+			key := data[fkn]
 			if key == nil {
 				continue
 			}
 
-			model := col.Detail.Model
-			fkn := col.Detail.Fkn
-			result, err := model.
-				Where(fkn).Eq(key).
-				Data().
-				Page(1).
-				Rows(30)
-			if err != nil {
-				continue
-			}
+			with := col.Detail.With
+			limit := int(col.Detail.Limit)
+			if limit <= 0 {
+				result, err := with.
+					Where(fkn).Eq(key).
+					Data().
+					All()
+				if err != nil {
+					continue
+				}
 
-			data[col.Name] = result.Result
-		case TpGenerated:
-			if col.GeneratedFunction != nil {
-				col.GeneratedFunction(col, &data)
+				data[col.Name] = result.Result
+			} else {
+				result, err := with.
+					Where(fkn).Eq(key).
+					Page(1).
+					Rows(limit)
+				if err != nil {
+					continue
+				}
+
+				data[col.Name] = result.Result
 			}
 		}
 	}
@@ -185,57 +196,38 @@ func (s *Ql) List(page, rows int) (et.List, error) {
 }
 
 /**
-* Search
+* Query
 * @param search et.Json
 * @return Ql
 **/
-func (s *Ql) Search(search et.Json) *Ql {
+func Query(search et.Json) (interface{}, error) {
+	from := search.Str("from")
 	joins := search.ArrayJson("join")
 	where := search.Json("where")
 	groups := search.ArrayStr("group_by")
-	havings := search.ArrayJson("having")
-	orders := search.ArrayJson("order_by")
+	havings := search.Json("having")
+	orders := search.Json("order_by")
+	page := search.Int("page")
+	limit := search.ValInt(30, "limit")
 
+	model := GetModel(from)
+	if model == nil {
+		return nil, mistake.Newf(MSG_MODEL_NOT_FOUND, from)
+	}
+
+	ql := From(model).
+		setJoins(joins).
+		setWheres(where).
+		setGroupBy(groups...).
+		setHavings(havings).
+		setOrders(orders)
 	if search["data"] != nil {
 		data := search.ArrayStr("data")
-		s.Data(data...)
+		ql.Data(data...)
 	} else {
 		selects := search.ArrayStr("select")
-		s.Select(selects...)
+		ql.Select(selects...)
 	}
-	s.setJoins(joins)
-	s.setWheres(where)
-	s.setGroupBy(groups...)
-	s.setHavings(havings)
-	s.setOrders(orders)
-
-	return s
-}
-
-/**
-* Query
-* @param params []string
-* @return Ql
-**/
-func (s *Ql) Query(params et.Json) (et.Items, error) {
-	s.Search(params)
-	limit := params.ValInt(1000, "limit")
-	page := params.ValInt(0, "page")
-
-	s.setLimit(limit)
-	s.setPage(page)
-	s.Db.Select(s)
-	return et.Items{
-		Ok: true,
-		Result: []et.Json{{
-			"select":   s.listSelects(),
-			"from":     s.listForms(),
-			"join":     s.listJoins(),
-			"where":    s.listWheres(),
-			"group_by": s.listGroups(),
-			"having":   s.listHavings(),
-			"order_by": s.listOrders(),
-			"limit":    s.listLimit(),
-		}},
-	}, nil
+	ql.setPage(page)
+	return ql.setLimit(limit)
 }

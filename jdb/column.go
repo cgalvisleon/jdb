@@ -14,7 +14,6 @@ const (
 	TpColumn TypeColumn = iota
 	TpAtribute
 	TpGenerated
-	TpDetail
 	TpRelatedTo
 )
 
@@ -177,7 +176,7 @@ type FullText struct {
 	Columns  []*Column `json:"columns"`
 }
 
-type GeneratedFunction func(col *Column, before, after *et.Json)
+type GeneratedFunction func(col *Column, data et.Json) et.Json
 
 type Relation struct {
 	With  *Model  `json:"with"`
@@ -252,16 +251,6 @@ func (s *Column) DefaultValue() interface{} {
 func (s *Column) DefaultQuote() interface{} {
 	result := s.DefaultValue()
 	result = utility.Quote(result)
-
-	return result
-}
-
-/**
-* GetField
-* @return *Field
-**/
-func (s *Column) GetField() *Field {
-	result := NewField(s)
 
 	return result
 }

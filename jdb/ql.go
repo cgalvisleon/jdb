@@ -35,12 +35,16 @@ type Ql struct {
 * @return et.Json
 **/
 func (s *Ql) Describe() et.Json {
-	result, err := et.Object(s)
-	if err != nil {
-		return et.Json{}
+	return et.Json{
+		"from":     s.listForms(),
+		"join":     s.listJoins(),
+		"where":    s.listWheres(),
+		"group_by": s.listGroups(),
+		"having":   s.listHavings(),
+		"order_by": s.listOrders(),
+		"select":   s.listSelects(),
+		"limit":    s.listLimit(),
 	}
-
-	return result
 }
 
 /**

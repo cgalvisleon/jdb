@@ -340,3 +340,12 @@ func (s *Model) GetKeys() []*Column {
 
 	return result
 }
+
+/**
+* Where
+* @param val interface{}
+* @return *Ql
+**/
+func (s *Model) Where(val interface{}) *Ql {
+	return From(s)
+}

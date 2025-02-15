@@ -326,33 +326,31 @@ func (s *QlWhere) LessEq(val interface{}) *QlWhere {
 }
 
 /**
-* Search
-* @param val interface{}
+* Between
+* @param val1, val2 interface{}
 * @return QlWhere
 **/
-func (s *QlWhere) Full(language string, val interface{}) *QlWhere {
-	s.Wheres[s.index].Operator = Search
-	s.Wheres[s.index].Language = language
+func (s *QlWhere) Between(vals interface{}) *QlWhere {
+	val, ok := vals.([]interface{})
+	if !ok {
+		return s
+	}
+
+	s.Wheres[s.index].Operator = Between
 	s.Wheres[s.index].setVal(val)
 
 	return s
 }
 
 /**
-* Between
-* @param val1, val2 interface{}
+* Search
+* @param val interface{}
 * @return QlWhere
 **/
-func (s *QlWhere) Between(val interface{}) *QlWhere {
-	vals, ok := val.([]interface{})
-	if !ok {
-		return s
-	}
-
-	s.Wheres[s.index].Operator = Between
-	for _, val := range vals {
-		s.Wheres[s.index].setVal(val)
-	}
+func (s *QlWhere) Search(language string, val interface{}) *QlWhere {
+	s.Wheres[s.index].Operator = Search
+	s.Wheres[s.index].Language = language
+	s.Wheres[s.index].setVal(val)
 
 	return s
 }
@@ -372,16 +370,6 @@ func (s *QlWhere) IsNull() *QlWhere {
 **/
 func (s *QlWhere) NotNull() *QlWhere {
 	s.Wheres[s.index].Operator = NotNull
-	return s
-}
-
-/**
-* Language
-* @param lan string
-* @return *QlWhere
-**/
-func (s *QlWhere) Language(lan string) *QlWhere {
-	s.language = lan
 	return s
 }
 
@@ -438,7 +426,7 @@ func (s *QlWhere) setValue(val et.Json) *QlWhere {
 		case "notNull":
 			s.NotNull()
 		case "search":
-			s.Full(s.language, value)
+			s.Search(s.language, value)
 		}
 	}
 
@@ -576,9 +564,163 @@ func (s *Ql) Or(val string) *Ql {
 }
 
 /**
+* Eq
+* @param val interface{}
+* @return *Ql
+**/
+func (s *Ql) Eq(val interface{}) *Ql {
+	s.QlWhere.Eq(val)
+
+	return s
+}
+
+/**
+* Neg
+* @param val interface{}
+* @return *Ql
+**/
+func (s *Ql) Neg(val interface{}) *Ql {
+	s.QlWhere.Neg(val)
+
+	return s
+}
+
+/**
+* In
+* @param val ...any
+* @return *Ql
+**/
+func (s *Ql) In(val ...any) *Ql {
+	s.QlWhere.In(val...)
+
+	return s
+}
+
+/**
+* Like
+* @param val interface{}
+* @return *Ql
+**/
+func (s *Ql) Like(val interface{}) *Ql {
+	s.QlWhere.Like(val)
+
+	return s
+}
+
+/**
+* More
+* @param val interface{}
+* @return *Ql
+**/
+func (s *Ql) More(val interface{}) *Ql {
+	s.QlWhere.More(val)
+
+	return s
+}
+
+/**
+* Less
+* @param val interface{}
+* @return *Ql
+**/
+func (s *Ql) Less(val interface{}) *Ql {
+	s.QlWhere.Less(val)
+
+	return s
+}
+
+/**
+* MoreEq
+* @param val interface{}
+* @return *Ql
+**/
+func (s *Ql) MoreEq(val interface{}) *Ql {
+	s.QlWhere.MoreEq(val)
+
+	return s
+}
+
+/**
+* LessEq
+* @param val interface{}
+* @return *Ql
+**/
+func (s *Ql) LessEq(val interface{}) *Ql {
+	s.QlWhere.LessEq(val)
+
+	return s
+}
+
+/*
+*
+* Between
+* @param vals interface{}
+* @return *Ql
+**/
+func (s *Ql) Between(vals interface{}) *Ql {
+	s.QlWhere.Between(vals)
+
+	return s
+}
+
+/**
+* Search
+* @param language string, val interface{}
+* @return *Ql
+**/
+func (s *Ql) Search(language string, val interface{}) *Ql {
+	s.QlWhere.Search(language, val)
+
+	return s
+}
+
+/**
+* IsNull
+* @return *Ql
+**/
+func (s *Ql) IsNull() *Ql {
+	s.QlWhere.IsNull()
+
+	return s
+}
+
+/**
+* NotNull
+* @return *Ql
+**/
+func (s *Ql) NotNull() *Ql {
+	s.QlWhere.NotNull()
+
+	return s
+}
+
+/**
+* History
+* @param v bool
+* @return *Ql
+**/
+func (s *Ql) History(v bool) *Ql {
+	s.QlWhere.History(v)
+
+	return s
+}
+
+/**
+* Debug
+* @param v bool
+* @return *Ql
+**/
+func (s *Ql) Debug() *Ql {
+	s.QlWhere.Debug()
+
+	return s
+}
+
+/**
 * setWheres
 * @param wheres []et.Json
-**/
+*
+ */
 func (s *Ql) setWheres(wheres et.Json) *Ql {
 	s.QlWhere.setWheres(wheres, s.getField)
 
