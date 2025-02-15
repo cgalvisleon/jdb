@@ -6,40 +6,18 @@ import (
 
 /**
 * DefineIdxColumn
-* @param name string
-* @param typeData TypeData
-* @param idx int
-* @param def interface{}
-* @return *Model
+* @param name string, typeData TypeData
+* @return *Column
 **/
-func (s *Model) DefineIdxColumn(name string, typeData TypeData, idx int) *Column {
+func (s *Model) DefineColumn(name string, typeData TypeData) *Column {
 	col := s.GetColumn(name)
 	if col != nil {
 		return col
 	}
 
-	if idx > len(s.Columns) {
-		idx = -1
-	}
 	def := typeData.DefaultValue()
 	col = newColumn(s, name, "", TpColumn, typeData, def)
-	if idx == -1 {
-		idx = slices.IndexFunc(s.Columns, func(e *Column) bool { return e == s.SourceField })
-	}
-	if idx == -1 {
-		idx = slices.IndexFunc(s.Columns, func(e *Column) bool { return e == s.StateField })
-	}
-	if idx == -1 {
-		idx = slices.IndexFunc(s.Columns, func(e *Column) bool { return e == s.SystemKeyField })
-	}
-	if idx == -1 {
-		idx = slices.IndexFunc(s.Columns, func(e *Column) bool { return e == s.IndexField })
-	}
-	if idx == -1 {
-		s.Columns = append(s.Columns, col)
-	} else {
-		s.Columns = append(s.Columns[:idx], append([]*Column{col}, s.Columns[idx:]...)...)
-	}
+	s.Columns = append(s.Columns, col)
 	if slices.Contains([]string{string(IndexField), string(ProjectField), string(CreatedAtField), string(UpdatedAtField), string(StateField), string(PrimaryKeyField), string(SystemKeyField), string(SourceField)}, name) {
 		s.DefineIndex(true, name)
 	} else if slices.Contains([]TypeData{TypeDataObject, TypeDataArray, TypeDataKey, TypeDataGeometry, TypeDataTime}, typeData) {
@@ -124,17 +102,6 @@ func (s *Model) DefineRequired(requireds ...string) *Model {
 }
 
 /**
-* DefineColumn
-* @param name string
-* @param typeData TypeData
-* @param def interface{}
-* @return *Model
-**/
-func (s *Model) DefineColumn(name string, typeData TypeData) *Column {
-	return s.DefineIdxColumn(name, typeData, -1)
-}
-
-/**
 * DefinePrimaryKey
 * @param name string
 * @return *Column
@@ -170,9 +137,11 @@ func (s *Model) DefineForeignKey(name string, with *Model) *Column {
 	pk := with.PrimaryKeys[0]
 	result := s.DefineColumn(name, pk.TypeData)
 	result.Detail = &Relation{
-		With:  with,
-		Fk:    pk,
-		Limit: -1,
+		With:            with,
+		Fk:              pk,
+		Limit:           -1,
+		OnDeleteCascade: true,
+		OnUpdateCascade: true,
 	}
 	s.DefineIndex(true, result.Name)
 	idx := slices.IndexFunc(s.ForeignKeys, func(e *Column) bool { return e == result })
@@ -188,7 +157,7 @@ func (s *Model) DefineForeignKey(name string, with *Model) *Column {
 * @return *Column
 **/
 func (s *Model) DefineSourceField(name string) *Column {
-	result := s.DefineIdxColumn(name, SourceField.TypeData(), 4)
+	result := s.DefineColumn(name, SourceField.TypeData())
 	s.DefineIndex(true, name)
 
 	return result
@@ -224,7 +193,7 @@ func (s *Model) DefineAtribute(name string, typeData TypeData) *Column {
 * @return *Column
 **/
 func (s *Model) DefineCreatedAtField() *Column {
-	result := s.DefineIdxColumn(string(CreatedAtField), CreatedAtField.TypeData(), 0)
+	result := s.DefineColumn(string(CreatedAtField), CreatedAtField.TypeData())
 	s.DefineIndex(true, string(CreatedAtField))
 
 	return result
@@ -235,7 +204,7 @@ func (s *Model) DefineCreatedAtField() *Column {
 * @return *Column
 **/
 func (s *Model) DefineUpdatedAtField() *Column {
-	result := s.DefineIdxColumn(string(UpdatedAtField), UpdatedAtField.TypeData(), 1)
+	result := s.DefineColumn(string(UpdatedAtField), UpdatedAtField.TypeData())
 	s.DefineIndex(true, string(UpdatedAtField))
 
 	return result
@@ -246,7 +215,7 @@ func (s *Model) DefineUpdatedAtField() *Column {
 * @return *Column
 **/
 func (s *Model) DefineStateField() *Column {
-	result := s.DefineIdxColumn(string(StateField), StateField.TypeData(), 2)
+	result := s.DefineColumn(string(StateField), StateField.TypeData())
 	s.DefineIndex(true, string(StateField))
 	s.StateField = result
 
@@ -339,7 +308,7 @@ func (s *Model) DefineRelation(name, relatedTo string) *Relation {
 	}
 
 	pk := s.PrimaryKeys[0]
-	with.DefineColumn(s.Name, pk.TypeData)
+	with.DefineAtribute(s.Name, pk.TypeData)
 	with.DefineForeignKey(s.Name, s)
 	col := newColumn(s, name, "", TpRelatedTo, TypeDataNone, TypeDataNone.DefaultValue())
 	result := &Relation{
@@ -370,7 +339,7 @@ func (s *Model) DefineDetail(name string) *Relation {
 	}
 
 	pk := s.PrimaryKeys[0]
-	with.DefineColumn(s.Name, pk.TypeData)
+	with.DefineAtribute(s.Name, pk.TypeData)
 	with.DefineForeignKey(s.Name, s)
 	col := newColumn(s, name, "", TpRelatedTo, TypeDataNone, TypeDataNone.DefaultValue())
 	result := &Relation{

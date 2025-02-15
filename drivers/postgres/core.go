@@ -57,5 +57,5 @@ func (s *Postgres) existTable(schema, name string) (bool, error) {
 func parceSQL(sql string) string {
 	return strs.Change(sql,
 		[]string{"date_make", "date_update", "_id", "_idt", "_state"},
-		[]string{jdb.CREATED_AT, jdb.UPDATED_AT, jdb.KEY, jdb.SYSID, jdb.STATUS})
+		[]string{jdb.CREATED_AT, jdb.UPDATED_AT, jdb.PRIMARYKEY, jdb.SYSID, jdb.STATUS})
 }

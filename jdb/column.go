@@ -179,9 +179,11 @@ type FullText struct {
 type GeneratedFunction func(col *Column, data et.Json) et.Json
 
 type Relation struct {
-	With  *Model  `json:"with"`
-	Fk    *Column `json:"fk"`
-	Limit int64   `json:"rows"`
+	With            *Model  `json:"with"`
+	Fk              *Column `json:"fk"`
+	Limit           int64   `json:"rows"`
+	OnDeleteCascade bool    `json:"on_delete_cascade"`
+	OnUpdateCascade bool    `json:"on_update_cascade"`
 }
 
 type Column struct {
