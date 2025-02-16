@@ -11,9 +11,9 @@ func (s *Postgres) Count(ql *jdb.Ql) (int, error) {
 	ql.Sql = strs.Append(ql.Sql, "SELECT COUNT(*) AS Count", "\n")
 	ql.Sql = strs.Append(ql.Sql, s.sqlFrom(ql.Froms), "\n")
 	ql.Sql = strs.Append(ql.Sql, s.sqlJoin(ql.Joins), "\n")
-	ql.Sql = strs.Append(ql.Sql, s.sqlWhere(ql.Wheres), "\n")
+	ql.Sql = strs.Append(ql.Sql, s.sqlWhere(ql.QlWhere), "\n")
 
-	if ql.Show {
+	if ql.IsDebug {
 		console.Debug(ql.Sql)
 	}
 

@@ -10,7 +10,7 @@ func (s *Postgres) sqlBulk(command *jdb.Command) string {
 	result := "INSERT INTO %s(%s)\nVALUES %s"
 	columns := ""
 	values := ""
-	for i, data := range command.Origin {
+	for i, data := range command.Data {
 		def := ""
 		for key, val := range data {
 			if i == 0 {

@@ -8,19 +8,19 @@ import (
 func (s *Postgres) sqlJoin(joins []*jdb.QlJoin) string {
 	result := ""
 	for _, join := range joins {
-		def := s.tableAs(join.From)
-		def = strs.Append(def, whereFilters(join.Wheres), " ON ")
+		def := s.tableAs(join.With)
+		def = strs.Append(def, whereConditions(join.QlWhere), " ON ")
 		switch join.TypeJoin {
-		case jdb.JoinInner:
+		case jdb.InnerJoin:
 			def = strs.Append(`INNER JOIN`, def, " ")
 			result = strs.Append(result, def, "\n")
-		case jdb.JoinLeft:
+		case jdb.LeftJoin:
 			def = strs.Append(`LEFT JOIN`, def, " ")
 			result = strs.Append(result, def, "\n")
-		case jdb.JoinRight:
+		case jdb.RightJoin:
 			def = strs.Append(`RIGHT JOIN`, def, " ")
 			result = strs.Append(result, def, "\n")
-		case jdb.JoinFull:
+		case jdb.FullJoin:
 			def = strs.Append(`FULL JOIN`, def, " ")
 			result = strs.Append(result, def, "\n")
 		}

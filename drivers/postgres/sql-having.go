@@ -7,8 +7,8 @@ import (
 
 func (s *Postgres) sqlHaving(ql *jdb.Ql) string {
 	result := ""
-	wheres := ql.Havings.Wheres
-	where := whereFilters(wheres)
+	havings := ql.Havings
+	where := whereConditions(havings.QlWhere)
 	if where != "" {
 		result = strs.Format("HAVING %s", where)
 	}
