@@ -7,21 +7,67 @@ import (
 )
 
 func (s *Postgres) sqlWhere(where *jdb.QlWhere) string {
-	result := whereFilters(where)
+	result := whereConditions(where)
 	result = strs.Append("WHERE", result, " ")
 
 	return result
 }
 
-func whereFilters(where *jdb.QlWhere) string {
+func whereConditions(where *jdb.QlWhere) string {
 	result := ""
-	for _, w := range where.Wheres {
-		def := whereFilter(w)
-		conector := whereConnector(w.Conector)
+	for _, con := range where.Wheres {
+		def := whereCondition(con)
+		conector := whereConnector(con.Connector)
 		result = strs.Append(result, def, conector)
 	}
 
 	return result
+}
+
+func whereCondition(con *jdb.QlCondition) string {
+	if con == nil {
+		return ""
+	}
+
+	key := whereKey(con.Field)
+	values := whereValue(con.Value)
+	def := whereOperator(con, values)
+	return strs.Format("%v%v", key, def)
+}
+
+func whereKey(val interface{}) string {
+	return whereValue(val)
+}
+
+func whereValue(val interface{}) string {
+	adField := func(f *jdb.Field) string {
+		switch f.Column.TypeColumn {
+		case jdb.TpColumn:
+			def := strs.Append(f.As, f.Name, ".")
+			return strs.Format(`%s`, def)
+		case jdb.TpAtribute:
+			def := strs.Append(f.As, f.Name, ".")
+			return strs.Format(`%s#>>'{%s}'`, def, f.Name)
+		default:
+			return ""
+		}
+	}
+
+	switch v := val.(type) {
+	case jdb.Field:
+		return asField(v)
+	case *jdb.Field:
+		return adField(v)
+	case []interface{}:
+		var result string
+		for _, w := range v {
+			val := whereValue(w)
+			result = strs.Append(result, strs.Format(`%v`, val), ",")
+		}
+		return result
+	default:
+		return strs.Format(`%v`, utility.Quote(v))
+	}
 }
 
 func whereOperator(condition *jdb.QlCondition, val interface{}) string {
@@ -64,50 +110,4 @@ func whereConnector(con jdb.Connector) string {
 	default:
 		return ""
 	}
-}
-
-func whereValue(val interface{}) string {
-	adField := func(f *jdb.Field) string {
-		switch f.Column.TypeColumn {
-		case jdb.TpColumn:
-			def := strs.Append(f.As, f.Field, ".")
-			return strs.Format(`%s`, def)
-		case jdb.TpAtribute:
-			def := strs.Append(f.As, f.Field, ".")
-			return strs.Format(`%s#>>'{%s}'`, def, f.Name)
-		default:
-			return ""
-		}
-	}
-
-	switch v := val.(type) {
-	case *jdb.Field:
-		return adField(v.Field)
-	case *jdb.Field:
-		return adField(v)
-	case []interface{}:
-		var result string
-		for _, w := range v {
-			val := whereValue(w)
-			result = strs.Append(result, strs.Format(`%v`, val), ",")
-		}
-		return result
-	default:
-		return strs.Format(`%v`, utility.Quote(v))
-	}
-}
-
-func whereKey(val interface{}) string {
-	return whereValue(val)
-}
-
-func whereFilter(where *jdb.QlWhere) string {
-	if where == nil {
-		return ""
-	}
-
-	key := whereKey(where.Key)
-	values := whereValue(where.Values)
-	def := whereOperator(where, values)
-	return strs.Format("%v%v", key, def)
 }

@@ -129,6 +129,14 @@ func NewModel(schema *Schema, name string, version int) *Model {
 }
 
 /**
+* GetFrom
+* @return *QlFrom
+**/
+func (s *Model) GetFrom() *QlFrom {
+	return &QlFrom{Model: s}
+}
+
+/**
 * GenId
 * @param id string
 * @return string

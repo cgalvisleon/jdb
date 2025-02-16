@@ -133,7 +133,7 @@ func (s *Postgres) defaultValue(tp jdb.TypeData) interface{} {
 func (s *Postgres) ddlTable(model *jdb.Model) string {
 	var columnsDef string
 	for _, column := range model.Columns {
-		if slices.Contains([]*jdb.Column{model.SystemKeyField, model.FullTextField}, column) {
+		if slices.Contains([]*jdb.Column{model.SystemKeyField}, column) {
 			if s.version >= 13 {
 				def := strs.Format("\n\t%s %s INVISIBLE DEFAULT %v", column.Name, s.typeData(column.TypeData), s.defaultValue(column.TypeData))
 				columnsDef = strs.Append(columnsDef, def, ",")
@@ -141,6 +141,13 @@ func (s *Postgres) ddlTable(model *jdb.Model) string {
 				def := strs.Format("\n\t%s %s DEFAULT %v", column.Name, s.typeData(column.TypeData), s.defaultValue(column.TypeData))
 				columnsDef = strs.Append(columnsDef, def, ",")
 			}
+		} else if slices.Contains([]*jdb.Column{model.FullTextField}, column) && column.FullText != nil {
+			columns := ""
+			for _, col := range column.FullText.Columns {
+				columns = strs.Append(columns, strs.Format("COALESCE(%s, '')", col.Name), " || ' ' || ")
+			}
+			def := strs.Format("%s TSVECTOR GENERATED ALWAYS AS (to_tsvector('%s', %s)) STORED", column.Name, column.FullText.Language, columns)
+			columnsDef = strs.Append(columnsDef, def, ",")
 		} else if column.TypeColumn == jdb.TpColumn {
 			def := strs.Format("\n\t%s %s DEFAULT %v", column.Name, s.typeData(column.TypeData), s.defaultValue(column.TypeData))
 			columnsDef = strs.Append(columnsDef, def, ",")
