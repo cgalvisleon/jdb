@@ -5,8 +5,11 @@ import (
 )
 
 func (s *Postgres) sqlJsonObject(from *jdb.QlFrom) string {
-	var selects = []*jdb.QlSelect{}
-	from.SetSelectByColumns(&selects, nil)
+	var selects = []*jdb.Field{}
+	for _, col := range from.Columns {
+		field := col.GetField()
+		selects = append(selects, field)
+	}
 
 	return s.sqlObject(selects)
 }

@@ -66,14 +66,14 @@ func (s *Postgres) Query(sql string, params ...any) (et.Items, error) {
 * @param source, sql string, params ...any
 * @return et.Items, error
 **/
-func (s *Postgres) Data(source, sql string, params ...any) (et.Items, error) {
+func (s *Postgres) Data(sourceFiled, sql string, params ...any) (et.Items, error) {
 	rows, err := s.query(s.db, sql, params...)
 	if err != nil {
 		return et.Items{}, console.QueryError(err, sql)
 	}
 	defer rows.Close()
 
-	result := jdb.SourceToItems(source, rows)
+	result := jdb.SourceToItems(sourceFiled, rows)
 
 	return result, nil
 }

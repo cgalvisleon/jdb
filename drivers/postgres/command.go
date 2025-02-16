@@ -20,11 +20,21 @@ func (s *Postgres) Command(command *jdb.Command) (et.Items, error) {
 		command.Sql = strs.Append(command.Sql, s.sqlBulk(command), "\n")
 	}
 
-	if command.Show {
+	if command.IsDebug {
 		console.Debug(command.Sql)
 	}
 
-	result, err := s.Data(command.Source, command.Sql)
+	if command.From.SourceField != nil {
+		sourceField := command.From.SourceField.Name
+		result, err := s.Data(sourceField, command.Sql)
+		if err != nil {
+			return et.Items{}, err
+		}
+
+		return result, nil
+	}
+
+	result, err := s.Query(command.Sql)
 	if err != nil {
 		return et.Items{}, err
 	}

@@ -6,8 +6,26 @@ import (
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
-func whereOperator(where *jdb.QlWhere, val interface{}) string {
-	switch where.Operator {
+func (s *Postgres) sqlWhere(where *jdb.QlWhere) string {
+	result := whereFilters(where)
+	result = strs.Append("WHERE", result, " ")
+
+	return result
+}
+
+func whereFilters(where *jdb.QlWhere) string {
+	result := ""
+	for _, w := range where.Wheres {
+		def := whereFilter(w)
+		conector := whereConnector(w.Conector)
+		result = strs.Append(result, def, conector)
+	}
+
+	return result
+}
+
+func whereOperator(condition *jdb.QlCondition, val interface{}) string {
+	switch condition.Operator {
 	case jdb.Equal:
 		return strs.Format("=%v", val)
 	case jdb.Neg:
@@ -31,7 +49,7 @@ func whereOperator(where *jdb.QlWhere, val interface{}) string {
 	case jdb.NotNull:
 		return " IS NOT NULL"
 	case jdb.Search:
-		return strs.Format(" @@ to_tsquery('%s', %v)", where.Language, val)
+		return strs.Format(" @@ to_tsquery('%s', %v)", condition.Language, val)
 	default:
 		return ""
 	}
@@ -63,7 +81,7 @@ func whereValue(val interface{}) string {
 	}
 
 	switch v := val.(type) {
-	case *jdb.QlSelect:
+	case *jdb.Field:
 		return adField(v.Field)
 	case *jdb.Field:
 		return adField(v)
@@ -92,22 +110,4 @@ func whereFilter(where *jdb.QlWhere) string {
 	values := whereValue(where.Values)
 	def := whereOperator(where, values)
 	return strs.Format("%v%v", key, def)
-}
-
-func whereFilters(wheres []*jdb.QlWhere) string {
-	result := ""
-	for _, w := range wheres {
-		def := whereFilter(w)
-		conector := whereConnector(w.Conector)
-		result = strs.Append(result, def, conector)
-	}
-
-	return result
-}
-
-func (s *Postgres) sqlWhere(wheres []*jdb.QlWhere) string {
-	result := whereFilters(wheres)
-	result = strs.Append("WHERE", result, " ")
-
-	return result
 }

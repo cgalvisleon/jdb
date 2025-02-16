@@ -73,6 +73,7 @@ type Field struct {
 	Agregation TypeAgregation
 	Value      interface{}
 	Alias      string
+	Hidden     bool
 }
 
 /**
@@ -102,6 +103,8 @@ func NewField(column *Column) *Field {
 		Table:  table,
 		Name:   name,
 		Source: source,
+		Hidden: column.Hidden,
+		Alias:  column.Name,
 	}
 }
 

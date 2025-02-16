@@ -114,13 +114,13 @@ func (s TypeData) Str() string {
 type ColumnField string
 
 const (
-	INDEX         = "index"
+	PRIMARYKEY    = "id"
 	SOURCE        = "source"
+	INDEX         = "index"
 	PROJECT       = "project"
 	CREATED_AT    = "created_at"
 	UPDATED_AT    = "update_at"
 	STATUS        = "status"
-	PRIMARYKEY    = "id"
 	SYSID         = "jdbid"
 	CREATED_TO    = "created_to"
 	UPDATED_TO    = "updated_to"

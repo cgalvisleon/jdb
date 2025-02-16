@@ -13,9 +13,14 @@ import (
 **/
 func (s *Ql) setSelect(field *Field) *Ql {
 	if field != nil {
-		s.Selects = append(s.Selects, field)
-		if field.Column != nil && !slices.Contains([]TypeColumn{}, field.Column.TypeColumn) {
+		if field.Column == nil {
+			return s
+		}
+
+		if !slices.Contains([]TypeColumn{TpColumn, TpAtribute}, field.Column.TypeColumn) {
 			s.Details = append(s.Details, field)
+		} else {
+			s.Selects = append(s.Selects, field)
 		}
 	}
 	return s

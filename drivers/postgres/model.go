@@ -75,7 +75,7 @@ func (s *Postgres) LoadModel(model *jdb.Model) error {
 				return err
 			}
 
-			sql = s.ddlMutate(&old, model)
+			sql = s.ddlMutate(&old, model, false)
 		} else {
 			action = "index"
 			sql = s.ddlIndexFunction(model)
