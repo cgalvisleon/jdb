@@ -33,7 +33,7 @@ func (s *Postgres) sqlInsert(command *jdb.Command) string {
 		}
 	}
 
-	objects := s.sqlJsonObject(from)
+	objects := s.sqlJsonObject(from.GetFrom())
 	result := "INSERT INTO %s(%s)\nVALUES (%s)\nRETURNING\njsonb_build_object(\n'before', jsonb_build_object(),\n'after', (%s)) AS result;"
 	return strs.Format(result, from.Table, columns, values, objects)
 }

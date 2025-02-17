@@ -88,19 +88,19 @@ func (s *Postgres) Select(ql *jdb.Ql) (et.Items, error) {
 	ql.Sql = strs.Append(ql.Sql, s.sqlSelect(ql), "\n")
 	ql.Sql = strs.Append(ql.Sql, s.sqlFrom(ql.Froms), "\n")
 	ql.Sql = strs.Append(ql.Sql, s.sqlJoin(ql.Joins), "\n")
-	ql.Sql = strs.Append(ql.Sql, s.sqlWhere(ql.Wheres), "\n")
+	ql.Sql = strs.Append(ql.Sql, s.sqlWhere(ql.QlWhere), "\n")
 	ql.Sql = strs.Append(ql.Sql, s.sqlGroupBy(ql), "\n")
 	ql.Sql = strs.Append(ql.Sql, s.sqlHaving(ql), "\n")
 	ql.Sql = strs.Append(ql.Sql, s.sqlOrderBy(ql), "\n")
 	ql.Sql = strs.Append(ql.Sql, s.sqlLimit(ql), "\n")
 	ql.Sql = strs.Format(`%s;`, ql.Sql)
 
-	if ql.Show {
+	if ql.IsDebug {
 		console.Debug(ql.Sql)
 	}
 
 	if ql.TypeSelect == jdb.Data {
-		result, err := s.Data(ql.Source, ql.Sql)
+		result, err := s.Data("result", ql.Sql)
 		if err != nil {
 			return et.Items{}, err
 		}
