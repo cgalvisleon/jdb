@@ -42,14 +42,11 @@ func (s *Ql) setLimit(limit int) (interface{}, error) {
 		limit = max
 	}
 	s.Limit = limit
-	switch s.Limit {
-	case 0:
+	if s.Limit == 0 {
 		return s.All()
-	case 1:
+	} else if s.Limit == 1 {
 		return s.One()
-	}
-
-	if s.Sheet > 0 {
+	} else if s.Sheet > 0 {
 		return s.Rows(s.Limit)
 	}
 

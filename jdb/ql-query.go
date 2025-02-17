@@ -9,7 +9,7 @@ import (
 * GetDetails
 * @return et.Json
 **/
-func (s *Ql) GetDetails(data et.Json) et.Json {
+func (s *Ql) GetDetails(data *et.Json) *et.Json {
 	for _, field := range s.Details {
 		col := field.Column
 		if col == nil {
@@ -19,7 +19,7 @@ func (s *Ql) GetDetails(data et.Json) et.Json {
 		switch col.TypeColumn {
 		case TpGenerated:
 			if col.GeneratedFunction != nil {
-				data = col.GeneratedFunction(col, data)
+				col.GeneratedFunction(col, data)
 			}
 		case TpRelatedTo:
 			if col.Detail == nil {
@@ -29,7 +29,7 @@ func (s *Ql) GetDetails(data et.Json) et.Json {
 				continue
 			}
 			fkn := col.Detail.Fk.Name
-			key := data[fkn]
+			key := (*data)[fkn]
 			if key == nil {
 				continue
 			}
@@ -45,7 +45,7 @@ func (s *Ql) GetDetails(data et.Json) et.Json {
 					continue
 				}
 
-				data[col.Name] = result.Result
+				data.Set(col.Name, result.Result)
 			} else {
 				result, err := with.
 					Where(fkn).Eq(key).
@@ -55,7 +55,7 @@ func (s *Ql) GetDetails(data et.Json) et.Json {
 					continue
 				}
 
-				data[col.Name] = result.Result
+				data.Set(col.Name, result.Result)
 			}
 		}
 	}
@@ -99,7 +99,8 @@ func (s *Ql) First(n int) (et.Items, error) {
 	}
 
 	for i, data := range result.Result {
-		result.Result[i] = s.GetDetails(data)
+		data := s.GetDetails(&data)
+		result.Result[i] = *data
 	}
 
 	return result, nil
@@ -200,6 +201,37 @@ func (s *Ql) List(page, rows int) (et.List, error) {
 * @param search et.Json
 * @return Ql
 **/
+func (s *Ql) Query(search et.Json) (interface{}, error) {
+	joins := search.ArrayJson("join")
+	where := search.Json("where")
+	groups := search.ArrayStr("group_by")
+	havings := search.Json("having")
+	orders := search.Json("order_by")
+	page := search.Int("page")
+	limit := search.ValInt(30, "limit")
+
+	s.setJoins(joins).
+		setWheres(where).
+		setGroupBy(groups...).
+		setHavings(havings).
+		setOrders(orders)
+	if search["data"] != nil {
+		data := search.ArrayStr("data")
+		s.Data(data...)
+	} else {
+		selects := search.ArrayStr("select")
+		s.Select(selects...)
+	}
+	s.setPage(page)
+
+	return s.setLimit(limit)
+}
+
+/**
+* Query
+* @param search et.Json
+* @return Ql
+**/
 func Query(search et.Json) (interface{}, error) {
 	from := search.Str("from")
 	joins := search.ArrayJson("join")
@@ -229,5 +261,6 @@ func Query(search et.Json) (interface{}, error) {
 		ql.Select(selects...)
 	}
 	ql.setPage(page)
+
 	return ql.setLimit(limit)
 }

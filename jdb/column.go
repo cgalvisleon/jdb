@@ -115,6 +115,8 @@ type ColumnField string
 
 const (
 	PRIMARYKEY    = "id"
+	PK            = PRIMARYKEY
+	KEY           = PRIMARYKEY
 	SOURCE        = "source"
 	INDEX         = "index"
 	PROJECT       = "project"
@@ -176,7 +178,7 @@ type FullText struct {
 	Columns  []*Column `json:"columns"`
 }
 
-type GeneratedFunction func(col *Column, data et.Json) et.Json
+type GeneratedFunction func(col *Column, data *et.Json)
 
 type Relation struct {
 	With            *Model  `json:"with"`
