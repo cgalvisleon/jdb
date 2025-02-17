@@ -129,3 +129,9 @@ func (s *Command) One() (et.Item, error) {
 		Result: result.Result[0],
 	}, nil
 }
+
+func (s *Command) setWhere(wheres et.Json) *Command {
+	s.QlWhere.setWheres(wheres, s.getField)
+
+	return s
+}

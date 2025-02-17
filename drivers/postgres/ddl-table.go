@@ -59,11 +59,12 @@ func (s *Postgres) strToTypeData(tp string, lenght int) jdb.TypeData {
 	case "INT4":
 		return jdb.TypeDataInt
 	case "VARCHAR":
-		if lenght == 80 {
-			return jdb.TypeDataKey
-		} else if lenght == 20 {
+		switch lenght {
+		case 80:
 			return jdb.TypeDataShortText
-		} else {
+		case 20:
+			return jdb.TypeDataShortText
+		default:
 			return jdb.TypeDataText
 		}
 	case "VARCHAR(80)":

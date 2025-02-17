@@ -21,12 +21,12 @@ func (s *Command) undo() error {
 	}
 
 	from := s.From
-	if len(from.PrimaryKeys) == 0 {
+	pk := from.Pk()
+	if pk == nil {
 		return mistake.New(MSG_PRIMARYKEY_NOT_FOUND)
 	}
 
-	pkn := from.PrimaryKeys[0].Name
-
+	pkn := pk.Name
 	var err error
 	var old et.Item
 	index := s.Undo.ValInt64(-1, "index")

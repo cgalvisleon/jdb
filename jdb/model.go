@@ -54,10 +54,10 @@ type Model struct {
 	Description     string               `json:"description"`
 	Columns         []*Column            `json:"columns"`
 	GeneratedFields []*Column            `json:"generated_fields"`
-	PrimaryKeys     []*Column            `json:"primary_keys"`
-	ForeignKeys     []*Column            `json:"foreign_keys"`
-	Indices         []*Index             `json:"indices"`
-	Uniques         []*Index             `json:"uniques"`
+	PrimaryKeys     map[string]*Column   `json:"primary_keys"`
+	ForeignKeys     map[string]*Column   `json:"foreign_keys"`
+	Indices         map[string]*Index    `json:"indices"`
+	Uniques         map[string]*Index    `json:"uniques"`
 	Relations       map[string]*Relation `json:"Relations"`
 	Details         map[string]*Relation `json:"details"`
 	History         *Relation            `json:"history"`
@@ -105,10 +105,10 @@ func NewModel(schema *Schema, name string, version int) *Model {
 		Description:     "",
 		Columns:         make([]*Column, 0),
 		GeneratedFields: make([]*Column, 0),
-		PrimaryKeys:     make([]*Column, 0),
-		ForeignKeys:     make([]*Column, 0),
-		Indices:         make([]*Index, 0),
-		Uniques:         make([]*Index, 0),
+		PrimaryKeys:     make(map[string]*Column),
+		ForeignKeys:     make(map[string]*Column),
+		Indices:         make(map[string]*Index),
+		Uniques:         make(map[string]*Index),
 		Relations:       make(map[string]*Relation),
 		Details:         make(map[string]*Relation),
 		History:         &Relation{Limit: -1},
@@ -344,7 +344,9 @@ func (s *Model) GetField(name string) *Field {
 **/
 func (s *Model) GetKeys() []*Column {
 	result := []*Column{}
-	result = append(result, s.PrimaryKeys...)
+	for _, col := range s.PrimaryKeys {
+		result = append(result, col)
+	}
 
 	return result
 }
@@ -356,4 +358,16 @@ func (s *Model) GetKeys() []*Column {
 **/
 func (s *Model) Where(val interface{}) *Ql {
 	return From(s)
+}
+
+/**
+* Pk
+* @return *Column
+**/
+func (s *Model) Pk() *Column {
+	for _, col := range s.PrimaryKeys {
+		return col
+	}
+
+	return nil
 }

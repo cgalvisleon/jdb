@@ -52,11 +52,8 @@ func (s *Postgres) ddlPrimaryKey(model *jdb.Model) string {
 
 func (s *Postgres) ddlForeignKeys(model *jdb.Model) string {
 	var result string
-	for _, fk := range model.ForeignKeys {
+	for key, fk := range model.ForeignKeys {
 		ref := fk.Detail.Fk
-		key := ref.Name + "_FKEY"
-		key = strs.Replace(key, "-", "_")
-		key = strs.Lowcase(key)
 		def := strs.Format(`ALTER TABLE IF EXISTS %s ADD CONSTRAINT %s FOREIGN KEY (%s) REFERENCES %s(%s)`, model.Table, key, ref.Name, ref.Model.Table, ref.Name)
 		if fk.Detail.OnDeleteCascade {
 			def = def + " ON DELETE CASCADE"
@@ -64,7 +61,7 @@ func (s *Postgres) ddlForeignKeys(model *jdb.Model) string {
 		if fk.Detail.OnUpdateCascade {
 			def = def + " ON UPDATE CASCADE"
 		}
-		def = strs.Format("SELECT core.add_constraint_if_not_exists('%s', '%s', '%s', '%s');", model.Schema.Low(), model.Low(), strs.Lowcase(key), def)
+		def = strs.Format("SELECT core.add_constraint_if_not_exists('%s', '%s', '%s', '%s');", model.Schema.Low(), model.Low(), key, def)
 		result = strs.Append(result, def, "\n")
 	}
 

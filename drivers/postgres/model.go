@@ -61,7 +61,7 @@ func (s *Postgres) LoadModel(model *jdb.Model) error {
 
 	var action string
 	var sql string
-	version := current.Int("version")
+	version := current.ValInt(1, "version")
 	if model.IsCreated {
 		if version != model.Version {
 			action = "mutate"
@@ -79,6 +79,8 @@ func (s *Postgres) LoadModel(model *jdb.Model) error {
 		} else {
 			action = "index"
 			sql = s.ddlIndexFunction(model)
+			console.Debug("index:", sql)
+			console.Stop()
 		}
 	} else {
 		action = "load"

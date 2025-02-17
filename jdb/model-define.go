@@ -2,6 +2,8 @@ package jdb
 
 import (
 	"slices"
+
+	"github.com/cgalvisleon/et/strs"
 )
 
 /**
@@ -41,7 +43,8 @@ func (s *Model) DefineIndex(sort bool, colums ...string) *Model {
 	for _, col := range cols {
 		if col.TypeColumn == TpColumn {
 			idx := NewIndex(col, sort)
-			s.Indices = append(s.Indices, idx)
+			name := strs.Format("%s_%s_idx", s.Name, col.Name)
+			s.Indices[name] = idx
 		}
 	}
 
@@ -61,7 +64,8 @@ func (s *Model) DefineUnique(colums ...string) *Model {
 
 	for _, col := range cols {
 		idx := NewIndex(col, true)
-		s.Uniques = append(s.Uniques, idx)
+		name := strs.Format("%s_%s_idx", s.Name, col.Name)
+		s.Uniques[name] = idx
 	}
 
 	return s
@@ -108,10 +112,8 @@ func (s *Model) DefineRequired(requireds ...string) *Model {
 **/
 func (s *Model) DefinePrimaryKey(name string) *Column {
 	result := s.DefineColumn(name, PrimaryKeyField.TypeData())
-	idx := slices.IndexFunc(s.PrimaryKeys, func(e *Column) bool { return e == result })
-	if idx != -1 {
-		s.PrimaryKeys = append(s.PrimaryKeys, result)
-	}
+	nm := strs.Format("%s_%s_pk", s.Name, name)
+	s.PrimaryKeys[nm] = result
 
 	return result
 }
@@ -130,11 +132,11 @@ func (s *Model) DefinePrimaryKeyField() *Column {
 * @return *Column
 **/
 func (s *Model) DefineForeignKey(name string, with *Model) *Column {
-	if len(with.PrimaryKeys) == 0 {
+	pk := with.Pk()
+	if pk == nil {
 		return nil
 	}
 
-	pk := with.PrimaryKeys[0]
 	result := s.DefineColumn(name, pk.TypeData)
 	result.Detail = &Relation{
 		With:            with,
@@ -144,10 +146,8 @@ func (s *Model) DefineForeignKey(name string, with *Model) *Column {
 		OnUpdateCascade: true,
 	}
 	s.DefineIndex(true, result.Name)
-	idx := slices.IndexFunc(s.ForeignKeys, func(e *Column) bool { return e == result })
-	if idx != -1 {
-		s.ForeignKeys = append(s.ForeignKeys, result)
-	}
+	nm := strs.Format("%s_%s_fk", s.Name, name)
+	s.ForeignKeys[nm] = result
 
 	return result
 }
@@ -298,7 +298,8 @@ func (s *Model) DefineGenerated(name string, fn GeneratedFunction) *Column {
 * @return *Relation
 **/
 func (s *Model) DefineRelation(name, relatedTo string) *Relation {
-	if len(s.PrimaryKeys) == 0 {
+	pk := s.Pk()
+	if pk == nil {
 		return nil
 	}
 
@@ -307,7 +308,6 @@ func (s *Model) DefineRelation(name, relatedTo string) *Relation {
 		with = NewModel(s.Schema, relatedTo, 0)
 	}
 
-	pk := s.PrimaryKeys[0]
 	with.DefineAtribute(s.Name, pk.TypeData)
 	with.DefineForeignKey(s.Name, s)
 	col := newColumn(s, name, "", TpRelatedTo, TypeDataNone, TypeDataNone.DefaultValue())
@@ -328,7 +328,8 @@ func (s *Model) DefineRelation(name, relatedTo string) *Relation {
 * @return *Relation
 **/
 func (s *Model) DefineDetail(name string) *Relation {
-	if len(s.PrimaryKeys) == 0 {
+	pk := s.Pk()
+	if pk == nil {
 		return nil
 	}
 
@@ -338,7 +339,6 @@ func (s *Model) DefineDetail(name string) *Relation {
 		with = NewModel(s.Schema, relatedTo, 0)
 	}
 
-	pk := s.PrimaryKeys[0]
 	with.DefineAtribute(s.Name, pk.TypeData)
 	with.DefineForeignKey(s.Name, s)
 	col := newColumn(s, name, "", TpRelatedTo, TypeDataNone, TypeDataNone.DefaultValue())

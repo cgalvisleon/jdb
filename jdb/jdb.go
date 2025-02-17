@@ -4,6 +4,7 @@ import (
 	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/envar"
 	"github.com/cgalvisleon/et/et"
+	"github.com/cgalvisleon/et/mistake"
 	"github.com/cgalvisleon/et/strs"
 )
 
@@ -262,4 +263,84 @@ func GetField(name string) *Field {
 **/
 func Describe() et.Json {
 	return Jdb.Describe()
+}
+
+/**
+* Query
+* @param params et.Json
+* @return interface{}, error
+**/
+func Query(params et.Json) (interface{}, error) {
+	from := params.Str("from")
+	joins := params.ArrayJson("join")
+	where := params.Json("where")
+	groups := params.ArrayStr("group_by")
+	havings := params.Json("having")
+	orders := params.Json("order_by")
+	page := params.Int("page")
+	limit := params.ValInt(30, "limit")
+
+	model := GetModel(from)
+	if model == nil {
+		return nil, mistake.Newf(MSG_MODEL_NOT_FOUND, from)
+	}
+
+	ql := From(model).
+		setJoins(joins).
+		setWheres(where).
+		setGroupBy(groups...).
+		setHavings(havings).
+		setOrders(orders)
+	if params["data"] != nil {
+		data := params.ArrayStr("data")
+		ql.Data(data...)
+	} else {
+		selects := params.ArrayStr("select")
+		ql.Select(selects...)
+	}
+	ql.setPage(page)
+
+	return ql.setLimit(limit)
+}
+
+/**
+* Query
+* @param params et.Json
+* @return interface{}, error
+**/
+func Commands(params et.Json) (interface{}, error) {
+	insert := params.Str("insert")
+	update := params.Str("update")
+	delete := params.Str("delete")
+	data := params.Json("data")
+	where := params.Json("where")
+	var conn *Command
+	if insert != "" {
+		model := GetModel(insert)
+		if model == nil {
+			return nil, mistake.Newf(MSG_MODEL_NOT_FOUND, insert)
+		}
+
+		conn = model.Insert(data)
+	} else if update != "" {
+		model := GetModel(update)
+		if model == nil {
+			return nil, mistake.Newf(MSG_MODEL_NOT_FOUND, update)
+		}
+
+		conn = model.Update(data).
+			setWhere(where)
+	} else if delete != "" {
+		model := GetModel(delete)
+		if model == nil {
+			return nil, mistake.Newf(MSG_MODEL_NOT_FOUND, delete)
+		}
+
+		conn = model.Delete().
+			setWhere(where)
+	} else {
+		return nil, mistake.New(MSG_COMMAND_NOT_FOUND)
+	}
+
+	return conn.Exec()
 }

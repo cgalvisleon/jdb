@@ -22,4 +22,5 @@ const (
 	MSG_HISTORY_NOT_FOUND        = "History not found"
 	MSG_UNDO_NOT_DEFINED         = "Undo record not defined"
 	MSG_UNDO_KEY_NOT_DEFINED     = "Undo key not defined"
+	MSG_COMMAND_NOT_FOUND        = "Command not found"
 )
