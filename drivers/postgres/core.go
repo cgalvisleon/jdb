@@ -30,6 +30,9 @@ func (s *Postgres) CreateCore() error {
 	if err := s.defineFlows(); err != nil {
 		return err
 	}
+	if err := s.defineCache(); err != nil {
+		return err
+	}
 
 	return nil
 }

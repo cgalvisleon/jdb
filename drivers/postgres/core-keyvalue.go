@@ -119,7 +119,7 @@ func (s *Postgres) DeleteKey(key string) error {
 	FROM core.KEYVALUES
 	WHERE _ID = $1;`)
 
-	err := s.Exec(sql)
+	err := s.Exec(sql, key)
 	if err != nil {
 		return err
 	}

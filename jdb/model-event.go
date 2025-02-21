@@ -28,6 +28,12 @@ func (s TypeEvent) Name() string {
 
 type Event func(model *Model, before et.Json, after et.Json) error
 
+type EventError func(model *Model, data et.Json)
+
+func EventErrorDefault(model *Model, data et.Json) {
+	event.Publish("model:error", data)
+}
+
 func EventInsertDefault(model *Model, before et.Json, after et.Json) error {
 	schema := ""
 	if model.Schema != nil {

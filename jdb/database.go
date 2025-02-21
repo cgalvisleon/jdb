@@ -435,3 +435,119 @@ func (s *DB) FindKeys(search string, page, rows int) (et.List, error) {
 
 	return s.driver.FindKeys(search, page, rows)
 }
+
+/**
+* SetFlow
+* @param name string, value []byte
+* @return error
+**/
+func (s *DB) SetFlow(name string, value []byte) error {
+	if s.driver == nil {
+		return mistake.New(MSG_DRIVER_NOT_DEFINED)
+	}
+
+	return s.driver.SetFlow(name, value)
+}
+
+/**
+* GetFlow
+* @param name string
+* @return Flow, error
+**/
+func (s *DB) GetFlow(name string) (Flow, error) {
+	if s.driver == nil {
+		return Flow{}, mistake.New(MSG_DRIVER_NOT_DEFINED)
+	}
+
+	return s.driver.GetFlow(name)
+}
+
+/**
+* DeleteFlow
+* @param name string
+* @return error
+**/
+func (s *DB) DeleteFlow(name string) error {
+	if s.driver == nil {
+		return mistake.New(MSG_DRIVER_NOT_DEFINED)
+	}
+
+	return s.driver.DeleteFlow(name)
+}
+
+/**
+* FindFlows
+* @param search string, page int, rows int
+* @return et.List, error
+**/
+func (s *DB) FindFlows(search string, page, rows int) (et.List, error) {
+	if s.driver == nil {
+		return et.List{}, mistake.New(MSG_DRIVER_NOT_DEFINED)
+	}
+
+	return s.driver.FindFlows(search, page, rows)
+}
+
+/**
+* SetCache
+* @param key string, value []byte, duration time.Duration
+* @return error
+**/
+func (s *DB) SetCache(key string, value []byte, duration time.Duration) error {
+	if s.driver == nil {
+		return mistake.New(MSG_DRIVER_NOT_DEFINED)
+	}
+
+	return s.driver.SetCache(key, value, duration)
+}
+
+/**
+* GetCache
+* @param key string
+* @return et.KeyValue, error
+**/
+func (s *DB) GetCache(key string) (et.KeyValue, error) {
+	if s.driver == nil {
+		return et.KeyValue{}, mistake.New(MSG_DRIVER_NOT_DEFINED)
+	}
+
+	return s.driver.GetCache(key)
+}
+
+/**
+* DeleteCache
+* @param key string
+* @return error
+**/
+func (s *DB) DeleteCache(key string) error {
+	if s.driver == nil {
+		return mistake.New(MSG_DRIVER_NOT_DEFINED)
+	}
+
+	return s.driver.DeleteCache(key)
+}
+
+/**
+* CleanCache
+* @return error
+**/
+func (s *DB) CleanCache() error {
+	if s.driver == nil {
+		return mistake.New(MSG_DRIVER_NOT_DEFINED)
+	}
+
+	return s.driver.CleanCache()
+}
+
+/**
+* FindCache
+* @param search string, page int, rows int
+* @return et.List, error
+**/
+func (s *DB) FindCache(search string, page, rows int) (et.List, error) {
+	if s.driver == nil {
+		return et.List{}, mistake.New(MSG_DRIVER_NOT_DEFINED)
+	}
+
+	return s.driver.FindCache(search, page, rows)
+}

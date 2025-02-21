@@ -61,12 +61,13 @@ type Model struct {
 	Relations       map[string]*Relation `json:"Relations"`
 	Details         map[string]*Relation `json:"details"`
 	History         *Relation            `json:"history"`
-	ColRequired     map[string]bool      `json:"col_required"`
+	Required        map[string]bool      `json:"col_required"`
 	SystemKeyField  *Column              `json:"system_key_field"`
 	StateField      *Column              `json:"state_field"`
 	IndexField      *Column              `json:"index_field"`
 	SourceField     *Column              `json:"source_field"`
 	FullTextField   *Column              `json:"full_text_field"`
+	EventError      EventError           `json:"-"`
 	EventsInsert    []Event              `json:"-"`
 	EventsUpdate    []Event              `json:"-"`
 	EventsDelete    []Event              `json:"-"`
@@ -111,8 +112,9 @@ func NewModel(schema *Schema, name string, version int) *Model {
 		Uniques:         make(map[string]*Index),
 		Relations:       make(map[string]*Relation),
 		Details:         make(map[string]*Relation),
-		History:         &Relation{Limit: -1},
-		ColRequired:     make(map[string]bool),
+		History:         &Relation{Limit: 0},
+		Required:        make(map[string]bool),
+		EventError:      EventErrorDefault,
 		EventsInsert:    make([]Event, 0),
 		EventsUpdate:    make([]Event, 0),
 		EventsDelete:    make([]Event, 0),
@@ -242,6 +244,18 @@ func (s *Model) Init() error {
 		return console.Alertm(MSG_DATABASE_IS_REQUIRED)
 	}
 
+	if !s.IsCreated && s.SystemKeyField == nil {
+		s.DefineSystemKeyField()
+	}
+
+	if s.SystemKeyField != nil {
+		idx := s.SystemKeyField.Idx()
+		if idx != len(s.Columns)-1 {
+			s.Columns = append(s.Columns[:idx], s.Columns[idx+1:]...)
+			s.Columns = append(s.Columns, s.SystemKeyField)
+		}
+	}
+
 	return s.Db.LoadModel(s)
 }
 
@@ -358,6 +372,16 @@ func (s *Model) GetKeys() []*Column {
 **/
 func (s *Model) Where(val interface{}) *Ql {
 	return From(s)
+}
+
+/**
+* Query
+* @param search et.Json
+* @return interface{}, error
+**/
+func (s *Model) Query(search et.Json) (interface{}, error) {
+	return From(s).
+		Query(search)
 }
 
 /**

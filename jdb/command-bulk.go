@@ -1,14 +1,24 @@
 package jdb
 
 import (
+	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/mistake"
 )
 
 func (s *Command) bulk() error {
 	s.prepare()
+	model := s.From
 
 	results, err := s.Db.Command(s)
 	if err != nil {
+		if model.EventError != nil {
+			model.EventError(model, et.Json{
+				"command": "insert",
+				"sql":     s.Sql,
+				"error":   err.Error(),
+			})
+		}
+
 		return err
 	}
 
@@ -16,7 +26,6 @@ func (s *Command) bulk() error {
 		return mistake.New(MSG_NOT_INSERT_DATA)
 	}
 
-	model := s.From
 	for _, result := range results.Result {
 		before := result.Json("before")
 		after := result.Json("after")

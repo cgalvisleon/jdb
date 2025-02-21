@@ -8,25 +8,25 @@ import (
 	"github.com/cgalvisleon/jdb/jdb"
 )
 
-func ddlIndex(col *jdb.Column) string {
+func ddlIndex(name string, col *jdb.Column) string {
 	result := ""
 	if slices.Contains([]jdb.TypeData{jdb.TypeDataObject, jdb.TypeDataArray}, col.TypeData) {
-		result = jdb.SQLDDL(`CREATE INDEX IF NOT EXISTS $2_$3_$4_idx ON $1 USING GIN($4 jsonb_path_ops);`, col.Model.Table, col.Model.Schema.Name, col.Model.Name, col.Name)
+		result = jdb.SQLDDL(`CREATE INDEX IF NOT EXISTS $1 ON $2 USING GIN($3 jsonb_path_ops);`, name, col.Model.Table, col.Name)
 	} else if slices.Contains([]jdb.TypeData{jdb.TypeDataFullText}, col.TypeData) {
-		result = jdb.SQLDDL(`CREATE INDEX IF NOT EXISTS $2_$3_$4_idx ON $1 USING GIN($4);`, col.Model.Table, col.Model.Schema.Name, col.Model.Name, col.Name)
+		result = jdb.SQLDDL(`CREATE INDEX IF NOT EXISTS $1 ON $2 USING GIN($3);`, name, col.Model.Table, col.Name)
 	} else if col.TypeColumn == jdb.TpAtribute && col.Model.SourceField != nil {
-		result = jdb.SQLDDL(`CREATE INDEX IF NOT EXISTS $2_$3_$4_idx ON $1 ((%s->>'%s'));`, col.Model.Table, col.Model.Schema.Name, col.Model.Name, col.Model.SourceField.Name, col.Name)
+		result = jdb.SQLDDL(`CREATE INDEX IF NOT EXISTS $1 ON $2 (($3->>'$4'));`, name, col.Model.Table, col.Model.SourceField.Name, col.Name)
 	} else {
-		result = jdb.SQLDDL(`CREATE INDEX IF NOT EXISTS $2_$3_$4_idx ON $1($4);`, col.Model.Table, col.Model.Schema.Name, col.Model.Name, col.Name)
+		result = jdb.SQLDDL(`CREATE INDEX IF NOT EXISTS $1 ON $2($3);`, name, col.Model.Table, col.Name)
 	}
 
 	return result
 }
 
-func ddlUniqueIndex(col *jdb.Column) string {
+func ddlUniqueIndex(name string, col *jdb.Column) string {
 	result := ""
 	if col.TypeColumn == jdb.TpColumn {
-		result = jdb.SQLDDL(`CREATE UNIQUE INDEX IF NOT EXISTS $2_$3_$4_idx ON $1($4);`, col.Model.Table, col.Model.Schema.Name, col.Model.Name, col.Name)
+		result = jdb.SQLDDL(`CREATE UNIQUE INDEX IF NOT EXISTS $1 ON $2($3);`, name, col.Model.Table, col.Name)
 	}
 
 	return result
@@ -70,12 +70,12 @@ func (s *Postgres) ddlForeignKeys(model *jdb.Model) string {
 
 func (s *Postgres) ddlIndex(model *jdb.Model) string {
 	var result string
-	for _, index := range model.Indices {
+	for name, index := range model.Indices {
 		def := ""
 		if index.Column.TypeColumn == jdb.TpAtribute && s.version >= 13 {
-			def = ddlIndex(index.Column)
+			def = ddlIndex(name, index.Column)
 		} else if index.Column.TypeColumn == jdb.TpColumn {
-			def = ddlIndex(index.Column)
+			def = ddlIndex(name, index.Column)
 		}
 
 		result = strs.Append(result, def, "\n")
@@ -86,10 +86,10 @@ func (s *Postgres) ddlIndex(model *jdb.Model) string {
 
 func (s *Postgres) ddlUniqueIndex(model *jdb.Model) string {
 	var result string
-	for _, index := range model.Uniques {
+	for name, index := range model.Uniques {
 		def := ""
 		if index.Column.TypeColumn == jdb.TpColumn {
-			def = ddlUniqueIndex(index.Column)
+			def = ddlUniqueIndex(name, index.Column)
 		}
 
 		result = strs.Append(result, def, "\n")

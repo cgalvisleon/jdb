@@ -79,8 +79,6 @@ func (s *Postgres) LoadModel(model *jdb.Model) error {
 		} else {
 			action = "index"
 			sql = s.ddlIndexFunction(model)
-			console.Debug("index:", sql)
-			console.Stop()
 		}
 	} else {
 		action = "load"

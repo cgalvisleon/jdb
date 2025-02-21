@@ -7,11 +7,11 @@ import (
 )
 
 /**
-* DefineIdxColumn
+* DefineColumnIdx
 * @param name string, typeData TypeData
 * @return *Column
 **/
-func (s *Model) DefineColumn(name string, typeData TypeData) *Column {
+func (s *Model) DefineColumnIdx(name string, typeData TypeData, idx int) *Column {
 	col := s.GetColumn(name)
 	if col != nil {
 		return col
@@ -19,14 +19,22 @@ func (s *Model) DefineColumn(name string, typeData TypeData) *Column {
 
 	def := typeData.DefaultValue()
 	col = newColumn(s, name, "", TpColumn, typeData, def)
-	s.Columns = append(s.Columns, col)
-	if slices.Contains([]string{string(IndexField), string(ProjectField), string(CreatedAtField), string(UpdatedAtField), string(StateField), string(PrimaryKeyField), string(SystemKeyField), string(SourceField)}, name) {
-		s.DefineIndex(true, name)
-	} else if slices.Contains([]TypeData{TypeDataObject, TypeDataArray, TypeDataKey, TypeDataGeometry, TypeDataTime}, typeData) {
-		s.DefineIndex(true, name)
+	if idx == -1 {
+		s.Columns = append(s.Columns, col)
+	} else {
+		s.Columns = append(s.Columns[:idx], append([]*Column{col}, s.Columns[idx:]...)...)
 	}
 
 	return col
+}
+
+/**
+* DefineColumnIdx
+* @param name string, typeData TypeData
+* @return *Column
+**/
+func (s *Model) DefineColumn(name string, typeData TypeData) *Column {
+	return s.DefineColumnIdx(name, typeData, -1)
 }
 
 /**
@@ -98,7 +106,7 @@ func (s *Model) DefineRequired(requireds ...string) *Model {
 	for _, required := range requireds {
 		col := s.GetColumn(required)
 		if col != nil {
-			s.ColRequired[col.Name] = true
+			s.Required[col.Name] = true
 		}
 	}
 
@@ -123,7 +131,7 @@ func (s *Model) DefinePrimaryKey(name string) *Column {
 * @return *Column
 **/
 func (s *Model) DefinePrimaryKeyField() *Column {
-	return s.DefinePrimaryKey(string(PrimaryKeyField))
+	return s.DefinePrimaryKey(PRIMARYKEY)
 }
 
 /**
@@ -156,11 +164,19 @@ func (s *Model) DefineForeignKey(name string, with *Model) *Column {
 * DefineSourceField
 * @return *Column
 **/
-func (s *Model) DefineSourceField(name string) *Column {
+func (s *Model) DefineSource(name string) *Column {
 	result := s.DefineColumn(name, SourceField.TypeData())
 	s.DefineIndex(true, name)
 
 	return result
+}
+
+/**
+* DefineSourceField
+* @return *Column
+**/
+func (s *Model) DefineSourceField() *Column {
+	return s.DefineSource(SOURCE)
 }
 
 /**
@@ -177,7 +193,7 @@ func (s *Model) DefineAtribute(name string, typeData TypeData) *Column {
 	}
 
 	if s.SourceField == nil {
-		s.DefineSourceField(SOURCE)
+		s.DefineSourceField()
 	}
 
 	def := typeData.DefaultValue()
@@ -252,7 +268,12 @@ func (s *Model) DefineIndexField() *Column {
 * @return *Column
 **/
 func (s *Model) DefineProjectField() *Column {
-	result := s.DefineColumn(string(ProjectField), ProjectField.TypeData())
+	idx := -1
+	pk := s.Pk()
+	if pk != nil {
+		idx = slices.IndexFunc(s.Columns, func(e *Column) bool { return e == pk })
+	}
+	result := s.DefineColumnIdx(string(ProjectField), ProjectField.TypeData(), idx)
 	s.DefineIndex(true, string(ProjectField))
 
 	return result
@@ -297,7 +318,7 @@ func (s *Model) DefineGenerated(name string, fn GeneratedFunction) *Column {
 * @param name, relatedTo string
 * @return *Relation
 **/
-func (s *Model) DefineRelation(name, relatedTo string) *Relation {
+func (s *Model) DefineRelation(name, relatedTo, fkn string) *Relation {
 	pk := s.Pk()
 	if pk == nil {
 		return nil
@@ -305,16 +326,16 @@ func (s *Model) DefineRelation(name, relatedTo string) *Relation {
 
 	with := GetModel(relatedTo)
 	if with == nil {
-		with = NewModel(s.Schema, relatedTo, 0)
+		with = NewModel(s.Schema, relatedTo, 1)
 	}
 
-	with.DefineAtribute(s.Name, pk.TypeData)
-	with.DefineForeignKey(s.Name, s)
+	with.DefineAtribute(fkn, pk.TypeData)
+	with.DefineForeignKey(fkn, s)
 	col := newColumn(s, name, "", TpRelatedTo, TypeDataNone, TypeDataNone.DefaultValue())
 	result := &Relation{
 		With:  with,
 		Fk:    pk,
-		Limit: -1,
+		Limit: 0,
 	}
 	col.Detail = result
 	s.Relations[name] = result
@@ -327,30 +348,11 @@ func (s *Model) DefineRelation(name, relatedTo string) *Relation {
 * @param name, relatedTo string
 * @return *Relation
 **/
-func (s *Model) DefineDetail(name string) *Relation {
-	pk := s.Pk()
-	if pk == nil {
-		return nil
-	}
-
+func (s *Model) DefineDetail(name, fkn string) *Model {
 	relatedTo := s.Name + "_" + name
-	with := GetModel(relatedTo)
-	if with == nil {
-		with = NewModel(s.Schema, relatedTo, 0)
-	}
+	result := s.DefineRelation(name, relatedTo, fkn)
 
-	with.DefineAtribute(s.Name, pk.TypeData)
-	with.DefineForeignKey(s.Name, s)
-	col := newColumn(s, name, "", TpRelatedTo, TypeDataNone, TypeDataNone.DefaultValue())
-	result := &Relation{
-		With:  with,
-		Fk:    pk,
-		Limit: -1,
-	}
-	col.Detail = result
-	s.Details[name] = result
-
-	return result
+	return result.With
 }
 
 /**
@@ -358,11 +360,23 @@ func (s *Model) DefineDetail(name string) *Relation {
 * @param limit int64
 * @return *Relation
 **/
-func (s *Model) DefineHistory(limit int64) *Relation {
-	result := s.DefineDetail("historical")
-	result.Limit = limit
+func (s *Model) DefineHistory(limit int64) *Model {
+	pk := s.Pk()
+	if pk == nil {
+		return nil
+	}
 
-	return result
+	name := "historical"
+	relatedTo := s.Name + "_" + name
+	result := s.DefineRelation(name, relatedTo, pk.Name)
+	result.Limit = limit
+	result.With.DefineColumn(CREATED_AT, CreatedAtField.TypeData())
+	result.With.DefineSourceField()
+	result.With.DefineSystemKeyField()
+	result.With.DefineColumn(HISTORY_INDEX, IndexField.TypeData())
+	result.With.DefineIndex(true, HISTORY_INDEX)
+
+	return result.With
 }
 
 /**
@@ -383,16 +397,25 @@ func (s *Model) DefineEvent(tp TypeEvent, event Event) {
 }
 
 /**
+* DefineEventError
+* @param event Resilience
+**/
+func (s *Model) DefineEventError(event EventError) {
+	s.EventError = event
+}
+
+/**
 * DefineModel
 * @return *Model
 **/
 func (s *Model) DefineModel() *Model {
 	s.DefineCreatedAtField()
 	s.DefineUpdatedAtField()
+	s.DefineProjectField()
 	s.DefineStateField()
+	s.DefinePrimaryKeyField()
+	s.DefineSourceField()
 	s.DefineSystemKeyField()
-	s.DefinePrimaryKey(PRIMARYKEY)
-	s.DefineSourceField(SOURCE)
 	s.DefineIndexField()
 
 	return s

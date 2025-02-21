@@ -2,6 +2,7 @@ package jdb
 
 import (
 	"encoding/gob"
+	"slices"
 
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/timezone"
@@ -234,6 +235,19 @@ func (s *Column) Describe() et.Json {
 	}
 
 	return result
+}
+
+/**
+* Idx
+* @return int
+**/
+func (s *Column) Idx() int {
+	idx := slices.IndexFunc(s.Model.Columns, func(e *Column) bool { return e == s })
+	if idx == -1 {
+		return 0
+	}
+
+	return idx
 }
 
 /**

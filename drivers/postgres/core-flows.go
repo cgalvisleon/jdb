@@ -124,7 +124,7 @@ func (s *Postgres) DeleteFlow(id string) error {
 	FROM core.FLOWS
 	WHERE _ID = $1;`)
 
-	err := s.Exec(sql)
+	err := s.Exec(sql, id)
 	if err != nil {
 		return err
 	}
@@ -139,7 +139,7 @@ func (s *Postgres) DeleteFlow(id string) error {
 * @params rows int
 * @return et.List, error
 **/
-func (s *Postgres) FindFlows(search string, page, rows int) (et.Json, error) {
+func (s *Postgres) FindFlows(search string, page, rows int) (et.List, error) {
 	sql := `
 	SELECT COUNT(*) AS ALL
 	FROM core.FLOWS A
@@ -147,7 +147,7 @@ func (s *Postgres) FindFlows(search string, page, rows int) (et.Json, error) {
 
 	result, err := s.Query(sql, search)
 	if err != nil {
-		return et.Json{}, err
+		return et.List{}, err
 	}
 
 	all := result.Int(0, "all")
@@ -162,35 +162,27 @@ func (s *Postgres) FindFlows(search string, page, rows int) (et.Json, error) {
 	offset := (page - 1) * rows
 	rws, err := s.db.Query(sql, search, offset, rows)
 	if err != nil {
-		return et.Json{}, err
+		return et.List{}, err
 	}
 	defer rws.Close()
 
-	flows := []et.Json{}
-	count := 0
+	flows := et.Items{}
 	for rws.Next() {
 		var value []byte
 		var index int
 		err = rws.Scan(&value, &index)
 		if err != nil {
-			return et.Json{}, err
+			return et.List{}, err
 		}
 
 		var flow jdb.Flow
 		err = json.Unmarshal(value, &flow)
 		if err != nil {
-			return et.Json{}, err
+			return et.List{}, err
 		}
 
-		flows = append(flows, flow.Describe())
-		count++
+		flows.Add(flow.Describe())
 	}
 
-	return et.Json{
-		"all":    all,
-		"count":  count,
-		"page":   page,
-		"rows":   rows,
-		"result": flows,
-	}, nil
+	return flows.ToList(all, page, rows), nil
 }

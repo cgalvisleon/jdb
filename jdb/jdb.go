@@ -109,6 +109,7 @@ func Load() (*DB, error) {
 	}
 
 	result.CreateCore()
+	cache.Db = result
 
 	return result, nil
 }
