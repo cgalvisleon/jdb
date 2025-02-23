@@ -31,7 +31,7 @@ type Driver interface {
 	DropSchema(name string) error
 	// Model
 	LoadTable(model *Model) (bool, error)
-	LoadModel(model *Model) error
+	CreateModel(model *Model) error
 	DropModel(model *Model) error
 	// Query
 	Exec(sql string, params ...any) error
@@ -52,7 +52,7 @@ type Driver interface {
 	GetKey(key string) (et.KeyValue, error)
 	DeleteKey(key string) error
 	FindKeys(search string, page, rows int) (et.List, error)
-	// Flow
+	// Function
 	SetFlow(name string, value []byte) error
 	GetFlow(id string) (Flow, error)
 	DeleteFlow(id string) error

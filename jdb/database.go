@@ -211,16 +211,16 @@ func (s *DB) LoadTable(model *Model) (bool, error) {
 }
 
 /**
-* LoadModel
+* CreateModel
 * @param model *Model
 * @return error
 **/
-func (s *DB) LoadModel(model *Model) error {
+func (s *DB) CreateModel(model *Model) error {
 	if s.driver == nil {
 		return mistake.New(MSG_DRIVER_NOT_DEFINED)
 	}
 
-	return s.driver.LoadModel(model)
+	return s.driver.CreateModel(model)
 }
 
 /**

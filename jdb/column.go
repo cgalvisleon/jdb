@@ -120,7 +120,7 @@ const (
 	KEY           = PRIMARYKEY
 	SOURCE        = "source"
 	INDEX         = "index"
-	PROJECT       = "project"
+	PROJECT       = "project_id"
 	CREATED_AT    = "created_at"
 	UPDATED_AT    = "update_at"
 	STATUS        = "status"
@@ -182,6 +182,7 @@ type FullText struct {
 type GeneratedFunction func(col *Column, data *et.Json)
 
 type Relation struct {
+	Key             string  `json:"key"`
 	With            *Model  `json:"with"`
 	Fk              *Column `json:"fk"`
 	Limit           int64   `json:"rows"`
@@ -242,12 +243,11 @@ func (s *Column) Describe() et.Json {
 * @return int
 **/
 func (s *Column) Idx() int {
-	idx := slices.IndexFunc(s.Model.Columns, func(e *Column) bool { return e == s })
-	if idx == -1 {
-		return 0
+	if s.Model == nil {
+		return -1
 	}
 
-	return idx
+	return slices.IndexFunc(s.Model.Columns, func(e *Column) bool { return e == s })
 }
 
 /**

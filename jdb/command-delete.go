@@ -9,10 +9,11 @@ func (s *Command) delete() error {
 	model := s.From
 	results, err := s.Db.Command(s)
 	if err != nil {
-		if model.EventError != nil {
-			model.EventError(model, et.Json{
+		for _, event := range s.From.EventError {
+			event(model, et.Json{
 				"command": "insert",
 				"sql":     s.Sql,
+				"where":   s.listWheres(),
 				"error":   err.Error(),
 			})
 		}

@@ -17,10 +17,10 @@ func (s *Ql) setSelect(field *Field) *Ql {
 			return s
 		}
 
-		if !slices.Contains([]TypeColumn{TpColumn, TpAtribute}, field.Column.TypeColumn) {
-			s.Details = append(s.Details, field)
-		} else {
+		if slices.Contains([]TypeColumn{TpColumn, TpAtribute}, field.Column.TypeColumn) {
 			s.Selects = append(s.Selects, field)
+		} else if slices.Contains([]TypeColumn{TpRelatedTo}, field.Column.TypeColumn) {
+			s.Details = append(s.Details, field)
 		}
 	}
 	return s
@@ -32,6 +32,7 @@ func (s *Ql) setSelect(field *Field) *Ql {
 * @return *Ql
 **/
 func (s *Ql) Select(fields ...string) *Ql {
+	s.TypeSelect = Select
 	for _, field := range fields {
 		field := s.getField(field)
 		s.setSelect(field)

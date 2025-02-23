@@ -49,20 +49,23 @@ func (s *Postgres) LoadTable(model *jdb.Model) (bool, error) {
 }
 
 /**
-* LoadModel
+* CreateModel
 * @param model *jdb.Model
 * @return error
 **/
-func (s *Postgres) LoadModel(model *jdb.Model) error {
-	current, err := s.getModel(model.Table)
-	if err != nil {
-		return err
-	}
-
+func (s *Postgres) CreateModel(model *jdb.Model) error {
 	var action string
 	var sql string
-	version := current.ValInt(1, "version")
-	if model.IsCreated {
+	if !model.IsCreated {
+		action = "create"
+		sql = s.ddlTable(model)
+	} else {
+		current, err := s.getModel(model.Table)
+		if err != nil {
+			return err
+		}
+
+		version := current.ValInt(1, "version")
 		if version != model.Version {
 			action = "mutate"
 			bt, err := current.Byte("model")
@@ -77,38 +80,36 @@ func (s *Postgres) LoadModel(model *jdb.Model) error {
 
 			sql = s.ddlMutate(&old, model, false)
 		} else {
-			action = "index"
-			sql = s.ddlIndexFunction(model)
+			action = "system"
+			sql = s.ddlSystemFunction(model)
 		}
-	} else {
-		action = "load"
-		sql = s.ddlTable(model)
-	}
-
-	serialized, err := model.Serialized()
-	if err != nil {
-		return err
-	}
-
-	id := strs.Format(`load_model_%s`, model.Table)
-	err = s.ExecDDL(id, sql)
-	if err != nil {
-		return err
 	}
 
 	if model.IsDebug {
 		console.Debug(sql)
 	}
 
+	id := strs.Format(`load_model_%s`, model.Table)
+	err := s.ExecDDL(id, sql)
+	if err != nil {
+		return err
+	}
+
+	serialized, err := model.Serialized()
+	if err != nil {
+		model.Drop()
+		return err
+	}
+
+	go s.upsertModel(model.Table, model.Version, serialized)
+
 	for _, detail := range model.Details {
-		err = s.LoadModel(detail.With)
+		err = s.CreateModel(detail.With)
 		if err != nil {
 			model.Drop()
 			return err
 		}
 	}
-
-	go s.upsertModel(model.Table, model.Version, serialized)
 
 	console.Logf(model.Db.Name, `Model %s %s`, model.Name, action)
 

@@ -8,9 +8,11 @@ import (
 func (s *Postgres) sqlGroupBy(ql *jdb.Ql) string {
 	result := ""
 	columns := s.sqlColumns(ql.Groups)
-	if len(columns) != 0 {
-		result = strs.Format("GROUP BY %s", columns)
+	if len(columns) == 0 {
+		return result
 	}
+
+	result = strs.Format("GROUP BY %s", columns)
 
 	return result
 }

@@ -9,9 +9,11 @@ func (s *Postgres) sqlHaving(ql *jdb.Ql) string {
 	result := ""
 	havings := ql.Havings
 	where := whereConditions(havings.QlWhere)
-	if where != "" {
-		result = strs.Format("HAVING %s", where)
+	if where == "" {
+		return result
 	}
+
+	result = strs.Format("HAVING %s", where)
 
 	return result
 }

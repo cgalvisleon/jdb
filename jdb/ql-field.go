@@ -86,6 +86,7 @@ func NewField(column *Column) *Field {
 	table := ""
 	name := ""
 	source := ""
+	hidden := false
 	if column.Model != nil {
 		if column.Model.Schema != nil {
 			schema = column.Model.Schema.Name
@@ -95,6 +96,7 @@ func NewField(column *Column) *Field {
 		if column.Source != nil {
 			source = column.Source.Name
 		}
+		hidden = column.Hidden
 	}
 
 	return &Field{
@@ -103,8 +105,8 @@ func NewField(column *Column) *Field {
 		Table:  table,
 		Name:   name,
 		Source: source,
-		Hidden: column.Hidden,
-		Alias:  column.Name,
+		Hidden: hidden,
+		Alias:  name,
 	}
 }
 

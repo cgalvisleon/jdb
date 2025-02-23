@@ -46,7 +46,7 @@ func asField(field jdb.Field) string {
 		result = strs.Append(result, field.Name, ".")
 		result = setAgregaction(result)
 	case jdb.TpAtribute:
-		result = strs.Append(result, field.Name, ".")
+		result = strs.Append(result, field.Source, ".")
 		result = strs.Format(`%s#>>'{%s}'`, result, field.Name)
 		result = strs.Format(`COALESCE(%s, %v)`, result, field.Column.DefaultQuote())
 		result = setAgregaction(result)
@@ -57,9 +57,11 @@ func asField(field jdb.Field) string {
 
 func selectAsField(field jdb.Field) string {
 	result := asField(field)
-	result = strs.Append(result, field.Alias, " AS ")
+	if field.Name == field.Alias {
+		return result
+	}
 
-	return result
+	return strs.Append(result, field.Alias, " AS ")
 }
 
 func jsonbBuildObject(result, obj string) string {

@@ -34,7 +34,8 @@ func (s *Model) DefineColumnIdx(name string, typeData TypeData, idx int) *Column
 * @return *Column
 **/
 func (s *Model) DefineColumn(name string, typeData TypeData) *Column {
-	return s.DefineColumnIdx(name, typeData, -1)
+	idx := s.SourceIdx()
+	return s.DefineColumnIdx(name, typeData, idx)
 }
 
 /**
@@ -147,13 +148,13 @@ func (s *Model) DefineForeignKey(name string, with *Model) *Column {
 
 	result := s.DefineColumn(name, pk.TypeData)
 	result.Detail = &Relation{
+		Key:             name,
 		With:            with,
 		Fk:              pk,
 		Limit:           -1,
 		OnDeleteCascade: true,
 		OnUpdateCascade: true,
 	}
-	s.DefineIndex(true, result.Name)
 	nm := strs.Format("%s_%s_fk", s.Name, name)
 	s.ForeignKeys[nm] = result
 
@@ -167,6 +168,7 @@ func (s *Model) DefineForeignKey(name string, with *Model) *Column {
 func (s *Model) DefineSource(name string) *Column {
 	result := s.DefineColumn(name, SourceField.TypeData())
 	s.DefineIndex(true, name)
+	s.SourceField = result
 
 	return result
 }
@@ -264,22 +266,6 @@ func (s *Model) DefineIndexField() *Column {
 }
 
 /**
-* DefineProjectField
-* @return *Column
-**/
-func (s *Model) DefineProjectField() *Column {
-	idx := -1
-	pk := s.Pk()
-	if pk != nil {
-		idx = slices.IndexFunc(s.Columns, func(e *Column) bool { return e == pk })
-	}
-	result := s.DefineColumnIdx(string(ProjectField), ProjectField.TypeData(), idx)
-	s.DefineIndex(true, string(ProjectField))
-
-	return result
-}
-
-/**
 * DefineFullText
 * @param fields []string
 * @return language string
@@ -295,6 +281,22 @@ func (s *Model) DefineFullText(language string, fields []string) *Column {
 	result.Hidden = true
 	s.DefineIndex(true, string(FullTextField))
 	s.FullTextField = result
+
+	return result
+}
+
+/**
+* DefineProjectField
+* @return *Column
+**/
+func (s *Model) DefineProjectField() *Column {
+	idx := -1
+	pk := s.Pk()
+	if pk != nil {
+		idx = slices.IndexFunc(s.Columns, func(e *Column) bool { return e == pk })
+	}
+	result := s.DefineColumnIdx(string(ProjectField), ProjectField.TypeData(), idx)
+	s.DefineIndex(true, string(ProjectField))
 
 	return result
 }
@@ -329,15 +331,17 @@ func (s *Model) DefineRelation(name, relatedTo, fkn string) *Relation {
 		with = NewModel(s.Schema, relatedTo, 1)
 	}
 
-	with.DefineAtribute(fkn, pk.TypeData)
+	with.DefineColumn(fkn, pk.TypeData)
 	with.DefineForeignKey(fkn, s)
 	col := newColumn(s, name, "", TpRelatedTo, TypeDataNone, TypeDataNone.DefaultValue())
 	result := &Relation{
+		Key:   fkn,
 		With:  with,
 		Fk:    pk,
 		Limit: 0,
 	}
 	col.Detail = result
+	s.Columns = append(s.Columns, col)
 	s.Relations[name] = result
 
 	return result
@@ -351,6 +355,7 @@ func (s *Model) DefineRelation(name, relatedTo, fkn string) *Relation {
 func (s *Model) DefineDetail(name, fkn string) *Model {
 	relatedTo := s.Name + "_" + name
 	result := s.DefineRelation(name, relatedTo, fkn)
+	s.Details[name] = result
 
 	return result.With
 }
@@ -372,8 +377,8 @@ func (s *Model) DefineHistory(limit int64) *Model {
 	result.Limit = limit
 	result.With.DefineColumn(CREATED_AT, CreatedAtField.TypeData())
 	result.With.DefineSourceField()
-	result.With.DefineSystemKeyField()
 	result.With.DefineColumn(HISTORY_INDEX, IndexField.TypeData())
+	result.With.DefineSystemKeyField()
 	result.With.DefineIndex(true, HISTORY_INDEX)
 
 	return result.With
@@ -401,7 +406,7 @@ func (s *Model) DefineEvent(tp TypeEvent, event Event) {
 * @param event Resilience
 **/
 func (s *Model) DefineEventError(event EventError) {
-	s.EventError = event
+	s.EventError = append(s.EventError, event)
 }
 
 /**
@@ -411,12 +416,28 @@ func (s *Model) DefineEventError(event EventError) {
 func (s *Model) DefineModel() *Model {
 	s.DefineCreatedAtField()
 	s.DefineUpdatedAtField()
+	s.DefineStateField()
+	s.DefinePrimaryKeyField()
+	s.DefineSourceField()
+	s.DefineIndexField()
+	s.DefineSystemKeyField()
+
+	return s
+}
+
+/**
+* DefineProjectModel
+* @return *Model
+**/
+func (s *Model) DefineProjectModel() *Model {
+	s.DefineCreatedAtField()
+	s.DefineUpdatedAtField()
 	s.DefineProjectField()
 	s.DefineStateField()
 	s.DefinePrimaryKeyField()
 	s.DefineSourceField()
-	s.DefineSystemKeyField()
 	s.DefineIndexField()
+	s.DefineSystemKeyField()
 
 	return s
 }

@@ -67,7 +67,7 @@ type Model struct {
 	IndexField      *Column              `json:"index_field"`
 	SourceField     *Column              `json:"source_field"`
 	FullTextField   *Column              `json:"full_text_field"`
-	EventError      EventError           `json:"-"`
+	EventError      []EventError         `json:"-"`
 	EventsInsert    []Event              `json:"-"`
 	EventsUpdate    []Event              `json:"-"`
 	EventsDelete    []Event              `json:"-"`
@@ -114,12 +114,13 @@ func NewModel(schema *Schema, name string, version int) *Model {
 		Details:         make(map[string]*Relation),
 		History:         &Relation{Limit: 0},
 		Required:        make(map[string]bool),
-		EventError:      EventErrorDefault,
+		EventError:      make([]EventError, 0),
 		EventsInsert:    make([]Event, 0),
 		EventsUpdate:    make([]Event, 0),
 		EventsDelete:    make([]Event, 0),
 		Version:         version,
 	}
+	result.DefineEventError(EventErrorDefault)
 	result.DefineEvent(EventInsert, EventInsertDefault)
 	result.DefineEvent(EventUpdate, EventUpdateDefault)
 	result.DefineEvent(EventDelete, EventDeleteDefault)
@@ -161,9 +162,22 @@ func (s *Model) GenKey(id string) string {
 }
 
 /**
+* SourceIdx
+* @return int
+**/
+func (s *Model) SourceIdx() int {
+	if s.SourceField == nil {
+		return -1
+	}
+
+	return s.SourceField.Idx()
+}
+
+/**
 * Up
 * @return string
-**/
+*
+ */
 func (s *Model) Up() string {
 	return strs.Uppcase(s.Name)
 }
@@ -244,8 +258,28 @@ func (s *Model) Init() error {
 		return console.Alertm(MSG_DATABASE_IS_REQUIRED)
 	}
 
-	if !s.IsCreated && s.SystemKeyField == nil {
+	if s.IsCreated {
+		return nil
+	}
+
+	if s.SystemKeyField == nil {
 		s.DefineSystemKeyField()
+	}
+
+	if s.SourceField != nil {
+		idx := s.SourceField.Idx()
+		if idx != len(s.Columns)-1 {
+			s.Columns = append(s.Columns[:idx], s.Columns[idx+1:]...)
+			s.Columns = append(s.Columns, s.SourceField)
+		}
+	}
+
+	if s.IndexField != nil {
+		idx := s.IndexField.Idx()
+		if idx != len(s.Columns)-1 {
+			s.Columns = append(s.Columns[:idx], s.Columns[idx+1:]...)
+			s.Columns = append(s.Columns, s.IndexField)
+		}
 	}
 
 	if s.SystemKeyField != nil {
@@ -256,7 +290,7 @@ func (s *Model) Init() error {
 		}
 	}
 
-	return s.Db.LoadModel(s)
+	return s.Db.CreateModel(s)
 }
 
 /**
@@ -367,11 +401,16 @@ func (s *Model) GetKeys() []*Column {
 
 /**
 * Where
-* @param val interface{}
+* @param val string
 * @return *Ql
 **/
-func (s *Model) Where(val interface{}) *Ql {
-	return From(s)
+func (s *Model) Where(val string) *Ql {
+	result := From(s)
+	if s.SourceField != nil {
+		result.TypeSelect = Data
+	}
+
+	return result.Where(val)
 }
 
 /**

@@ -1,6 +1,7 @@
 package jdb
 
 import (
+	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/mistake"
 )
@@ -28,18 +29,20 @@ func (s *Ql) GetDetails(data *et.Json) *et.Json {
 			if col.Detail.Fk == nil {
 				continue
 			}
-			fkn := col.Detail.Fk.Name
-			key := (*data)[fkn]
+			pkn := col.Detail.Fk.Name
+			key := (*data)[pkn]
 			if key == nil {
 				continue
 			}
 
+			fkn := col.Detail.Key
 			with := col.Detail.With
 			limit := int(col.Detail.Limit)
+			console.Debug("GetDetails:", " key:", key, " pkn:", pkn, " fkn:", fkn, " limit:", limit)
 			if limit <= 0 {
 				result, err := with.
 					Where(fkn).Eq(key).
-					Data().
+					Debug().
 					All()
 				if err != nil {
 					continue
@@ -50,6 +53,7 @@ func (s *Ql) GetDetails(data *et.Json) *et.Json {
 				result, err := with.
 					Where(fkn).Eq(key).
 					Page(1).
+					Debug().
 					Rows(limit)
 				if err != nil {
 					continue
@@ -91,16 +95,15 @@ func (s *Ql) First(n int) (et.Items, error) {
 		return et.Items{}, mistake.New(MSG_DATABASE_NOT_FOUND)
 	}
 
-	s.setLimit(n)
+	s.Limit = n
 	s.prepare()
 	result, err := s.Db.Select(s)
 	if err != nil {
 		return et.Items{}, err
 	}
 
-	for i, data := range result.Result {
-		data := s.GetDetails(&data)
-		result.Result[i] = *data
+	for _, data := range result.Result {
+		s.GetDetails(&data)
 	}
 
 	return result, nil

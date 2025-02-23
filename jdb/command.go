@@ -3,6 +3,7 @@ package jdb
 import (
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/mistake"
+	"github.com/cgalvisleon/et/strs"
 )
 
 type TypeCommand int
@@ -130,8 +131,34 @@ func (s *Command) One() (et.Item, error) {
 	}, nil
 }
 
+/**
+* asField
+* @param field *Field
+* @return string
+**/
+func (s *Command) asField(field *Field) string {
+	if s.From == nil {
+		return field.Name
+	}
+
+	return strs.Format("%s.%s", field.Table, field.Name)
+}
+
+/**
+* setWhere
+* @param wheres et.Json
+* @return *Command
+**/
 func (s *Command) setWhere(wheres et.Json) *Command {
 	s.QlWhere.setWheres(wheres, s.getField)
 
 	return s
+}
+
+/**
+* listWheres
+* @return et.Json
+**/
+func (s *Command) listWheres() et.Json {
+	return s.QlWhere.listWheres(s.asField)
 }

@@ -7,6 +7,14 @@ import (
 )
 
 func (s *Postgres) sqlWhere(where *jdb.QlWhere) string {
+	if where == nil {
+		return ""
+	}
+
+	if len(where.Wheres) == 0 {
+		return ""
+	}
+
 	result := whereConditions(where)
 	result = strs.Append("WHERE", result, " ")
 
@@ -40,24 +48,11 @@ func whereKey(val interface{}) string {
 }
 
 func whereValue(val interface{}) string {
-	adField := func(f *jdb.Field) string {
-		switch f.Column.TypeColumn {
-		case jdb.TpColumn:
-			def := strs.Append(f.As, f.Name, ".")
-			return strs.Format(`%s`, def)
-		case jdb.TpAtribute:
-			def := strs.Append(f.As, f.Name, ".")
-			return strs.Format(`%s#>>'{%s}'`, def, f.Name)
-		default:
-			return ""
-		}
-	}
-
 	switch v := val.(type) {
 	case jdb.Field:
 		return asField(v)
 	case *jdb.Field:
-		return adField(v)
+		return asField(*v)
 	case []interface{}:
 		var result string
 		for _, w := range v {

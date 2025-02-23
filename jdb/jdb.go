@@ -273,35 +273,13 @@ func Describe() et.Json {
 **/
 func Query(params et.Json) (interface{}, error) {
 	from := params.Str("from")
-	joins := params.ArrayJson("join")
-	where := params.Json("where")
-	groups := params.ArrayStr("group_by")
-	havings := params.Json("having")
-	orders := params.Json("order_by")
-	page := params.Int("page")
-	limit := params.ValInt(30, "limit")
-
 	model := GetModel(from)
 	if model == nil {
 		return nil, mistake.Newf(MSG_MODEL_NOT_FOUND, from)
 	}
 
-	ql := From(model).
-		setJoins(joins).
-		setWheres(where).
-		setGroupBy(groups...).
-		setHavings(havings).
-		setOrders(orders)
-	if params["data"] != nil {
-		data := params.ArrayStr("data")
-		ql.Data(data...)
-	} else {
-		selects := params.ArrayStr("select")
-		ql.Select(selects...)
-	}
-	ql.setPage(page)
-
-	return ql.setLimit(limit)
+	return From(model).
+		Query(params)
 }
 
 /**

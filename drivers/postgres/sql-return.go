@@ -16,7 +16,7 @@ func (s *Postgres) sqlJsonObject(from *jdb.QlFrom) string {
 		if field.Column == nil {
 			continue
 		}
-		if slices.Contains([]jdb.TypeColumn{jdb.TpColumn, jdb.TpAtribute}, field.Column.TypeColumn) {
+		if slices.Contains([]jdb.TypeColumn{jdb.TpColumn}, field.Column.TypeColumn) {
 			field.As = from.As
 			selects = append(selects, field)
 		}

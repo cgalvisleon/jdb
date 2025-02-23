@@ -60,7 +60,7 @@ func (s *Ql) addFrom(m *Model) *QlFrom {
 	}
 
 	s.Froms.Froms = append(s.Froms.Froms, from)
-	s.index++
+	s.Froms.index++
 
 	return from
 }

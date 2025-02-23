@@ -113,6 +113,13 @@ func (s *Postgres) Select(ql *jdb.Ql) (et.Items, error) {
 		return et.Items{}, err
 	}
 
+	for _, item := range result.Result {
+		for _, detail := range ql.Details {
+			item[detail.Name] = detail.Define()
+			console.Debug(detail)
+		}
+	}
+
 	return result, nil
 }
 

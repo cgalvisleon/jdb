@@ -54,7 +54,7 @@ func (s *Postgres) ddlForeignKeys(model *jdb.Model) string {
 	var result string
 	for key, fk := range model.ForeignKeys {
 		ref := fk.Detail.Fk
-		def := strs.Format(`ALTER TABLE IF EXISTS %s ADD CONSTRAINT %s FOREIGN KEY (%s) REFERENCES %s(%s)`, model.Table, key, ref.Name, ref.Model.Table, ref.Name)
+		def := strs.Format(`ALTER TABLE IF EXISTS %s ADD CONSTRAINT %s FOREIGN KEY (%s) REFERENCES %s(%s)`, model.Table, key, fk.Name, ref.Model.Table, ref.Name)
 		if fk.Detail.OnDeleteCascade {
 			def = def + " ON DELETE CASCADE"
 		}
@@ -103,6 +103,13 @@ func (s *Postgres) ddlIndexFunction(model *jdb.Model) string {
 	result = strs.Append(result, s.ddlIndex(model), "\n")
 	result = strs.Append(result, s.ddlUniqueIndex(model), "\n")
 	result = strs.Append(result, s.ddlForeignKeys(model), "\n\n")
+	result = strs.Append(result, s.ddlTriggers(model), "\n\n")
+
+	return result
+}
+
+func (s *Postgres) ddlSystemFunction(model *jdb.Model) string {
+	result := ""
 	result = strs.Append(result, s.ddlTriggers(model), "\n\n")
 
 	return result
