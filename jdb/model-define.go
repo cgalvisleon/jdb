@@ -151,12 +151,13 @@ func (s *Model) DefineForeignKey(name string, with *Model) *Column {
 		Key:             name,
 		With:            with,
 		Fk:              pk,
-		Limit:           -1,
+		Limit:           0,
 		OnDeleteCascade: true,
 		OnUpdateCascade: true,
 	}
-	nm := strs.Format("%s_%s_fk", s.Name, name)
-	s.ForeignKeys[nm] = result
+	fkn := strs.Format("%s_%s_fk", s.Name, name)
+	s.ForeignKeys[fkn] = result
+	s.RelationsTo[with.Name] = result.Detail
 
 	return result
 }
@@ -317,10 +318,10 @@ func (s *Model) DefineGenerated(name string, fn GeneratedFunction) *Column {
 
 /**
 * DefineRelation
-* @param name, relatedTo string
+* @param name, relatedTo, fkn string, limit int
 * @return *Relation
 **/
-func (s *Model) DefineRelation(name, relatedTo, fkn string) *Relation {
+func (s *Model) DefineRelation(name, relatedTo, fkn string, limit int) *Relation {
 	pk := s.Pk()
 	if pk == nil {
 		return nil
@@ -338,23 +339,23 @@ func (s *Model) DefineRelation(name, relatedTo, fkn string) *Relation {
 		Key:   fkn,
 		With:  with,
 		Fk:    pk,
-		Limit: 0,
+		Limit: limit,
 	}
 	col.Detail = result
 	s.Columns = append(s.Columns, col)
-	s.Relations[name] = result
+	s.RelationsTo[name] = result
 
 	return result
 }
 
 /**
 * DefineDetail
-* @param name, relatedTo string
+* @param name, fkn string, limit int
 * @return *Relation
 **/
-func (s *Model) DefineDetail(name, fkn string) *Model {
+func (s *Model) DefineDetail(name, fkn string, limit int) *Model {
 	relatedTo := s.Name + "_" + name
-	result := s.DefineRelation(name, relatedTo, fkn)
+	result := s.DefineRelation(name, relatedTo, fkn, limit)
 	s.Details[name] = result
 
 	return result.With
@@ -362,10 +363,10 @@ func (s *Model) DefineDetail(name, fkn string) *Model {
 
 /**
 * DefineHistory
-* @param limit int64
+* @param limit int
 * @return *Relation
 **/
-func (s *Model) DefineHistory(limit int64) *Model {
+func (s *Model) DefineHistory(limit int) *Model {
 	pk := s.Pk()
 	if pk == nil {
 		return nil
@@ -373,8 +374,7 @@ func (s *Model) DefineHistory(limit int64) *Model {
 
 	name := "historical"
 	relatedTo := s.Name + "_" + name
-	result := s.DefineRelation(name, relatedTo, pk.Name)
-	result.Limit = limit
+	result := s.DefineRelation(name, relatedTo, pk.Name, limit)
 	result.With.DefineColumn(CREATED_AT, CreatedAtField.TypeData())
 	result.With.DefineSourceField()
 	result.With.DefineColumn(HISTORY_INDEX, IndexField.TypeData())

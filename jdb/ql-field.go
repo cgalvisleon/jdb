@@ -50,6 +50,27 @@ var agregations = map[TypeAgregation]*Agregation{
 	AgregationMax:   {Agregation: "MAX", pattern: `MAX\([a-zA-Z0-9_]+\)$`},
 }
 
+type TypeResult int
+
+const (
+	TpResult TypeResult = iota
+	TpList
+)
+
+/**
+* StrToTypeResult
+* @param str string
+* @return TypeResult
+**/
+func StrToTypeResult(str string) TypeResult {
+	switch str {
+	case "list":
+		return TpList
+	}
+
+	return TpResult
+}
+
 /**
 * init
 **/
@@ -74,6 +95,22 @@ type Field struct {
 	Value      interface{}
 	Alias      string
 	Hidden     bool
+	Page       int
+	Rows       int
+	TpResult   TypeResult
+}
+
+/**
+* Describe
+* @return et.Json
+**/
+func (s *Field) Describe() et.Json {
+	result, err := et.Object(s)
+	if err != nil {
+		return et.Json{}
+	}
+
+	return result
 }
 
 /**
@@ -82,32 +119,36 @@ type Field struct {
 * @return *Field
 **/
 func NewField(column *Column) *Field {
-	schema := ""
-	table := ""
-	name := ""
-	source := ""
-	hidden := false
-	if column.Model != nil {
-		if column.Model.Schema != nil {
-			schema = column.Model.Schema.Name
-		}
-		table = column.Model.Name
-		name = column.Name
-		if column.Source != nil {
-			source = column.Source.Name
-		}
-		hidden = column.Hidden
+	result := &Field{}
+	if column == nil {
+		return result
 	}
 
-	return &Field{
-		Column: column,
-		Schema: schema,
-		Table:  table,
-		Name:   name,
-		Source: source,
-		Hidden: hidden,
-		Alias:  name,
+	result.Column = column
+	result.Name = column.Name
+	result.Alias = column.Name
+	result.Hidden = column.Hidden
+
+	if column.TypeColumn == TpRelatedTo {
+		result.Page = 1
+		result.Rows = 30
+		result.TpResult = TpResult
 	}
+
+	if column.Model == nil {
+		return result
+	}
+
+	result.Schema = column.Model.Schema.Name
+	result.Table = column.Model.Name
+
+	if column.Source == nil {
+		return result
+	}
+
+	result.Source = column.Source.Name
+
+	return result
 }
 
 func (s *Field) Define() et.Json {

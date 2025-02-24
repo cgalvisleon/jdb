@@ -20,6 +20,7 @@ type Ql struct {
 	Joins      []*QlJoin  `json:"joins"`
 	Selects    []*Field   `json:"selects"`
 	Details    []*Field   `json:"details"`
+	Rollups    []*Field   `json:"rollups"`
 	Groups     []*Field   `json:"group_bys"`
 	Havings    *QlHaving  `json:"havings"`
 	Orders     *QlOrder   `json:"orders"`

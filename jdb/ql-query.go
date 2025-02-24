@@ -7,67 +7,6 @@ import (
 )
 
 /**
-* GetDetails
-* @return et.Json
-**/
-func (s *Ql) GetDetails(data *et.Json) *et.Json {
-	for _, field := range s.Details {
-		col := field.Column
-		if col == nil {
-			continue
-		}
-
-		switch col.TypeColumn {
-		case TpGenerated:
-			if col.GeneratedFunction != nil {
-				col.GeneratedFunction(col, data)
-			}
-		case TpRelatedTo:
-			if col.Detail == nil {
-				continue
-			}
-			if col.Detail.Fk == nil {
-				continue
-			}
-			pkn := col.Detail.Fk.Name
-			key := (*data)[pkn]
-			if key == nil {
-				continue
-			}
-
-			fkn := col.Detail.Key
-			with := col.Detail.With
-			limit := int(col.Detail.Limit)
-			console.Debug("GetDetails:", " key:", key, " pkn:", pkn, " fkn:", fkn, " limit:", limit)
-			if limit <= 0 {
-				result, err := with.
-					Where(fkn).Eq(key).
-					Debug().
-					All()
-				if err != nil {
-					continue
-				}
-
-				data.Set(col.Name, result.Result)
-			} else {
-				result, err := with.
-					Where(fkn).Eq(key).
-					Page(1).
-					Debug().
-					Rows(limit)
-				if err != nil {
-					continue
-				}
-
-				data.Set(col.Name, result.Result)
-			}
-		}
-	}
-
-	return data
-}
-
-/**
 * Exist
 * @return bool, error
 **/
@@ -80,6 +19,24 @@ func (s *Ql) Exist() (bool, error) {
 	result, err := s.Db.Exists(s)
 	if err != nil {
 		return false, err
+	}
+
+	return result, nil
+}
+
+/**
+* Counted
+* @return int, error
+**/
+func (s *Ql) Counted() (int, error) {
+	if s.Db == nil {
+		return 0, mistake.New(MSG_DATABASE_NOT_FOUND)
+	}
+
+	s.prepare()
+	result, err := s.Db.Count(s)
+	if err != nil {
+		return 0, err
 	}
 
 	return result, nil
@@ -213,6 +170,8 @@ func (s *Ql) Query(search et.Json) (interface{}, error) {
 	page := search.Int("page")
 	limit := search.ValInt(30, "limit")
 
+	console.Debug("search:", search.ToString())
+
 	s.setJoins(joins).
 		setWheres(where).
 		setGroupBy(groups...).
@@ -220,8 +179,10 @@ func (s *Ql) Query(search et.Json) (interface{}, error) {
 		setOrders(orders)
 	if search["data"] != nil {
 		data := search.ArrayStr("data")
+		console.Ping()
 		s.Data(data...)
 	} else {
+		console.Pong()
 		selects := search.ArrayStr("select")
 		s.Select(selects...)
 	}

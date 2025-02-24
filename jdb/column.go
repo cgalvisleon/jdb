@@ -185,7 +185,7 @@ type Relation struct {
 	Key             string  `json:"key"`
 	With            *Model  `json:"with"`
 	Fk              *Column `json:"fk"`
-	Limit           int64   `json:"rows"`
+	Limit           int     `json:"rows"`
 	OnDeleteCascade bool    `json:"on_delete_cascade"`
 	OnUpdateCascade bool    `json:"on_update_cascade"`
 }

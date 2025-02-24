@@ -110,7 +110,7 @@ func EventHistoryDefault(model *Model, before et.Json, after et.Json) error {
 	go history.With.Insert(before).
 		Exec()
 
-	limit := index - history.Limit
+	limit := index - int64(history.Limit)
 	if limit <= 0 {
 		return nil
 	}

@@ -1,5 +1,7 @@
 package jdb
 
+import "github.com/cgalvisleon/et/utility"
+
 /**
 * Sum
 * @param field string
@@ -21,6 +23,10 @@ func (s *Ql) Sum(field string) *Ql {
 * @return *Ql
 **/
 func (s *Ql) Count(field string) *Ql {
+	if !utility.ValidWord(field) {
+		return s
+	}
+
 	agr := s.getField(field)
 	if agr != nil {
 		agr.SetAgregation(AgregationCount)
@@ -36,6 +42,10 @@ func (s *Ql) Count(field string) *Ql {
 * @return *Ql
 **/
 func (s *Ql) Avg(field string) *Ql {
+	if !utility.ValidWord(field) {
+		return s
+	}
+
 	agr := s.getField(field)
 	if agr != nil {
 		agr.SetAgregation(AgregationAvg)
@@ -51,6 +61,10 @@ func (s *Ql) Avg(field string) *Ql {
 * @return *Ql
 **/
 func (s *Ql) Min(field string) *Ql {
+	if !utility.ValidWord(field) {
+		return s
+	}
+
 	agr := s.getField(field)
 	if agr != nil {
 		agr.SetAgregation(AgregationMin)
@@ -66,6 +80,10 @@ func (s *Ql) Min(field string) *Ql {
 * @return *Ql
 **/
 func (s *Ql) Max(field string) *Ql {
+	if !utility.ValidWord(field) {
+		return s
+	}
+
 	agr := s.getField(field)
 	if agr != nil {
 		agr.SetAgregation(AgregationMax)

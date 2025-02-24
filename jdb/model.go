@@ -58,7 +58,8 @@ type Model struct {
 	ForeignKeys     map[string]*Column   `json:"foreign_keys"`
 	Indices         map[string]*Index    `json:"indices"`
 	Uniques         map[string]*Index    `json:"uniques"`
-	Relations       map[string]*Relation `json:"Relations"`
+	RelationsTo     map[string]*Relation `json:"relations_to"`
+	Rollups         map[string]*Relation `json:"rollups"`
 	Details         map[string]*Relation `json:"details"`
 	History         *Relation            `json:"history"`
 	Required        map[string]bool      `json:"col_required"`
@@ -110,7 +111,8 @@ func NewModel(schema *Schema, name string, version int) *Model {
 		ForeignKeys:     make(map[string]*Column),
 		Indices:         make(map[string]*Index),
 		Uniques:         make(map[string]*Index),
-		Relations:       make(map[string]*Relation),
+		RelationsTo:     make(map[string]*Relation),
+		Rollups:         make(map[string]*Relation),
 		Details:         make(map[string]*Relation),
 		History:         &Relation{Limit: 0},
 		Required:        make(map[string]bool),
@@ -420,6 +422,7 @@ func (s *Model) Where(val string) *Ql {
 **/
 func (s *Model) Query(search et.Json) (interface{}, error) {
 	return From(s).
+		Debug().
 		Query(search)
 }
 
