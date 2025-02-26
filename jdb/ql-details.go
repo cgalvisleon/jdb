@@ -64,6 +64,52 @@ func (s *Ql) GetDetails(data *et.Json) *et.Json {
 
 				data.Set(col.Name, result.ToList(all, field.Page, field.Rows))
 			}
+		case TpRollup:
+			if col.Rollup == nil {
+				continue
+			}
+			if col.Rollup.Fk == nil {
+				continue
+			}
+			pkn := col.Rollup.Key
+			key := (*data)[pkn]
+			if key == nil {
+				continue
+			}
+
+			n := len(col.Rollup.Props)
+			if n <= 0 {
+				continue
+			}
+
+			fkn := col.Rollup.Fk.Name
+			source := col.Rollup.Source
+			props := make([]string, 0)
+			for _, prop := range col.Rollup.Props {
+				props = append(props, prop.Name)
+			}
+			if n == 1 {
+				prop := props[0]
+				result, err := source.
+					Where(fkn).Eq(key).
+					Data(prop).
+					One()
+				if err != nil {
+					continue
+				}
+
+				data.Set(col.Name, result.Result[prop])
+			} else {
+				result, err := source.
+					Where(fkn).Eq(key).
+					Data(props...).
+					One()
+				if err != nil {
+					continue
+				}
+
+				data.Set(col.Name, result.Result)
+			}
 		}
 	}
 
@@ -76,14 +122,14 @@ func (s *Ql) GetDetails(data *et.Json) *et.Json {
 * @return *Ql
 **/
 func (s *Ql) Detail(name string, page, rows int, tp TypeResult) *Ql {
-	idx := slices.IndexFunc(s.Details, func(e *Field) bool { return e.Name == name })
-	if idx == -1 {
+	field := s.getField(name)
+	if field == nil {
 		return s
 	}
 
-	field := s.Details[idx]
-	if field == nil {
-		return s
+	idx := slices.IndexFunc(s.Details, func(e *Field) bool { return e.AsField() == field.AsField() })
+	if idx == -1 {
+		s.Details = append(s.Details, field)
 	}
 
 	field.Page = page

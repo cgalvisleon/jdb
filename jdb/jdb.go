@@ -173,6 +173,15 @@ func ConnectTo(params et.Json) (*DB, error) {
 }
 
 /**
+* GetDB
+* @param name string
+* @return *DB
+**/
+func GetDB(name string) *DB {
+	return Jdb.DBs[name]
+}
+
+/**
 * GetShema
 * @param name string
 * @param isCreate bool

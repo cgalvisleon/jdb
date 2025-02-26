@@ -16,7 +16,25 @@ const (
 	TpAtribute
 	TpGenerated
 	TpRelatedTo
+	TpRollup
 )
+
+func (s TypeColumn) Str() string {
+	switch s {
+	case TpColumn:
+		return "column"
+	case TpAtribute:
+		return "attribute"
+	case TpGenerated:
+		return "generated"
+	case TpRelatedTo:
+		return "related_to"
+	case TpRollup:
+		return "rollup"
+	}
+
+	return "column"
+}
 
 type TypeData int
 
@@ -123,7 +141,7 @@ const (
 	PROJECT       = "project_id"
 	CREATED_AT    = "created_at"
 	UPDATED_AT    = "update_at"
-	STATUS        = "status"
+	STATUS        = "status_id"
 	SYSID         = "jdbid"
 	CREATED_TO    = "created_to"
 	UPDATED_TO    = "updated_to"
@@ -190,6 +208,54 @@ type Relation struct {
 	OnUpdateCascade bool    `json:"on_update_cascade"`
 }
 
+func (s *Relation) Describe() et.Json {
+	with := ""
+	if s.With != nil {
+		with = s.With.Name
+	}
+	fk := ""
+	if s.Fk != nil {
+		fk = s.Fk.Name
+	}
+	result := et.Json{
+		"key":               s.Key,
+		"with":              with,
+		"fk":                fk,
+		"rows":              s.Limit,
+		"on_delete_cascade": s.OnDeleteCascade,
+		"on_update_cascade": s.OnUpdateCascade,
+	}
+
+	return result
+}
+
+type Rollup struct {
+	Key    string  `json:"key"`
+	Source *Model  `json:"source"`
+	Fk     *Column `json:"fk"`
+	Props  []*Column
+}
+
+func (s *Rollup) Describe() et.Json {
+	source := ""
+	if s.Source != nil {
+		source = s.Source.Name
+	}
+	props := make([]string, 0)
+	for _, column := range s.Props {
+		props = append(props, column.Name)
+	}
+
+	result := et.Json{
+		"key":    s.Key,
+		"source": source,
+		"fk":     s.Fk.Name,
+		"props":  props,
+	}
+
+	return result
+}
+
 type Column struct {
 	Model             *Model            `json:"-"`
 	Source            *Column           `json:"-"`
@@ -202,6 +268,7 @@ type Column struct {
 	Min               float64           `json:"min"`
 	Hidden            bool              `json:"hidden"`
 	Detail            *Relation         `json:"detail"`
+	Rollup            *Rollup           `json:"rollup"`
 	FullText          *FullText         `json:"columns"`
 	GeneratedFunction GeneratedFunction `json:"-"`
 	Values            []interface{}     `json:"values"`
@@ -230,9 +297,34 @@ func newColumn(model *Model, name string, description string, typeColumn TypeCol
 * @return et.Json
 **/
 func (s *Column) Describe() et.Json {
-	result, err := et.Object(s)
-	if err != nil {
-		return et.Json{}
+	var fulltext = []string{}
+	if s.FullText != nil {
+		for _, column := range s.FullText.Columns {
+			fulltext = append(fulltext, column.Name)
+		}
+	}
+	detail := et.Json{}
+	if s.Detail != nil {
+		detail = s.Detail.Describe()
+	}
+	rollup := et.Json{}
+	if s.Rollup != nil {
+		rollup = s.Rollup.Describe()
+	}
+
+	result := et.Json{
+		"name":        s.Name,
+		"description": s.Description,
+		"type_column": s.TypeColumn.Str(),
+		"type_data":   s.TypeData.DefaultValue(),
+		"default":     s.Default,
+		"max":         s.Max,
+		"min":         s.Min,
+		"hidden":      s.Hidden,
+		"detail":      detail,
+		"rollup":      rollup,
+		"fulltext":    fulltext,
+		"values":      s.Values,
 	}
 
 	return result

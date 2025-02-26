@@ -27,7 +27,7 @@ type DB struct {
 	Schemas     map[string]*Schema `json:"schemas"`
 	UseCore     bool               `json:"use_core"`
 	Node        int64              `json:"node"`
-	driver      Driver
+	driver      Driver             `json:"-"`
 }
 
 /**
@@ -48,7 +48,7 @@ func NewDatabase(name, driver string) (*DB, error) {
 	result := &DB{
 		CreatedAt:   now,
 		UpdateAt:    now,
-		Id:          utility.UUID(),
+		Id:          utility.RecordId("db", ""),
 		Name:        Name(name),
 		Description: "",
 		Schemas:     map[string]*Schema{},
@@ -66,9 +66,18 @@ func NewDatabase(name, driver string) (*DB, error) {
 * @return et.Json
 **/
 func (s *DB) Describe() et.Json {
-	result, err := et.Object(s)
-	if err != nil {
-		return et.Json{}
+	var schemas = make([]et.Json, 0)
+	for _, schema := range s.Schemas {
+		schemas = append(schemas, schema.Describe())
+	}
+
+	result := et.Json{
+		"created_date": s.CreatedAt,
+		"update_date":  s.UpdateAt,
+		"id":           s.Id,
+		"name":         s.Name,
+		"description":  s.Description,
+		"schemas":      schemas,
 	}
 
 	return result

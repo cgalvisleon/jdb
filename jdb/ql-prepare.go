@@ -13,7 +13,7 @@ func (s *Ql) prepare() *Ql {
 	if isEmpty {
 		frm := s.Froms.Froms[0]
 		for _, col := range frm.Columns {
-			if slices.Contains([]TypeColumn{TpColumn, TpRelatedTo}, col.TypeColumn) {
+			if slices.Contains([]TypeColumn{TpColumn, TpRelatedTo, TpRollup}, col.TypeColumn) {
 				field := col.GetField()
 				s.setSelect(field)
 			}

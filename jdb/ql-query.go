@@ -158,32 +158,32 @@ func (s *Ql) List(page, rows int) (et.List, error) {
 
 /**
 * Query
-* @param search et.Json
+* @param params et.Json
 * @return Ql
 **/
-func (s *Ql) Query(search et.Json) (interface{}, error) {
-	joins := search.ArrayJson("join")
-	where := search.Json("where")
-	groups := search.ArrayStr("group_by")
-	havings := search.Json("having")
-	orders := search.Json("order_by")
-	page := search.Int("page")
-	limit := search.ValInt(30, "limit")
-
-	console.Debug("search:", search.ToString())
+func (s *Ql) Query(params et.Json) (interface{}, error) {
+	joins := params.ArrayJson("join")
+	where := params.Json("where")
+	groups := params.ArrayStr("group_by")
+	havings := params.Json("having")
+	orders := params.Json("order_by")
+	page := params.Int("page")
+	limit := params.ValInt(30, "limit")
+	details := params.ArrayJson("details")
 
 	s.setJoins(joins).
 		setWheres(where).
 		setGroupBy(groups...).
 		setHavings(havings).
-		setOrders(orders)
-	if search["data"] != nil {
-		data := search.ArrayStr("data")
+		setOrders(orders).
+		setDetail(details)
+	if params["data"] != nil {
+		data := params.ArrayStr("data")
 		console.Ping()
 		s.Data(data...)
 	} else {
 		console.Pong()
-		selects := search.ArrayStr("select")
+		selects := params.ArrayStr("select")
 		s.Select(selects...)
 	}
 	s.setPage(page)

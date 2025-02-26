@@ -349,6 +349,37 @@ func (s *Model) DefineRelation(name, relatedTo, fkn string, limit int) *Relation
 }
 
 /**
+* DefineRollup
+* @param name, rollupFrom, property string
+* @return *Model
+**/
+func (s *Model) DefineRollup(name, rollupFrom, fkn string, properties []string) *Model {
+	source := GetModel(rollupFrom)
+	if source == nil {
+		return nil
+	}
+
+	pk := source.Pk()
+	if pk == nil {
+		return nil
+	}
+
+	props := source.GetColumns(properties...)
+	col := newColumn(s, name, "", TpRollup, TypeDataNone, TypeDataNone.DefaultValue())
+	result := &Rollup{
+		Key:    fkn,
+		Source: source,
+		Fk:     pk,
+		Props:  props,
+	}
+	col.Rollup = result
+	s.Columns = append(s.Columns, col)
+	s.Rollups[name] = result
+
+	return s
+}
+
+/**
 * DefineDetail
 * @param name, fkn string, limit int
 * @return *Relation

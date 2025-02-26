@@ -49,6 +49,7 @@ type Model struct {
 	Schema          *Schema              `json:"-"`
 	CreatedAt       time.Time            `json:"created_date"`
 	UpdateAt        time.Time            `json:"update_date"`
+	Id              string               `json:"id"`
 	Name            string               `json:"name"`
 	Table           string               `json:"table"`
 	Description     string               `json:"description"`
@@ -59,8 +60,8 @@ type Model struct {
 	Indices         map[string]*Index    `json:"indices"`
 	Uniques         map[string]*Index    `json:"uniques"`
 	RelationsTo     map[string]*Relation `json:"relations_to"`
-	Rollups         map[string]*Relation `json:"rollups"`
 	Details         map[string]*Relation `json:"details"`
+	Rollups         map[string]*Rollup   `json:"rollups"`
 	History         *Relation            `json:"history"`
 	Required        map[string]bool      `json:"col_required"`
 	SystemKeyField  *Column              `json:"system_key_field"`
@@ -102,6 +103,7 @@ func NewModel(schema *Schema, name string, version int) *Model {
 		Schema:          schema,
 		CreatedAt:       now,
 		UpdateAt:        now,
+		Id:              utility.RecordId("model", ""),
 		Name:            name,
 		Table:           table,
 		Description:     "",
@@ -112,8 +114,8 @@ func NewModel(schema *Schema, name string, version int) *Model {
 		Indices:         make(map[string]*Index),
 		Uniques:         make(map[string]*Index),
 		RelationsTo:     make(map[string]*Relation),
-		Rollups:         make(map[string]*Relation),
 		Details:         make(map[string]*Relation),
+		Rollups:         make(map[string]*Rollup),
 		History:         &Relation{Limit: 0},
 		Required:        make(map[string]bool),
 		EventError:      make([]EventError, 0),
@@ -197,9 +199,73 @@ func (s *Model) Low() string {
 * @return et.Json
 **/
 func (s *Model) Describe() et.Json {
-	result, err := et.Object(s)
-	if err != nil {
-		return et.Json{}
+	var columns = make([]et.Json, 0)
+	for _, col := range s.Columns {
+		columns = append(columns, col.Describe())
+	}
+	var generated_fields = make([]et.Json, 0)
+	for _, col := range s.GeneratedFields {
+		generated_fields = append(generated_fields, col.Describe())
+	}
+	var primary_keys = make([]string, 0)
+	for _, col := range s.PrimaryKeys {
+		primary_keys = append(primary_keys, col.Name)
+	}
+	var foreign_keys = make([]string, 0)
+	for _, col := range s.ForeignKeys {
+		foreign_keys = append(foreign_keys, col.Name)
+	}
+	var indices = et.Json{}
+	var asc = []string{}
+	var desc = []string{}
+	var uniques = []string{}
+	for _, index := range s.Indices {
+		if index.Sorted {
+			asc = append(asc, index.Column.Name)
+		} else {
+			desc = append(desc, index.Column.Name)
+		}
+	}
+	indices["asc"] = asc
+	indices["desc"] = desc
+	for _, index := range s.Uniques {
+		uniques = append(uniques, index.Column.Name)
+	}
+	indices["uniques"] = uniques
+	relationsTo := []et.Json{}
+	for _, relation := range s.RelationsTo {
+		relationsTo = append(relationsTo, relation.Describe())
+	}
+	rollups := []et.Json{}
+	for _, rollup := range s.Rollups {
+		rollups = append(rollups, rollup.Describe())
+	}
+	details := []et.Json{}
+	for _, detail := range s.Details {
+		details = append(details, detail.Describe())
+	}
+	history := et.Json{}
+	if s.History != nil {
+		history = s.History.Describe()
+	}
+
+	result := et.Json{
+		"created_date":     s.CreatedAt,
+		"update_date":      s.UpdateAt,
+		"id":               s.Id,
+		"name":             s.Name,
+		"schema":           s.Schema.Name,
+		"table":            s.Table,
+		"description":      s.Description,
+		"columns":          columns,
+		"generated_fields": generated_fields,
+		"primary_keys":     primary_keys,
+		"foreign_keys":     foreign_keys,
+		"indices":          indices,
+		"relations_to":     relationsTo,
+		"rollups":          rollups,
+		"details":          details,
+		"history":          history,
 	}
 
 	return result
