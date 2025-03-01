@@ -1,7 +1,6 @@
 package postgres
 
 import (
-	"database/sql"
 	"encoding/json"
 
 	"github.com/cgalvisleon/et/console"
@@ -87,21 +86,18 @@ func (s *Postgres) SetFlow(name string, value []byte) error {
 * @return jdb.Flow, error
 **/
 func (s *Postgres) GetFlow(id string) (jdb.Flow, error) {
-	query := parceSQL(`
+	sql := parceSQL(`
 	SELECT VALUE, INDEX
 	FROM core.FLOWS
 	WHERE _ID = $1
 	LIMIT 1;`)
 
-	var ok bool
 	var value []byte
 	var index int
-	err := s.db.QueryRow(query, id).Scan(&value, &index)
+	sql = jdb.SQLParse(sql, id)
+	_, err := s.QueryRow(sql, &value, &index)
 	if err != nil {
-		ok = err == sql.ErrNoRows
-		if !ok {
-			return jdb.Flow{}, err
-		}
+		return jdb.Flow{}, err
 	}
 
 	var result jdb.Flow

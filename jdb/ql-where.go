@@ -1,6 +1,8 @@
 package jdb
 
 import (
+	"slices"
+
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/strs"
 )
@@ -387,16 +389,22 @@ func (s *QlWhere) setWheres(wheres et.Json, findField func(name string) *Field) 
 	}
 
 	for key := range wheres {
+		if slices.Contains([]string{"and", "AND", "or", "OR"}, key) {
+			continue
+		}
+
+		val := wheres.Json(key)
+		where(key, val)
+	}
+
+	for key := range wheres {
 		switch key {
-		case "and":
+		case "and", "AND":
 			vals := wheres.ArrayJson(key)
 			and(vals)
-		case "or":
+		case "or", "OR":
 			vals := wheres.ArrayJson(key)
 			or(vals)
-		default:
-			val := wheres.Json(key)
-			where(key, val)
 		}
 	}
 

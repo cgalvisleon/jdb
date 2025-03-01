@@ -4,11 +4,9 @@ import (
 	"database/sql"
 
 	"github.com/cgalvisleon/et/et"
-	jdb "github.com/cgalvisleon/jdb/jdb"
+	"github.com/cgalvisleon/jdb/jdb"
 	_ "github.com/lib/pq"
 )
-
-var driver Postgres
 
 type Postgres struct {
 	params    et.Json

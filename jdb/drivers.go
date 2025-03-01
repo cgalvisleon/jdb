@@ -8,6 +8,7 @@ import (
 
 var (
 	Postgres = "postgres"
+	SqlLite  = "sqlite"
 	Josefine = "josefine"
 )
 
@@ -34,9 +35,10 @@ type Driver interface {
 	CreateModel(model *Model) error
 	DropModel(model *Model) error
 	// Query
-	Exec(sql string, params ...any) error
-	Query(sql string, params ...any) (et.Items, error)
-	Data(source, sql string, params ...any) (et.Items, error)
+	Exec(sql string, arg ...any) error
+	Query(sql string, arg ...any) (et.Items, error)
+	One(sql string, arg ...any) (et.Item, error)
+	Data(source, sql string, arg ...any) (et.Items, error)
 	Select(ql *Ql) (et.Items, error)
 	Count(ql *Ql) (int, error)
 	Exists(ql *Ql) (bool, error)

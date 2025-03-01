@@ -9,20 +9,20 @@ import (
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
-func (s *Postgres) query(db *sql.DB, sql string, params ...any) (*sql.Rows, error) {
-	result, err := db.Query(sql, params...)
+func (s *Postgres) query(db *sql.DB, sql string, arg ...any) (*sql.Rows, error) {
+	result, err := db.Query(sql, arg...)
 	if err != nil {
-		sql = jdb.SQLParse(sql, params...)
+		sql = jdb.SQLParse(sql, arg...)
 		return nil, console.QueryError(err, sql)
 	}
 
 	return result, nil
 }
 
-func (s *Postgres) exec(db *sql.DB, sql string, params ...any) (sql.Result, error) {
-	result, err := db.Exec(sql, params...)
+func (s *Postgres) exec(db *sql.DB, sql string, arg ...any) (sql.Result, error) {
+	result, err := db.Exec(sql, arg...)
 	if err != nil {
-		sql = jdb.SQLParse(sql, params...)
+		sql = jdb.SQLParse(sql, arg...)
 		return nil, console.QueryError(err, sql)
 	}
 
@@ -31,11 +31,11 @@ func (s *Postgres) exec(db *sql.DB, sql string, params ...any) (sql.Result, erro
 
 /**
 * Exec
-* @param sql string, params ...any
+* @param sql string, arg ...any
 * @return error
 **/
-func (s *Postgres) Exec(sql string, params ...any) error {
-	_, err := s.exec(s.db, sql, params...)
+func (s *Postgres) Exec(sql string, arg ...any) error {
+	_, err := s.exec(s.db, sql, arg...)
 	if err != nil {
 		return err
 	}
@@ -45,12 +45,27 @@ func (s *Postgres) Exec(sql string, params ...any) error {
 }
 
 /**
+* QueryRow
+* @param query string, dest ...any
+* @return error
+**/
+func (s *Postgres) QueryRow(query string, dest ...any) (bool, error) {
+	err := s.db.QueryRow(query).Scan(dest...)
+	if err != nil {
+		ok := err == sql.ErrNoRows
+		return ok, err
+	}
+
+	return false, nil
+}
+
+/**
 * Query
-* @param sql string, params ...any
+* @param sql string, arg ...any
 * @return et.Items, error
 **/
-func (s *Postgres) Query(sql string, params ...any) (et.Items, error) {
-	rows, err := s.query(s.db, sql, params...)
+func (s *Postgres) Query(sql string, arg ...any) (et.Items, error) {
+	rows, err := s.query(s.db, sql, arg...)
 	if err != nil {
 		return et.Items{}, console.QueryError(err, sql)
 	}
@@ -62,12 +77,29 @@ func (s *Postgres) Query(sql string, params ...any) (et.Items, error) {
 }
 
 /**
+* One
+* @param sql string, arg ...any
+* @return et.Item, error
+**/
+func (s *Postgres) One(sql string, arg ...any) (et.Item, error) {
+	rows, err := s.query(s.db, sql, arg...)
+	if err != nil {
+		return et.Item{}, console.QueryError(err, sql)
+	}
+	defer rows.Close()
+
+	result := jdb.RowsToItem(rows)
+
+	return result, nil
+}
+
+/**
 * Data
-* @param source, sql string, params ...any
+* @param source, sql string, arg ...any
 * @return et.Items, error
 **/
-func (s *Postgres) Data(sourceFiled, sql string, params ...any) (et.Items, error) {
-	rows, err := s.query(s.db, sql, params...)
+func (s *Postgres) Data(sourceFiled, sql string, arg ...any) (et.Items, error) {
+	rows, err := s.query(s.db, sql, arg...)
 	if err != nil {
 		return et.Items{}, console.QueryError(err, sql)
 	}
@@ -118,11 +150,11 @@ func (s *Postgres) Select(ql *jdb.Ql) (et.Items, error) {
 
 /**
 * ExecDDL
-* @param id, sql string, params ...any
+* @param id, sql string, arg ...any
 * @return error
 **/
-func (s *Postgres) ExecDDL(id, sql string, params ...any) error {
-	err := s.Exec(sql, params...)
+func (s *Postgres) ExecDDL(id, sql string, arg ...any) error {
+	err := s.Exec(sql, arg...)
 	if err != nil {
 		return err
 	}

@@ -41,8 +41,8 @@ func (s *Command) updated() error {
 
 	model := s.From
 	for _, result := range s.Result.Result {
-		before := result.Json("before")
-		after := result.Json("after")
+		before := result.ValJson(et.Json{}, "result", "before")
+		after := result.ValJson(et.Json{}, "result", "after")
 
 		for _, event := range s.From.EventsUpdate {
 			err := event(model, before, after)

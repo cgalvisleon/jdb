@@ -1,11 +1,10 @@
 package postgres
 
 import (
-	"database/sql"
-
 	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/strs"
+	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
 /**
@@ -84,7 +83,7 @@ func (s *Postgres) SetKey(key string, value []byte) error {
 * @return KeyValue, error
 **/
 func (s *Postgres) GetKey(key string) (et.KeyValue, error) {
-	query := parceSQL(`
+	sql := parceSQL(`
 	SELECT VALUE, INDEX
 	FROM core.KEYVALUES
 	WHERE _ID = $1
@@ -93,12 +92,10 @@ func (s *Postgres) GetKey(key string) (et.KeyValue, error) {
 	var ok bool
 	var value []byte
 	var index int
-	err := s.db.QueryRow(query, key).Scan(&value, &index)
+	sql = jdb.SQLParse(sql, key)
+	ok, err := s.QueryRow(sql, &value, &index)
 	if err != nil {
-		ok = err == sql.ErrNoRows
-		if !ok {
-			return et.KeyValue{}, err
-		}
+		return et.KeyValue{}, err
 	}
 
 	return et.KeyValue{

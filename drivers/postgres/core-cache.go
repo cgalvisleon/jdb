@@ -1,12 +1,12 @@
 package postgres
 
 import (
-	"database/sql"
 	"time"
 
 	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/strs"
+	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
 func (s *Postgres) defineCache() error {
@@ -83,21 +83,18 @@ func (s *Postgres) SetCache(key string, value []byte, duration time.Duration) er
 * @return KeyValue, error
 **/
 func (s *Postgres) GetCache(key string) (et.KeyValue, error) {
-	query := parceSQL(`
+	sql := parceSQL(`
 	SELECT VALUE, INDEX
 	FROM core.CACHE
 	WHERE _ID = $1
 	LIMIT 1;`)
 
-	var ok bool
 	var value []byte
 	var index int
-	err := s.db.QueryRow(query, key).Scan(&value, &index)
+	sql = jdb.SQLParse(sql, key)
+	ok, err := s.QueryRow(sql, &value, &index)
 	if err != nil {
-		ok = err == sql.ErrNoRows
-		if !ok {
-			return et.KeyValue{}, err
-		}
+		return et.KeyValue{}, err
 	}
 
 	return et.KeyValue{

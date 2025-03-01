@@ -16,7 +16,7 @@ ps aux | grep jdb | grep -v grep
 ## Library
 
 ```
-go get github.com/cgalvisleon/et/@v1.0.5
+go get github.com/cgalvisleon/et/@v1.0.3
 ```
 
 ## Go work

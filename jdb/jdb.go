@@ -1,7 +1,6 @@
 package jdb
 
 import (
-	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/envar"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/mistake"
@@ -74,22 +73,23 @@ func (s *JDB) Describe() et.Json {
 **/
 func Load() (*DB, error) {
 	name := envar.GetStr("", "DB_NAME")
-	result, err := NewDatabase(name, Postgres)
+	driver := envar.GetStr("", "DB_DRIVER")
+	result, err := NewDatabase(name, driver)
 	if err != nil {
 		return nil, err
 	}
 
 	result.UseCore = true
 	err = result.Conected(et.Json{
-		"driver":   Postgres,
+		"driver":   driver,
+		"database": name,
 		"host":     envar.GetStr("localhost", "DB_HOST"),
 		"port":     envar.GetInt(5432, "DB_PORT"),
-		"database": name,
 		"username": envar.GetStr("", "DB_USER"),
 		"password": envar.GetStr("", "DB_PASSWORD"),
 		"app":      envar.GetStr("jdb", "DB_APP_NAME"),
 		"core":     result.UseCore,
-		"nodeId":   result.Node,
+		"nodeId":   result.NodeId,
 		"fields": et.Json{
 			"IndexField":     "index",
 			"SourceField":    "_data",
@@ -122,7 +122,7 @@ func Load() (*DB, error) {
 func ConnectTo(params et.Json) (*DB, error) {
 	driver := params.Str("driver")
 	if driver == "" {
-		return nil, console.Alertm("Driver not defined")
+		return nil, mistake.New(MSG_DRIVER_NOT_DEFINED)
 	}
 
 	name := params.ValStr("db", "name")
@@ -269,10 +269,54 @@ func GetField(name string) *Field {
 
 /**
 * Describe
+* @param name string
 * @return et.Json
 **/
-func Describe() et.Json {
-	return Jdb.Describe()
+func Describe(name string) (et.Json, error) {
+	list := strs.Split(name, ":")
+	if len(list) == 2 {
+		prefix := list[0]
+		switch prefix {
+		case "db":
+			db := GetDB(list[1])
+			if db != nil {
+				return db.Describe(), nil
+			}
+
+			return et.Json{}, mistake.Newf(MSG_DATABASE_NOT_FOUND, list[1])
+		case "schema":
+			sch := GetShema(list[1], false)
+			if sch != nil {
+				return sch.Describe(), nil
+			}
+
+			return et.Json{}, mistake.Newf(MSG_SCHEMA_NOT_FOUND, list[1])
+		case "model":
+			mod := GetModel(list[1])
+			if mod != nil {
+				return mod.Describe(), nil
+			}
+
+			return et.Json{}, mistake.Newf(MSG_MODEL_NOT_FOUND, list[1])
+		}
+	}
+
+	mod := GetModel(name)
+	if mod == nil {
+		sch := GetShema(name, false)
+		if sch == nil {
+			result := et.Json{}
+			for _, db := range JDBS {
+				result.Set(db.Name, db.Describe())
+			}
+
+			return result, nil
+		}
+
+		return sch.Describe(), nil
+	}
+
+	return mod.Describe(), nil
 }
 
 /**

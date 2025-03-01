@@ -41,7 +41,7 @@ func From(m *Model) *Ql {
 * @return *Field
 **/
 func (s *QlFrom) getField(name string) *Field {
-	result := s.Model.GetField(name)
+	result := s.GetField(name)
 	if result != nil {
 		result.As = s.As
 	}

@@ -415,7 +415,11 @@ func (s *Model) GetColumns(names ...string) []*Column {
 **/
 func (s *Model) getField(name string) *Field {
 	col := s.GetColumn(name)
-	if col == nil && s.Integrity {
+	if col != nil {
+		return col.GetField()
+	}
+
+	if s.Integrity {
 		return nil
 	}
 
@@ -483,13 +487,13 @@ func (s *Model) Where(val string) *Ql {
 
 /**
 * Query
-* @param search et.Json
+* @param params et.Json
 * @return interface{}, error
 **/
-func (s *Model) Query(search et.Json) (interface{}, error) {
+func (s *Model) Query(params et.Json) (interface{}, error) {
 	return From(s).
 		Debug().
-		Query(search)
+		Query(params)
 }
 
 /**

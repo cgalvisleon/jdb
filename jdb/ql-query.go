@@ -1,7 +1,6 @@
 package jdb
 
 import (
-	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/mistake"
 )
@@ -114,7 +113,6 @@ func (s *Ql) One() (et.Item, error) {
 **/
 func (s *Ql) Page(val int) *Ql {
 	s.Sheet = val
-	s.calcOffset()
 	return s
 }
 
@@ -179,10 +177,8 @@ func (s *Ql) Query(params et.Json) (interface{}, error) {
 		setDetail(details)
 	if params["data"] != nil {
 		data := params.ArrayStr("data")
-		console.Ping()
 		s.Data(data...)
 	} else {
-		console.Pong()
 		selects := params.ArrayStr("select")
 		s.Select(selects...)
 	}

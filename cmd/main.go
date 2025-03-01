@@ -7,10 +7,10 @@ import (
 )
 
 func main() {
-	// _, err := jdb.Load()
-	// if err != nil {
-	// 	panic(err)
-	// }
+	result, err := jdb.Describe("")
+	if err != nil {
+		panic(err)
+	}
 
-	console.Debug(jdb.Describe().ToString())
+	console.Debug(result.ToString())
 }

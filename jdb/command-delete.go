@@ -27,8 +27,8 @@ func (s *Command) delete() error {
 	s.Result = results
 
 	for _, result := range results.Result {
-		before := result.Json("before")
-		after := result.Json("after")
+		before := result.ValJson(et.Json{}, "result", "before")
+		after := result.ValJson(et.Json{}, "result", "after")
 
 		for _, event := range s.From.EventsUpdate {
 			err := event(model, before, after)

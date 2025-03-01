@@ -13,12 +13,19 @@ func (s *Ql) prepare() *Ql {
 	if isEmpty {
 		frm := s.Froms.Froms[0]
 		for _, col := range frm.Columns {
-			if slices.Contains([]TypeColumn{TpColumn, TpRelatedTo, TpRollup}, col.TypeColumn) {
+			if col.Hidden {
+				continue
+			}
+
+			if !slices.Contains([]TypeColumn{TpAtribute}, col.TypeColumn) {
 				field := col.GetField()
+				field.As = frm.As
 				s.setSelect(field)
 			}
 		}
 	}
+
+	s.calcOffset()
 
 	return s
 }

@@ -169,11 +169,11 @@ func (s *Ql) FullJoin(m *Model) *QlJoin {
 
 /**
 * SetValue
-* @param val et.Json
+* @param wheres et.Json
 * @return *QlJoin
 **/
-func (s *QlJoin) SetValue(val et.Json) *QlJoin {
-	s.setValue(val)
+func (s *QlJoin) setWheres(wheres et.Json) *QlJoin {
+	s.QlWhere.setWheres(wheres, s.Ql.getField)
 
 	return s
 }
@@ -188,7 +188,7 @@ func (s *Ql) setJoins(joins []et.Json) *Ql {
 			with := GetModel(key)
 			if with != nil {
 				val := join.Json(key)
-				s.Join(with).SetValue(val)
+				s.Join(with).setWheres(val)
 			}
 		}
 	}

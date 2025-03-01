@@ -3,7 +3,6 @@ package jdb
 import (
 	"time"
 
-	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/envar"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/mistake"
@@ -18,6 +17,13 @@ func Name(name string) string {
 
 var JDBS []*DB = []*DB{}
 
+type Mode int
+
+const (
+	Origin Mode = iota
+	Local
+)
+
 type DB struct {
 	CreatedAt   time.Time          `json:"created_date"`
 	UpdateAt    time.Time          `json:"update_date"`
@@ -26,7 +32,9 @@ type DB struct {
 	Description string             `json:"description"`
 	Schemas     map[string]*Schema `json:"schemas"`
 	UseCore     bool               `json:"use_core"`
-	Node        int64              `json:"node"`
+	NodeId      int64              `json:"node_id"`
+	Mode        Mode               `json:"mode"`
+	Origin      string             `json:"origin"`
 	driver      Driver             `json:"-"`
 }
 
@@ -37,11 +45,11 @@ type DB struct {
 **/
 func NewDatabase(name, driver string) (*DB, error) {
 	if driver == "" {
-		return nil, console.Alertm(MSG_DRIVER_NOT_DEFINED)
+		return nil, mistake.New(MSG_DRIVER_NOT_DEFINED)
 	}
 
 	if _, ok := Jdb.Drivers[driver]; !ok {
-		return nil, console.Alertf(MSG_DRIVER_NOT_FOUND, driver)
+		return nil, mistake.Newf(MSG_DRIVER_NOT_FOUND, driver)
 	}
 
 	now := time.Now()
@@ -52,10 +60,10 @@ func NewDatabase(name, driver string) (*DB, error) {
 		Name:        Name(name),
 		Description: "",
 		Schemas:     map[string]*Schema{},
-		Node:        envar.GetInt64(1, "DB_NODE"),
+		NodeId:      envar.GetInt64(1, "DB_NODEID"),
 		driver:      Jdb.Drivers[driver](),
 	}
-	utility.SetSnowflakeNode(result.Node)
+	utility.SetSnowflakeNode(result.NodeId)
 	JDBS = append(JDBS, result)
 
 	return result, nil
@@ -270,6 +278,20 @@ func (s *DB) Query(sql string, params ...any) (et.Items, error) {
 	}
 
 	return s.driver.Query(sql, params...)
+}
+
+/**
+* One
+* @param sql string
+* @param params ...any
+* @return et.Item, error
+**/
+func (s *DB) One(sql string, params ...any) (et.Item, error) {
+	if s.driver == nil {
+		return et.Item{}, mistake.New(MSG_DRIVER_NOT_DEFINED)
+	}
+
+	return s.driver.One(sql, params...)
 }
 
 /**
