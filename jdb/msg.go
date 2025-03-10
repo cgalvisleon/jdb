@@ -24,4 +24,5 @@ const (
 	MSG_UNDO_NOT_DEFINED         = "Undo record not defined"
 	MSG_UNDO_KEY_NOT_DEFINED     = "Undo key not defined"
 	MSG_COMMAND_NOT_FOUND        = "Command not found"
+	MSG_NOT_COMMAND              = "No command"
 )

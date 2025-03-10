@@ -2,10 +2,9 @@ package jdb
 
 import (
 	"github.com/cgalvisleon/et/et"
-	"github.com/cgalvisleon/et/mistake"
 )
 
-func (s *Command) update() error {
+func (s *Command) updated() error {
 	s.prepare()
 	model := s.From
 
@@ -24,22 +23,15 @@ func (s *Command) update() error {
 		return err
 	}
 
-	if !results.Ok {
-		return mistake.New(MSG_NOT_UPDATE_DATA)
-	}
-
 	s.Result = results
-
-	return nil
-}
-
-func (s *Command) updated() error {
-	err := s.update()
-	if err != nil {
-		return err
+	if !s.Result.Ok {
+		return nil
 	}
 
-	model := s.From
+	if s.rollback {
+		return nil
+	}
+
 	for _, result := range s.Result.Result {
 		before := result.ValJson(et.Json{}, "result", "before")
 		after := result.ValJson(et.Json{}, "result", "after")
@@ -51,7 +43,8 @@ func (s *Command) updated() error {
 			}
 		}
 
-		if s.history && model.History.With != nil {
+		changed := before.IsChanged(after)
+		if s.history && changed && model.History.With != nil {
 			err := EventHistoryDefault(model, before, after)
 			if err != nil {
 				return err

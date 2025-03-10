@@ -6,9 +6,9 @@ import (
 	"github.com/cgalvisleon/et/mistake"
 )
 
-func (s *Postgres) GrantPrivileges(username, dbName string) error {
+func (s *Postgres) GrantPrivileges(username, database string) error {
 	// Otorgar acceso a la base de datos
-	grantDatabase := fmt.Sprintf("GRANT CONNECT ON DATABASE %s TO %s;", dbName, username)
+	grantDatabase := fmt.Sprintf("GRANT CONNECT ON DATABASE %s TO %s;", database, username)
 	_, err := s.db.Exec(grantDatabase)
 	if err != nil {
 		return err

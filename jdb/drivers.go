@@ -6,10 +6,11 @@ import (
 	"github.com/cgalvisleon/et/et"
 )
 
-var (
-	Postgres = "postgres"
-	SqlLite  = "sqlite"
-	Josefine = "josefine"
+const (
+	SqliteDriver   = "sqlite"
+	PostgresDriver = "postgres"
+	MysqlDriver    = "mysql"
+	OracleDriver   = "oracle"
 )
 
 type Driver interface {
@@ -23,7 +24,7 @@ type Driver interface {
 	// Core
 	CreateCore() error
 	// User
-	GrantPrivileges(username, dbName string) error
+	GrantPrivileges(username, database string) error
 	CreateUser(username, password, confirmation string) error
 	ChangePassword(username, password, confirmation string) error
 	DeleteUser(username string) error
@@ -34,6 +35,7 @@ type Driver interface {
 	LoadTable(model *Model) (bool, error)
 	CreateModel(model *Model) error
 	DropModel(model *Model) error
+	SaveModel(model *Model) error
 	// Query
 	Exec(sql string, arg ...any) error
 	Query(sql string, arg ...any) (et.Items, error)

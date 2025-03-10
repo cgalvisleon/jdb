@@ -2,7 +2,6 @@ package jdb
 
 import (
 	"github.com/cgalvisleon/et/et"
-	"github.com/cgalvisleon/et/mistake"
 )
 
 func (s *Command) delete() error {
@@ -17,16 +16,20 @@ func (s *Command) delete() error {
 				"error":   err.Error(),
 			})
 		}
+
 		return err
 	}
 
+	s.Result = results
 	if !results.Ok {
-		return mistake.New(MSG_NOT_DELETE_DATA)
+		return nil
 	}
 
-	s.Result = results
+	if s.rollback {
+		return nil
+	}
 
-	for _, result := range results.Result {
+	for _, result := range s.Result.Result {
 		before := result.ValJson(et.Json{}, "result", "before")
 		after := result.ValJson(et.Json{}, "result", "after")
 

@@ -95,13 +95,7 @@ func (s *Postgres) CreateModel(model *jdb.Model) error {
 		return err
 	}
 
-	serialized, err := model.Serialized()
-	if err != nil {
-		model.Drop()
-		return err
-	}
-
-	go s.upsertModel(model.Table, model.Version, serialized)
+	s.SaveModel(model)
 
 	for _, detail := range model.Details {
 		err = s.CreateModel(detail.With)
@@ -130,4 +124,21 @@ func (s *Postgres) DropModel(model *jdb.Model) error {
 	}
 
 	return s.deleteModel(model.Table)
+}
+
+/**
+* SaveModel
+* @param model *jdb.Model
+* @return error
+**/
+func (s *Postgres) SaveModel(model *jdb.Model) error {
+	serialized, err := model.Serialized()
+	if err != nil {
+		model.Drop()
+		return err
+	}
+
+	go s.upsertModel(model.Table, model.Version, serialized)
+
+	return nil
 }

@@ -29,7 +29,7 @@ func (s *Postgres) CreateSchema(name string) error {
 		return err
 	}
 
-	console.Logf(jdb.Postgres, `Schema %s created`, name)
+	console.Logf(s.name, `Schema %s created`, name)
 
 	return nil
 }
@@ -46,7 +46,7 @@ func (s *Postgres) DropSchema(name string) error {
 		return err
 	}
 
-	console.Logf(jdb.Postgres, `Schema %s droped`, name)
+	console.Logf(s.name, `Schema %s droped`, name)
 
 	return nil
 }

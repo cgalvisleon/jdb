@@ -64,14 +64,14 @@ func (s *Postgres) chain(params et.Json) (string, error) {
 		return "", mistake.Newf(jdb.MSS_PARAM_REQUIRED, "app")
 	}
 
-	driver := jdb.Postgres
+	driver := s.name
 	result := strs.Format(`%s://%s:%s@%s:%d/%s?sslmode=disable&application_name=%s`, driver, username, password, host, port, database, app)
 
 	return result, nil
 }
 
 func (s *Postgres) connectTo(connStr string) (*sql.DB, error) {
-	db, err := sql.Open(jdb.Postgres, connStr)
+	db, err := sql.Open(s.name, connStr)
 	if err != nil {
 		return nil, err
 	}
@@ -124,7 +124,7 @@ func (s *Postgres) CreateDatabase(name string) error {
 		return err
 	}
 
-	console.Logf(jdb.Postgres, `Database %s created`, name)
+	console.Logf(s.name, `Database %s created`, name)
 
 	return nil
 }
@@ -149,7 +149,7 @@ func (s *Postgres) DropDatabase(name string) error {
 		return err
 	}
 
-	console.Logf(jdb.Postgres, `Database %s droped`, name)
+	console.Logf(s.name, `Database %s droped`, name)
 
 	return nil
 }
@@ -173,7 +173,7 @@ func (s *Postgres) Connect(params et.Json) error {
 		return err
 	}
 
-	console.Logf(jdb.Postgres, `Connected to %s:%s`, params.Str("host"), database)
+	console.Logf(s.name, `Connected to %s:%s`, params.Str("host"), database)
 
 	return nil
 }

@@ -66,7 +66,11 @@ func (s *Postgres) SetKey(key string, value []byte) error {
 
 	sql = parceSQL(`
 	INSERT INTO core.KEYVALUES(_ID, VALUE, INDEX)
-	VALUES ($1, $2, $3);`)
+	VALUES ($1, $2, $3)
+	ON CONFLICT (_ID) DO UPDATE SET
+		VALUE = $2
+	WHERE
+		core.KEYVALUES.VALUE IS DISTINCT FROM EXCLUDED.VALUE;`)
 
 	index := s.GetSerie("core.KEYVALUES")
 	err = s.Exec(sql, key, value, index)

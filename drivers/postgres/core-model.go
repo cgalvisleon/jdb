@@ -10,27 +10,18 @@ import (
 * @return error
 **/
 func (s *Postgres) defineModel() error {
-	exist, err := s.existTable("core", "MODELS")
-	if err != nil {
-		return console.Panic(err)
-	}
-
-	if exist {
-		return nil
-	}
-
 	sql := parceSQL(`
-  CREATE TABLE IF NOT EXISTS core.MODELS(
-		TABLENAME VARCHAR(80) DEFAULT '',
-		VERSION INTEGER DEFAULT 0,
-		MODEL BYTEA,
-		INDEX SERIAL,
-		PRIMARY KEY(TABLENAME)
+  CREATE TABLE IF NOT EXISTS core_MODELS (
+    TABLENAME TEXT DEFAULT '',
+    VERSION INTEGER DEFAULT 0,
+    MODEL BLOB,
+    INDEX_ID INTEGER PRIMARY KEY AUTOINCREMENT
 	);
-	CREATE INDEX IF NOT EXISTS MODELS_TABLENAME_IDX ON core.MODELS(TABLENAME);
-	CREATE INDEX IF NOT EXISTS MODELS_INDEX_IDX ON core.MODELS(INDEX);`)
 
-	err = s.Exec(sql)
+	CREATE INDEX IF NOT EXISTS MODELS_TABLENAME_IDX ON core_MODELS(TABLENAME);
+	CREATE INDEX IF NOT EXISTS MODELS_INDEX_IDX ON core_MODELS(INDEX_ID);`)
+
+	err := s.Exec(sql)
 	if err != nil {
 		return err
 	}

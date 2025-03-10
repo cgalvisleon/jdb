@@ -72,8 +72,8 @@ func (s *JDB) Describe() et.Json {
 * @return *DB, error
 **/
 func Load() (*DB, error) {
-	name := envar.GetStr("", "DB_NAME")
-	driver := envar.GetStr("", "DB_DRIVER")
+	name := envar.GetStr("data", "DB_NAME")
+	driver := envar.GetStr(SqliteDriver, "DB_DRIVER")
 	result, err := NewDatabase(name, driver)
 	if err != nil {
 		return nil, err
@@ -217,22 +217,20 @@ func GetShema(name string, isCreate bool) *Schema {
 
 /**
 * GetModel
-* @param name string
-* @param isCreated bool
+* @param key string, isCreated bool
 * @return *Model
 **/
-func GetModel(name string) *Model {
-	list := strs.Split(name, ".")
+func GetModel(key string) *Model {
+	list := strs.Split(key, ".")
 	switch len(list) {
 	case 1:
 		for _, model := range Jdb.Models {
-			if model.Name == strs.Lowcase(name) {
+			if model.Name == key {
 				return model
 			}
 		}
 	case 2:
-		table := strs.Format(`%s.%s`, list[0], list[1])
-		result := Jdb.Models[strs.Lowcase(table)]
+		result := Jdb.Models[key]
 		if result != nil {
 			return result
 		}

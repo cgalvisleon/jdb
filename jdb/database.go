@@ -132,12 +132,12 @@ func (s *DB) SetMain(params et.Json) error {
 * GrantPrivileges
 * @return error
 **/
-func (s *DB) GrantPrivileges(username, dbName string) error {
+func (s *DB) GrantPrivileges(username, database string) error {
 	if s.driver == nil {
 		return mistake.New(MSG_DRIVER_NOT_DEFINED)
 	}
 
-	return s.driver.GrantPrivileges(username, dbName)
+	return s.driver.GrantPrivileges(username, database)
 }
 
 /**
@@ -250,6 +250,19 @@ func (s *DB) DropModel(model *Model) error {
 	}
 
 	return s.driver.DropModel(model)
+}
+
+/**
+* SaveModel
+* @param model *Model
+* @return error
+**/
+func (s *DB) SaveModel(model *Model) error {
+	if s.driver == nil {
+		return mistake.New(MSG_DRIVER_NOT_DEFINED)
+	}
+
+	return s.driver.SaveModel(model)
 }
 
 /**

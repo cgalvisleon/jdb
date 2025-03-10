@@ -52,8 +52,11 @@ func (s *Postgres) Exec(sql string, arg ...any) error {
 func (s *Postgres) QueryRow(query string, dest ...any) (bool, error) {
 	err := s.db.QueryRow(query).Scan(dest...)
 	if err != nil {
-		ok := err == sql.ErrNoRows
-		return ok, err
+		if err == sql.ErrNoRows {
+			return true, nil
+		}
+
+		return false, err
 	}
 
 	return false, nil

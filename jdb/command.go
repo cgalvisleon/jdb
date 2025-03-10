@@ -18,14 +18,15 @@ const (
 
 type Command struct {
 	*QlWhere
-	Command TypeCommand
-	Db      *DB
-	From    *Model
-	Data    []et.Json
-	Values  []map[string]*Field
-	Undo    et.Json
-	Sql     string
-	Result  et.Items
+	Command  TypeCommand
+	Db       *DB
+	From     *Model
+	Data     []et.Json
+	Values   []map[string]*Field
+	Undo     et.Json
+	Sql      string
+	Result   et.Items
+	rollback bool
 }
 
 /**
@@ -106,6 +107,8 @@ func (s *Command) Exec() (et.Items, error) {
 		if err != nil {
 			return et.Items{}, err
 		}
+	default:
+		return et.Items{}, mistake.New(MSG_NOT_COMMAND)
 	}
 
 	return s.Result, nil
@@ -129,6 +132,20 @@ func (s *Command) One() (et.Item, error) {
 		Ok:     true,
 		Result: result.Result[0],
 	}, nil
+}
+
+/**
+* Rollback
+* @return et.Items, error
+**/
+func (s *Command) Rollback() error {
+	s.rollback = true
+	_, err := s.Exec()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 /**

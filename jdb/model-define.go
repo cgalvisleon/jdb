@@ -137,7 +137,7 @@ func (s *Model) DefinePrimaryKeyField() *Column {
 
 /**
 * DefineForeignKey
-* @param name string, with *Model, pkn string
+* @param name []string, with *Model, pkn string
 * @return *Column
 **/
 func (s *Model) DefineForeignKey(name string, with *Model) *Column {
@@ -298,6 +298,7 @@ func (s *Model) DefineProjectField() *Column {
 	}
 	result := s.DefineColumnIdx(string(ProjectField), ProjectField.TypeData(), idx)
 	s.DefineIndex(true, string(ProjectField))
+	s.ProjectField = result
 
 	return result
 }

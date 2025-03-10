@@ -49,6 +49,7 @@ type Model struct {
 	Schema          *Schema              `json:"-"`
 	CreatedAt       time.Time            `json:"created_date"`
 	UpdateAt        time.Time            `json:"update_date"`
+	ProjectId       string               `json:"project_id"`
 	Id              string               `json:"id"`
 	Name            string               `json:"name"`
 	Table           string               `json:"table"`
@@ -69,6 +70,7 @@ type Model struct {
 	IndexField      *Column              `json:"index_field"`
 	SourceField     *Column              `json:"source_field"`
 	FullTextField   *Column              `json:"full_text_field"`
+	ProjectField    *Column              `json:"project_field"`
 	EventError      []EventError         `json:"-"`
 	EventsInsert    []Event              `json:"-"`
 	EventsUpdate    []Event              `json:"-"`
@@ -77,25 +79,36 @@ type Model struct {
 	IsCreated       bool                 `json:"is_created"`
 	Version         int                  `json:"version"`
 	IsDebug         bool                 `json:"-"`
+	projectId       string               `json:"-"`
 }
 
 /**
-* NewModel
-* @param schema *Schema, name string, tp TypeModel, version int
+* NewProjectModel
+* @param schema *Schema, projectId, name string, tp TypeModel, version int
 * @return *Model
 **/
-func NewModel(schema *Schema, name string, version int) *Model {
+func NewProjectModel(schema *Schema, projectId, name string, version int) *Model {
 	if version == 0 {
 		version = 1
 	}
 	now := time.Now()
 	name = Name(name)
 	table := TableName(schema, name)
-	result := Jdb.Models[table]
+	key := strs.Append(table, projectId, ":")
+	result := Jdb.Models[key]
 	if result != nil {
 		result.Version = version
-
 		return result
+	}
+
+	if key != table {
+		result = Jdb.Models[table]
+		if result != nil {
+			new := *result
+			new.Version = version
+			Jdb.Models[key] = &new
+			return Jdb.Models[key]
+		}
 	}
 
 	result = &Model{
@@ -103,6 +116,7 @@ func NewModel(schema *Schema, name string, version int) *Model {
 		Schema:          schema,
 		CreatedAt:       now,
 		UpdateAt:        now,
+		ProjectId:       projectId,
 		Id:              utility.RecordId("model", ""),
 		Name:            name,
 		Table:           table,
@@ -128,70 +142,20 @@ func NewModel(schema *Schema, name string, version int) *Model {
 	result.DefineEvent(EventInsert, EventInsertDefault)
 	result.DefineEvent(EventUpdate, EventUpdateDefault)
 	result.DefineEvent(EventDelete, EventDeleteDefault)
-	schema.Models[result.Name] = result
-	Jdb.Models[table] = result
 	result.IsCreated, _ = result.Db.LoadTable(result)
+	schema.Models[result.Name] = result
+	Jdb.Models[key] = result
 
 	return result
 }
 
 /**
-* GetFrom
-* @return *QlFrom
+* NewModel
+* @param schema *Schema, name string, tp TypeModel, version int
+* @return *Model
 **/
-func (s *Model) GetFrom() *QlFrom {
-	return &QlFrom{Model: s}
-}
-
-/**
-* GenId
-* @param id string
-* @return string
-**/
-func (s *Model) GenId(id string) string {
-	if !map[string]bool{"": true, "*": true, "new": true}[id] {
-		return id
-	}
-
-	return utility.RecordId(s.Table, id)
-}
-
-/**
-* GenKey
-* @param id string
-* @return string
-**/
-func (s *Model) GenKey(id string) string {
-	return utility.RecordId(s.Table, id)
-}
-
-/**
-* SourceIdx
-* @return int
-**/
-func (s *Model) SourceIdx() int {
-	if s.SourceField == nil {
-		return -1
-	}
-
-	return s.SourceField.Idx()
-}
-
-/**
-* Up
-* @return string
-*
- */
-func (s *Model) Up() string {
-	return strs.Uppcase(s.Name)
-}
-
-/**
-* Low
-* @return string
-**/
-func (s *Model) Low() string {
-	return strs.Lowcase(s.Name)
+func NewModel(schema *Schema, name string, version int) *Model {
+	return NewProjectModel(schema, "", name, version)
 }
 
 /**
@@ -286,14 +250,6 @@ func (s *Model) Serialized() ([]byte, error) {
 }
 
 /**
-* GetSerie
-* @return int
-**/
-func (s *Model) GetSerie() int64 {
-	return s.Db.GetSerie(s.Table)
-}
-
-/**
 * Load
 * @param data []byte
 * @return error
@@ -305,6 +261,81 @@ func (s *Model) Load(data []byte) error {
 	}
 
 	return nil
+}
+
+/**
+* Save
+* @return error
+**/
+func (s *Model) Save() error {
+	return s.Db.SaveModel(s)
+}
+
+/**
+* GetFrom
+* @return *QlFrom
+**/
+func (s *Model) GetFrom() *QlFrom {
+	return &QlFrom{Model: s}
+}
+
+/**
+* GenId
+* @param id string
+* @return string
+**/
+func (s *Model) GenId(id string) string {
+	if !map[string]bool{"": true, "*": true, "new": true}[id] {
+		return id
+	}
+
+	return utility.RecordId(s.Table, id)
+}
+
+/**
+* GenKey
+* @param id string
+* @return string
+**/
+func (s *Model) GenKey(id string) string {
+	return utility.RecordId(s.Table, id)
+}
+
+/**
+* SourceIdx
+* @return int
+**/
+func (s *Model) SourceIdx() int {
+	if s.SourceField == nil {
+		return -1
+	}
+
+	return s.SourceField.Idx()
+}
+
+/**
+* Up
+* @return string
+*
+ */
+func (s *Model) Up() string {
+	return strs.Uppcase(s.Name)
+}
+
+/**
+* Low
+* @return string
+**/
+func (s *Model) Low() string {
+	return strs.Lowcase(s.Name)
+}
+
+/**
+* GetSerie
+* @return int
+**/
+func (s *Model) GetSerie() int64 {
+	return s.Db.GetSerie(s.Table)
 }
 
 /**

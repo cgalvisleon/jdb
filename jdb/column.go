@@ -17,6 +17,7 @@ const (
 	TpGenerated
 	TpRelatedTo
 	TpRollup
+	TpIA
 )
 
 func (s TypeColumn) Str() string {

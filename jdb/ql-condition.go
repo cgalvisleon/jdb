@@ -72,7 +72,122 @@ func (s Operator) Str() string {
 	case Search:
 		return "search"
 	default:
-		return ""
+		return "Any"
+	}
+}
+
+/**
+* Name
+* @return string
+**/
+func (s *Operator) Name() string {
+	switch *s {
+	case Equal:
+		return "Equal"
+	case Neg:
+		return "Neg"
+	case In:
+		return "In"
+	case Like:
+		return "Like"
+	case More:
+		return "More"
+	case Less:
+		return "Less"
+	case MoreEq:
+		return "MoreEq"
+	case LessEq:
+		return "LessEq"
+	case Between:
+		return "Between"
+	case IsNull:
+		return "IsNull"
+	case NotNull:
+		return "NotNull"
+	case Search:
+		return "Search"
+	default:
+		return "Any"
+	}
+}
+
+/**
+* Command
+* @return string
+**/
+func (s *Operator) Command() string {
+	switch *s {
+	case Equal:
+		return "eq"
+	case Neg:
+		return "neg"
+	case In:
+		return "in"
+	case Like:
+		return "like"
+	case More:
+		return "more"
+	case Less:
+		return "less"
+	case MoreEq:
+		return "moreEq"
+	case LessEq:
+		return "lessEq"
+	case Between:
+		return "between"
+	case IsNull:
+		return "isNull"
+	case NotNull:
+		return "notNull"
+	case Search:
+		return "search"
+	default:
+		return "any"
+	}
+}
+
+/**
+* OperatorToCommand
+* @param op Operator
+* @return string
+**/
+func OperatorToCommand(op Operator) string {
+	return op.Command()
+}
+
+/**
+* StrToOperator
+* @param str string
+* @return Operator
+**/
+func StrToOperator(str string) Operator {
+	switch str {
+	case "eq":
+		return Equal
+	case "neg":
+		return Neg
+	case "in":
+		return In
+	case "like":
+		return Like
+	case "more":
+		return More
+	case "less":
+		return Less
+	case "moreEq":
+		return MoreEq
+	case "lessEq":
+		return LessEq
+	case "between":
+		return Between
+	case "isNull":
+		return IsNull
+	case "notNull":
+		return NotNull
+	case "search":
+		return Search
+	default:
+		return NoP
 	}
 }
 
