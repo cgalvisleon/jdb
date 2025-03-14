@@ -3,7 +3,7 @@ module github.com/cgalvisleon/jdb
 go 1.23.0
 
 require (
-	github.com/cgalvisleon/et v1.0.4
+	github.com/cgalvisleon/et v1.0.5
 	github.com/dop251/goja v0.0.0-20250125213203-5ef83b82af17
 	github.com/go-chi/chi/v5 v5.1.0
 	github.com/lib/pq v1.10.9
@@ -29,7 +29,7 @@ require (
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	golang.org/x/crypto v0.26.0 // indirect
 	golang.org/x/exp v0.0.0-20240119083558-1b970713d09a // indirect
-	golang.org/x/sys v0.28.0 // indirect
+	golang.org/x/sys v0.29.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
 	modernc.org/libc v1.61.13 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
