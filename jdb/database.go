@@ -3,7 +3,6 @@ package jdb
 import (
 	"time"
 
-	"github.com/cgalvisleon/et/envar"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/mistake"
 	"github.com/cgalvisleon/et/strs"
@@ -40,10 +39,10 @@ type DB struct {
 
 /**
 * NewDatabase
-* @param driver string
+* @param name, driver string, id int
 * @return *DB
 **/
-func NewDatabase(name, driver string) (*DB, error) {
+func NewDatabase(name, driver string, id int64) (*DB, error) {
 	if driver == "" {
 		return nil, mistake.New(MSG_DRIVER_NOT_DEFINED)
 	}
@@ -60,10 +59,10 @@ func NewDatabase(name, driver string) (*DB, error) {
 		Name:        Name(name),
 		Description: "",
 		Schemas:     map[string]*Schema{},
-		NodeId:      envar.GetInt64(1, "DB_NODEID"),
+		NodeId:      id,
 		driver:      Jdb.Drivers[driver](),
 	}
-	utility.SetSnowflakeNode(result.NodeId)
+
 	JDBS = append(JDBS, result)
 
 	return result, nil
@@ -89,6 +88,15 @@ func (s *DB) Describe() et.Json {
 	}
 
 	return result
+}
+
+/**
+* GenId
+* @param tag string
+* @return string
+**/
+func (s *DB) GenId(tag string) string {
+	return utility.Snowflake(s.NodeId, tag)
 }
 
 /**

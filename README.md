@@ -1,4 +1,24 @@
-## jdb
+## JDB
+
+## Sytem vars
+
+- NODEID:
+
+- DB_NAME:
+
+- DB_DRIVER:
+
+- DB_HOST:
+
+- DB_PORT:
+
+- DB_USER:
+
+- DB_PASSWORD:
+
+- APP_NAME:
+
+## Run and build
 
 ```
 gofmt -w . && go run --race ./cmd/jdb -port 3500

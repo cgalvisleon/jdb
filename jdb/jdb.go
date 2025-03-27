@@ -72,9 +72,10 @@ func (s *JDB) Describe() et.Json {
 * @return *DB, error
 **/
 func Load() (*DB, error) {
-	name := envar.GetStr("data", "DB_NAME")
 	driver := envar.GetStr(SqliteDriver, "DB_DRIVER")
-	result, err := NewDatabase(name, driver)
+	name := envar.GetStr("data", "DB_NAME")
+	id := envar.GetInt64(0, "NODEID")
+	result, err := NewDatabase(name, driver, id)
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +88,7 @@ func Load() (*DB, error) {
 		"port":     envar.GetInt(5432, "DB_PORT"),
 		"username": envar.GetStr("", "DB_USER"),
 		"password": envar.GetStr("", "DB_PASSWORD"),
-		"app":      envar.GetStr("jdb", "DB_APP_NAME"),
+		"app":      envar.GetStr("jdb", "APP_NAME"),
 		"core":     result.UseCore,
 		"nodeId":   result.NodeId,
 		"fields": et.Json{
@@ -126,7 +127,8 @@ func ConnectTo(params et.Json) (*DB, error) {
 	}
 
 	name := params.ValStr("db", "name")
-	result, err := NewDatabase(name, driver)
+	id := params.ValInt64(0, "nodeId")
+	result, err := NewDatabase(name, driver, id)
 	if err != nil {
 		return nil, err
 	}
