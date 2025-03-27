@@ -1,8 +1,6 @@
 package jdb
 
 import (
-	"time"
-
 	"github.com/cgalvisleon/et/et"
 )
 
@@ -51,22 +49,6 @@ type Driver interface {
 	NextCode(tag, prefix string) string
 	SetSerie(tag string, val int) int64
 	CurrentSerie(tag string) int64
-	// Key Value
-	SetKey(key string, value []byte) error
-	GetKey(key string) (et.KeyValue, error)
-	DeleteKey(key string) error
-	FindKeys(search string, page, rows int) (et.List, error)
-	// Function
-	SetFlow(name string, value []byte) error
-	GetFlow(id string) (Flow, error)
-	DeleteFlow(id string) error
-	FindFlows(search string, page, rows int) (et.List, error)
-	// Cache
-	SetCache(key string, value []byte, duration time.Duration) error
-	GetCache(key string) (et.KeyValue, error)
-	DeleteCache(key string) error
-	CleanCache() error
-	FindCache(search string, page, rows int) (et.List, error)
 }
 
 /**
