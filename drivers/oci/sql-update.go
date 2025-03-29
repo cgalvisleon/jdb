@@ -6,7 +6,7 @@ import (
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
-func (s *Postgres) sqlUpdate(command *jdb.Command) string {
+func (s *Oracle) sqlUpdate(command *jdb.Command) string {
 	from := command.From
 	set := ""
 	atribs := ""

@@ -7,7 +7,7 @@ import (
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
-func (s *Postgres) Command(command *jdb.Command) (et.Items, error) {
+func (s *Oracle) Command(command *jdb.Command) (et.Items, error) {
 	command.Sql = ""
 	switch command.Command {
 	case jdb.Insert:

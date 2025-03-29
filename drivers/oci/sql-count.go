@@ -6,7 +6,7 @@ import (
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
-func (s *Postgres) Count(ql *jdb.Ql) (int, error) {
+func (s *Oracle) Count(ql *jdb.Ql) (int, error) {
 	ql.Sql = ""
 	ql.Sql = strs.Append(ql.Sql, "SELECT COUNT(*) AS Count", "\n")
 	ql.Sql = strs.Append(ql.Sql, s.sqlFrom(ql.Froms), "\n")

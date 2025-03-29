@@ -6,7 +6,7 @@ import (
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
-func (s *Postgres) defineRecords() error {
+func (s *Oracle) defineRecords() error {
 	exist, err := s.existTable("core", "RECORDS")
 	if err != nil {
 		return console.Panic(err)
@@ -49,7 +49,7 @@ func (s *Postgres) defineRecords() error {
 	return s.defineRecordsFunction()
 }
 
-func (s *Postgres) defineRecordsFunction() error {
+func (s *Oracle) defineRecordsFunction() error {
 	sql := parceSQL(`
 	CREATE OR REPLACE FUNCTION core.SYNC_NOTIFY()
   RETURNS

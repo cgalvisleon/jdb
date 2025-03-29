@@ -33,7 +33,7 @@ func (s *Command) bulk() error {
 		before := result.ValJson(et.Json{}, "result", "before")
 		after := result.ValJson(et.Json{}, "result", "after")
 
-		for _, event := range s.From.EventsUpdate {
+		for _, event := range s.From.EventsInsert {
 			err := event(model, before, after)
 			if err != nil {
 				return err

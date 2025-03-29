@@ -6,7 +6,7 @@ import (
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
-func (s *Postgres) sqlBulk(command *jdb.Command) string {
+func (s *Oracle) sqlBulk(command *jdb.Command) string {
 	result := "INSERT INTO %s(%s)\nVALUES %s"
 	columns := ""
 	values := ""

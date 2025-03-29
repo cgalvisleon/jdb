@@ -5,7 +5,7 @@ import (
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
-func (s *Postgres) sqlSelect(ql *jdb.Ql) string {
+func (s *Oracle) sqlSelect(ql *jdb.Ql) string {
 	if len(ql.Froms.Froms) == 0 {
 		return ""
 	}
@@ -72,7 +72,7 @@ func jsonbBuildObject(result, obj string) string {
 	return strs.Append(result, strs.Format("jsonb_build_object(\n%s)", obj), "||\n")
 }
 
-func (s *Postgres) sqlObject(selects []*jdb.Field) string {
+func (s *Oracle) sqlObject(selects []*jdb.Field) string {
 	result := ""
 	l := 20
 	if s.version >= 13 {
@@ -117,7 +117,7 @@ func (s *Postgres) sqlObject(selects []*jdb.Field) string {
 	return result
 }
 
-func (s *Postgres) sqlObjectOrders(selects []*jdb.Field, orders *jdb.QlOrder) string {
+func (s *Oracle) sqlObjectOrders(selects []*jdb.Field, orders *jdb.QlOrder) string {
 	result := s.sqlObject(selects)
 	result = strs.Append(result, "result", " AS ")
 	for _, ord := range orders.Asc {
@@ -132,7 +132,7 @@ func (s *Postgres) sqlObjectOrders(selects []*jdb.Field, orders *jdb.QlOrder) st
 	return result
 }
 
-func (s *Postgres) sqlColumns(selects []*jdb.Field) string {
+func (s *Oracle) sqlColumns(selects []*jdb.Field) string {
 	result := ""
 	for _, fld := range selects {
 		if fld.Hidden {

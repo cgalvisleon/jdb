@@ -9,7 +9,7 @@ import (
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
-func (s *Postgres) query(db *sql.DB, sql string, arg ...any) (*sql.Rows, error) {
+func (s *Oracle) query(db *sql.DB, sql string, arg ...any) (*sql.Rows, error) {
 	result, err := db.Query(sql, arg...)
 	if err != nil {
 		sql = jdb.SQLParse(sql, arg...)
@@ -19,7 +19,7 @@ func (s *Postgres) query(db *sql.DB, sql string, arg ...any) (*sql.Rows, error) 
 	return result, nil
 }
 
-func (s *Postgres) exec(db *sql.DB, sql string, arg ...any) (sql.Result, error) {
+func (s *Oracle) exec(db *sql.DB, sql string, arg ...any) (sql.Result, error) {
 	result, err := db.Exec(sql, arg...)
 	if err != nil {
 		sql = jdb.SQLParse(sql, arg...)
@@ -34,7 +34,7 @@ func (s *Postgres) exec(db *sql.DB, sql string, arg ...any) (sql.Result, error) 
 * @param sql string, arg ...any
 * @return error
 **/
-func (s *Postgres) Exec(sql string, arg ...any) error {
+func (s *Oracle) Exec(sql string, arg ...any) error {
 	_, err := s.exec(s.db, sql, arg...)
 	if err != nil {
 		return err
@@ -49,7 +49,7 @@ func (s *Postgres) Exec(sql string, arg ...any) error {
 * @param query string, dest ...any
 * @return error
 **/
-func (s *Postgres) QueryRow(query string, dest ...any) (bool, error) {
+func (s *Oracle) QueryRow(query string, dest ...any) (bool, error) {
 	err := s.db.QueryRow(query).Scan(dest...)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -67,7 +67,7 @@ func (s *Postgres) QueryRow(query string, dest ...any) (bool, error) {
 * @param sql string, arg ...any
 * @return et.Items, error
 **/
-func (s *Postgres) Query(sql string, arg ...any) (et.Items, error) {
+func (s *Oracle) Query(sql string, arg ...any) (et.Items, error) {
 	rows, err := s.query(s.db, sql, arg...)
 	if err != nil {
 		return et.Items{}, console.QueryError(err, sql)
@@ -84,7 +84,7 @@ func (s *Postgres) Query(sql string, arg ...any) (et.Items, error) {
 * @param sql string, arg ...any
 * @return et.Item, error
 **/
-func (s *Postgres) One(sql string, arg ...any) (et.Item, error) {
+func (s *Oracle) One(sql string, arg ...any) (et.Item, error) {
 	rows, err := s.query(s.db, sql, arg...)
 	if err != nil {
 		return et.Item{}, console.QueryError(err, sql)
@@ -101,7 +101,7 @@ func (s *Postgres) One(sql string, arg ...any) (et.Item, error) {
 * @param source, sql string, arg ...any
 * @return et.Items, error
 **/
-func (s *Postgres) Data(sourceFiled, sql string, arg ...any) (et.Items, error) {
+func (s *Oracle) Data(sourceFiled, sql string, arg ...any) (et.Items, error) {
 	rows, err := s.query(s.db, sql, arg...)
 	if err != nil {
 		return et.Items{}, console.QueryError(err, sql)
@@ -118,7 +118,7 @@ func (s *Postgres) Data(sourceFiled, sql string, arg ...any) (et.Items, error) {
 * @param ql *jdb.Ql
 * @return et.Items, error
 **/
-func (s *Postgres) Select(ql *jdb.Ql) (et.Items, error) {
+func (s *Oracle) Select(ql *jdb.Ql) (et.Items, error) {
 	ql.Sql = ""
 	ql.Sql = strs.Append(ql.Sql, s.sqlSelect(ql), "\n")
 	ql.Sql = strs.Append(ql.Sql, s.sqlFrom(ql.Froms), "\n")
@@ -156,7 +156,7 @@ func (s *Postgres) Select(ql *jdb.Ql) (et.Items, error) {
 * @param id, sql string, arg ...any
 * @return error
 **/
-func (s *Postgres) ExecDDL(id, sql string, arg ...any) error {
+func (s *Oracle) ExecDDL(id, sql string, arg ...any) error {
 	err := s.Exec(sql, arg...)
 	if err != nil {
 		return err

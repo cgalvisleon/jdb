@@ -14,24 +14,6 @@ import (
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
-func (s *Postgres) ExistDatabase(name string) (bool, error) {
-	sql := `
-	SELECT EXISTS(
-	SELECT 1
-	FROM pg_database
-	WHERE UPPER(datname) = UPPER($1));`
-	items, err := s.Query(sql, name)
-	if err != nil {
-		return false, err
-	}
-
-	if items.Count == 0 {
-		return false, nil
-	}
-
-	return items.Bool(0, "exists"), nil
-}
-
 func (s *Postgres) chain(params et.Json) (string, error) {
 	username := params.Str("username")
 	password := params.Str("password")
@@ -104,12 +86,40 @@ func (s *Postgres) connect(params et.Json) error {
 	return nil
 }
 
+func (s *Postgres) connectDefault(params et.Json) error {
+	params["database"] = "postgres"
+	return s.connect(params)
+}
+
+func (s *Postgres) existDatabase(name string) (bool, error) {
+	sql := `
+	SELECT EXISTS(
+	SELECT 1
+	FROM pg_database
+	WHERE UPPER(datname) = UPPER($1));`
+	items, err := s.Query(sql, name)
+	if err != nil {
+		return false, err
+	}
+
+	if items.Count == 0 {
+		return false, nil
+	}
+
+	return items.Bool(0, "exists"), nil
+}
+
+/**
+* CreateDatabase
+* @param name string
+* @return error
+**/
 func (s *Postgres) CreateDatabase(name string) error {
 	if s.db == nil {
 		return mistake.Newf(msg.NOT_DRIVER_DB)
 	}
 
-	exist, err := s.ExistDatabase(name)
+	exist, err := s.existDatabase(name)
 	if err != nil {
 		return err
 	}
@@ -129,12 +139,17 @@ func (s *Postgres) CreateDatabase(name string) error {
 	return nil
 }
 
+/**
+* DropDatabase
+* @param name string
+* @return error
+**/
 func (s *Postgres) DropDatabase(name string) error {
 	if s.db == nil {
 		return mistake.Newf(msg.NOT_DRIVER_DB)
 	}
 
-	exist, err := s.ExistDatabase(name)
+	exist, err := s.existDatabase(name)
 	if err != nil {
 		return err
 	}
@@ -154,21 +169,24 @@ func (s *Postgres) DropDatabase(name string) error {
 	return nil
 }
 
+/**
+* Connect
+* @param params et.Json
+* @return error
+**/
 func (s *Postgres) Connect(params et.Json) error {
-	database := params.Str("database")
-	params["database"] = "postgres"
-	err := s.connect(params)
+	err := s.connectDefault(params)
 	if err != nil {
 		return err
 	}
 
+	database := params.Str("database")
 	err = s.CreateDatabase(database)
 	if err != nil {
 		return err
 	}
 
-	s.params["database"] = database
-	err = s.connect(s.params)
+	err = s.connect(params)
 	if err != nil {
 		return err
 	}
@@ -178,6 +196,10 @@ func (s *Postgres) Connect(params et.Json) error {
 	return nil
 }
 
+/**
+* Disconnect
+* @return error
+**/
 func (s *Postgres) Disconnect() error {
 	if !s.connected {
 		return nil
@@ -190,6 +212,10 @@ func (s *Postgres) Disconnect() error {
 	return nil
 }
 
+/**
+* Version
+* @return int
+**/
 func (s *Postgres) Version() int {
 	if !s.connected {
 		return 0

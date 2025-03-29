@@ -5,7 +5,7 @@ import (
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
-func (s *Postgres) sqlGroupBy(ql *jdb.Ql) string {
+func (s *Oracle) sqlGroupBy(ql *jdb.Ql) string {
 	result := ""
 	columns := s.sqlColumns(ql.Groups)
 	if len(columns) == 0 {

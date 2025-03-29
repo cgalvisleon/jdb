@@ -8,7 +8,27 @@ import (
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
-func (s *Postgres) typeData(tp jdb.TypeData) interface{} {
+func (s *Oracle) existTable(schema, name string) (bool, error) {
+	sql := `
+	SELECT EXISTS(
+		SELECT 1
+		FROM information_schema.tables
+		WHERE UPPER(table_schema) = UPPER($1)
+		AND UPPER(table_name) = UPPER($2));`
+
+	items, err := s.Query(sql, schema, name)
+	if err != nil {
+		return false, err
+	}
+
+	if items.Count == 0 {
+		return false, nil
+	}
+
+	return items.Bool(0, "exists"), nil
+}
+
+func (s *Oracle) typeData(tp jdb.TypeData) interface{} {
 	switch tp {
 	case jdb.TypeDataArray:
 		return "JSONB"
@@ -47,7 +67,7 @@ func (s *Postgres) typeData(tp jdb.TypeData) interface{} {
 	}
 }
 
-func (s *Postgres) strToTypeData(tp string, lenght int) jdb.TypeData {
+func (s *Oracle) strToTypeData(tp string, lenght int) jdb.TypeData {
 	tp = strs.Uppcase(tp)
 	switch tp {
 	case "ARRAY":
@@ -96,7 +116,7 @@ func (s *Postgres) strToTypeData(tp string, lenght int) jdb.TypeData {
 	}
 }
 
-func (s *Postgres) defaultValue(tp jdb.TypeData) interface{} {
+func (s *Oracle) defaultValue(tp jdb.TypeData) interface{} {
 	switch tp {
 	case jdb.TypeDataArray:
 		return utility.Quote("[]")
@@ -131,7 +151,7 @@ func (s *Postgres) defaultValue(tp jdb.TypeData) interface{} {
 	}
 }
 
-func (s *Postgres) ddlTable(model *jdb.Model) string {
+func (s *Oracle) ddlTable(model *jdb.Model) string {
 	var columnsDef string
 	for _, column := range model.Columns {
 		if slices.Contains([]*jdb.Column{model.SystemKeyField}, column) {
@@ -162,13 +182,13 @@ func (s *Postgres) ddlTable(model *jdb.Model) string {
 	return result
 }
 
-func (s *Postgres) ddlTableRename(old, new string) string {
+func (s *Oracle) ddlTableRename(old, new string) string {
 	result := strs.Format(`ALTER TABLE %s RENAME TO %s;`, old, new)
 
 	return result
 }
 
-func (s *Postgres) ddlTableInsert(old *jdb.Model) string {
+func (s *Oracle) ddlTableInsert(old *jdb.Model) string {
 	backupTable := strs.Format(`%s_BACKUP`, old.Table)
 	fields := ""
 	for _, column := range old.Columns {
@@ -181,26 +201,8 @@ func (s *Postgres) ddlTableInsert(old *jdb.Model) string {
 	return result
 }
 
-func (s *Postgres) ddlTableDrop(table string) string {
+func (s *Oracle) ddlTableDrop(table string) string {
 	result := strs.Format("DROP TABLE IF EXISTS %s CASCADE;", table)
 
 	return result
-}
-
-func (s *Postgres) tableExists(schema, tableName string) (bool, error) {
-	query := `
-		SELECT EXISTS (
-			SELECT 1
-			FROM information_schema.tables
-			WHERE table_schema = $1
-			AND table_name = $2
-		);`
-
-	var exists bool
-	err := s.db.QueryRow(query, schema, tableName).Scan(&exists)
-	if err != nil {
-		return false, err
-	}
-
-	return exists, nil
 }

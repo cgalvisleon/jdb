@@ -2,7 +2,7 @@ package oci
 
 import "github.com/cgalvisleon/et/et"
 
-func (s *Postgres) SetMain(params et.Json) error {
+func (s *Oracle) SetMain(params et.Json) error {
 
 	return nil
 }

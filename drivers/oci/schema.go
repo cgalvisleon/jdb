@@ -8,7 +8,7 @@ import (
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
-func (s *Postgres) CreateSchema(name string) error {
+func (s *Oracle) CreateSchema(name string) error {
 	if s.db == nil {
 		return mistake.Newf(msg.NOT_DRIVER_DB)
 	}
@@ -34,7 +34,7 @@ func (s *Postgres) CreateSchema(name string) error {
 	return nil
 }
 
-func (s *Postgres) DropSchema(name string) error {
+func (s *Oracle) DropSchema(name string) error {
 	if s.db == nil {
 		return mistake.Newf(msg.NOT_DRIVER_DB)
 	}
@@ -51,7 +51,7 @@ func (s *Postgres) DropSchema(name string) error {
 	return nil
 }
 
-func (s *Postgres) ExistSchema(name string) (bool, error) {
+func (s *Oracle) ExistSchema(name string) (bool, error) {
 	if s.db == nil {
 		return false, mistake.Newf(msg.NOT_DRIVER_DB)
 	}

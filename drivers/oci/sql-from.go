@@ -5,7 +5,7 @@ import (
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
-func (s *Postgres) sqlFrom(froms *jdb.QlFroms) string {
+func (s *Oracle) sqlFrom(froms *jdb.QlFroms) string {
 	if len(froms.Froms) == 0 {
 		return ""
 	}
@@ -17,7 +17,7 @@ func (s *Postgres) sqlFrom(froms *jdb.QlFroms) string {
 	return result
 }
 
-func (s *Postgres) tableAs(from *jdb.QlFrom) string {
+func (s *Oracle) tableAs(from *jdb.QlFrom) string {
 	if from == nil {
 		return ""
 	}

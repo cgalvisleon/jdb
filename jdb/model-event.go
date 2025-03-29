@@ -30,61 +30,111 @@ type Event func(model *Model, before et.Json, after et.Json) error
 
 type EventError func(model *Model, data et.Json)
 
-func EventErrorDefault(model *Model, data et.Json) {
+/**
+* EventErrorDefault
+* @param model *Model, err et.Json
+**/
+func EventErrorDefault(model *Model, err et.Json) {
+	schema := ""
+	if model.Schema != nil {
+		schema = model.Schema.Name
+	}
+
+	data := et.Json{
+		"schema": schema,
+		"model":  model.Name,
+		"table":  model.Table,
+		"error":  err,
+	}
+
 	event.Publish("model:error", data)
+	event.Publish("model:error:"+model.Name, data)
+	event.Publish("model:error:"+model.Table, data)
 }
 
+/**
+* EventInsertDefault
+* @param model *Model, before et.Json, after et.Json
+* @return error
+**/
 func EventInsertDefault(model *Model, before et.Json, after et.Json) error {
 	schema := ""
 	if model.Schema != nil {
 		schema = model.Schema.Name
 	}
 
-	event.Publish("model:insert", et.Json{
+	data := et.Json{
 		"schema": schema,
 		"model":  model.Name,
 		"table":  model.Table,
 		"before": before,
 		"after":  after,
-	})
+	}
+
+	event.Publish("model:insert", data)
+	event.Publish("model:insert:"+model.Name, data)
+	event.Publish("model:insert:"+model.Table, data)
 
 	return nil
 }
 
+/**
+* EventUpdateDefault
+* @param model *Model, before et.Json, after et.Json
+* @return error
+**/
 func EventUpdateDefault(model *Model, before et.Json, after et.Json) error {
 	schema := ""
 	if model.Schema != nil {
 		schema = model.Schema.Name
 	}
 
-	event.Publish("model:update", et.Json{
+	data := et.Json{
 		"schema": schema,
 		"model":  model.Name,
 		"table":  model.Table,
 		"before": before,
 		"after":  after,
-	})
+	}
+
+	event.Publish("model:update", data)
+	event.Publish("model:update:"+model.Name, data)
+	event.Publish("model:update:"+model.Table, data)
 
 	return nil
 }
 
+/**
+* EventDeleteDefault
+* @param model *Model, before et.Json, after et.Json
+* @return error
+**/
 func EventDeleteDefault(model *Model, before et.Json, after et.Json) error {
 	schema := ""
 	if model.Schema != nil {
 		schema = model.Schema.Name
 	}
 
-	event.Publish("model:delete", et.Json{
+	data := et.Json{
 		"schema": schema,
 		"model":  model.Name,
 		"table":  model.Table,
 		"before": before,
 		"after":  after,
-	})
+	}
+
+	event.Publish("model:delete", data)
+	event.Publish("model:delete:"+model.Name, data)
+	event.Publish("model:delete:"+model.Table, data)
 
 	return nil
 }
 
+/**
+* EventHistoryDefault
+* @param model *Model, before et.Json, after et.Json
+* @return error
+**/
 func EventHistoryDefault(model *Model, before et.Json, after et.Json) error {
 	if model.History == nil {
 		return nil

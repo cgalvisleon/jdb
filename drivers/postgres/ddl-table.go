@@ -8,6 +8,26 @@ import (
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
+func (s *Postgres) existTable(schema, name string) (bool, error) {
+	sql := `
+	SELECT EXISTS(
+		SELECT 1
+		FROM information_schema.tables
+		WHERE UPPER(table_schema) = UPPER($1)
+		AND UPPER(table_name) = UPPER($2));`
+
+	items, err := s.Query(sql, schema, name)
+	if err != nil {
+		return false, err
+	}
+
+	if items.Count == 0 {
+		return false, nil
+	}
+
+	return items.Bool(0, "exists"), nil
+}
+
 func (s *Postgres) typeData(tp jdb.TypeData) interface{} {
 	switch tp {
 	case jdb.TypeDataArray:
@@ -185,22 +205,4 @@ func (s *Postgres) ddlTableDrop(table string) string {
 	result := strs.Format("DROP TABLE IF EXISTS %s CASCADE;", table)
 
 	return result
-}
-
-func (s *Postgres) tableExists(schema, tableName string) (bool, error) {
-	query := `
-		SELECT EXISTS (
-			SELECT 1
-			FROM information_schema.tables
-			WHERE table_schema = $1
-			AND table_name = $2
-		);`
-
-	var exists bool
-	err := s.db.QueryRow(query, schema, tableName).Scan(&exists)
-	if err != nil {
-		return false, err
-	}
-
-	return exists, nil
 }

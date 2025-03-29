@@ -5,7 +5,7 @@ import (
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
-func (s *Postgres) sqlJoin(joins []*jdb.QlJoin) string {
+func (s *Oracle) sqlJoin(joins []*jdb.QlJoin) string {
 	result := ""
 	for _, join := range joins {
 		def := s.tableAs(join.With)

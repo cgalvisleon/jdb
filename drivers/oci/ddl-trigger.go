@@ -17,7 +17,7 @@ func ddlSeriesTriggers(model *jdb.Model) string {
 	return defineSeriesTrigger(model.Table)
 }
 
-func (s *Postgres) ddlTriggers(model *jdb.Model) string {
+func (s *Oracle) ddlTriggers(model *jdb.Model) string {
 	var result string
 	if !model.Db.UseCore {
 		return result

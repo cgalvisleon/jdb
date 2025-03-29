@@ -7,7 +7,7 @@ import (
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
-func (s *Postgres) sqlInsert(command *jdb.Command) string {
+func (s *Oracle) sqlInsert(command *jdb.Command) string {
 	from := command.From
 	columns := ""
 	values := ""

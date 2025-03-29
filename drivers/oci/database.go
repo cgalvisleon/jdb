@@ -14,7 +14,7 @@ import (
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
-func (s *Postgres) ExistDatabase(name string) (bool, error) {
+func (s *Oracle) ExistDatabase(name string) (bool, error) {
 	sql := `
 	SELECT EXISTS(
 	SELECT 1
@@ -32,7 +32,7 @@ func (s *Postgres) ExistDatabase(name string) (bool, error) {
 	return items.Bool(0, "exists"), nil
 }
 
-func (s *Postgres) chain(params et.Json) (string, error) {
+func (s *Oracle) chain(params et.Json) (string, error) {
 	username := params.Str("username")
 	password := params.Str("password")
 	host := params.Str("host")
@@ -70,7 +70,7 @@ func (s *Postgres) chain(params et.Json) (string, error) {
 	return result, nil
 }
 
-func (s *Postgres) connectTo(connStr string) (*sql.DB, error) {
+func (s *Oracle) connectTo(connStr string) (*sql.DB, error) {
 	db, err := sql.Open(s.name, connStr)
 	if err != nil {
 		return nil, err
@@ -83,7 +83,7 @@ func (s *Postgres) connectTo(connStr string) (*sql.DB, error) {
 	return db, nil
 }
 
-func (s *Postgres) connect(params et.Json) error {
+func (s *Oracle) connect(params et.Json) error {
 	connStr, err := s.chain(params)
 	if err != nil {
 		return err
@@ -104,7 +104,7 @@ func (s *Postgres) connect(params et.Json) error {
 	return nil
 }
 
-func (s *Postgres) CreateDatabase(name string) error {
+func (s *Oracle) CreateDatabase(name string) error {
 	if s.db == nil {
 		return mistake.Newf(msg.NOT_DRIVER_DB)
 	}
@@ -129,7 +129,7 @@ func (s *Postgres) CreateDatabase(name string) error {
 	return nil
 }
 
-func (s *Postgres) DropDatabase(name string) error {
+func (s *Oracle) DropDatabase(name string) error {
 	if s.db == nil {
 		return mistake.Newf(msg.NOT_DRIVER_DB)
 	}
@@ -154,7 +154,7 @@ func (s *Postgres) DropDatabase(name string) error {
 	return nil
 }
 
-func (s *Postgres) Connect(params et.Json) error {
+func (s *Oracle) Connect(params et.Json) error {
 	database := params.Str("database")
 	params["database"] = "postgres"
 	err := s.connect(params)
@@ -178,7 +178,7 @@ func (s *Postgres) Connect(params et.Json) error {
 	return nil
 }
 
-func (s *Postgres) Disconnect() error {
+func (s *Oracle) Disconnect() error {
 	if !s.connected {
 		return nil
 	}
@@ -190,7 +190,7 @@ func (s *Postgres) Disconnect() error {
 	return nil
 }
 
-func (s *Postgres) Version() int {
+func (s *Oracle) Version() int {
 	if !s.connected {
 		return 0
 	}

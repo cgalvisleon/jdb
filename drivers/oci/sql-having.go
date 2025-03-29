@@ -5,7 +5,7 @@ import (
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
-func (s *Postgres) sqlHaving(ql *jdb.Ql) string {
+func (s *Oracle) sqlHaving(ql *jdb.Ql) string {
 	result := ""
 	havings := ql.Havings
 	where := whereConditions(havings.QlWhere)

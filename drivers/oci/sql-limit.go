@@ -5,7 +5,7 @@ import (
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
-func (s *Postgres) sqlLimit(ql *jdb.Ql) string {
+func (s *Oracle) sqlLimit(ql *jdb.Ql) string {
 	result := ""
 	if ql.Sheet > 0 {
 		result = strs.Format(`LIMIT %d OFFSET %d`, ql.Limit, ql.Offset)

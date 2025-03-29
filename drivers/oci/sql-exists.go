@@ -6,7 +6,7 @@ import (
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
-func (s *Postgres) Exists(ql *jdb.Ql) (bool, error) {
+func (s *Oracle) Exists(ql *jdb.Ql) (bool, error) {
 	ql.Sql = ""
 	ql.Sql = strs.Append(ql.Sql, "SELECT 1", "\n")
 	ql.Sql = strs.Append(ql.Sql, s.sqlFrom(ql.Froms), "\n")

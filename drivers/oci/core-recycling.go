@@ -6,7 +6,7 @@ import (
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
-func (s *Postgres) defineRecycling() error {
+func (s *Oracle) defineRecycling() error {
 	exist, err := s.existTable("core", "RECYCLING")
 	if err != nil {
 		return console.Panic(err)
@@ -42,7 +42,7 @@ func (s *Postgres) defineRecycling() error {
 	return s.defineRecyclingFunction()
 }
 
-func (s *Postgres) defineRecyclingFunction() error {
+func (s *Oracle) defineRecyclingFunction() error {
 	sql := parceSQL(`  
   CREATE OR REPLACE FUNCTION core.RECYCLING_UPDATE()
   RETURNS

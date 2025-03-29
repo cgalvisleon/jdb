@@ -13,7 +13,7 @@ import (
 * @param model *jdb.Model
 * @return error
 **/
-func (s *Postgres) LoadTable(model *jdb.Model) (bool, error) {
+func (s *Oracle) LoadTable(model *jdb.Model) (bool, error) {
 	sql := `
 	SELECT
 	a.attname AS column_name, 
@@ -53,7 +53,7 @@ func (s *Postgres) LoadTable(model *jdb.Model) (bool, error) {
 * @param model *jdb.Model
 * @return error
 **/
-func (s *Postgres) CreateModel(model *jdb.Model) error {
+func (s *Oracle) CreateModel(model *jdb.Model) error {
 	var action string
 	var sql string
 	if !model.IsCreated {
@@ -115,7 +115,7 @@ func (s *Postgres) CreateModel(model *jdb.Model) error {
 * @param model *jdb.Model
 * @return error
 **/
-func (s *Postgres) DropModel(model *jdb.Model) error {
+func (s *Oracle) DropModel(model *jdb.Model) error {
 	for _, detail := range model.Details {
 		err := s.DropModel(detail.With)
 		if err != nil {
@@ -131,7 +131,7 @@ func (s *Postgres) DropModel(model *jdb.Model) error {
 * @param model *jdb.Model
 * @return error
 **/
-func (s *Postgres) SaveModel(model *jdb.Model) error {
+func (s *Oracle) SaveModel(model *jdb.Model) error {
 	serialized, err := model.Serialized()
 	if err != nil {
 		model.Drop()

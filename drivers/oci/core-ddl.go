@@ -11,7 +11,7 @@ import (
 * defineDDL create alter or delete
 * @return error
 **/
-func (s *Postgres) defineDDL() error {
+func (s *Oracle) defineDDL() error {
 	exist, err := s.existTable("core", "DDL")
 	if err != nil {
 		return console.Panic(err)
@@ -46,7 +46,7 @@ func (s *Postgres) defineDDL() error {
 * upsertDDL
 * @params query string
 **/
-func (s *Postgres) upsertDDL(id string, query string) error {
+func (s *Oracle) upsertDDL(id string, query string) error {
 	sql := parceSQL(`
 	UPDATE core.DDL SET
 	SQL = $2
@@ -84,7 +84,7 @@ func (s *Postgres) upsertDDL(id string, query string) error {
 * deleteDDL
 * @params query string
 **/
-func (s *Postgres) deleteDDL(id string) error {
+func (s *Oracle) deleteDDL(id string) error {
 	sql := parceSQL(`
 	DELETE FROM core.DDL
 	WHERE _ID = $1;`)

@@ -9,7 +9,7 @@ import (
 * defineModel create alter or delete
 * @return error
 **/
-func (s *Postgres) defineModel() error {
+func (s *Oracle) defineModel() error {
 	sql := parceSQL(`
   CREATE TABLE IF NOT EXISTS core.MODELS(
     TABLENAME TEXT DEFAULT '',
@@ -35,7 +35,7 @@ func (s *Postgres) defineModel() error {
 * @params table string
 * @return et.Item, error
 **/
-func (s *Postgres) getModel(table string) (et.Item, error) {
+func (s *Oracle) getModel(table string) (et.Item, error) {
 	sql := `
 	SELECT *
 	FROM core.MODELS
@@ -57,7 +57,7 @@ func (s *Postgres) getModel(table string) (et.Item, error) {
 * @params model []byte
 * @return error
 **/
-func (s *Postgres) upsertModel(table string, version int, model []byte) error {
+func (s *Oracle) upsertModel(table string, version int, model []byte) error {
 	sql := `
 	UPDATE core.MODELS SET
 	MODEL = $3,
@@ -96,7 +96,7 @@ func (s *Postgres) upsertModel(table string, version int, model []byte) error {
 * @params table string
 * @return error
 **/
-func (s *Postgres) deleteModel(table string) error {
+func (s *Oracle) deleteModel(table string) error {
 	sql := `
 	DELETE FROM core.MODELS
 	WHERE TABLENAME = $1;`

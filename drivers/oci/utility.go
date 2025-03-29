@@ -1,4 +1,4 @@
-package postgres
+package oci
 
 import (
 	"reflect"
@@ -7,6 +7,7 @@ import (
 	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/strs"
+	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
 func JsonQuote(val interface{}) interface{} {
@@ -58,4 +59,10 @@ func JsonQuote(val interface{}) interface{} {
 		console.Errorf("Not quoted type:%v value:%v", reflect.TypeOf(v), v)
 		return val
 	}
+}
+
+func parceSQL(sql string) string {
+	return strs.Change(sql,
+		[]string{"date_make", "date_update", "_id", "_idt", "_state"},
+		[]string{jdb.CREATED_AT, jdb.UPDATED_AT, jdb.PRIMARYKEY, jdb.SYSID, jdb.STATUS})
 }

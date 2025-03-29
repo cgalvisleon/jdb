@@ -9,7 +9,7 @@ import (
 	_ "github.com/lib/pq"
 )
 
-type Postgres struct {
+type Oracle struct {
 	name      string
 	params    et.Json
 	connStr   string
@@ -21,18 +21,18 @@ type Postgres struct {
 }
 
 func NewDriver() jdb.Driver {
-	return &Postgres{
-		name:      jdb.PostgresDriver,
+	return &Oracle{
+		name:      jdb.OracleDriver,
 		params:    et.Json{},
 		connected: false,
 	}
 }
 
-func (s *Postgres) Name() string {
+func (s *Oracle) Name() string {
 	return s.name
 }
 
 func init() {
-	jdb.Register(jdb.PostgresDriver, NewDriver)
-	envar.UpSetStr("DB_DRIVER", jdb.PostgresDriver)
+	jdb.Register(jdb.OracleDriver, NewDriver)
+	envar.UpSetStr("DB_DRIVER", jdb.OracleDriver)
 }

@@ -5,7 +5,7 @@ import (
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
-func (s *Postgres) ddlMutate(old, model *jdb.Model, drop bool) string {
+func (s *Oracle) ddlMutate(old, model *jdb.Model, drop bool) string {
 	backupTable := strs.Format(`%s_backup`, old.Up())
 	result := "\n"
 	result = strs.Append(result, s.ddlTableRename(old.Table, backupTable), "\n")

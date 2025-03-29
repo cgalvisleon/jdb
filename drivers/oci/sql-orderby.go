@@ -5,7 +5,7 @@ import (
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
-func (s *Postgres) sqlOrderBy(ql *jdb.Ql) string {
+func (s *Oracle) sqlOrderBy(ql *jdb.Ql) string {
 	result := ""
 	for _, fld := range ql.Orders.Asc {
 		def := asField(*fld)

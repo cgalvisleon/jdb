@@ -6,7 +6,7 @@ import (
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
-func (s *Postgres) defineSeries() error {
+func (s *Oracle) defineSeries() error {
 	exist, err := s.existTable("core", "SERIES")
 	if err != nil {
 		return console.Panic(err)
@@ -35,7 +35,7 @@ func (s *Postgres) defineSeries() error {
 	return s.defineSeriesFunction()
 }
 
-func (s *Postgres) defineSeriesFunction() error {
+func (s *Oracle) defineSeriesFunction() error {
 	sql := `
 	CREATE OR REPLACE FUNCTION core.nextserie(tag VARCHAR(250))
 	RETURNS BIGINT AS $$
@@ -110,7 +110,7 @@ func (s *Postgres) defineSeriesFunction() error {
 	return nil
 }
 
-func (s *Postgres) GetSerie(tag string) int64 {
+func (s *Oracle) GetSerie(tag string) int64 {
 	db := s.db
 	if s.master != nil {
 		db = s.master
@@ -133,7 +133,7 @@ func (s *Postgres) GetSerie(tag string) int64 {
 	return result
 }
 
-func (s *Postgres) SetSerie(tag string, val int) int64 {
+func (s *Oracle) SetSerie(tag string, val int) int64 {
 	db := s.db
 	if s.master != nil {
 		db = s.master
@@ -156,7 +156,7 @@ func (s *Postgres) SetSerie(tag string, val int) int64 {
 	return result
 }
 
-func (s *Postgres) CurrentSerie(tag string) int64 {
+func (s *Oracle) CurrentSerie(tag string) int64 {
 	db := s.db
 	if s.master != nil {
 		db = s.master
@@ -179,7 +179,7 @@ func (s *Postgres) CurrentSerie(tag string) int64 {
 	return result
 }
 
-func (s *Postgres) NextCode(tag, prefix string) string {
+func (s *Oracle) NextCode(tag, prefix string) string {
 	num := s.GetSerie(tag)
 
 	if len(prefix) == 0 {

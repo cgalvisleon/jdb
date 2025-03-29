@@ -6,7 +6,7 @@ import (
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
-func (s *Postgres) sqlWhere(where *jdb.QlWhere) string {
+func (s *Oracle) sqlWhere(where *jdb.QlWhere) string {
 	if where == nil {
 		return ""
 	}

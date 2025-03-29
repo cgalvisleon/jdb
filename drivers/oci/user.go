@@ -6,7 +6,7 @@ import (
 	"github.com/cgalvisleon/et/mistake"
 )
 
-func (s *Postgres) GrantPrivileges(username, database string) error {
+func (s *Oracle) GrantPrivileges(username, database string) error {
 	// Otorgar acceso a la base de datos
 	grantDatabase := fmt.Sprintf("GRANT CONNECT ON DATABASE %s TO %s;", database, username)
 	_, err := s.db.Exec(grantDatabase)
@@ -45,7 +45,7 @@ func (s *Postgres) GrantPrivileges(username, database string) error {
 	return nil
 }
 
-func (s *Postgres) CreateUser(username, password, confirmation string) error {
+func (s *Oracle) CreateUser(username, password, confirmation string) error {
 	if password != confirmation {
 		return mistake.New("password do not match!")
 	}
@@ -65,7 +65,7 @@ func (s *Postgres) CreateUser(username, password, confirmation string) error {
 	return nil
 }
 
-func (s *Postgres) ChangePassword(username, password, confirmation string) error {
+func (s *Oracle) ChangePassword(username, password, confirmation string) error {
 	if password != confirmation {
 		return mistake.New("password do not match!")
 	}
@@ -79,7 +79,7 @@ func (s *Postgres) ChangePassword(username, password, confirmation string) error
 	return nil
 }
 
-func (s *Postgres) DeleteUser(username string) error {
+func (s *Oracle) DeleteUser(username string) error {
 	query := fmt.Sprintf("DROP ROLE IF EXISTS %s;", username)
 	_, err := s.db.Exec(query)
 	if err != nil {

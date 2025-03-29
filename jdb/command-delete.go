@@ -10,7 +10,7 @@ func (s *Command) delete() error {
 	if err != nil {
 		for _, event := range s.From.EventError {
 			event(model, et.Json{
-				"command": "insert",
+				"command": "delete",
 				"sql":     s.Sql,
 				"where":   s.listWheres(),
 				"error":   err.Error(),
@@ -33,7 +33,7 @@ func (s *Command) delete() error {
 		before := result.ValJson(et.Json{}, "result", "before")
 		after := result.ValJson(et.Json{}, "result", "after")
 
-		for _, event := range s.From.EventsUpdate {
+		for _, event := range s.From.EventsDelete {
 			err := event(model, before, after)
 			if err != nil {
 				return err
