@@ -3,6 +3,7 @@ package postgres
 import (
 	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
+	"github.com/cgalvisleon/et/strs"
 )
 
 /**
@@ -10,19 +11,29 @@ import (
 * @return error
 **/
 func (s *Postgres) defineModel() error {
+	exist, err := s.existTable("core", "MODELS")
+	if err != nil {
+		return console.Panic(err)
+	}
+
+	if exist {
+		return nil
+	}
+
 	sql := parceSQL(`
   CREATE TABLE IF NOT EXISTS core.MODELS(
     TABLENAME TEXT DEFAULT '',
     VERSION INTEGER DEFAULT 0,
-    MODEL BLOB,
-    INDEX SERIAL,
-		PRIMARY KEY(SERIE)
+    MODEL BYTEA,
+    _IDT VARCHAR(80) DEFAULT '-1',
+		INDEX BIGINT DEFAULT 0,
+		PRIMARY KEY(TABLENAME)
 	);
-
-	CREATE INDEX IF NOT EXISTS MODELS_TABLENAME_IDX ON core.MODELS(TABLENAME);
 	CREATE INDEX IF NOT EXISTS MODELS_INDEX_IDX ON core.MODELS(INDEX);`)
+	sql = strs.Append(sql, defineRecordTrigger("core.DDL"), "\n")
+	sql = strs.Append(sql, defineSeriesTrigger("core.DDL"), "\n")
 
-	err := s.Exec(sql)
+	err = s.Exec(sql)
 	if err != nil {
 		return err
 	}

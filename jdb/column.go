@@ -142,7 +142,7 @@ const (
 	PROJECT       = "project_id"
 	CREATED_AT    = "created_at"
 	UPDATED_AT    = "update_at"
-	STATUS        = "status_id"
+	STATUS        = "status"
 	SYSID         = "jdbid"
 	CREATED_TO    = "created_to"
 	UPDATED_TO    = "updated_to"

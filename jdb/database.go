@@ -10,8 +10,7 @@ import (
 )
 
 func Name(name string) string {
-	result := strs.ReplaceAll(name, []string{" "}, "_")
-	return strs.Lowcase(result)
+	return strs.ReplaceAll(name, []string{" "}, "_")
 }
 
 var JDBS []*DB = []*DB{}
@@ -39,10 +38,10 @@ type DB struct {
 
 /**
 * NewDatabase
-* @param name, driver string, id int
+* @param name, driver string, nodeId int
 * @return *DB
 **/
-func NewDatabase(name, driver string, id int64) (*DB, error) {
+func NewDatabase(name, driver string, nodeId int64) (*DB, error) {
 	if driver == "" {
 		return nil, mistake.New(MSG_DRIVER_NOT_DEFINED)
 	}
@@ -59,7 +58,7 @@ func NewDatabase(name, driver string, id int64) (*DB, error) {
 		Name:        Name(name),
 		Description: "",
 		Schemas:     map[string]*Schema{},
-		NodeId:      id,
+		NodeId:      nodeId,
 		driver:      Jdb.Drivers[driver](),
 	}
 

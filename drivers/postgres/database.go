@@ -175,17 +175,18 @@ func (s *Postgres) DropDatabase(name string) error {
 * @return error
 **/
 func (s *Postgres) Connect(params et.Json) error {
+	database := params.Str("database")
 	err := s.connectDefault(params)
 	if err != nil {
 		return err
 	}
 
-	database := params.Str("database")
 	err = s.CreateDatabase(database)
 	if err != nil {
 		return err
 	}
 
+	params["database"] = database
 	err = s.connect(params)
 	if err != nil {
 		return err

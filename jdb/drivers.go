@@ -57,3 +57,12 @@ type Driver interface {
 func Register(name string, driver func() Driver) {
 	Jdb.Drivers[name] = driver
 }
+
+type ConnectParams struct {
+	Driver   string
+	Name     string
+	NodeId   int64
+	Params   et.Json
+	Fields   map[string]string
+	UserCore bool
+}

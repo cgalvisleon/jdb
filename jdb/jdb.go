@@ -9,7 +9,7 @@ import (
 
 type JDB struct {
 	Drivers map[string]func() Driver
-	DBs     map[string]*DB
+	DBS     map[string]*DB
 	Schemas map[string]*Schema
 	Models  map[string]*Model
 	Flows   map[string]*Flow
@@ -21,7 +21,7 @@ var Jdb *JDB
 func init() {
 	Jdb = &JDB{
 		Drivers: map[string]func() Driver{},
-		DBs:     map[string]*DB{},
+		DBS:     map[string]*DB{},
 		Schemas: map[string]*Schema{},
 		Models:  map[string]*Model{},
 		Flows:   map[string]*Flow{},
@@ -39,7 +39,7 @@ func (s *JDB) Describe() et.Json {
 		drivers = append(drivers, key)
 	}
 	dbs := []string{}
-	for key := range s.DBs {
+	for key := range s.DBS {
 		dbs = append(dbs, key)
 	}
 	schemas := []et.Json{}
@@ -68,109 +68,102 @@ func (s *JDB) Describe() et.Json {
 }
 
 /**
-* Load
+* ConnectTo
+* @param params et.Json
 * @return *DB, error
 **/
-func Load() (*DB, error) {
-	driver := envar.GetStr(SqliteDriver, "DB_DRIVER")
-	name := envar.GetStr("data", "DB_NAME")
-	id := envar.GetInt64(0, "NODEID")
-	result, err := NewDatabase(name, driver, id)
+func ConnectTo(params ConnectParams) (*DB, error) {
+	driver := params.Driver
+	if driver == "" {
+		return nil, mistake.New(MSG_DRIVER_NOT_DEFINED)
+	}
+
+	name := params.Name
+	nodeId := params.NodeId
+	result, err := NewDatabase(name, driver, nodeId)
 	if err != nil {
 		return nil, err
 	}
 
-	result.UseCore = true
-	err = result.Conected(et.Json{
-		"driver":   driver,
-		"database": name,
-		"host":     envar.GetStr("localhost", "DB_HOST"),
-		"port":     envar.GetInt(5432, "DB_PORT"),
-		"username": envar.GetStr("", "DB_USER"),
-		"password": envar.GetStr("", "DB_PASSWORD"),
-		"app":      envar.GetStr("jdb", "APP_NAME"),
-		"core":     result.UseCore,
-		"nodeId":   result.NodeId,
-		"fields": et.Json{
-			"IndexField":     "index",
-			"SourceField":    "_data",
-			"ProjectField":   "project_id",
-			"CreatedAtField": "created_at",
-			"UpdatedAtField": "update_at",
-			"StateField":     "_state",
-			"KeyField":       "_id",
-			"SystemKeyField": "_idt",
-			"ClassField":     "_class",
-			"CreatedToField": "created_to",
-			"UpdatedToField": "updated_to",
-		},
-	})
+	err = result.Conected(params.Params)
 	if err != nil {
 		return nil, err
 	}
 
-	result.CreateCore()
+	if params.Fields != nil {
+		for key, value := range params.Fields {
+			switch key {
+			case "IndexField":
+				IndexField = ColumnField(value)
+			case "SourceField":
+				SourceField = ColumnField(value)
+			case "ProjectField":
+				ProjectField = ColumnField(value)
+			case "CreatedAtField":
+				CreatedAtField = ColumnField(value)
+			case "UpdatedAtField":
+				UpdatedAtField = ColumnField(value)
+			case "StateField":
+				StateField = ColumnField(value)
+			case "PrimaryKeyField":
+				PrimaryKeyField = ColumnField(value)
+			case "SystemKeyField":
+				SystemKeyField = ColumnField(value)
+			case "CreatedToField":
+				CreatedToField = ColumnField(value)
+			case "UpdatedToField":
+				UpdatedToField = ColumnField(value)
+			case "FullTextField":
+				FullTextField = ColumnField(value)
+			}
+		}
+	}
+
+	result.UseCore = params.UserCore
+	if result.UseCore {
+		err := result.CreateCore()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	Jdb.DBS[name] = result
 
 	return result, nil
 }
 
 /**
-* ConnectTo
-* @param params et.Json
+* Load
 * @return *DB, error
 **/
-func ConnectTo(params et.Json) (*DB, error) {
-	driver := params.Str("driver")
-	if driver == "" {
-		return nil, mistake.New(MSG_DRIVER_NOT_DEFINED)
-	}
-
-	name := params.ValStr("db", "name")
-	id := params.ValInt64(0, "nodeId")
-	result, err := NewDatabase(name, driver, id)
-	if err != nil {
-		return nil, err
-	}
-
-	err = result.Conected(params)
-	if err != nil {
-		return nil, err
-	}
-
-	core := params.Bool("core")
-	if core {
-		result.CreateCore()
-	}
-
-	fields := params.Json("fields")
-	for key, value := range fields {
-		switch key {
-		case "IndexField":
-			IndexField = value.(ColumnField)
-		case "SourceField":
-			SourceField = value.(ColumnField)
-		case "ProjectField":
-			ProjectField = value.(ColumnField)
-		case "CreatedAtField":
-			CreatedAtField = value.(ColumnField)
-		case "UpdatedAtField":
-			UpdatedAtField = value.(ColumnField)
-		case "StateField":
-			StateField = value.(ColumnField)
-		case "PrimaryKeyField":
-			PrimaryKeyField = value.(ColumnField)
-		case "SystemKeyField":
-			SystemKeyField = value.(ColumnField)
-		case "CreatedToField":
-			CreatedToField = value.(ColumnField)
-		case "UpdatedToField":
-			UpdatedToField = value.(ColumnField)
-		}
-	}
-
-	Jdb.DBs[name] = result
-
-	return result, nil
+func Load() (*DB, error) {
+	return ConnectTo(ConnectParams{
+		Driver: envar.GetStr(PostgresDriver, "DB_DRIVER"),
+		Name:   envar.GetStr("data", "DB_NAME"),
+		NodeId: envar.GetInt64(0, "NODEID"),
+		Params: et.Json{
+			"database": envar.GetStr("data", "DB_NAME"),
+			"host":     envar.GetStr("localhost", "DB_HOST"),
+			"port":     envar.GetInt(5432, "DB_PORT"),
+			"username": envar.GetStr("", "DB_USER"),
+			"password": envar.GetStr("", "DB_PASSWORD"),
+			"app":      envar.GetStr("jdb", "APP_NAME"),
+		},
+		Fields: map[string]string{
+			"IndexField":     INDEX,
+			"SourceField":    SOURCE,
+			"ProjectField":   PROJECT,
+			"CreatedAtField": CREATED_AT,
+			"UpdatedAtField": UPDATED_AT,
+			"StateField":     STATUS,
+			"KeyField":       PRIMARYKEY,
+			"SystemKeyField": SYSID,
+			"CreatedToField": CREATED_TO,
+			"UpdatedToField": UPDATED_TO,
+			"FullTextField":  FULLTEXT,
+		},
+		UserCore: true,
+	})
 }
 
 /**
@@ -179,7 +172,7 @@ func ConnectTo(params et.Json) (*DB, error) {
 * @return *DB
 **/
 func GetDB(name string) *DB {
-	return Jdb.DBs[name]
+	return Jdb.DBS[name]
 }
 
 /**
@@ -192,14 +185,14 @@ func GetShema(name string, isCreate bool) *Schema {
 	list := strs.Split(name, ".")
 	switch len(list) {
 	case 1:
-		return Jdb.Schemas[strs.Lowcase(name)]
+		return Jdb.Schemas[name]
 	case 2:
 		schema := Jdb.Schemas[list[1]]
 		if schema != nil {
 			return schema
 		}
 		if isCreate {
-			db := Jdb.DBs[list[0]]
+			db := Jdb.DBS[list[0]]
 			if db == nil {
 				return nil
 			}

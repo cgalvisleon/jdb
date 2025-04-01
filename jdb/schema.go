@@ -8,10 +8,6 @@ import (
 	"github.com/cgalvisleon/et/utility"
 )
 
-func schemaName(name string) string {
-	return strs.Lowcase(name)
-}
-
 type Schema struct {
 	Db          *DB               `json:"-"`
 	CreatedAt   time.Time         `json:"created_date"`

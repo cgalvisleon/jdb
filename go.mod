@@ -3,7 +3,7 @@ module github.com/cgalvisleon/jdb
 go 1.23.0
 
 require (
-	github.com/cgalvisleon/et v1.0.5
+	github.com/cgalvisleon/et v1.0.6
 	github.com/dop251/goja v0.0.0-20250125213203-5ef83b82af17
 	github.com/go-chi/chi/v5 v5.1.0
 	github.com/lib/pq v1.10.9
@@ -19,7 +19,6 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/joho/godotenv v1.5.1 // indirect
 	github.com/klauspost/compress v1.17.2 // indirect
-	github.com/matoous/go-nanoid/v2 v2.1.0 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/nats-io/nats.go v1.33.1 // indirect
 	github.com/nats-io/nkeys v0.4.7 // indirect

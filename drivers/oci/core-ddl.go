@@ -79,20 +79,3 @@ func (s *Oracle) upsertDDL(id string, query string) error {
 
 	return nil
 }
-
-/**
-* deleteDDL
-* @params query string
-**/
-func (s *Oracle) deleteDDL(id string) error {
-	sql := parceSQL(`
-	DELETE FROM core.DDL
-	WHERE _ID = $1;`)
-
-	err := s.Exec(sql, id)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}

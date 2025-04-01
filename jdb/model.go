@@ -37,11 +37,12 @@ func GetRID(id string) *RID {
 }
 
 func TableName(schema *Schema, name string) string {
+	table := strs.Lowcase(name)
 	if schema != nil {
-		return strs.Format(`%s.%s`, strs.Lowcase(schema.Name), strs.Lowcase(name))
+		return strs.Format(`%s.%s`, strs.Lowcase(schema.Name), table)
 	}
 
-	return strs.Lowcase(name)
+	return table
 }
 
 type Model struct {
@@ -474,13 +475,13 @@ func (s *Model) GetField(name string) *Field {
 	case 1:
 		return s.getField(list[0])
 	case 2:
-		if s.Name != strs.Lowcase(list[0]) {
+		if !strs.Same(s.Name, list[0]) {
 			return nil
 		}
 		return s.getField(list[1])
 	case 3:
 		table := strs.Format(`%s.%s`, list[0], list[1])
-		if s.Table != strs.Lowcase(table) {
+		if !strs.Same(s.Table, table) {
 			return nil
 		}
 		return s.getField(list[2])
