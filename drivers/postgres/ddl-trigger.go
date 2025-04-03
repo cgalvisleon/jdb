@@ -13,10 +13,6 @@ func ddlRecycligTriggers(model *jdb.Model) string {
 	return defineRecyclingTrigger(model.Table)
 }
 
-func ddlSeriesTriggers(model *jdb.Model) string {
-	return defineSeriesTrigger(model.Table)
-}
-
 func (s *Postgres) ddlTriggers(model *jdb.Model) string {
 	var result string
 	if !model.Db.UseCore {
@@ -28,9 +24,6 @@ func (s *Postgres) ddlTriggers(model *jdb.Model) string {
 	}
 	if model.StateField != nil {
 		result = strs.Append(result, ddlRecycligTriggers(model), "\n\n")
-	}
-	if model.IndexField != nil {
-		result = strs.Append(result, ddlSeriesTriggers(model), "\n\n")
 	}
 
 	return result

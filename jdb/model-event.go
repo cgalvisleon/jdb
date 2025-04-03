@@ -47,9 +47,9 @@ func EventErrorDefault(model *Model, err et.Json) {
 		"error":  err,
 	}
 
-	event.Publish("model:error", data)
-	event.Publish("model:error:"+model.Name, data)
-	event.Publish("model:error:"+model.Table, data)
+	event.Publish(event.EVENT_MODEL_ERROR, data)
+	event.Publish(event.EVENT_MODEL_ERROR+model.Name, data)
+	event.Publish(event.EVENT_MODEL_ERROR+model.Table, data)
 }
 
 /**
@@ -71,9 +71,9 @@ func EventInsertDefault(model *Model, before et.Json, after et.Json) error {
 		"after":  after,
 	}
 
-	event.Publish("model:insert", data)
-	event.Publish("model:insert:"+model.Name, data)
-	event.Publish("model:insert:"+model.Table, data)
+	event.Publish(event.EVENT_MODEL_INSERT, data)
+	event.Publish(event.EVENT_MODEL_INSERT+model.Name, data)
+	event.Publish(event.EVENT_MODEL_INSERT+model.Table, data)
 
 	return nil
 }
@@ -97,9 +97,9 @@ func EventUpdateDefault(model *Model, before et.Json, after et.Json) error {
 		"after":  after,
 	}
 
-	event.Publish("model:update", data)
-	event.Publish("model:update:"+model.Name, data)
-	event.Publish("model:update:"+model.Table, data)
+	event.Publish(event.EVENT_MODEL_UPDATE, data)
+	event.Publish(event.EVENT_MODEL_UPDATE+model.Name, data)
+	event.Publish(event.EVENT_MODEL_UPDATE+model.Table, data)
 
 	return nil
 }
@@ -123,9 +123,9 @@ func EventDeleteDefault(model *Model, before et.Json, after et.Json) error {
 		"after":  after,
 	}
 
-	event.Publish("model:delete", data)
-	event.Publish("model:delete:"+model.Name, data)
-	event.Publish("model:delete:"+model.Table, data)
+	event.Publish(event.EVENT_MODEL_DELETE, data)
+	event.Publish(event.EVENT_MODEL_DELETE+model.Name, data)
+	event.Publish(event.EVENT_MODEL_DELETE+model.Table, data)
 
 	return nil
 }

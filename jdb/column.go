@@ -49,6 +49,7 @@ const (
 	TypeDataNumber
 	TypeDataPrecision
 	TypeDataSerie
+	TypeDataIndex
 	TypeDataBool
 	TypeDataTime
 	TypeDataBytes
@@ -81,6 +82,8 @@ func (s TypeData) DefaultValue() interface{} {
 		return "{}"
 	case TypeDataSerie:
 		return 0
+	case TypeDataIndex:
+		return 0
 	case TypeDataTime:
 		return "NOW()"
 	case TypeDataGeometry:
@@ -112,6 +115,8 @@ func (s TypeData) Str() string {
 		return "object"
 	case TypeDataSerie:
 		return "serie"
+	case TypeDataIndex:
+		return "index"
 	case TypeDataShortText:
 		return "short_text"
 	case TypeDataText:
@@ -167,7 +172,7 @@ var (
 func (s ColumnField) TypeData() TypeData {
 	switch s {
 	case IndexField:
-		return TypeDataInt
+		return TypeDataIndex
 	case SourceField:
 		return TypeDataObject
 	case ProjectField:

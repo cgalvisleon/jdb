@@ -24,16 +24,6 @@ func (s *Postgres) Command(command *jdb.Command) (et.Items, error) {
 		console.Debug(command.Sql)
 	}
 
-	if command.From.SourceField != nil {
-		sourceField := command.From.SourceField.Name
-		result, err := s.Data(sourceField, command.Sql)
-		if err != nil {
-			return et.Items{}, err
-		}
-
-		return result, nil
-	}
-
 	result, err := s.Query(command.Sql)
 	if err != nil {
 		return et.Items{}, err

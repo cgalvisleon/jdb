@@ -32,7 +32,6 @@ func (s *Postgres) defineDDL() error {
 	CREATE INDEX IF NOT EXISTS DDL__IDT_IDX ON core.DDL(_IDT);
 	CREATE INDEX IF NOT EXISTS DDL_INDEX_IDX ON core.DDL(INDEX);`)
 	sql = strs.Append(sql, defineRecordTrigger("core.DDL"), "\n")
-	sql = strs.Append(sql, defineSeriesTrigger("core.DDL"), "\n")
 
 	err = s.Exec(sql)
 	if err != nil {
@@ -67,7 +66,7 @@ func (s *Postgres) upsertDDL(id string, query string) error {
 	VALUES ($1, $2, $3);`)
 
 	id = utility.GenKey(id)
-	index := s.GetSerie("ddl")
+	index := utility.GenIndex()
 	err = s.Exec(sql, id, []byte(query), index)
 	if err != nil {
 		console.Alertm(et.Json{

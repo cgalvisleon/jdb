@@ -107,7 +107,7 @@ func RowsToItem(rows *sql.Rows) et.Item {
 * @param rows *sql.Rows
 * @return et.Items
 **/
-func SourceToItems(source string, rows *sql.Rows) et.Items {
+func RowsToSource(source string, rows *sql.Rows) et.Items {
 	var result = et.Items{Result: []et.Json{}}
 	for rows.Next() {
 		var item et.Json

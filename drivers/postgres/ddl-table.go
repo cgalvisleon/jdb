@@ -50,6 +50,8 @@ func (s *Postgres) typeData(tp jdb.TypeData) interface{} {
 		return "JSONB"
 	case jdb.TypeDataSerie:
 		return "BIGINT"
+	case jdb.TypeDataIndex:
+		return "BIGINT"
 	case jdb.TypeDataShortText:
 		return "VARCHAR(80)"
 	case jdb.TypeDataText:
@@ -102,7 +104,7 @@ func (s *Postgres) strToTypeData(tp string, lenght int) jdb.TypeData {
 	case "JSONB":
 		return jdb.TypeDataObject
 	case "BIGINT":
-		return jdb.TypeDataSerie
+		return jdb.TypeDataIndex
 	case "VARCHAR(250)":
 		return jdb.TypeDataText
 	case "TIMESTAMP":
@@ -135,6 +137,8 @@ func (s *Postgres) defaultValue(tp jdb.TypeData) interface{} {
 	case jdb.TypeDataObject:
 		return utility.Quote("{}")
 	case jdb.TypeDataSerie:
+		return 0
+	case jdb.TypeDataIndex:
 		return 0
 	case jdb.TypeDataShortText:
 		return utility.Quote("")

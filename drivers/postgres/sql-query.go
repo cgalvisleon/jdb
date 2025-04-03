@@ -108,7 +108,7 @@ func (s *Postgres) Data(sourceFiled, sql string, arg ...any) (et.Items, error) {
 	}
 	defer rows.Close()
 
-	result := jdb.SourceToItems(sourceFiled, rows)
+	result := jdb.RowsToSource(sourceFiled, rows)
 
 	return result, nil
 }

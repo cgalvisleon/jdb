@@ -86,20 +86,7 @@ func (s *Postgres) defineSeriesFunction() error {
 
 	 RETURN COALESCE(result, 0);
 	END;
-	$$ LANGUAGE plpgsql;
-	
-	CREATE OR REPLACE FUNCTION core.SERIES_AFTER_SET()
-  RETURNS
-    TRIGGER AS $$
-	DECLARE
-		TAG VARCHAR(250);
-  BEGIN
-	  SELECT CONCAT(TG_TABLE_SCHEMA, '.',  TG_TABLE_NAME) INTO TAG;
-		PERFORM core.setserie(TAG, NEW.INDEX);
-
-  	RETURN NEW;
-  END;
-  $$ LANGUAGE plpgsql;
+	$$ LANGUAGE plpgsql;	
 	`
 
 	err := s.Exec(sql)
@@ -110,6 +97,11 @@ func (s *Postgres) defineSeriesFunction() error {
 	return nil
 }
 
+/**
+* GetSerie
+* @param tag string
+* @return int64
+ */
 func (s *Postgres) GetSerie(tag string) int64 {
 	db := s.db
 	if s.master != nil {
@@ -133,6 +125,11 @@ func (s *Postgres) GetSerie(tag string) int64 {
 	return result
 }
 
+/**
+* SetSerie
+* @param tag string, val int
+* @return int64
+ */
 func (s *Postgres) SetSerie(tag string, val int) int64 {
 	db := s.db
 	if s.master != nil {
@@ -156,6 +153,11 @@ func (s *Postgres) SetSerie(tag string, val int) int64 {
 	return result
 }
 
+/**
+* CurrentSerie
+* @param tag string
+* @return int64
+ */
 func (s *Postgres) CurrentSerie(tag string) int64 {
 	db := s.db
 	if s.master != nil {
@@ -179,6 +181,11 @@ func (s *Postgres) CurrentSerie(tag string) int64 {
 	return result
 }
 
+/**
+* NextCode
+* @param tag string, prefix string
+* @return string
+ */
 func (s *Postgres) NextCode(tag, prefix string) string {
 	num := s.GetSerie(tag)
 
@@ -187,24 +194,4 @@ func (s *Postgres) NextCode(tag, prefix string) string {
 	} else {
 		return strs.Format("%s%08v", prefix, num)
 	}
-}
-
-func defineSeriesTrigger(table string) string {
-	result := jdb.SQLDDL(`
-	DROP TRIGGER IF EXISTS SERIES_AFTER_INSERT ON $1 CASCADE;
-	CREATE TRIGGER SERIES_AFTER_INSERT
-	AFTER INSERT ON $1
-	FOR EACH ROW
-	EXECUTE PROCEDURE core.SERIES_AFTER_SET();
-
-	DROP TRIGGER IF EXISTS SERIES_AFTER_UPDATE ON $1 CASCADE;
-	CREATE TRIGGER SERIES_AFTER_UPDATE
-	AFTER UPDATE ON $1
-	FOR EACH ROW
-	WHEN (OLD.INDEX IS DISTINCT FROM NEW.INDEX)
-	EXECUTE PROCEDURE core.SERIES_AFTER_SET();`, table)
-
-	result = strs.Replace(result, "\t", "")
-
-	return result
 }

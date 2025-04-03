@@ -10,16 +10,17 @@ import (
 func (s *Postgres) sqlInsert(command *jdb.Command) string {
 	from := command.From
 	columns := ""
+	value := ""
 	values := ""
 	atribs := et.Json{}
-	for _, value := range command.Values {
-		for key, fld := range value {
+	for _, val := range command.Values {
+		for key, fld := range val {
 			if fld.Column == from.SourceField || fld.Column == from.FullTextField {
 				continue
 			} else if fld.Column.TypeColumn == jdb.TpColumn {
 				columns = strs.Append(columns, key, ", ")
 				def := strs.Format(`%v`, utility.Quote(fld.Value))
-				values = strs.Append(values, def, ", ")
+				value = strs.Append(value, def, ", ")
 			} else if fld.Column.TypeColumn == jdb.TpAtribute && from.SourceField != nil {
 				atribs.Set(key, fld.Value)
 			}
@@ -29,11 +30,13 @@ func (s *Postgres) sqlInsert(command *jdb.Command) string {
 			columns = strs.Append(columns, column, ", ")
 
 			def := strs.Format(`'%v'::jsonb`, atribs.ToString())
-			values = strs.Append(values, def, ", ")
+			value = strs.Append(value, def, ", ")
 		}
+		value = strs.Format(`(%s)`, value)
+		values = strs.Append(values, value, ",\n")
 	}
 
 	objects := s.sqlJsonObject(from.GetFrom())
-	result := "INSERT INTO %s(%s)\nVALUES (%s)\nRETURNING\njsonb_build_object(\n'before', jsonb_build_object(),\n'after', (%s)) AS result;"
+	result := "INSERT INTO %s(%s)\nVALUES %s\nRETURNING\njsonb_build_object(\n'before', jsonb_build_object(),\n'after', (%s)) AS result;"
 	return strs.Format(result, from.Table, columns, values, objects)
 }

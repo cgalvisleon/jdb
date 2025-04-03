@@ -2,8 +2,8 @@ github.com/Masterminds/semver/v3 v3.2.1 h1:RN9w6+7QoMeJVGyfmbcgs28Br8cvmnucEXnY0
 github.com/Masterminds/semver/v3 v3.2.1/go.mod h1:qvl/7zhW3nngYb5+80sSMF+FG2BjYrf8m9wsX0PNOMQ=
 github.com/bwmarrin/snowflake v0.3.0 h1:xm67bEhkKh6ij1790JB83OujPR5CzNe8QuQqAgISZN0=
 github.com/bwmarrin/snowflake v0.3.0/go.mod h1:NdZxfVWX+oR6y2K0o6qAYv6gIOP9rjG0/E9WsDpxqwE=
-github.com/cgalvisleon/et v1.0.6 h1:G21Qa5Pxk3gMIMNCBRF8K3O1QRYRhSwyHZFcuVz5y8s=
-github.com/cgalvisleon/et v1.0.6/go.mod h1:6ZdW1WmijFQ0hS/obCAjBmn3N9W4d91EMwmKDG0Rz3A=
+github.com/cgalvisleon/et v1.0.7 h1:3bt2etFfcQJKJFzUqxL7fJ6HlCmtekslz4NOM3tY9rY=
+github.com/cgalvisleon/et v1.0.7/go.mod h1:6ZdW1WmijFQ0hS/obCAjBmn3N9W4d91EMwmKDG0Rz3A=
 github.com/dlclark/regexp2 v1.11.4 h1:rPYF9/LECdNymJufQKmri9gV604RvvABwgOA8un7yAo=
 github.com/dlclark/regexp2 v1.11.4/go.mod h1:DHkYz0B9wPfa6wondMfaivmHpzrQ3v9q8cnmRbL6yW8=
 github.com/dop251/goja v0.0.0-20250125213203-5ef83b82af17 h1:spJaibPy2sZNwo6Q0HjBVufq7hBUj5jNFOKRoogCBow=

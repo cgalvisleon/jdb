@@ -1,6 +1,8 @@
 package jdb
 
-import "github.com/cgalvisleon/et/et"
+import (
+	"github.com/cgalvisleon/et/et"
+)
 
 func (s *Command) bulk() error {
 	s.prepare()

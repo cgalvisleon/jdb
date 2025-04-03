@@ -1,12 +1,14 @@
 package jdb
 
+import "github.com/cgalvisleon/et/utility"
+
 func (s *Command) beforeInsert(item map[string]*Field) map[string]*Field {
 	if s.From == nil {
 		return item
 	}
 
 	if s.From.IndexField != nil {
-		index := s.From.GetSerie()
+		index := utility.GenIndex()
 		field := s.From.IndexField.GetField()
 		if field != nil {
 			field.Value = index

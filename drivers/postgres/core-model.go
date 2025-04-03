@@ -4,6 +4,7 @@ import (
 	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/strs"
+	"github.com/cgalvisleon/et/utility"
 )
 
 /**
@@ -31,7 +32,6 @@ func (s *Postgres) defineModel() error {
 	);
 	CREATE INDEX IF NOT EXISTS MODELS_INDEX_IDX ON core.MODELS(INDEX);`)
 	sql = strs.Append(sql, defineRecordTrigger("core.DDL"), "\n")
-	sql = strs.Append(sql, defineSeriesTrigger("core.DDL"), "\n")
 
 	err = s.Exec(sql)
 	if err != nil {
@@ -69,12 +69,12 @@ func (s *Postgres) getModel(table string) (et.Item, error) {
 * @return error
 **/
 func (s *Postgres) upsertModel(table string, version int, model []byte) error {
-	sql := `
+	sql := parceSQL(`
 	UPDATE core.MODELS SET
 	MODEL = $3,
 	VERSION = $2		
 	WHERE TABLENAME = $1
-	RETURNING *;`
+	RETURNING *;`)
 
 	item, err := s.Query(sql, table, version, model)
 	if err != nil {
@@ -85,11 +85,12 @@ func (s *Postgres) upsertModel(table string, version int, model []byte) error {
 		return nil
 	}
 
-	sql = `
-	INSERT INTO core.MODELS(TABLENAME, MODEL, VERSION)
-	VALUES ($1, $2, $3);`
+	sql = parceSQL(`
+	INSERT INTO core.MODELS(TABLENAME, MODEL, VERSION, INDEX)
+	VALUES ($1, $2, $3, $4);`)
 
-	err = s.Exec(sql, table, model, version)
+	index := utility.GenIndex()
+	err = s.Exec(sql, table, model, version, index)
 	if err != nil {
 		console.Alertm(et.Json{
 			"table":   table,
