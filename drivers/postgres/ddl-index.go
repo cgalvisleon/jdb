@@ -103,14 +103,6 @@ func (s *Postgres) ddlIndexFunction(model *jdb.Model) string {
 	result = strs.Append(result, s.ddlIndex(model), "\n")
 	result = strs.Append(result, s.ddlUniqueIndex(model), "\n")
 	result = strs.Append(result, s.ddlForeignKeys(model), "\n\n")
-	result = strs.Append(result, s.ddlTriggers(model), "\n\n")
-
-	return result
-}
-
-func (s *Postgres) ddlSystemFunction(model *jdb.Model) string {
-	result := ""
-	result = strs.Append(result, s.ddlTriggers(model), "\n\n")
 
 	return result
 }

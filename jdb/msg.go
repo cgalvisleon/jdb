@@ -1,7 +1,10 @@
 package jdb
 
 const (
+	MSG_INVALID_NAME             = "Invalid name (%s)"
+	MSG_JDB_NOT_DEFINED          = "JDB not defined"
 	MSG_DRIVER_NOT_FOUND         = "Driver not found (%s)"
+	MSG_DATABASE_NOT_DEFINED     = "Database not defined"
 	MSG_DRIVER_NOT_DEFINED       = "Driver not defined"
 	MSS_PARAM_REQUIRED           = "Parámetro requerido (%s)"
 	MSG_DATABASE_NOT_FOUND       = "Database not found (%s)"
@@ -25,4 +28,8 @@ const (
 	MSG_UNDO_KEY_NOT_DEFINED     = "Undo key not defined"
 	MSG_COMMAND_NOT_FOUND        = "Command not found"
 	MSG_NOT_COMMAND              = "No command"
+	MSG_SYSID_REQUIRED           = "Sysid is required"
+	MSG_SCHEMA_NOT_USING_CORE    = "Schema is not using core"
+	MSG_DATABASE_NOT_USING_CORE  = "Database is not using core"
+	MSG_MODEL_NOT_USING_CORE     = "Model is not using core"
 )

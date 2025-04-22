@@ -161,7 +161,7 @@ var (
 	ProjectField    ColumnField = PROJECT
 	CreatedAtField  ColumnField = CREATED_AT
 	UpdatedAtField  ColumnField = UPDATED_AT
-	StateField      ColumnField = STATUS
+	StatusField     ColumnField = STATUS
 	PrimaryKeyField ColumnField = PRIMARYKEY
 	SystemKeyField  ColumnField = SYSID
 	CreatedToField  ColumnField = CREATED_TO
@@ -181,7 +181,7 @@ func (s ColumnField) TypeData() TypeData {
 		return TypeDataTime
 	case UpdatedAtField:
 		return TypeDataTime
-	case StateField:
+	case StatusField:
 		return TypeDataState
 	case PrimaryKeyField:
 		return TypeDataKey

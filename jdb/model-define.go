@@ -119,19 +119,24 @@ func (s *Model) DefineRequired(requireds ...string) *Model {
 * @param name string
 * @return *Column
 **/
-func (s *Model) DefinePrimaryKey(name string) *Column {
-	result := s.DefineColumn(name, PrimaryKeyField.TypeData())
-	nm := strs.Format("%s_%s_pk", s.Name, name)
-	s.PrimaryKeys[nm] = result
+func (s *Model) DefinePrimaryKey(primaryKeys ...string) *Model {
+	for _, primaryKey := range primaryKeys {
+		col := s.GetColumn(primaryKey)
+		if col != nil {
+			s.Required[col.Name] = true
+			pkn := strs.Format("%s_%s_pk", s.Name, col.Name)
+			s.PrimaryKeys[pkn] = col
+		}
+	}
 
-	return result
+	return s
 }
 
 /**
 * DefineKeyField
 * @return *Column
 **/
-func (s *Model) DefinePrimaryKeyField() *Column {
+func (s *Model) DefinePrimaryKeyField() *Model {
 	return s.DefinePrimaryKey(PRIMARYKEY)
 }
 
@@ -230,13 +235,13 @@ func (s *Model) DefineUpdatedAtField() *Column {
 }
 
 /**
-* DefineStateField
+* DefineStatusField
 * @return *Column
 **/
-func (s *Model) DefineStateField() *Column {
-	result := s.DefineColumn(string(StateField), StateField.TypeData())
-	s.DefineIndex(true, string(StateField))
-	s.StateField = result
+func (s *Model) DefineStatusField() *Column {
+	result := s.DefineColumn(string(StatusField), StatusField.TypeData())
+	s.DefineIndex(true, string(StatusField))
+	s.StatusField = result
 
 	return result
 }
@@ -328,7 +333,7 @@ func (s *Model) DefineRelation(name, relatedTo, fkn string, limit int) *Relation
 		return nil
 	}
 
-	with := GetModel(relatedTo)
+	with := GetModel(relatedTo, false)
 	if with == nil {
 		with = NewModel(s.Schema, relatedTo, 1)
 	}
@@ -355,7 +360,7 @@ func (s *Model) DefineRelation(name, relatedTo, fkn string, limit int) *Relation
 * @return *Model
 **/
 func (s *Model) DefineRollup(name, rollupFrom, fkn string, properties []string) *Model {
-	source := GetModel(rollupFrom)
+	source := GetModel(rollupFrom, false)
 	if source == nil {
 		return nil
 	}
@@ -448,7 +453,7 @@ func (s *Model) DefineEventError(event EventError) {
 func (s *Model) DefineModel() *Model {
 	s.DefineCreatedAtField()
 	s.DefineUpdatedAtField()
-	s.DefineStateField()
+	s.DefineStatusField()
 	s.DefinePrimaryKeyField()
 	s.DefineSourceField()
 	s.DefineIndexField()
@@ -465,7 +470,7 @@ func (s *Model) DefineProjectModel() *Model {
 	s.DefineCreatedAtField()
 	s.DefineUpdatedAtField()
 	s.DefineProjectField()
-	s.DefineStateField()
+	s.DefineStatusField()
 	s.DefinePrimaryKeyField()
 	s.DefineSourceField()
 	s.DefineIndexField()

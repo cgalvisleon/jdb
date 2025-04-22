@@ -89,6 +89,14 @@ func EventUpdateDefault(model *Model, before et.Json, after et.Json) error {
 		schema = model.Schema.Name
 	}
 
+	if model.StatusField != nil && model.SystemKeyField != nil {
+		oldStatus := before.Str(model.StatusField.Name)
+		newStatus := after.Str(model.StatusField.Name)
+		if oldStatus != newStatus {
+			model.Db.upsertRecycling(model.Table, before.Str(model.SystemKeyField.Name), newStatus)
+		}
+	}
+
 	data := et.Json{
 		"schema": schema,
 		"model":  model.Name,

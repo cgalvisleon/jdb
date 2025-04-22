@@ -17,27 +17,6 @@ func (s *Postgres) defineCore() error {
 }
 
 func (s *Postgres) CreateCore() error {
-	if err := s.defineCore(); err != nil {
-		return err
-	}
-	if err := s.defineRecords(); err != nil {
-		return err
-	}
-	if err := s.defineSeries(); err != nil {
-		return err
-	}
-	if err := s.defineRecycling(); err != nil {
-		return err
-	}
-	if err := s.defineDDL(); err != nil {
-		return err
-	}
-	if err := s.defineModel(); err != nil {
-		return err
-	}
-	if err := s.defineFunctions(s.nodeId); err != nil {
-		return err
-	}
 
 	return nil
 }

@@ -2,6 +2,8 @@ package jdb
 
 import (
 	"github.com/cgalvisleon/et/et"
+	"github.com/cgalvisleon/et/event"
+	"github.com/cgalvisleon/et/strs"
 )
 
 func (s *Command) updated() error {
@@ -26,6 +28,18 @@ func (s *Command) updated() error {
 	s.Result = results
 	if !s.Result.Ok {
 		return nil
+	}
+
+	if model.UseCore {
+		syncChannel := strs.Format("sync:%s", model.Db.Name)
+		s.Db.upsertRecord(model.Table, "update", s.Result.Result[0].ValStr(SYSID))
+		event.Publish(syncChannel, et.Json{
+			"fromId":  model.Db.Id,
+			"command": "update",
+			"sql":     s.Sql,
+			"values":  s.Values,
+			"result":  s.Result,
+		})
 	}
 
 	if s.rollback {

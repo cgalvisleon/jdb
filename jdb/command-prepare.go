@@ -7,11 +7,18 @@ func (s *Command) beforeInsert(item map[string]*Field) map[string]*Field {
 		return item
 	}
 
-	if s.From.IndexField != nil {
-		index := utility.GenIndex()
+	if s.From.UseCore && s.From.IndexField != nil {
 		field := s.From.IndexField.GetField()
-		if field != nil {
-			field.Value = index
+		if field != nil && field.AsInt64() == 0 {
+			field.Value = utility.GenIndex()
+			item[field.Name] = field
+		}
+	}
+
+	if s.From.UseCore && s.From.SystemKeyField != nil {
+		field := s.From.SystemKeyField.GetField()
+		if field != nil && field.AsStr() == "" {
+			field.Value = s.From.GenId()
 			item[field.Name] = field
 		}
 	}

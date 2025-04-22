@@ -14,6 +14,7 @@ const (
 	Delete
 	Bulk
 	Undo
+	Sync
 )
 
 type Command struct {
@@ -23,6 +24,7 @@ type Command struct {
 	From     *Model
 	Data     []et.Json
 	Values   []map[string]*Field
+	Returns  []*Field
 	Undo     et.Json
 	Sql      string
 	Result   et.Items
@@ -45,6 +47,7 @@ func NewCommand(model *Model, data []et.Json, command TypeCommand) *Command {
 		Data:    data,
 		Undo:    et.Json{},
 		Values:  []map[string]*Field{},
+		Returns: []*Field{},
 		Result:  et.Items{},
 	}
 
@@ -125,7 +128,7 @@ func (s *Command) One() (et.Item, error) {
 	}
 
 	if !result.Ok {
-		return et.Item{}, nil
+		return et.Item{Result: et.Json{}}, nil
 	}
 
 	return et.Item{

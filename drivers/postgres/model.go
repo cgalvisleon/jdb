@@ -4,16 +4,15 @@ import (
 	"encoding/json"
 
 	"github.com/cgalvisleon/et/console"
-	"github.com/cgalvisleon/et/strs"
 	"github.com/cgalvisleon/jdb/jdb"
 )
 
 /**
-* LoadTable
+* LoadModel
 * @param model *jdb.Model
 * @return error
 **/
-func (s *Postgres) LoadTable(model *jdb.Model) (bool, error) {
+func (s *Postgres) LoadModel(model *jdb.Model) (bool, error) {
 	sql := `
 	SELECT
 	a.attname AS column_name, 
@@ -89,8 +88,7 @@ func (s *Postgres) CreateModel(model *jdb.Model) error {
 		console.Debug(sql)
 	}
 
-	id := strs.Format(`load_model_%s`, model.Table)
-	err := s.ExecDDL(id, sql)
+	err := s.Exec(sql)
 	if err != nil {
 		return err
 	}

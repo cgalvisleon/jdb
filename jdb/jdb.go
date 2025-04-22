@@ -1,6 +1,8 @@
 package jdb
 
 import (
+	"slices"
+
 	"github.com/cgalvisleon/et/envar"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/mistake"
@@ -9,10 +11,7 @@ import (
 
 type JDB struct {
 	Drivers map[string]func() Driver
-	DBS     map[string]*DB
-	Schemas map[string]*Schema
-	Models  map[string]*Model
-	Flows   map[string]*Flow
+	DBS     []*DB
 	Version string
 }
 
@@ -21,10 +20,7 @@ var Jdb *JDB
 func init() {
 	Jdb = &JDB{
 		Drivers: map[string]func() Driver{},
-		DBS:     map[string]*DB{},
-		Schemas: map[string]*Schema{},
-		Models:  map[string]*Model{},
-		Flows:   map[string]*Flow{},
+		DBS:     make([]*DB, 0),
 		Version: "0.0.1",
 	}
 }
@@ -38,33 +34,16 @@ func (s *JDB) Describe() et.Json {
 	for key := range s.Drivers {
 		drivers = append(drivers, key)
 	}
-	dbs := []string{}
-	for key := range s.DBS {
-		dbs = append(dbs, key)
-	}
-	schemas := []et.Json{}
-	for _, val := range s.Schemas {
-		schemas = append(schemas, val.Describe())
-	}
-	models := []et.Json{}
-	for _, val := range s.Models {
-		models = append(models, val.Describe())
-	}
-	flows := []et.Json{}
-	for _, val := range s.Flows {
-		flows = append(flows, val.Describe())
+	dbs := []et.Json{}
+	for _, db := range s.DBS {
+		dbs = append(dbs, db.Describe())
 	}
 
-	result := et.Json{
+	return et.Json{
 		"drivers": drivers,
 		"dbs":     dbs,
-		"schemas": schemas,
-		"models":  models,
-		"flows":   flows,
 		"version": s.Version,
 	}
-
-	return result
 }
 
 /**
@@ -73,14 +52,21 @@ func (s *JDB) Describe() et.Json {
 * @return *DB, error
 **/
 func ConnectTo(params ConnectParams) (*DB, error) {
+	if Jdb == nil {
+		return nil, mistake.New(MSG_JDB_NOT_DEFINED)
+	}
+
+	name := params.Name
+	if name == "" {
+		return nil, mistake.New(MSG_DATABASE_NOT_DEFINED)
+	}
+
 	driver := params.Driver
 	if driver == "" {
 		return nil, mistake.New(MSG_DRIVER_NOT_DEFINED)
 	}
 
-	name := params.Name
-	nodeId := params.NodeId
-	result, err := NewDatabase(name, driver, nodeId)
+	result, err := NewDatabase(name, driver)
 	if err != nil {
 		return nil, err
 	}
@@ -103,8 +89,8 @@ func ConnectTo(params ConnectParams) (*DB, error) {
 				CreatedAtField = ColumnField(value)
 			case "UpdatedAtField":
 				UpdatedAtField = ColumnField(value)
-			case "StateField":
-				StateField = ColumnField(value)
+			case "StatusField":
+				StatusField = ColumnField(value)
 			case "PrimaryKeyField":
 				PrimaryKeyField = ColumnField(value)
 			case "SystemKeyField":
@@ -121,13 +107,23 @@ func ConnectTo(params ConnectParams) (*DB, error) {
 
 	result.UseCore = params.UserCore
 	if result.UseCore {
-		err := result.CreateCore()
+		err := result.createCore()
 		if err != nil {
 			return nil, err
 		}
-	}
 
-	Jdb.DBS[name] = result
+		item, err := result.getModel("db", result.Name)
+		if err != nil {
+			return nil, err
+		}
+
+		if item.Ok {
+			id := item.Str(SYSID)
+			if id != "" {
+				result.Id = id
+			}
+		}
+	}
 
 	return result, nil
 }
@@ -140,7 +136,6 @@ func Load() (*DB, error) {
 	return ConnectTo(ConnectParams{
 		Driver: envar.GetStr(PostgresDriver, "DB_DRIVER"),
 		Name:   envar.GetStr("data", "DB_NAME"),
-		NodeId: envar.GetInt64(0, "NODEID"),
 		Params: et.Json{
 			"database": envar.GetStr("data", "DB_NAME"),
 			"host":     envar.GetStr("localhost", "DB_HOST"),
@@ -172,7 +167,13 @@ func Load() (*DB, error) {
 * @return *DB
 **/
 func GetDB(name string) *DB {
-	return Jdb.DBS[name]
+	name = Name(name)
+	idx := slices.IndexFunc(Jdb.DBS, func(db *DB) bool { return db.Name == name })
+	if idx != -1 {
+		return Jdb.DBS[idx]
+	}
+
+	return nil
 }
 
 /**
@@ -182,55 +183,126 @@ func GetDB(name string) *DB {
 * @return *Schema
 **/
 func GetShema(name string, isCreate bool) *Schema {
+	if len(Jdb.DBS) == 0 {
+		return nil
+	}
+
+	name = Name(name)
+	var db *DB
+	var result *Schema
+	var err error
 	list := strs.Split(name, ".")
 	switch len(list) {
 	case 1:
-		return Jdb.Schemas[name]
-	case 2:
-		schema := Jdb.Schemas[list[1]]
-		if schema != nil {
-			return schema
+		db = Jdb.DBS[0]
+		if db == nil {
+			return nil
 		}
-		if isCreate {
-			db := Jdb.DBS[list[0]]
-			if db == nil {
-				return nil
-			}
 
-			result, err := NewSchema(db, list[1])
-			if err != nil {
-				return nil
-			}
-
+		result = db.GetSchema(name)
+		if result != nil {
 			return result
+		}
+	case 2:
+		db = GetDB(list[0])
+		if db == nil {
+			return nil
+		}
+
+		name := list[1]
+		result = db.GetSchema(name)
+		if result != nil {
+			return result
+		}
+	default:
+		return result
+	}
+
+	if isCreate {
+		result, err = NewSchema(db, name)
+		if err != nil {
+			return nil
 		}
 	}
 
-	return nil
+	return result
 }
 
 /**
 * GetModel
-* @param key string, isCreated bool
+* @param name string, isCreate bool
 * @return *Model
 **/
-func GetModel(key string) *Model {
-	list := strs.Split(key, ".")
+func GetModel(name string, isCreate bool) *Model {
+	if len(Jdb.DBS) == 0 {
+		return nil
+	}
+
+	var db *DB
+	var schema *Schema
+	var result *Model
+	list := strs.Split(name, ".")
 	switch len(list) {
-	case 1:
-		for _, model := range Jdb.Models {
-			if model.Name == key {
-				return model
-			}
+	case 1: // model
+		db = Jdb.DBS[0]
+		if db == nil {
+			return nil
 		}
-	case 2:
-		result := Jdb.Models[key]
+
+		schema = db.schemas[0]
+		if schema == nil {
+			return nil
+		}
+
+		result = schema.GetModel(name)
 		if result != nil {
 			return result
 		}
+	case 2: // schema, model
+		db = Jdb.DBS[0]
+		if db == nil {
+			return nil
+		}
+
+		schema = db.GetSchema(list[0])
+		if schema == nil {
+			return nil
+		}
+
+		name := list[1]
+		result = schema.GetModel(name)
+		if result != nil {
+			return result
+		}
+	case 3: // db, schema, model
+		db = GetDB(list[0])
+		if db == nil {
+			return nil
+		}
+
+		schema = db.GetSchema(list[1])
+		if schema == nil {
+			return nil
+		}
+
+		name := list[2]
+		result = schema.GetModel(name)
+		if result != nil {
+			return result
+		}
+	default:
+		return result
 	}
 
-	return nil
+	if !isCreate {
+		return result
+	}
+
+	if schema == nil {
+		return nil
+	}
+
+	return NewModel(schema, name, 0)
 }
 
 /**
@@ -240,20 +312,32 @@ func GetModel(key string) *Model {
 **/
 func GetField(name string) *Field {
 	list := strs.Split(name, ".")
+
 	switch len(list) {
-	case 2:
-		model := GetModel(list[0])
+	case 2: // model
+		modelName := list[0]
+		model := GetModel(modelName, false)
 		if model == nil {
 			return nil
 		}
+
 		return model.GetField(list[1])
-	case 3:
-		table := strs.Format(`%s.%s`, list[0], list[1])
-		model := GetModel(table)
+	case 3: // schema, model
+		modelName := strs.Format(`%s.%s`, list[0], list[1])
+		model := GetModel(modelName, false)
 		if model == nil {
 			return nil
 		}
+
 		return model.GetField(list[2])
+	case 4: // db, schema, model
+		modelName := strs.Format(`%s.%s.%s`, list[0], list[1], list[2])
+		model := GetModel(modelName, false)
+		if model == nil {
+			return nil
+		}
+
+		return model.GetField(list[3])
 	default:
 		return nil
 	}
@@ -266,49 +350,78 @@ func GetField(name string) *Field {
 **/
 func Describe(name string) (et.Json, error) {
 	list := strs.Split(name, ":")
-	if len(list) == 2 {
-		prefix := list[0]
-		switch prefix {
-		case "db":
-			db := GetDB(list[1])
-			if db != nil {
-				return db.Describe(), nil
-			}
+	switch len(list) {
+	case 1: // model
+		model := GetModel(name, false)
+		if model != nil {
+			return model.Describe(), nil
+		}
 
-			return et.Json{}, mistake.Newf(MSG_DATABASE_NOT_FOUND, list[1])
-		case "schema":
-			sch := GetShema(list[1], false)
-			if sch != nil {
-				return sch.Describe(), nil
-			}
+		schema := GetShema(name, false)
+		if schema != nil {
+			return schema.Describe(), nil
+		}
 
+		db := GetDB(name)
+		if db != nil {
+			return db.Describe(), nil
+		}
+
+		return Jdb.Describe(), nil
+	case 2: // schema, model
+		schema := GetShema(list[0], false)
+		if schema == nil {
+			return et.Json{}, mistake.Newf(MSG_SCHEMA_NOT_FOUND, list[0])
+		}
+
+		model := schema.GetModel(list[1])
+		if model != nil {
+			return model.Describe(), nil
+		}
+
+		return schema.Describe(), nil
+	case 3: // db, schema, model
+		db := GetDB(list[0])
+		if db == nil {
+			return et.Json{}, mistake.Newf(MSG_DATABASE_NOT_FOUND, list[0])
+		}
+
+		schema := db.GetSchema(list[1])
+		if schema == nil {
 			return et.Json{}, mistake.Newf(MSG_SCHEMA_NOT_FOUND, list[1])
-		case "model":
-			mod := GetModel(list[1])
-			if mod != nil {
-				return mod.Describe(), nil
-			}
-
-			return et.Json{}, mistake.Newf(MSG_MODEL_NOT_FOUND, list[1])
-		}
-	}
-
-	mod := GetModel(name)
-	if mod == nil {
-		sch := GetShema(name, false)
-		if sch == nil {
-			result := et.Json{}
-			for _, db := range JDBS {
-				result.Set(db.Name, db.Describe())
-			}
-
-			return result, nil
 		}
 
-		return sch.Describe(), nil
+		model := schema.GetModel(list[2])
+		if model != nil {
+			return model.Describe(), nil
+		}
+
+		return schema.Describe(), nil
+	case 4: // db, schema, model, field
+		db := GetDB(list[0])
+		if db == nil {
+			return et.Json{}, mistake.Newf(MSG_DATABASE_NOT_FOUND, list[0])
+		}
+
+		schema := db.GetSchema(list[1])
+		if schema == nil {
+			return et.Json{}, mistake.Newf(MSG_SCHEMA_NOT_FOUND, list[1])
+		}
+
+		model := schema.GetModel(list[2])
+		if model == nil {
+			return et.Json{}, mistake.Newf(MSG_MODEL_NOT_FOUND, list[2])
+		}
+
+		field := model.GetField(list[3])
+		if field != nil {
+			return field.Describe(), nil
+		}
+
+		return model.Describe(), nil
 	}
 
-	return mod.Describe(), nil
+	return et.Json{}, mistake.Newf(MSG_INVALID_NAME, name)
 }
 
 /**
@@ -318,7 +431,7 @@ func Describe(name string) (et.Json, error) {
 **/
 func Query(params et.Json) (interface{}, error) {
 	from := params.Str("from")
-	model := GetModel(from)
+	model := GetModel(from, false)
 	if model == nil {
 		return nil, mistake.Newf(MSG_MODEL_NOT_FOUND, from)
 	}
@@ -340,14 +453,14 @@ func Commands(params et.Json) (interface{}, error) {
 	where := params.Json("where")
 	var conn *Command
 	if insert != "" {
-		model := GetModel(insert)
+		model := GetModel(insert, false)
 		if model == nil {
 			return nil, mistake.Newf(MSG_MODEL_NOT_FOUND, insert)
 		}
 
 		conn = model.Insert(data)
 	} else if update != "" {
-		model := GetModel(update)
+		model := GetModel(update, false)
 		if model == nil {
 			return nil, mistake.Newf(MSG_MODEL_NOT_FOUND, update)
 		}
@@ -355,7 +468,7 @@ func Commands(params et.Json) (interface{}, error) {
 		conn = model.Update(data).
 			setWhere(where)
 	} else if delete != "" {
-		model := GetModel(delete)
+		model := GetModel(delete, false)
 		if model == nil {
 			return nil, mistake.Newf(MSG_MODEL_NOT_FOUND, delete)
 		}

@@ -150,19 +150,3 @@ func (s *Postgres) Select(ql *jdb.Ql) (et.Items, error) {
 
 	return result, nil
 }
-
-/**
-* ExecDDL
-* @param id, sql string, arg ...any
-* @return error
-**/
-func (s *Postgres) ExecDDL(id, sql string, arg ...any) error {
-	err := s.Exec(sql, arg...)
-	if err != nil {
-		return err
-	}
-
-	go s.upsertDDL(id, sql)
-
-	return nil
-}

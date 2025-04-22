@@ -185,7 +185,7 @@ func (s *QlJoin) setWheres(wheres et.Json) *QlJoin {
 func (s *Ql) setJoins(joins []et.Json) *Ql {
 	for _, join := range joins {
 		for key := range join {
-			with := GetModel(key)
+			with := GetModel(key, false)
 			if with != nil {
 				val := join.Json(key)
 				s.Join(with).setWheres(val)

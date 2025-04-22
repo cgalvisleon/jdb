@@ -3,7 +3,7 @@ package jdb
 import (
 	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
-	"github.com/cgalvisleon/et/utility"
+	"github.com/cgalvisleon/et/reg"
 )
 
 type Message struct {
@@ -46,7 +46,7 @@ type Function struct {
 **/
 func NewFunction(name, description string, execute func(chan *Context) *Context, rollback func()) *Function {
 	return &Function{
-		Id:          utility.RecordId("function", ""),
+		Id:          reg.Id("function"),
 		Name:        name,
 		Description: description,
 		Execute:     execute,
@@ -69,7 +69,7 @@ type Flow struct {
 **/
 func NewFlow(name, description string) *Flow {
 	return &Flow{
-		Id:          utility.RecordId("flow", ""),
+		Id:          reg.Id("flow"),
 		Name:        name,
 		Description: description,
 		Functions:   []*Function{},

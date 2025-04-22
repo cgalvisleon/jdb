@@ -1,7 +1,10 @@
 package jdb
 
 import (
+	"encoding/json"
 	"regexp"
+	"strconv"
+	"time"
 
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/strs"
@@ -212,6 +215,126 @@ func (s *Field) AsName() string {
 	}
 
 	return s.Name
+}
+
+/**
+* AsString
+* @return string
+**/
+func (s *Field) AsStr() string {
+	if s.Value == nil {
+		return ""
+	}
+
+	return strs.Format("%v", s.Value)
+}
+
+/**
+* AsInt
+* @return int
+**/
+func (s *Field) AsInt() int {
+	if s.Value == nil {
+		return 0
+	}
+
+	result, err := strconv.Atoi(s.Value.(string))
+	if err != nil {
+		return 0
+	}
+
+	return result
+}
+
+/**
+* AsInt64
+* @return int64
+**/
+func (s *Field) AsInt64() int64 {
+	if s.Value == nil {
+		return 0
+	}
+
+	result, err := strconv.ParseInt(s.Value.(string), 10, 64)
+	if err != nil {
+		return 0
+	}
+
+	return result
+}
+
+/**
+* AsFloat
+* @return float64
+**/
+func (s *Field) AsFloat() float64 {
+	if s.Value == nil {
+		return 0
+	}
+
+	result, err := strconv.ParseFloat(s.Value.(string), 64)
+	if err != nil {
+		return 0
+	}
+
+	return result
+}
+
+/**
+* AsBool
+* @return bool
+**/
+func (s *Field) AsBool() bool {
+	if s.Value == nil {
+		return false
+	}
+
+	result, err := strconv.ParseBool(s.Value.(string))
+	if err != nil {
+		return false
+	}
+
+	return result
+}
+
+/**
+* AsTime
+* @return time.Time
+**/
+func (s *Field) AsTime() time.Time {
+	if s.Value == nil {
+		return time.Time{}
+	}
+
+	result, err := time.Parse(time.RFC3339, s.Value.(string))
+	if err != nil {
+		return time.Time{}
+	}
+
+	return result
+}
+
+/**
+* AsJson
+* @return et.Json
+**/
+func (s *Field) AsJson() et.Json {
+	if s.Value == nil {
+		return et.Json{}
+	}
+
+	bt, err := json.Marshal(s.Value)
+	if err != nil {
+		return et.Json{}
+	}
+
+	var result et.Json
+	err = json.Unmarshal(bt, &result)
+	if err != nil {
+		return et.Json{}
+	}
+
+	return result
 }
 
 /**

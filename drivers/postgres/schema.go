@@ -4,7 +4,6 @@ import (
 	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/mistake"
 	"github.com/cgalvisleon/et/msg"
-	"github.com/cgalvisleon/et/strs"
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
@@ -22,9 +21,8 @@ func (s *Postgres) CreateSchema(name string) error {
 		return nil
 	}
 
-	id := strs.Format(`create_schema_%s`, name)
 	sql := jdb.SQLDDL(`CREATE SCHEMA IF NOT EXISTS $1`, name)
-	err = s.ExecDDL(id, sql)
+	err = s.Exec(sql)
 	if err != nil {
 		return err
 	}
@@ -39,9 +37,8 @@ func (s *Postgres) DropSchema(name string) error {
 		return mistake.Newf(msg.NOT_DRIVER_DB)
 	}
 
-	id := strs.Format(`drop_schema_%s`, name)
 	sql := jdb.SQLDDL(`DROP SCHEMA IF EXISTS $1 CASCADE`, name)
-	err := s.ExecDDL(id, sql)
+	err := s.Exec(sql)
 	if err != nil {
 		return err
 	}

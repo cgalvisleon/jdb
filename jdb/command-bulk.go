@@ -6,15 +6,17 @@ import (
 	"github.com/cgalvisleon/et/strs"
 )
 
-func (s *Command) delete() error {
+func (s *Command) bulk() error {
+	s.prepare()
 	model := s.From
+
 	results, err := s.Db.Command(s)
 	if err != nil {
 		for _, event := range s.From.EventError {
 			event(model, et.Json{
-				"command": "delete",
+				"command": "insert",
 				"sql":     s.Sql,
-				"where":   s.listWheres(),
+				"data":    s.Data,
 				"error":   err.Error(),
 			})
 		}
@@ -29,30 +31,18 @@ func (s *Command) delete() error {
 
 	if model.UseCore {
 		syncChannel := strs.Format("sync:%s", model.Db.Name)
-		s.Db.upsertRecord(model.Table, "delete", s.Result.Result[0].ValStr(SYSID))
+		s.Db.upsertRecord(model.Table, "insert", s.Result.Result[0].ValStr(SYSID))
 		event.Publish(syncChannel, et.Json{
 			"fromId":  model.Db.Id,
-			"command": "delete",
+			"command": "insert",
 			"sql":     s.Sql,
-			"where":   s.listWheres(),
+			"values":  s.Values,
 			"result":  s.Result,
 		})
 	}
 
 	if s.rollback {
 		return nil
-	}
-
-	for _, result := range s.Result.Result {
-		before := result.ValJson(et.Json{}, "result", "before")
-		after := result.ValJson(et.Json{}, "result", "after")
-
-		for _, event := range s.From.EventsDelete {
-			err := event(model, before, after)
-			if err != nil {
-				return err
-			}
-		}
 	}
 
 	return nil

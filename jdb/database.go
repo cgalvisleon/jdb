@@ -1,47 +1,46 @@
 package jdb
 
 import (
+	"encoding/json"
+	"slices"
 	"time"
 
 	"github.com/cgalvisleon/et/et"
+	"github.com/cgalvisleon/et/event"
 	"github.com/cgalvisleon/et/mistake"
+	"github.com/cgalvisleon/et/reg"
 	"github.com/cgalvisleon/et/strs"
-	"github.com/cgalvisleon/et/utility"
 )
 
 func Name(name string) string {
 	return strs.ReplaceAll(name, []string{" "}, "_")
 }
 
-var JDBS []*DB = []*DB{}
-
 type Mode int
 
 const (
 	Origin Mode = iota
-	Local
+	Replica
 )
 
 type DB struct {
-	CreatedAt   time.Time          `json:"created_date"`
-	UpdateAt    time.Time          `json:"update_date"`
-	Id          string             `json:"id"`
-	Name        string             `json:"name"`
-	Description string             `json:"description"`
-	Schemas     map[string]*Schema `json:"schemas"`
-	UseCore     bool               `json:"use_core"`
-	NodeId      int64              `json:"node_id"`
-	Mode        Mode               `json:"mode"`
-	Origin      string             `json:"origin"`
-	driver      Driver             `json:"-"`
+	CreatedAt   time.Time `json:"created_date"`
+	UpdateAt    time.Time `json:"update_date"`
+	Id          string    `json:"id"`
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	UseCore     bool      `json:"use_core"`
+	Mode        Mode      `json:"mode"`
+	schemas     []*Schema `json:"-"`
+	driver      Driver    `json:"-"`
 }
 
 /**
 * NewDatabase
-* @param name, driver string, nodeId int
+* @param name, driver string
 * @return *DB
 **/
-func NewDatabase(name, driver string, nodeId int64) (*DB, error) {
+func NewDatabase(name, driver string) (*DB, error) {
 	if driver == "" {
 		return nil, mistake.New(MSG_DRIVER_NOT_DEFINED)
 	}
@@ -50,21 +49,79 @@ func NewDatabase(name, driver string, nodeId int64) (*DB, error) {
 		return nil, mistake.Newf(MSG_DRIVER_NOT_FOUND, driver)
 	}
 
-	now := time.Now()
-	result := &DB{
-		CreatedAt:   now,
-		UpdateAt:    now,
-		Id:          utility.RecordId("db", ""),
-		Name:        Name(name),
-		Description: "",
-		Schemas:     map[string]*Schema{},
-		NodeId:      nodeId,
-		driver:      Jdb.Drivers[driver](),
+	name = Name(name)
+	idx := slices.IndexFunc(Jdb.DBS, func(db *DB) bool { return db.Name == name })
+	if idx != -1 {
+		return Jdb.DBS[idx], nil
 	}
 
-	JDBS = append(JDBS, result)
+	now := time.Now()
+	result := &DB{
+		CreatedAt: now,
+		UpdateAt:  now,
+		Id:        reg.Id("db"),
+		Name:      name,
+		UseCore:   false,
+		Mode:      Origin,
+		schemas:   make([]*Schema, 0),
+		driver:    Jdb.Drivers[driver](),
+	}
+	Jdb.DBS = append(Jdb.DBS, result)
 
 	return result, nil
+}
+
+/**
+* Load
+* @return error
+**/
+func (s *DB) Load(kind, name string, out interface{}) error {
+	if !s.UseCore {
+		return nil
+	}
+
+	item, err := s.getModel(kind, name)
+	if err != nil {
+		return err
+	}
+
+	if !item.Ok {
+		return mistake.Newf(MSG_MODEL_NOT_FOUND, name)
+	}
+
+	definition, err := item.Byte("definition")
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(definition, out)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+/**
+* Save
+* @return error
+**/
+func (s *DB) Save() error {
+	if !s.UseCore {
+		return nil
+	}
+
+	buf, err := json.Marshal(s)
+	if err != nil {
+		return err
+	}
+
+	err = s.upsertModel("db", s.Name, 1, buf)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 /**
@@ -73,11 +130,11 @@ func NewDatabase(name, driver string, nodeId int64) (*DB, error) {
 **/
 func (s *DB) Describe() et.Json {
 	var schemas = make([]et.Json, 0)
-	for _, schema := range s.Schemas {
+	for _, schema := range s.schemas {
 		schemas = append(schemas, schema.Describe())
 	}
 
-	result := et.Json{
+	return et.Json{
 		"created_date": s.CreatedAt,
 		"update_date":  s.UpdateAt,
 		"id":           s.Id,
@@ -85,17 +142,6 @@ func (s *DB) Describe() et.Json {
 		"description":  s.Description,
 		"schemas":      schemas,
 	}
-
-	return result
-}
-
-/**
-* GenId
-* @param tag string
-* @return string
-**/
-func (s *DB) GenId(tag string) string {
-	return utility.Snowflake(s.NodeId, tag)
 }
 
 /**
@@ -120,6 +166,20 @@ func (s *DB) Disconected() error {
 	}
 
 	return s.driver.Disconnect()
+}
+
+/**
+* GetSchema
+* @param name string
+* @return *Schema
+**/
+func (s *DB) GetSchema(name string) *Schema {
+	idx := slices.IndexFunc(s.schemas, func(schema *Schema) bool { return schema.Name == name })
+	if idx != -1 {
+		return s.schemas[idx]
+	}
+
+	return nil
 }
 
 /**
@@ -210,28 +270,16 @@ func (s *DB) DropSchema(name string) error {
 }
 
 /**
-* CreateCore
-* @return error
-**/
-func (s *DB) CreateCore() error {
-	if s.driver == nil {
-		return mistake.New(MSG_DRIVER_NOT_DEFINED)
-	}
-
-	return s.driver.CreateCore()
-}
-
-/**
-* LoadTable
+* LoadModel
 * @param model *Model
 * @return error
 **/
-func (s *DB) LoadTable(model *Model) (bool, error) {
+func (s *DB) LoadModel(model *Model) (bool, error) {
 	if s.driver == nil {
 		return false, mistake.New(MSG_DRIVER_NOT_DEFINED)
 	}
 
-	return s.driver.LoadTable(model)
+	return s.driver.LoadModel(model)
 }
 
 /**
@@ -382,52 +430,42 @@ func (s *DB) Command(command *Command) (et.Items, error) {
 }
 
 /**
-* GetSerie
-* @return int64
+* Sync
+* @param command string, data et.Json
+* @return error
 **/
-func (s *DB) GetSerie(tag string) int64 {
+func (s *DB) Sync(command string, data et.Json) error {
 	if s.driver == nil {
-		return 0
+		return mistake.New(MSG_DRIVER_NOT_DEFINED)
 	}
 
-	return s.driver.GetSerie(tag)
+	return s.driver.Sync(command, data)
 }
 
 /**
-* NextCode
-* @param tag string
-* @param format string "%08v" "PREFIX-%08v-SUFFIX"
-* @return string
+* EventSync
 **/
-func (s *DB) NextCode(tag, format string) string {
-	if s.driver == nil {
-		return ""
-	}
+func (s *DB) EventSync() {
+	syncChannel := strs.Format("sync:%s", s.Name)
+	event.Subscribe(syncChannel, func(msg event.EvenMessage) {
+		data := msg.Data
+		fromId := data.ValStr("", "fromId")
+		if fromId == "" || fromId == s.Id {
+			return
+		}
 
-	return s.driver.NextCode(tag, format)
-}
+		command := data.ValStr("", "command")
+		if command == "" {
+			return
+		}
 
-/**
-* SetSerie
-* @return int64
-**/
-func (s *DB) SetSerie(tag string, val int) int64 {
-	if s.driver == nil {
-		return 0
-	}
-
-	return s.driver.SetSerie(tag, val)
-}
-
-/**
-* CurrentSerie
-* @param tag string
-* @return int64
-**/
-func (s *DB) CurrentSerie(tag string) int64 {
-	if s.driver == nil {
-		return 0
-	}
-
-	return s.driver.CurrentSerie(tag)
+		switch command {
+		case "insert":
+			s.Sync("insert", data)
+		case "update":
+			s.Sync("update", data)
+		case "delete":
+			s.Sync("delete", data)
+		}
+	})
 }

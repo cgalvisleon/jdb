@@ -6,6 +6,7 @@ import (
 
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/event"
+	"github.com/cgalvisleon/et/reg"
 	"github.com/cgalvisleon/et/utility"
 	"github.com/cgalvisleon/jdb/jdb"
 )
@@ -169,7 +170,7 @@ func init() {
 	}
 
 	conn = &Cache{
-		Id:     utility.RecordId("cache", ""),
+		Id:     reg.Id("cache"),
 		Values: make(map[string]string),
 		lock:   &sync.RWMutex{},
 	}

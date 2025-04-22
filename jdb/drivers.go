@@ -19,8 +19,6 @@ type Driver interface {
 	// Database
 	CreateDatabase(name string) error
 	DropDatabase(name string) error
-	// Core
-	CreateCore() error
 	// User
 	GrantPrivileges(username, database string) error
 	CreateUser(username, password, confirmation string) error
@@ -30,7 +28,7 @@ type Driver interface {
 	CreateSchema(name string) error
 	DropSchema(name string) error
 	// Model
-	LoadTable(model *Model) (bool, error)
+	LoadModel(model *Model) (bool, error)
 	CreateModel(model *Model) error
 	DropModel(model *Model) error
 	SaveModel(model *Model) error
@@ -44,11 +42,7 @@ type Driver interface {
 	Exists(ql *Ql) (bool, error)
 	// Command
 	Command(command *Command) (et.Items, error)
-	// Series
-	GetSerie(tag string) int64
-	NextCode(tag, prefix string) string
-	SetSerie(tag string, val int) int64
-	CurrentSerie(tag string) int64
+	Sync(command string, data et.Json) error
 }
 
 /**
@@ -61,7 +55,6 @@ func Register(name string, driver func() Driver) {
 type ConnectParams struct {
 	Driver   string
 	Name     string
-	NodeId   int64
 	Params   et.Json
 	Fields   map[string]string
 	UserCore bool

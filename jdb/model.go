@@ -1,14 +1,17 @@
 package jdb
 
 import (
+	"bytes"
+	"encoding/gob"
 	"encoding/json"
 	"strings"
 	"time"
 
 	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
+	"github.com/cgalvisleon/et/mistake"
+	"github.com/cgalvisleon/et/reg"
 	"github.com/cgalvisleon/et/strs"
-	"github.com/cgalvisleon/et/utility"
 )
 
 type RID struct {
@@ -50,11 +53,11 @@ type Model struct {
 	Schema          *Schema              `json:"-"`
 	CreatedAt       time.Time            `json:"created_date"`
 	UpdateAt        time.Time            `json:"update_date"`
-	ProjectId       string               `json:"project_id"`
 	Id              string               `json:"id"`
 	Name            string               `json:"name"`
-	Table           string               `json:"table"`
 	Description     string               `json:"description"`
+	UseCore         bool                 `json:"use_core"`
+	Table           string               `json:"table"`
 	Columns         []*Column            `json:"columns"`
 	GeneratedFields []*Column            `json:"generated_fields"`
 	PrimaryKeys     map[string]*Column   `json:"primary_keys"`
@@ -67,7 +70,7 @@ type Model struct {
 	History         *Relation            `json:"history"`
 	Required        map[string]bool      `json:"col_required"`
 	SystemKeyField  *Column              `json:"system_key_field"`
-	StateField      *Column              `json:"state_field"`
+	StatusField     *Column              `json:"status_field"`
 	IndexField      *Column              `json:"index_field"`
 	SourceField     *Column              `json:"source_field"`
 	FullTextField   *Column              `json:"full_text_field"`
@@ -81,47 +84,37 @@ type Model struct {
 	Version         int                  `json:"version"`
 	IsDebug         bool                 `json:"-"`
 	projectId       string               `json:"-"`
+	definition      []byte               `json:"-"`
+	indexes         []byte               `json:"-"`
 }
 
 /**
-* NewProjectModel
-* @param schema *Schema, projectId, name string, tp TypeModel, version int
+* NewModel
+* @param schema *Schema, name string, version int
 * @return *Model
 **/
-func NewProjectModel(schema *Schema, projectId, name string, version int) *Model {
-	if version == 0 {
-		version = 1
-	}
-	now := time.Now()
+func NewModel(schema *Schema, name string, version int) *Model {
 	name = Name(name)
-	table := TableName(schema, name)
-	key := strs.Append(table, projectId, ":")
-	result := Jdb.Models[key]
+	result := schema.GetModel(name)
 	if result != nil {
-		result.Version = version
+		if result.Version != version {
+			result.Version = version
+		}
+
 		return result
 	}
 
-	if key != table {
-		result = Jdb.Models[table]
-		if result != nil {
-			new := *result
-			new.Version = version
-			Jdb.Models[key] = &new
-			return Jdb.Models[key]
-		}
-	}
-
+	table := TableName(schema, name)
+	now := time.Now()
 	result = &Model{
 		Db:              schema.Db,
 		Schema:          schema,
 		CreatedAt:       now,
 		UpdateAt:        now,
-		ProjectId:       projectId,
-		Id:              utility.RecordId("model", ""),
+		Id:              reg.Id("model"),
 		Name:            name,
+		UseCore:         schema.UseCore,
 		Table:           table,
-		Description:     "",
 		Columns:         make([]*Column, 0),
 		GeneratedFields: make([]*Column, 0),
 		PrimaryKeys:     make(map[string]*Column),
@@ -143,20 +136,34 @@ func NewProjectModel(schema *Schema, projectId, name string, version int) *Model
 	result.DefineEvent(EventInsert, EventInsertDefault)
 	result.DefineEvent(EventUpdate, EventUpdateDefault)
 	result.DefineEvent(EventDelete, EventDeleteDefault)
-	result.IsCreated, _ = result.Db.LoadTable(result)
-	schema.Models[result.Name] = result
-	Jdb.Models[key] = result
+	result.IsCreated, _ = result.Db.LoadModel(result)
+	schema.models = append(schema.models, result)
 
 	return result
 }
 
 /**
-* NewModel
-* @param schema *Schema, name string, tp TypeModel, version int
-* @return *Model
+* Save
+* @return error
 **/
-func NewModel(schema *Schema, name string, version int) *Model {
-	return NewProjectModel(schema, "", name, version)
+func (s *Model) Save() error {
+	if !s.UseCore {
+		return mistake.New(MSG_MODEL_NOT_USING_CORE)
+	}
+
+	var buf bytes.Buffer
+	enc := gob.NewEncoder(&buf)
+	err := enc.Encode(s)
+	if err != nil {
+		return err
+	}
+
+	err = s.Db.upsertModel("model", s.Name, s.Version, buf.Bytes())
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 /**
@@ -251,28 +258,6 @@ func (s *Model) Serialized() ([]byte, error) {
 }
 
 /**
-* Load
-* @param data []byte
-* @return error
-**/
-func (s *Model) Load(data []byte) error {
-	err := json.Unmarshal(data, s)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-/**
-* Save
-* @return error
-**/
-func (s *Model) Save() error {
-	return s.Db.SaveModel(s)
-}
-
-/**
 * GetFrom
 * @return *QlFrom
 **/
@@ -282,24 +267,10 @@ func (s *Model) GetFrom() *QlFrom {
 
 /**
 * GenId
-* @param id string
 * @return string
 **/
-func (s *Model) GenId(id string) string {
-	if !map[string]bool{"": true, "*": true, "new": true}[id] {
-		return id
-	}
-
-	return utility.RecordId(s.Table, id)
-}
-
-/**
-* GenKey
-* @param id string
-* @return string
-**/
-func (s *Model) GenKey(id string) string {
-	return utility.RecordId(s.Table, id)
+func (s *Model) GenId() string {
+	return reg.Id(s.Table)
 }
 
 /**
