@@ -1,6 +1,7 @@
 package jdb
 
 import (
+	"encoding/json"
 	"slices"
 
 	"github.com/cgalvisleon/et/envar"
@@ -10,15 +11,15 @@ import (
 )
 
 type JDB struct {
-	Drivers map[string]func() Driver
-	DBS     []*DB
-	Version string
+	Drivers map[string]func() Driver `json:"-"`
+	DBS     []*DB                    `json:"-"`
+	Version string                   `json:"version"`
 }
 
-var Jdb *JDB
+var conn *JDB
 
 func init() {
-	Jdb = &JDB{
+	conn = &JDB{
 		Drivers: map[string]func() Driver{},
 		DBS:     make([]*DB, 0),
 		Version: "0.0.1",
@@ -30,20 +31,31 @@ func init() {
 * @return et.Json
 **/
 func (s *JDB) Describe() et.Json {
+	definition, err := json.Marshal(s)
+	if err != nil {
+		return et.Json{}
+	}
+
+	result := et.Json{}
+	err = json.Unmarshal(definition, &result)
+	if err != nil {
+		return et.Json{}
+	}
+
 	drivers := []string{}
 	for key := range s.Drivers {
 		drivers = append(drivers, key)
 	}
+
 	dbs := []et.Json{}
 	for _, db := range s.DBS {
 		dbs = append(dbs, db.Describe())
 	}
 
-	return et.Json{
-		"drivers": drivers,
-		"dbs":     dbs,
-		"version": s.Version,
-	}
+	result["drivers"] = drivers
+	result["dbs"] = dbs
+
+	return result
 }
 
 /**
@@ -52,21 +64,12 @@ func (s *JDB) Describe() et.Json {
 * @return *DB, error
 **/
 func ConnectTo(params ConnectParams) (*DB, error) {
-	if Jdb == nil {
-		return nil, mistake.New(MSG_JDB_NOT_DEFINED)
+	err := params.Validate()
+	if err != nil {
+		return nil, err
 	}
 
-	name := params.Name
-	if name == "" {
-		return nil, mistake.New(MSG_DATABASE_NOT_DEFINED)
-	}
-
-	driver := params.Driver
-	if driver == "" {
-		return nil, mistake.New(MSG_DRIVER_NOT_DEFINED)
-	}
-
-	result, err := NewDatabase(name, driver)
+	result, err := NewDatabase(params.Name, params.Driver)
 	if err != nil {
 		return nil, err
 	}
@@ -74,35 +77,6 @@ func ConnectTo(params ConnectParams) (*DB, error) {
 	err = result.Conected(params.Params)
 	if err != nil {
 		return nil, err
-	}
-
-	if params.Fields != nil {
-		for key, value := range params.Fields {
-			switch key {
-			case "IndexField":
-				IndexField = ColumnField(value)
-			case "SourceField":
-				SourceField = ColumnField(value)
-			case "ProjectField":
-				ProjectField = ColumnField(value)
-			case "CreatedAtField":
-				CreatedAtField = ColumnField(value)
-			case "UpdatedAtField":
-				UpdatedAtField = ColumnField(value)
-			case "StatusField":
-				StatusField = ColumnField(value)
-			case "PrimaryKeyField":
-				PrimaryKeyField = ColumnField(value)
-			case "SystemKeyField":
-				SystemKeyField = ColumnField(value)
-			case "CreatedToField":
-				CreatedToField = ColumnField(value)
-			case "UpdatedToField":
-				UpdatedToField = ColumnField(value)
-			case "FullTextField":
-				FullTextField = ColumnField(value)
-			}
-		}
 	}
 
 	result.UseCore = params.UserCore
@@ -144,21 +118,16 @@ func Load() (*DB, error) {
 			"password": envar.GetStr("", "DB_PASSWORD"),
 			"app":      envar.GetStr("jdb", "APP_NAME"),
 		},
-		Fields: map[string]string{
-			"IndexField":     INDEX,
-			"SourceField":    SOURCE,
-			"ProjectField":   PROJECT,
-			"CreatedAtField": CREATED_AT,
-			"UpdatedAtField": UPDATED_AT,
-			"StateField":     STATUS,
-			"KeyField":       PRIMARYKEY,
-			"SystemKeyField": SYSID,
-			"CreatedToField": CREATED_TO,
-			"UpdatedToField": UPDATED_TO,
-			"FullTextField":  FULLTEXT,
-		},
 		UserCore: true,
 	})
+}
+
+/**
+* Jdb
+* @return *JDB
+**/
+func Jdb() *JDB {
+	return conn
 }
 
 /**
@@ -168,9 +137,9 @@ func Load() (*DB, error) {
 **/
 func GetDB(name string) *DB {
 	name = Name(name)
-	idx := slices.IndexFunc(Jdb.DBS, func(db *DB) bool { return db.Name == name })
+	idx := slices.IndexFunc(conn.DBS, func(db *DB) bool { return db.Name == name })
 	if idx != -1 {
-		return Jdb.DBS[idx]
+		return conn.DBS[idx]
 	}
 
 	return nil
@@ -183,18 +152,17 @@ func GetDB(name string) *DB {
 * @return *Schema
 **/
 func GetShema(name string, isCreate bool) *Schema {
-	if len(Jdb.DBS) == 0 {
+	if len(conn.DBS) == 0 {
 		return nil
 	}
 
 	name = Name(name)
 	var db *DB
 	var result *Schema
-	var err error
 	list := strs.Split(name, ".")
 	switch len(list) {
 	case 1:
-		db = Jdb.DBS[0]
+		db = conn.DBS[0]
 		if db == nil {
 			return nil
 		}
@@ -219,10 +187,7 @@ func GetShema(name string, isCreate bool) *Schema {
 	}
 
 	if isCreate {
-		result, err = NewSchema(db, name)
-		if err != nil {
-			return nil
-		}
+		result = NewSchema(db, name)
 	}
 
 	return result
@@ -234,7 +199,7 @@ func GetShema(name string, isCreate bool) *Schema {
 * @return *Model
 **/
 func GetModel(name string, isCreate bool) *Model {
-	if len(Jdb.DBS) == 0 {
+	if len(conn.DBS) == 0 {
 		return nil
 	}
 
@@ -244,22 +209,17 @@ func GetModel(name string, isCreate bool) *Model {
 	list := strs.Split(name, ".")
 	switch len(list) {
 	case 1: // model
-		db = Jdb.DBS[0]
+		db = conn.DBS[0]
 		if db == nil {
 			return nil
 		}
 
-		schema = db.schemas[0]
-		if schema == nil {
-			return nil
-		}
-
-		result = schema.GetModel(name)
+		result = db.GetModel(name)
 		if result != nil {
 			return result
 		}
 	case 2: // schema, model
-		db = Jdb.DBS[0]
+		db = conn.DBS[0]
 		if db == nil {
 			return nil
 		}
@@ -367,7 +327,7 @@ func Describe(name string) (et.Json, error) {
 			return db.Describe(), nil
 		}
 
-		return Jdb.Describe(), nil
+		return conn.Describe(), nil
 	case 2: // schema, model
 		schema := GetShema(list[0], false)
 		if schema == nil {
@@ -441,7 +401,7 @@ func Query(params et.Json) (interface{}, error) {
 }
 
 /**
-* Query
+* Commands
 * @param params et.Json
 * @return interface{}, error
 **/
@@ -451,21 +411,21 @@ func Commands(params et.Json) (interface{}, error) {
 	delete := params.Str("delete")
 	data := params.Json("data")
 	where := params.Json("where")
-	var conn *Command
+	var comm *Command
 	if insert != "" {
 		model := GetModel(insert, false)
 		if model == nil {
 			return nil, mistake.Newf(MSG_MODEL_NOT_FOUND, insert)
 		}
 
-		conn = model.Insert(data)
+		comm = model.Insert(data)
 	} else if update != "" {
 		model := GetModel(update, false)
 		if model == nil {
 			return nil, mistake.Newf(MSG_MODEL_NOT_FOUND, update)
 		}
 
-		conn = model.Update(data).
+		comm = model.Update(data).
 			setWhere(where)
 	} else if delete != "" {
 		model := GetModel(delete, false)
@@ -473,11 +433,11 @@ func Commands(params et.Json) (interface{}, error) {
 			return nil, mistake.Newf(MSG_MODEL_NOT_FOUND, delete)
 		}
 
-		conn = model.Delete().
+		comm = model.Delete().
 			setWhere(where)
 	} else {
 		return nil, mistake.New(MSG_COMMAND_NOT_FOUND)
 	}
 
-	return conn.Exec()
+	return comm.Exec()
 }

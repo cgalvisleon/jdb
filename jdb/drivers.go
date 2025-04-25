@@ -5,8 +5,8 @@ import (
 )
 
 const (
-	SqliteDriver   = "sqlite"
 	PostgresDriver = "postgres"
+	SqliteDriver   = "sqlite"
 	MysqlDriver    = "mysql"
 	OracleDriver   = "oracle"
 )
@@ -25,13 +25,12 @@ type Driver interface {
 	ChangePassword(username, password, confirmation string) error
 	DeleteUser(username string) error
 	// Schema
-	CreateSchema(name string) error
+	LoadSchema(name string) error
 	DropSchema(name string) error
 	// Model
-	LoadModel(model *Model) (bool, error)
-	CreateModel(model *Model) error
+	LoadModel(model *Model) error
 	DropModel(model *Model) error
-	SaveModel(model *Model) error
+	MutateModel(model *Model) error
 	// Query
 	Exec(sql string, arg ...any) error
 	Query(sql string, arg ...any) (et.Items, error)
@@ -46,16 +45,9 @@ type Driver interface {
 }
 
 /**
-* SetDriver
+* Register
+* @param name string, driver func() Driver
 **/
 func Register(name string, driver func() Driver) {
-	Jdb.Drivers[name] = driver
-}
-
-type ConnectParams struct {
-	Driver   string
-	Name     string
-	Params   et.Json
-	Fields   map[string]string
-	UserCore bool
+	conn.Drivers[name] = driver
 }

@@ -157,9 +157,24 @@ func (s *Ql) List(page, rows int) (et.List, error) {
 /**
 * Query
 * @param params et.Json
-* @return Ql
+* @return interface{}, error
 **/
 func (s *Ql) Query(params et.Json) (interface{}, error) {
+	if len(params) == 0 {
+		return et.Json{
+			"data":     []string{"name"},
+			"select":   []string{SYSID},
+			"join":     []et.Json{},
+			"where":    et.Json{},
+			"group_by": []string{},
+			"having":   et.Json{},
+			"order_by": et.Json{},
+			"page":     1,
+			"limit":    30,
+			"details":  []et.Json{},
+		}, nil
+	}
+
 	joins := params.ArrayJson("join")
 	where := params.Json("where")
 	groups := params.ArrayStr("group_by")
@@ -168,6 +183,7 @@ func (s *Ql) Query(params et.Json) (interface{}, error) {
 	page := params.Int("page")
 	limit := params.ValInt(30, "limit")
 	details := params.ArrayJson("details")
+	debug := params.Bool("debug")
 
 	s.setJoins(joins).
 		setWheres(where).
@@ -183,6 +199,9 @@ func (s *Ql) Query(params et.Json) (interface{}, error) {
 		s.Select(selects...)
 	}
 	s.setPage(page)
+	if debug {
+		s.Debug()
+	}
 
 	return s.setLimit(limit)
 }

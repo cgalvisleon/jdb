@@ -169,7 +169,7 @@ func (s *Postgres) ddlTable(model *jdb.Model) string {
 		} else if slices.Contains([]*jdb.Column{model.FullTextField}, column) && column.FullText != nil {
 			columns := ""
 			for _, col := range column.FullText.Columns {
-				columns = strs.Append(columns, strs.Format("COALESCE(%s, '')", col.Name), " || ' ' || ")
+				columns = strs.Append(columns, strs.Format("COALESCE(%s, '')", col), " || ' ' || ")
 			}
 			def := strs.Format("\n\t%s TSVECTOR GENERATED ALWAYS AS (to_tsvector('%s', %s)) STORED", column.Name, column.FullText.Language, columns)
 			columnsDef = strs.Append(columnsDef, def, ",")
@@ -178,29 +178,25 @@ func (s *Postgres) ddlTable(model *jdb.Model) string {
 			columnsDef = strs.Append(columnsDef, def, ",")
 		}
 	}
-	def := s.ddlPrimaryKey(model)
-	columnsDef = strs.Append(columnsDef, def, ",\n\t")
 	result := strs.Format("\nCREATE TABLE IF NOT EXISTS %s (%s\n);", model.Table, columnsDef)
-	result = strs.Append(result, s.ddlIndexFunction(model), "\n")
 
 	return result
 }
 
-func (s *Postgres) ddlTableRename(old, new string) string {
-	result := strs.Format(`ALTER TABLE %s RENAME TO %s;`, old, new)
+func (s *Postgres) ddlTableRename(oldName, newName string) string {
+	result := strs.Format(`ALTER TABLE %s RENAME TO %s;`, oldName, newName)
 
 	return result
 }
 
-func (s *Postgres) ddlTableInsert(old *jdb.Model) string {
-	backupTable := strs.Format(`%s_BACKUP`, old.Table)
+func (s *Postgres) ddlTableInsertTo(model *jdb.Model, tableOrigin string) string {
 	fields := ""
-	for _, column := range old.Columns {
+	for _, column := range model.Columns {
 		if column.TypeColumn == jdb.TpColumn {
 			fields = strs.Append(fields, strs.Format("%s", column.Name), ", ")
 		}
 	}
-	result := strs.Format("INSERT INTO %s (%s)\nSELECT %s FROM %s;", old.Table, fields, fields, backupTable)
+	result := strs.Format("INSERT INTO %s (%s)\nSELECT %s FROM %s;", model.Table, fields, fields, tableOrigin)
 
 	return result
 }

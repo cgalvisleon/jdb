@@ -12,7 +12,7 @@ func (s *Command) inserted() error {
 
 	results, err := s.Db.Command(s)
 	if err != nil {
-		for _, event := range s.From.EventError {
+		for _, event := range model.eventError {
 			event(model, et.Json{
 				"command": "insert",
 				"sql":     s.Sql,
@@ -29,9 +29,8 @@ func (s *Command) inserted() error {
 		return nil
 	}
 
-	if model.UseCore {
+	if model.UseCore && model.SystemKeyField != nil {
 		syncChannel := strs.Format("sync:%s", model.Db.Name)
-		s.Db.upsertRecord(model.Table, "insert", s.Result.Result[0].ValStr(SYSID))
 		event.Publish(syncChannel, et.Json{
 			"fromId":  model.Db.Id,
 			"command": "insert",
@@ -49,7 +48,14 @@ func (s *Command) inserted() error {
 		before := result.ValJson(et.Json{}, "result", "before")
 		after := result.ValJson(et.Json{}, "result", "after")
 
-		for _, event := range s.From.EventsInsert {
+		go func() {
+			if model.SystemKeyField != nil {
+				sysid := after.Str(model.SystemKeyField.Name)
+				s.Db.upsertRecord(model.Table, "insert", sysid)
+			}
+		}()
+
+		for _, event := range model.eventsInsert {
 			err := event(model, before, after)
 			if err != nil {
 				return err

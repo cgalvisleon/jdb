@@ -44,7 +44,7 @@ func (s *Postgres) ddlPrimaryKey(model *jdb.Model) string {
 	}
 
 	if len(primaryKeys()) > 0 {
-		result = strs.Format("PRIMARY KEY (%s)", strings.Join(primaryKeys(), ", "))
+		result = strs.Format("ALTER TABLE %s ADD CONSTRAINT %s_pk PRIMARY KEY (%s);", model.Table, model.Name, strings.Join(primaryKeys(), ", "))
 	}
 
 	return result
@@ -52,16 +52,26 @@ func (s *Postgres) ddlPrimaryKey(model *jdb.Model) string {
 
 func (s *Postgres) ddlForeignKeys(model *jdb.Model) string {
 	var result string
-	for key, fk := range model.ForeignKeys {
-		ref := fk.Detail.Fk
-		def := strs.Format(`ALTER TABLE IF EXISTS %s ADD CONSTRAINT %s FOREIGN KEY (%s) REFERENCES %s(%s)`, model.Table, key, fk.Name, ref.Model.Table, ref.Name)
+	for name, fk := range model.ForeignKeys {
+		reference := fk.Detail.With
+		if reference == nil {
+			continue
+		}
+
+		referenceKey := ""
+		key := ""
+		for fkn, pkn := range fk.Detail.Fk {
+			key = strs.Append(key, fkn, ", ")
+			referenceKey = strs.Append(referenceKey, pkn, ", ")
+		}
+		def := strs.Format(`ALTER TABLE IF EXISTS %s ADD CONSTRAINT %s FOREIGN KEY (%s) REFERENCES %s(%s)`, model.Table, name, key, reference.Table, referenceKey)
 		if fk.Detail.OnDeleteCascade {
 			def = def + " ON DELETE CASCADE"
 		}
 		if fk.Detail.OnUpdateCascade {
 			def = def + " ON UPDATE CASCADE"
 		}
-		def = strs.Format("SELECT core.add_constraint_if_not_exists('%s', '%s', '%s', '%s');", model.Schema.Low(), model.Low(), key, def)
+		def = def + ";"
 		result = strs.Append(result, def, "\n")
 	}
 
@@ -98,11 +108,12 @@ func (s *Postgres) ddlUniqueIndex(model *jdb.Model) string {
 	return result
 }
 
-func (s *Postgres) ddlIndexFunction(model *jdb.Model) string {
+func (s *Postgres) ddlTableIndex(model *jdb.Model) string {
 	result := ""
 	result = strs.Append(result, s.ddlIndex(model), "\n")
+	result = strs.Append(result, s.ddlPrimaryKey(model), "\n")
+	result = strs.Append(result, s.ddlForeignKeys(model), "\n")
 	result = strs.Append(result, s.ddlUniqueIndex(model), "\n")
-	result = strs.Append(result, s.ddlForeignKeys(model), "\n\n")
 
-	return result
+	return strs.Format("\n%s", result)
 }

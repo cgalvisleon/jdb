@@ -1,6 +1,9 @@
 package jdb
 
 import (
+	"encoding/json"
+
+	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
 )
 
@@ -30,12 +33,35 @@ func (s TypeJoin) Str() string {
 
 type QlJoin struct {
 	*QlWhere
-	Ql       *Ql
-	TypeJoin TypeJoin
-	With     *QlFrom
+	Ql       *Ql      `json:"-"`
+	TypeJoin TypeJoin `json:"type_join"`
+	With     *QlFrom  `json:"with"`
 }
 
 type QlJoins []*QlJoin
+
+/**
+* Describe
+* @return *et.Json
+**/
+func (s *QlJoin) Describe() et.Json {
+	definition, err := json.Marshal(s)
+	if err != nil {
+		console.Errorf("QlJoin error: %s", err.Error())
+		return et.Json{}
+	}
+
+	result := et.Json{}
+	err = json.Unmarshal(definition, &result)
+	if err != nil {
+		console.Errorf("QlJoin error: %s", err.Error())
+		return et.Json{}
+	}
+
+	result["ql"] = s.Ql.Describe()
+
+	return result
+}
 
 /**
 * On
@@ -92,6 +118,31 @@ func (s *QlJoin) Or(val interface{}) *QlJoin {
 }
 
 /**
+* setValue
+* @param val et.Json
+* @return *QlJoin
+**/
+func (s *QlJoin) setValue(val et.Json) *QlJoin {
+	for key, value := range val {
+		switch v := value.(type) {
+		case string:
+			field := s.Ql.getField(v)
+			if field != nil {
+				console.Debug("QlJoin:", field.Describe().ToString())
+				s.QlWhere.setValue(et.Json{key: field})
+				continue
+			}
+
+			s.QlWhere.setValue(et.Json{key: v})
+		default:
+			s.QlWhere.setValue(et.Json{key: v})
+		}
+	}
+
+	return s
+}
+
+/**
 * Select
 * @param fields ...string
 * @return *Ql
@@ -121,6 +172,7 @@ func (s *Ql) Join(m *Model) *QlJoin {
 	}
 
 	result := &QlJoin{
+		QlWhere:  NewQlWhere(),
 		Ql:       s,
 		TypeJoin: InnerJoin,
 		With:     with,
@@ -173,7 +225,14 @@ func (s *Ql) FullJoin(m *Model) *QlJoin {
 * @return *QlJoin
 **/
 func (s *QlJoin) setWheres(wheres et.Json) *QlJoin {
-	s.QlWhere.setWheres(wheres, s.Ql.getField)
+	if len(wheres) == 0 {
+		return s
+	}
+
+	for key := range wheres {
+		val := wheres.Json(key)
+		s.On(key).setValue(val)
+	}
 
 	return s
 }

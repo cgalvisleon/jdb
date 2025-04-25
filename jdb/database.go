@@ -3,36 +3,35 @@ package jdb
 import (
 	"encoding/json"
 	"slices"
+	"strings"
 	"time"
 
+	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/event"
 	"github.com/cgalvisleon/et/mistake"
 	"github.com/cgalvisleon/et/reg"
 	"github.com/cgalvisleon/et/strs"
+	"github.com/cgalvisleon/et/timezone"
 )
 
 func Name(name string) string {
+	name = strings.ToLower(name)
 	return strs.ReplaceAll(name, []string{" "}, "_")
 }
 
-type Mode int
-
-const (
-	Origin Mode = iota
-	Replica
-)
-
 type DB struct {
-	CreatedAt   time.Time `json:"created_date"`
-	UpdateAt    time.Time `json:"update_date"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdateAt    time.Time `json:"update_at"`
 	Id          string    `json:"id"`
 	Name        string    `json:"name"`
 	Description string    `json:"description"`
 	UseCore     bool      `json:"use_core"`
-	Mode        Mode      `json:"mode"`
-	schemas     []*Schema `json:"-"`
 	driver      Driver    `json:"-"`
+	schemas     []*Schema `json:"-"`
+	models      []*Model  `json:"-"`
+	isInit      bool      `json:"-"`
+	debug       bool      `json:"-"`
 }
 
 /**
@@ -45,38 +44,66 @@ func NewDatabase(name, driver string) (*DB, error) {
 		return nil, mistake.New(MSG_DRIVER_NOT_DEFINED)
 	}
 
-	if _, ok := Jdb.Drivers[driver]; !ok {
+	if _, ok := conn.Drivers[driver]; !ok {
 		return nil, mistake.Newf(MSG_DRIVER_NOT_FOUND, driver)
 	}
 
 	name = Name(name)
-	idx := slices.IndexFunc(Jdb.DBS, func(db *DB) bool { return db.Name == name })
+	idx := slices.IndexFunc(conn.DBS, func(db *DB) bool { return db.Name == name })
 	if idx != -1 {
-		return Jdb.DBS[idx], nil
+		return conn.DBS[idx], nil
 	}
 
-	now := time.Now()
+	now := timezone.NowTime()
 	result := &DB{
 		CreatedAt: now,
 		UpdateAt:  now,
 		Id:        reg.Id("db"),
 		Name:      name,
 		UseCore:   false,
-		Mode:      Origin,
+		driver:    conn.Drivers[driver](),
 		schemas:   make([]*Schema, 0),
-		driver:    Jdb.Drivers[driver](),
+		models:    make([]*Model, 0),
 	}
-	Jdb.DBS = append(Jdb.DBS, result)
+	conn.DBS = append(conn.DBS, result)
 
 	return result, nil
 }
 
 /**
+* Describe
+* @return et.Json
+**/
+func (s *DB) Describe() et.Json {
+	definition, err := json.Marshal(s)
+	if err != nil {
+		return et.Json{}
+	}
+
+	result := et.Json{}
+	err = json.Unmarshal(definition, &result)
+	if err != nil {
+		return et.Json{}
+	}
+
+	var schemas = make([]et.Json, 0)
+	for _, schema := range s.schemas {
+		schemas = append(schemas, schema.Describe())
+	}
+
+	result["schemas"] = schemas
+	result["driver"] = s.driver.Name()
+
+	return result
+}
+
+/**
 * Load
+* @param kind, name string, out interface{}
 * @return error
 **/
 func (s *DB) Load(kind, name string, out interface{}) error {
-	if !s.UseCore {
+	if !s.UseCore || !s.isInit {
 		return nil
 	}
 
@@ -86,7 +113,7 @@ func (s *DB) Load(kind, name string, out interface{}) error {
 	}
 
 	if !item.Ok {
-		return mistake.Newf(MSG_MODEL_NOT_FOUND, name)
+		return nil
 	}
 
 	definition, err := item.Byte("definition")
@@ -94,6 +121,9 @@ func (s *DB) Load(kind, name string, out interface{}) error {
 		return err
 	}
 
+	if s.debug {
+		console.Debug(kind, ":", string(definition))
+	}
 	err = json.Unmarshal(definition, out)
 	if err != nil {
 		return err
@@ -107,16 +137,16 @@ func (s *DB) Load(kind, name string, out interface{}) error {
 * @return error
 **/
 func (s *DB) Save() error {
-	if !s.UseCore {
+	if !s.UseCore || !s.isInit {
 		return nil
 	}
 
-	buf, err := json.Marshal(s)
+	definition, err := json.Marshal(s)
 	if err != nil {
 		return err
 	}
 
-	err = s.upsertModel("db", s.Name, 1, buf)
+	err = s.upsertModel("db", s.Name, 1, definition)
 	if err != nil {
 		return err
 	}
@@ -125,23 +155,10 @@ func (s *DB) Save() error {
 }
 
 /**
-* Describe
-* @return et.Json
+* Debug
 **/
-func (s *DB) Describe() et.Json {
-	var schemas = make([]et.Json, 0)
-	for _, schema := range s.schemas {
-		schemas = append(schemas, schema.Describe())
-	}
-
-	return et.Json{
-		"created_date": s.CreatedAt,
-		"update_date":  s.UpdateAt,
-		"id":           s.Id,
-		"name":         s.Name,
-		"description":  s.Description,
-		"schemas":      schemas,
-	}
+func (s *DB) Debug() {
+	s.debug = true
 }
 
 /**
@@ -177,6 +194,20 @@ func (s *DB) GetSchema(name string) *Schema {
 	idx := slices.IndexFunc(s.schemas, func(schema *Schema) bool { return schema.Name == name })
 	if idx != -1 {
 		return s.schemas[idx]
+	}
+
+	return nil
+}
+
+/**
+* GetModel
+* @param name string
+* @return *Model
+**/
+func (s *DB) GetModel(name string) *Model {
+	idx := slices.IndexFunc(s.models, func(model *Model) bool { return model.Name == name })
+	if idx != -1 {
+		return s.models[idx]
 	}
 
 	return nil
@@ -244,16 +275,16 @@ func (s *DB) DeleteUser(username string) error {
 }
 
 /**
-* CreateSchema
+* LoadSchema
 * @param name string
 * @return error
 **/
-func (s *DB) CreateSchema(name string) error {
+func (s *DB) LoadSchema(name string) error {
 	if s.driver == nil {
 		return mistake.New(MSG_DRIVER_NOT_DEFINED)
 	}
 
-	return s.driver.CreateSchema(name)
+	return s.driver.LoadSchema(name)
 }
 
 /**
@@ -266,7 +297,17 @@ func (s *DB) DropSchema(name string) error {
 		return mistake.New(MSG_DRIVER_NOT_DEFINED)
 	}
 
-	return s.driver.DropSchema(name)
+	err := s.driver.DropSchema(name)
+	if err != nil {
+		return err
+	}
+
+	err = s.deleteModel("schema", name)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 /**
@@ -274,25 +315,12 @@ func (s *DB) DropSchema(name string) error {
 * @param model *Model
 * @return error
 **/
-func (s *DB) LoadModel(model *Model) (bool, error) {
-	if s.driver == nil {
-		return false, mistake.New(MSG_DRIVER_NOT_DEFINED)
-	}
-
-	return s.driver.LoadModel(model)
-}
-
-/**
-* CreateModel
-* @param model *Model
-* @return error
-**/
-func (s *DB) CreateModel(model *Model) error {
+func (s *DB) LoadModel(model *Model) error {
 	if s.driver == nil {
 		return mistake.New(MSG_DRIVER_NOT_DEFINED)
 	}
 
-	return s.driver.CreateModel(model)
+	return s.driver.LoadModel(model)
 }
 
 /**
@@ -304,20 +332,17 @@ func (s *DB) DropModel(model *Model) error {
 		return mistake.New(MSG_DRIVER_NOT_DEFINED)
 	}
 
-	return s.driver.DropModel(model)
-}
-
-/**
-* SaveModel
-* @param model *Model
-* @return error
-**/
-func (s *DB) SaveModel(model *Model) error {
-	if s.driver == nil {
-		return mistake.New(MSG_DRIVER_NOT_DEFINED)
+	err := s.driver.DropModel(model)
+	if err != nil {
+		return err
 	}
 
-	return s.driver.SaveModel(model)
+	err = s.deleteModel("model", model.Name)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 /**

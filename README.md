@@ -18,6 +18,12 @@
 
 - APP_NAME:
 
+## Library
+
+```
+go get github.com/cgalvisleon/et/@v1.0.9
+```
+
 ## Run and build
 
 ```
@@ -31,12 +37,6 @@ gofmt -w . && go build --race -a -v -o ./jdb ./cmd/jdb
 
 ps aux | grep jdb | grep -v grep
 
-```
-
-## Library
-
-```
-go get github.com/cgalvisleon/et/@v1.0.7
 ```
 
 ## Go work

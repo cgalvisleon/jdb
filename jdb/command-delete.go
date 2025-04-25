@@ -10,7 +10,7 @@ func (s *Command) delete() error {
 	model := s.From
 	results, err := s.Db.Command(s)
 	if err != nil {
-		for _, event := range s.From.EventError {
+		for _, event := range model.eventError {
 			event(model, et.Json{
 				"command": "delete",
 				"sql":     s.Sql,
@@ -29,7 +29,6 @@ func (s *Command) delete() error {
 
 	if model.UseCore {
 		syncChannel := strs.Format("sync:%s", model.Db.Name)
-		s.Db.upsertRecord(model.Table, "delete", s.Result.Result[0].ValStr(SYSID))
 		event.Publish(syncChannel, et.Json{
 			"fromId":  model.Db.Id,
 			"command": "delete",
@@ -47,7 +46,14 @@ func (s *Command) delete() error {
 		before := result.ValJson(et.Json{}, "result", "before")
 		after := result.ValJson(et.Json{}, "result", "after")
 
-		for _, event := range s.From.EventsDelete {
+		go func() {
+			if model.SystemKeyField != nil {
+				sysid := after.Str(model.SystemKeyField.Name)
+				s.Db.upsertRecord(model.Table, "delete", sysid)
+			}
+		}()
+
+		for _, event := range model.eventsDelete {
 			err := event(model, before, after)
 			if err != nil {
 				return err

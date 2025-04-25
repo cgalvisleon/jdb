@@ -54,6 +54,10 @@ func (s *QlWhere) String() string {
 * @return *QlWhere
 **/
 func (s *QlWhere) where(field *Field) *QlWhere {
+	if field == nil {
+		return s
+	}
+
 	s.Wheres = append(s.Wheres, NewQlCondition(field))
 
 	return s
@@ -353,9 +357,14 @@ func (s *QlWhere) setValue(val et.Json) *QlWhere {
 
 /**
 * setWheres
-* @param wheres et.Json
+* @param wheres et.Json, findField func(name string) *Field
+* @return *QlWhere
 **/
 func (s *QlWhere) setWheres(wheres et.Json, findField func(name string) *Field) *QlWhere {
+	if len(wheres) == 0 {
+		return s
+	}
+
 	and := func(vals []et.Json) {
 		for _, val := range vals {
 			for key := range val {

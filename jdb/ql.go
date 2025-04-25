@@ -76,7 +76,6 @@ func (s *Ql) getField(name string) *Field {
 		for _, from := range s.Froms.Froms {
 			field := from.getField(name)
 			if field != nil {
-				field.As = from.As
 				return field
 			}
 		}

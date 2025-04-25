@@ -12,7 +12,7 @@ func (s *Command) bulk() error {
 
 	results, err := s.Db.Command(s)
 	if err != nil {
-		for _, event := range s.From.EventError {
+		for _, event := range model.eventError {
 			event(model, et.Json{
 				"command": "insert",
 				"sql":     s.Sql,

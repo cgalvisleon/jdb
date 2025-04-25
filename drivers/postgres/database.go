@@ -128,7 +128,10 @@ func (s *Postgres) CreateDatabase(name string) error {
 		return nil
 	}
 
-	sql := jdb.SQLDDL(`CREATE DATABASE $1`, name)
+	sql := jdb.SQLDDL(`
+	CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+	CREATE EXTENSION IF NOT EXISTS pgcrypto;
+	CREATE DATABASE $1`, name)
 	err = s.Exec(sql)
 	if err != nil {
 		return err

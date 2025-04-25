@@ -12,7 +12,7 @@ func (s *Command) updated() error {
 
 	results, err := s.Db.Command(s)
 	if err != nil {
-		for _, event := range s.From.EventError {
+		for _, event := range model.eventError {
 			event(model, et.Json{
 				"command": "update",
 				"sql":     s.Sql,
@@ -32,7 +32,6 @@ func (s *Command) updated() error {
 
 	if model.UseCore {
 		syncChannel := strs.Format("sync:%s", model.Db.Name)
-		s.Db.upsertRecord(model.Table, "update", s.Result.Result[0].ValStr(SYSID))
 		event.Publish(syncChannel, et.Json{
 			"fromId":  model.Db.Id,
 			"command": "update",
@@ -50,7 +49,14 @@ func (s *Command) updated() error {
 		before := result.ValJson(et.Json{}, "result", "before")
 		after := result.ValJson(et.Json{}, "result", "after")
 
-		for _, event := range s.From.EventsUpdate {
+		go func() {
+			if model.SystemKeyField != nil {
+				sysid := after.Str(model.SystemKeyField.Name)
+				s.Db.upsertRecord(model.Table, "update", sysid)
+			}
+		}()
+
+		for _, event := range model.eventsUpdate {
 			err := event(model, before, after)
 			if err != nil {
 				return err
@@ -58,7 +64,7 @@ func (s *Command) updated() error {
 		}
 
 		changed := before.IsChanged(after)
-		if s.history && changed && model.History.With != nil {
+		if s.history && changed && model.History != nil {
 			err := EventHistoryDefault(model, before, after)
 			if err != nil {
 				return err

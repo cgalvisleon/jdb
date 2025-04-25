@@ -1,9 +1,7 @@
 package postgres
 
 import (
-	"encoding/json"
-
-	"github.com/cgalvisleon/et/console"
+	"github.com/cgalvisleon/et/strs"
 	"github.com/cgalvisleon/jdb/jdb"
 )
 
@@ -12,7 +10,28 @@ import (
 * @param model *jdb.Model
 * @return error
 **/
-func (s *Postgres) LoadModel(model *jdb.Model) (bool, error) {
+func (s *Postgres) LoadModel(model *jdb.Model) error {
+	existTable, err := s.existTable(model.Schema.Name, model.Name)
+	if err != nil {
+		return err
+	}
+
+	if !existTable {
+		sql := s.ddlTable(model)
+		err := s.Exec(sql)
+		if err != nil {
+			return err
+		}
+
+		sql = s.ddlTableIndex(model)
+		err = s.Exec(sql)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
+
 	sql := `
 	SELECT
 	a.attname AS column_name, 
@@ -33,7 +52,7 @@ func (s *Postgres) LoadModel(model *jdb.Model) (bool, error) {
 
 	items, err := s.Query(sql, model.Schema.Name, model.Name)
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	for _, item := range items.Result {
@@ -44,67 +63,6 @@ func (s *Postgres) LoadModel(model *jdb.Model) (bool, error) {
 		model.DefineColumn(name, typeData)
 	}
 
-	return items.Ok, nil
-}
-
-/**
-* CreateModel
-* @param model *jdb.Model
-* @return error
-**/
-func (s *Postgres) CreateModel(model *jdb.Model) error {
-	var action string
-	var sql string
-	if !model.IsCreated {
-		action = "create"
-		sql = s.ddlTable(model)
-	} else {
-		current, err := s.getModel(model.Table)
-		if err != nil {
-			return err
-		}
-
-		version := current.ValInt(1, "version")
-		if version != model.Version {
-			action = "mutate"
-			bt, err := current.Byte("model")
-			if err != nil {
-				return err
-			}
-			var old jdb.Model
-			err = json.Unmarshal(bt, &old)
-			if err != nil {
-				return err
-			}
-
-			sql = s.ddlMutate(&old, model, false)
-		} else {
-			action = "system"
-			sql = s.ddlSystemFunction(model)
-		}
-	}
-
-	if model.IsDebug {
-		console.Debug(sql)
-	}
-
-	err := s.Exec(sql)
-	if err != nil {
-		return err
-	}
-
-	s.SaveModel(model)
-
-	for _, detail := range model.Details {
-		err = s.CreateModel(detail.With)
-		if err != nil {
-			model.Drop()
-			return err
-		}
-	}
-
-	console.Logf(model.Db.Name, `Model %s %s`, model.Name, action)
-
 	return nil
 }
 
@@ -114,29 +72,31 @@ func (s *Postgres) CreateModel(model *jdb.Model) error {
 * @return error
 **/
 func (s *Postgres) DropModel(model *jdb.Model) error {
-	for _, detail := range model.Details {
-		err := s.DropModel(detail.With)
-		if err != nil {
-			return err
-		}
-	}
-
-	return s.deleteModel(model.Table)
-}
-
-/**
-* SaveModel
-* @param model *jdb.Model
-* @return error
-**/
-func (s *Postgres) SaveModel(model *jdb.Model) error {
-	serialized, err := model.Serialized()
+	sql := s.ddlTableDrop(model.Table)
+	err := s.Exec(sql)
 	if err != nil {
-		model.Drop()
 		return err
 	}
 
-	go s.upsertModel(model.Table, model.Version, serialized)
+	return nil
+}
+
+/**
+* MutateModel
+* @param model *jdb.Model
+* @return error
+**/
+func (s *Postgres) MutateModel(model *jdb.Model) error {
+	backupTable := strs.Format(`%s_backup`, model.Table)
+	sql := "\n"
+	sql = strs.Append(sql, s.ddlTableRename(model.Table, backupTable), "\n")
+	sql = strs.Append(sql, s.ddlTable(model), "\n")
+	sql = strs.Append(sql, s.ddlTableInsertTo(model, backupTable), "\n\n")
+	sql = strs.Append(sql, s.ddlTableIndex(model), "\n\n")
+	err := s.Exec(sql)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

@@ -24,6 +24,7 @@ func main() {
 		panic(err)
 	}
 
-	result := db.Describe()
-	console.Debug(result.ToString())
+	// result := db.Describe()
+	// console.Debug(result.ToString())
+	console.Debug("db:", db.Name)
 }

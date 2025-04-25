@@ -1,6 +1,8 @@
 package jdb
 
-import "github.com/cgalvisleon/et/utility"
+import (
+	"github.com/cgalvisleon/et/utility"
+)
 
 func (s *Command) beforeInsert(item map[string]*Field) map[string]*Field {
 	if s.From == nil {
@@ -35,7 +37,7 @@ func (s *Command) prepare() {
 			if field == nil {
 				continue
 			}
-			field.Value = v
+			field.SetValue(v)
 			item[field.Name] = field
 		}
 		if s.Command == Insert {

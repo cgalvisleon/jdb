@@ -55,7 +55,7 @@ func asField(field jdb.Field) string {
 	return result
 }
 
-func selectAsField(field jdb.Field) string {
+func aliasAsField(field jdb.Field) string {
 	result := asField(field)
 	if field.Name == field.Alias {
 		return result
@@ -91,7 +91,7 @@ func (s *Postgres) sqlObject(selects []*jdb.Field) string {
 			sourceField = append(sourceField, fld)
 			continue
 		}
-		def := selectAsField(*fld)
+		def := asField(*fld)
 		def = strs.Format(`'%s', %s`, fld.Alias, def)
 		obj = strs.Append(obj, def, ",\n")
 
@@ -107,7 +107,7 @@ func (s *Postgres) sqlObject(selects []*jdb.Field) string {
 	sources := ""
 	for i := 0; i < len(sourceField); i++ {
 		fld := sourceField[i]
-		def := selectAsField(*fld)
+		def := aliasAsField(*fld)
 		sources = strs.Append(sources, def, "||\n")
 		if i == len(sourceField)-1 {
 			result = strs.Format(`%s||%s`, def, result)
@@ -121,11 +121,11 @@ func (s *Postgres) sqlObjectOrders(selects []*jdb.Field, orders *jdb.QlOrder) st
 	result := s.sqlObject(selects)
 	result = strs.Append(result, "result", " AS ")
 	for _, ord := range orders.Asc {
-		def := selectAsField(*ord)
+		def := aliasAsField(*ord)
 		result = strs.Append(result, def, ",\n")
 	}
 	for _, ord := range orders.Desc {
-		def := selectAsField(*ord)
+		def := aliasAsField(*ord)
 		result = strs.Append(result, def, ",\n")
 	}
 
@@ -138,7 +138,7 @@ func (s *Postgres) sqlColumns(selects []*jdb.Field) string {
 		if fld.Hidden {
 			continue
 		}
-		def := selectAsField(*fld)
+		def := aliasAsField(*fld)
 		result = strs.Append(result, def, ",\n")
 	}
 

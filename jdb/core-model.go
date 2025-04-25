@@ -18,19 +18,18 @@ func (s *DB) defineModel() error {
 	}
 
 	coreModel = NewModel(coreSchema, "models", 1)
-	coreModel.DefineAtribute(CREATED_AT, CreatedAtField.TypeData())
-	coreModel.DefineAtribute(UPDATED_AT, UpdatedAtField.TypeData())
-	coreModel.DefineAtribute("kind", TypeDataText)
-	coreModel.DefineAtribute("name", TypeDataText)
-	coreModel.DefineAtribute("version", TypeDataInt)
-	coreModel.DefineAtribute("definition", TypeDataBytes)
-	coreModel.DefineAtribute(SYSID, SystemKeyField.TypeData())
-	coreModel.DefineAtribute(INDEX, IndexField.TypeData())
-	coreModel.DefinePrimaryKey(SYSID)
+	coreModel.DefineColumn(CREATED_AT, CreatedAtField.TypeData())
+	coreModel.DefineColumn(UPDATED_AT, UpdatedAtField.TypeData())
+	coreModel.DefineColumn("kind", TypeDataText)
+	coreModel.DefineColumn("name", TypeDataText)
+	coreModel.DefineColumn("version", TypeDataInt)
+	coreModel.DefineColumn("definition", TypeDataBytes)
+	coreModel.DefineSystemKeyField()
+	coreModel.DefineIndexField()
+	coreModel.DefinePrimaryKey("kind", "name")
 	coreModel.DefineIndex(true,
-		"kind",
-		"name",
 		"version",
+		SYSID,
 		INDEX,
 	)
 	if err := coreModel.Init(); err != nil {
@@ -67,7 +66,6 @@ func (s *DB) upsertModel(kind, name string, version int, definition []byte) erro
 		}).
 		Where("kind").Eq(kind).
 		And("name").Eq(name).
-		Return("version").
 		One()
 	if err != nil {
 		return err
@@ -85,10 +83,44 @@ func (s *DB) upsertModel(kind, name string, version int, definition []byte) erro
 			"name":       name,
 			"version":    version,
 			"definition": definition,
-		}).Exec()
+		}).
+		Exec()
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+/**
+* deleteModel
+* @param kind, name string
+* @return error
+**/
+func (s *DB) deleteModel(kind, name string) error {
+	_, err := coreModel.
+		Delete().
+		Where("kind").Eq(kind).
+		And("name").Eq(name).
+		Exec()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+/**
+* QueryModel
+* @param search et.Json
+* @return interface{}, error
+**/
+func (s *DB) QueryModel(search et.Json) (interface{}, error) {
+	result, err := coreModel.
+		Query(search)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }

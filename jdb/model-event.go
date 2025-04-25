@@ -6,6 +6,11 @@ import (
 	"github.com/cgalvisleon/et/strs"
 )
 
+const EVENT_MODEL_ERROR = "model:error"
+const EVENT_MODEL_INSERT = "model:insert"
+const EVENT_MODEL_UPDATE = "model:update"
+const EVENT_MODEL_DELETE = "model:delete"
+
 type TypeEvent int
 
 const (
@@ -47,9 +52,9 @@ func EventErrorDefault(model *Model, err et.Json) {
 		"error":  err,
 	}
 
-	event.Publish(event.EVENT_MODEL_ERROR, data)
-	event.Publish(event.EVENT_MODEL_ERROR+model.Name, data)
-	event.Publish(event.EVENT_MODEL_ERROR+model.Table, data)
+	event.Publish(EVENT_MODEL_ERROR, data)
+	event.Publish(EVENT_MODEL_ERROR+model.Name, data)
+	event.Publish(EVENT_MODEL_ERROR+model.Table, data)
 }
 
 /**
@@ -71,9 +76,9 @@ func EventInsertDefault(model *Model, before et.Json, after et.Json) error {
 		"after":  after,
 	}
 
-	event.Publish(event.EVENT_MODEL_INSERT, data)
-	event.Publish(event.EVENT_MODEL_INSERT+model.Name, data)
-	event.Publish(event.EVENT_MODEL_INSERT+model.Table, data)
+	event.Publish(EVENT_MODEL_INSERT, data)
+	event.Publish(EVENT_MODEL_INSERT+model.Name, data)
+	event.Publish(EVENT_MODEL_INSERT+model.Table, data)
 
 	return nil
 }
@@ -93,7 +98,8 @@ func EventUpdateDefault(model *Model, before et.Json, after et.Json) error {
 		oldStatus := before.Str(model.StatusField.Name)
 		newStatus := after.Str(model.StatusField.Name)
 		if oldStatus != newStatus {
-			model.Db.upsertRecycling(model.Table, before.Str(model.SystemKeyField.Name), newStatus)
+			sysId := before.Str(model.SystemKeyField.Name)
+			model.Db.upsertRecycling(model.Table, sysId, newStatus)
 		}
 	}
 
@@ -105,9 +111,9 @@ func EventUpdateDefault(model *Model, before et.Json, after et.Json) error {
 		"after":  after,
 	}
 
-	event.Publish(event.EVENT_MODEL_UPDATE, data)
-	event.Publish(event.EVENT_MODEL_UPDATE+model.Name, data)
-	event.Publish(event.EVENT_MODEL_UPDATE+model.Table, data)
+	event.Publish(EVENT_MODEL_UPDATE, data)
+	event.Publish(EVENT_MODEL_UPDATE+model.Name, data)
+	event.Publish(EVENT_MODEL_UPDATE+model.Table, data)
 
 	return nil
 }
@@ -123,6 +129,11 @@ func EventDeleteDefault(model *Model, before et.Json, after et.Json) error {
 		schema = model.Schema.Name
 	}
 
+	if model.StatusField != nil && model.SystemKeyField != nil {
+		sysId := before.Str(model.SystemKeyField.Name)
+		model.Db.deleteRecycling(model.Table, sysId)
+	}
+
 	data := et.Json{
 		"schema": schema,
 		"model":  model.Name,
@@ -131,9 +142,9 @@ func EventDeleteDefault(model *Model, before et.Json, after et.Json) error {
 		"after":  after,
 	}
 
-	event.Publish(event.EVENT_MODEL_DELETE, data)
-	event.Publish(event.EVENT_MODEL_DELETE+model.Name, data)
-	event.Publish(event.EVENT_MODEL_DELETE+model.Table, data)
+	event.Publish(EVENT_MODEL_DELETE, data)
+	event.Publish(EVENT_MODEL_DELETE+model.Name, data)
+	event.Publish(EVENT_MODEL_DELETE+model.Table, data)
 
 	return nil
 }
@@ -148,35 +159,52 @@ func EventHistoryDefault(model *Model, before et.Json, after et.Json) error {
 		return nil
 	}
 
-	history := model.History
+	history := model.History.With
 	if history == nil {
 		return nil
 	}
 
-	if history.With == nil {
-		return nil
+	tag := "history"
+	n := 0
+	command := history.
+		Insert(before)
+	for fkn, pk := range model.History.Fk {
+		key := before.ValStr("", pk)
+		if n == 0 {
+			command.Where(fkn).Eq(key)
+		} else {
+			command.And(fkn).Eq(key)
+		}
+		tag = strs.Append(tag, key, ":")
+		n++
 	}
 
-	key := before.ValStr("", history.Fk.Name)
-	if key == "" {
-		return nil
+	index, err := model.Db.GetSerie(tag)
+	if err != nil {
+		return err
 	}
-
-	tag := strs.Format("%s:%s", "history", key)
-	index := model.Db.GetSerie(tag)
 	before[HISTORY_INDEX] = index
-	go history.With.Insert(before).
-		Exec()
+	go command.Exec()
 
-	limit := index - int64(history.Limit)
+	limit := index - int64(model.History.Limit)
 	if limit <= 0 {
 		return nil
 	}
 
-	go history.With.Delete().
-		Where(history.Fk.Name).Eq(key).
-		And(HISTORY_INDEX).LessEq(limit).
-		Exec()
+	n = 0
+	command = history.
+		Delete()
+	for fkn, pk := range model.History.Fk {
+		key := before.ValStr("", pk)
+		if n == 0 {
+			command.Where(fkn).Eq(key)
+		} else {
+			command.And(fkn).Eq(key)
+		}
+		n++
+	}
+	command.And(HISTORY_INDEX).LessEq(limit)
+	go command.Exec()
 
 	return nil
 }

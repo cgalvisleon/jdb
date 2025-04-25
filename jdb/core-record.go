@@ -1,9 +1,12 @@
 package jdb
 
 import (
+	"net/http"
+
 	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/mistake"
+	"github.com/cgalvisleon/et/response"
 	"github.com/cgalvisleon/et/timezone"
 	"github.com/cgalvisleon/et/utility"
 )
@@ -20,14 +23,14 @@ func (s *DB) defineRecords() error {
 	}
 
 	coreRecords = NewModel(coreSchema, "records", 1)
-	coreRecords.DefineAtribute(CREATED_AT, CreatedAtField.TypeData())
-	coreRecords.DefineAtribute(UPDATED_AT, UpdatedAtField.TypeData())
-	coreRecords.DefineAtribute("table", TypeDataText)
-	coreRecords.DefineAtribute("option", TypeDataText)
-	coreRecords.DefineAtribute("sync", TypeDataBool)
-	coreRecords.DefineAtribute(SYSID, SystemKeyField.TypeData())
-	coreRecords.DefineAtribute(INDEX, IndexField.TypeData())
-	coreRecords.DefinePrimaryKey("table", SYSID)
+	coreRecords.DefineColumn(CREATED_AT, CreatedAtField.TypeData())
+	coreRecords.DefineColumn(UPDATED_AT, UpdatedAtField.TypeData())
+	coreRecords.DefineColumn("table_name", TypeDataText)
+	coreRecords.DefineColumn("option", TypeDataShortText)
+	coreRecords.DefineColumn("sync", TypeDataBool)
+	coreRecords.DefineColumn(SYSID, SystemKeyField.TypeData())
+	coreRecords.DefineIndexField()
+	coreRecords.DefinePrimaryKey("table_name", SYSID)
 	coreRecords.DefineIndex(true,
 		"option",
 		"sync",
@@ -46,40 +49,34 @@ func (s *DB) upsertRecord(table, option, sysid string) error {
 		return mistake.New(MSG_SYSID_REQUIRED)
 	}
 
-	current, err := coreRecords.
-		Where("table").Eq(table).
+	now := timezone.Now()
+	item, err := coreRecords.
+		Update(et.Json{
+			UPDATED_AT: now,
+			"option":   option,
+			"sync":     false,
+		}).
+		Where("table_name").Eq(table).
 		And(SYSID).Eq(sysid).
 		One()
 	if err != nil {
 		return err
 	}
 
-	now := timezone.Now()
-	if current.Ok {
-		_, err := coreRecords.Update(et.Json{
-			UPDATED_AT: now,
-			"option":   option,
-			"sync":     false,
-		}).
-			Where("table").Eq(table).
-			And(SYSID).Eq(sysid).
-			One()
-		if err != nil {
-			return err
-		}
-
+	if item.Ok {
 		return nil
 	}
 
-	_, err = coreRecords.Insert(et.Json{
-		CREATED_AT: now,
-		UPDATED_AT: now,
-		"table":    table,
-		"option":   option,
-		"sync":     false,
-		SYSID:      sysid,
-		INDEX:      utility.GenIndex(),
-	}).
+	_, err = coreRecords.
+		Insert(et.Json{
+			CREATED_AT:   now,
+			UPDATED_AT:   now,
+			"table_name": table,
+			"option":     option,
+			"sync":       false,
+			SYSID:        sysid,
+			INDEX:        utility.GenIndex(),
+		}).
 		One()
 	if err != nil {
 		return err
@@ -101,4 +98,20 @@ func (s *DB) QueryRecords(query et.Json) (interface{}, error) {
 	}
 
 	return result, nil
+}
+
+/**
+* HandlerQueryRecords
+* @param w http.ResponseWriter
+* @param r *http.Request
+**/
+func (s *DB) HandlerQueryRecords(w http.ResponseWriter, r *http.Request) {
+	body, _ := response.GetBody(r)
+	result, err := s.QueryRecords(body)
+	if err != nil {
+		response.HTTPError(w, r, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	response.RESULT(w, r, http.StatusOK, result)
 }

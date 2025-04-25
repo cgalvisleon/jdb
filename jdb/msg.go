@@ -32,4 +32,7 @@ const (
 	MSG_SCHEMA_NOT_USING_CORE    = "Schema is not using core"
 	MSG_DATABASE_NOT_USING_CORE  = "Database is not using core"
 	MSG_MODEL_NOT_USING_CORE     = "Model is not using core"
+	MSG_ATTR_REQUIRED            = "Attribute required (%s)"
+	MSG_SERIE_NOT_FOUND          = "Serie not found (%s)"
+	MSG_RECORD_NOT_FOUND         = "Record not found"
 )

@@ -2,6 +2,7 @@ package jdb
 
 import (
 	"encoding/gob"
+	"encoding/json"
 	"slices"
 
 	"github.com/cgalvisleon/et/et"
@@ -146,8 +147,8 @@ const (
 	INDEX         = "index"
 	PROJECT       = "project_id"
 	CREATED_AT    = "created_at"
-	UPDATED_AT    = "update_at"
-	STATUS        = "status"
+	UPDATED_AT    = "updated_at"
+	STATUS        = "status_id"
 	SYSID         = "jdbid"
 	CREATED_TO    = "created_to"
 	UPDATED_TO    = "updated_to"
@@ -198,86 +199,90 @@ func (s ColumnField) TypeData() TypeData {
 	return TypeDataText
 }
 
-type FullText struct {
-	Language string    `json:"language"`
-	Columns  []*Column `json:"columns"`
+func (s ColumnField) Str() string {
+	return string(s)
 }
 
-type GeneratedFunction func(col *Column, data *et.Json)
-
 type Relation struct {
-	Key             string  `json:"key"`
-	With            *Model  `json:"with"`
-	Fk              *Column `json:"fk"`
-	Limit           int     `json:"rows"`
-	OnDeleteCascade bool    `json:"on_delete_cascade"`
-	OnUpdateCascade bool    `json:"on_update_cascade"`
+	With            *Model            `json:"-"`
+	Fk              map[string]string `json:"fk"`
+	Limit           int               `json:"rows"`
+	OnDeleteCascade bool              `json:"on_delete_cascade"`
+	OnUpdateCascade bool              `json:"on_update_cascade"`
 }
 
 func (s *Relation) Describe() et.Json {
-	with := ""
-	if s.With != nil {
-		with = s.With.Name
+	definition, err := json.Marshal(s)
+	if err != nil {
+		return et.Json{}
 	}
-	fk := ""
-	if s.Fk != nil {
-		fk = s.Fk.Name
+
+	result := et.Json{}
+	err = json.Unmarshal(definition, &result)
+	if err != nil {
+		return et.Json{}
 	}
-	result := et.Json{
-		"key":               s.Key,
-		"with":              with,
-		"fk":                fk,
-		"rows":              s.Limit,
-		"on_delete_cascade": s.OnDeleteCascade,
-		"on_update_cascade": s.OnUpdateCascade,
-	}
+
+	result["with"] = s.With.Name
 
 	return result
 }
 
 type Rollup struct {
-	Key    string  `json:"key"`
-	Source *Model  `json:"source"`
-	Fk     *Column `json:"fk"`
-	Props  []*Column
+	Source *Model            `json:"-"`
+	Fk     map[string]string `json:"fk"`
+	Props  []string          `json:"props"`
 }
 
 func (s *Rollup) Describe() et.Json {
-	source := ""
-	if s.Source != nil {
-		source = s.Source.Name
-	}
-	props := make([]string, 0)
-	for _, column := range s.Props {
-		props = append(props, column.Name)
+	definition, err := json.Marshal(s)
+	if err != nil {
+		return et.Json{}
 	}
 
+	result := et.Json{}
+	err = json.Unmarshal(definition, &result)
+	if err != nil {
+		return et.Json{}
+	}
+
+	result["source"] = s.Source.Name
+
+	return result
+}
+
+type FullText struct {
+	Language string   `json:"language"`
+	Columns  []string `json:"columns"`
+}
+
+func (s *FullText) Describe() et.Json {
 	result := et.Json{
-		"key":    s.Key,
-		"source": source,
-		"fk":     s.Fk.Name,
-		"props":  props,
+		"language": s.Language,
+		"columns":  s.Columns,
 	}
 
 	return result
 }
 
+type GeneratedFunction func(col *Column, data *et.Json)
+
 type Column struct {
-	Model             *Model            `json:"-"`
-	Source            *Column           `json:"-"`
-	Name              string            `json:"name"`
-	Description       string            `json:"description"`
-	TypeColumn        TypeColumn        `json:"type_column"`
-	TypeData          TypeData          `json:"type_data"`
-	Default           interface{}       `json:"default"`
-	Max               float64           `json:"max"`
-	Min               float64           `json:"min"`
-	Hidden            bool              `json:"hidden"`
-	Detail            *Relation         `json:"detail"`
-	Rollup            *Rollup           `json:"rollup"`
-	FullText          *FullText         `json:"columns"`
-	GeneratedFunction GeneratedFunction `json:"-"`
-	Values            []interface{}     `json:"values"`
+	Model             *Model                 `json:"-"`
+	Source            *Column                `json:"-"`
+	Name              string                 `json:"name"`
+	Description       string                 `json:"description"`
+	TypeColumn        TypeColumn             `json:"type_column"`
+	TypeData          TypeData               `json:"type_data"`
+	Default           interface{}            `json:"default"`
+	Max               float64                `json:"max"`
+	Min               float64                `json:"min"`
+	Hidden            bool                   `json:"hidden"`
+	Detail            *Relation              `json:"detail"`
+	Rollup            *Rollup                `json:"rollup"`
+	FullText          *FullText              `json:"fulltext"`
+	Values            map[string]interface{} `json:"values"`
+	generatedFunction GeneratedFunction      `json:"-"`
 }
 
 func init() {
@@ -294,7 +299,7 @@ func newColumn(model *Model, name string, description string, typeColumn TypeCol
 		Default:     def,
 		Max:         0,
 		Min:         0,
-		Values:      []interface{}{},
+		Values:      make(map[string]interface{}),
 	}
 }
 
@@ -305,20 +310,23 @@ func newColumn(model *Model, name string, description string, typeColumn TypeCol
 func (s *Column) Describe() et.Json {
 	var fulltext = []string{}
 	if s.FullText != nil {
-		for _, column := range s.FullText.Columns {
-			fulltext = append(fulltext, column.Name)
-		}
+		fulltext = append(fulltext, s.FullText.Columns...)
 	}
+
 	detail := et.Json{}
 	if s.Detail != nil {
 		detail = s.Detail.Describe()
 	}
+
 	rollup := et.Json{}
 	if s.Rollup != nil {
 		rollup = s.Rollup.Describe()
 	}
 
 	result := et.Json{
+		"model":       s.Model.Name,
+		"table":       s.Model.Table,
+		"source":      s.Source.Name,
 		"name":        s.Name,
 		"description": s.Description,
 		"type_column": s.TypeColumn.Str(),
@@ -345,7 +353,7 @@ func (s *Column) Idx() int {
 		return -1
 	}
 
-	return slices.IndexFunc(s.Model.Columns, func(e *Column) bool { return e == s })
+	return slices.IndexFunc(s.Model.Columns, func(e *Column) bool { return e.Name == s.Name })
 }
 
 /**

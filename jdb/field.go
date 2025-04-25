@@ -8,6 +8,7 @@ import (
 
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/strs"
+	"github.com/cgalvisleon/et/utility"
 )
 
 type TypeAgregation int
@@ -88,32 +89,20 @@ func init() {
 }
 
 type Field struct {
-	Column     *Column
-	Schema     string
-	Table      string
-	As         string
-	Name       string
-	Source     string
-	Agregation TypeAgregation
-	Value      interface{}
-	Alias      string
-	Hidden     bool
-	Page       int
-	Rows       int
-	TpResult   TypeResult
-}
-
-/**
-* Describe
-* @return et.Json
-**/
-func (s *Field) Describe() et.Json {
-	result, err := et.Object(s)
-	if err != nil {
-		return et.Json{}
-	}
-
-	return result
+	Column     *Column        `json:"column"`
+	Schema     string         `json:"schema"`
+	Table      string         `json:"table"`
+	As         string         `json:"as"`
+	Name       string         `json:"name"`
+	Source     string         `json:"source"`
+	Agregation TypeAgregation `json:"agregation"`
+	Value      interface{}    `json:"value"`
+	Alias      string         `json:"alias"`
+	Hidden     bool           `json:"hidden"`
+	Page       int            `json:"page"`
+	Rows       int            `json:"rows"`
+	TpResult   TypeResult     `json:"tp_result"`
+	Unquoted   bool           `json:"unquoted"`
 }
 
 /**
@@ -154,19 +143,59 @@ func NewField(column *Column) *Field {
 	return result
 }
 
-func (s *Field) Define() et.Json {
-	return et.Json{
-		"schema":     s.Schema,
-		"table":      s.Table,
-		"as":         s.As,
-		"name":       s.Name,
-		"source":     s.Source,
-		"agregation": s.Agregation.Str(),
-		"alias":      s.Alias,
-		"value":      s.Value,
+/**
+* Describe
+* @return et.Json
+**/
+func (s *Field) Describe() et.Json {
+	definition, err := json.Marshal(s)
+	if err != nil {
+		return et.Json{}
+	}
+
+	result := et.Json{}
+	err = json.Unmarshal(definition, &result)
+	if err != nil {
+		return et.Json{}
+	}
+
+	return result
+}
+
+/**
+* SetValue
+* @param value interface{}
+**/
+func (s *Field) SetValue(value interface{}) {
+	regexpMust := func(pattern string, value interface{}) (string, bool) {
+		re := regexp.MustCompile(pattern)
+		matches := re.FindStringSubmatch(value.(string))
+
+		if len(matches) > 1 {
+			return matches[1], true
+		} else {
+			return value.(string), false
+		}
+	}
+
+	switch value.(type) {
+	case string:
+		result, ok := regexpMust(`(?i)^CALC\((.*)\)$`, value)
+		if ok {
+			s.Value = result
+			s.Unquoted = true
+		} else {
+			s.Value = value
+		}
+	default:
+		s.Value = value
 	}
 }
 
+/**
+* SetAgregation
+* @param agr TypeAgregation
+**/
 func (s *Field) SetAgregation(agr TypeAgregation) {
 	s.Agregation = agr
 	switch agr {
@@ -181,6 +210,26 @@ func (s *Field) SetAgregation(agr TypeAgregation) {
 	case AgregationMax:
 		s.Alias = strs.Format("max_%s", s.Name)
 	}
+}
+
+/**
+* ValueQuoted
+* @return any
+**/
+func (s *Field) ValueQuoted() any {
+	if s.Unquoted {
+		return strs.Format(`%v`, s.Value)
+	}
+
+	return utility.Quote(s.Value)
+}
+
+/**
+* ValueUnquoted
+* @return any
+**/
+func (s *Field) ValueUnquoted() any {
+	return utility.Unquote(s.Value)
 }
 
 /**

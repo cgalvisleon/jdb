@@ -3,7 +3,6 @@ package postgres
 import (
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/strs"
-	"github.com/cgalvisleon/et/utility"
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
@@ -19,7 +18,7 @@ func (s *Postgres) sqlInsert(command *jdb.Command) string {
 				continue
 			} else if fld.Column.TypeColumn == jdb.TpColumn {
 				columns = strs.Append(columns, key, ", ")
-				def := strs.Format(`%v`, utility.Quote(fld.Value))
+				def := strs.Format(`%v`, fld.ValueQuoted())
 				value = strs.Append(value, def, ", ")
 			} else if fld.Column.TypeColumn == jdb.TpAtribute && from.SourceField != nil {
 				atribs.Set(key, fld.Value)
@@ -37,6 +36,14 @@ func (s *Postgres) sqlInsert(command *jdb.Command) string {
 	}
 
 	objects := s.sqlJsonObject(from.GetFrom())
-	result := "INSERT INTO %s(%s)\nVALUES %s\nRETURNING\njsonb_build_object(\n'before', jsonb_build_object(),\n'after', (%s)) AS result;"
-	return strs.Format(result, from.Table, columns, values, objects)
+	returns := strs.Format("jsonb_build_object(\n'before', jsonb_build_object(),\n'after', (%s)) AS result;", objects)
+	if len(command.Returns) > 0 {
+		returns := ""
+		for _, fld := range command.Returns {
+			returns = strs.Append(returns, fld.Name, ", ")
+		}
+	}
+
+	result := "INSERT INTO %s(%s)\nVALUES %s\nRETURNING\n%s"
+	return strs.Format(result, from.Table, columns, values, returns)
 }

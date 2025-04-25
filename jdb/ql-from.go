@@ -14,9 +14,23 @@ type QlFroms struct {
 	index int
 }
 
-func From(m *Model) *Ql {
+func From(name any) *Ql {
+	var model *Model
+	switch v := name.(type) {
+	case string:
+		model = GetModel(v, false)
+	case *Model:
+		model = v
+	default:
+		return nil
+	}
+
+	if model == nil {
+		return nil
+	}
+
 	result := &Ql{
-		Db:         m.Db,
+		Db:         model.Db,
 		TypeSelect: Select,
 		Froms:      &QlFroms{index: 65, Froms: make([]*QlFrom, 0)},
 		Joins:      make([]*QlJoin, 0),
@@ -30,7 +44,7 @@ func From(m *Model) *Ql {
 		Sheet:      0,
 	}
 	result.Havings = &QlHaving{Ql: result, QlWhere: NewQlWhere()}
-	result.addFrom(m)
+	result.addFrom(model)
 
 	return result
 }

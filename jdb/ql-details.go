@@ -19,43 +19,52 @@ func (s *Ql) GetDetails(data *et.Json) *et.Json {
 
 		switch col.TypeColumn {
 		case TpGenerated:
-			if col.GeneratedFunction != nil {
-				col.GeneratedFunction(col, data)
+			if col.generatedFunction != nil {
+				col.generatedFunction(col, data)
 			}
 		case TpRelatedTo:
 			if col.Detail == nil {
 				continue
 			}
-			if col.Detail.Fk == nil {
-				continue
-			}
-			pkn := col.Detail.Fk.Name
-			key := (*data)[pkn]
-			if key == nil {
+			if len(col.Detail.Fk) <= 0 {
 				continue
 			}
 
-			fkn := col.Detail.Key
+			n := 0
 			with := col.Detail.With
-			if field.TpResult == TpResult {
-				result, err := with.
-					Where(fkn).Eq(key).
-					All()
-				if err != nil {
+			if with == nil {
+				continue
+			}
+
+			ql := From(with)
+			for fkn, pk := range col.Detail.Fk {
+				key := (*data)[pk]
+				if key == nil {
 					continue
 				}
 
+				if n == 0 {
+					ql.Where(fkn).Eq(key)
+				} else {
+					ql.And(fkn).Eq(key)
+				}
+				n++
+			}
+
+			if field.TpResult == TpResult {
+				result, err := ql.All()
+				if err != nil {
+					continue
+				}
 				data.Set(col.Name, result.Result)
 			} else {
-				all, err := with.
-					Where(fkn).Eq(key).
+				all, err := ql.
 					Counted()
 				if err != nil {
 					continue
 				}
 
-				result, err := with.
-					Where(fkn).Eq(key).
+				result, err := ql.
 					Page(field.Page).
 					Rows(field.Rows)
 				if err != nil {
@@ -68,30 +77,40 @@ func (s *Ql) GetDetails(data *et.Json) *et.Json {
 			if col.Rollup == nil {
 				continue
 			}
-			if col.Rollup.Fk == nil {
-				continue
-			}
-			pkn := col.Rollup.Key
-			key := (*data)[pkn]
-			if key == nil {
+			if len(col.Rollup.Fk) <= 0 {
 				continue
 			}
 
-			n := len(col.Rollup.Props)
-			if n <= 0 {
-				continue
-			}
-
-			fkn := col.Rollup.Fk.Name
+			n := 0
 			source := col.Rollup.Source
-			props := make([]string, 0)
-			for _, prop := range col.Rollup.Props {
-				props = append(props, prop.Name)
+			if source == nil {
+				continue
 			}
-			if n == 1 {
+
+			ql := From(source)
+			for fkn, pk := range col.Rollup.Fk {
+				key := (*data)[pk]
+				if key == nil {
+					continue
+				}
+
+				if n == 0 {
+					ql.Where(fkn).Eq(key)
+				} else {
+					ql.And(fkn).Eq(key)
+				}
+				n++
+			}
+
+			props := make([]string, 0)
+			props = append(props, col.Rollup.Props...)
+
+			switch len(props) {
+			case 0:
+				continue
+			case 1:
 				prop := props[0]
-				result, err := source.
-					Where(fkn).Eq(key).
+				result, err := ql.
 					Data(prop).
 					One()
 				if err != nil {
@@ -99,9 +118,8 @@ func (s *Ql) GetDetails(data *et.Json) *et.Json {
 				}
 
 				data.Set(col.Name, result.Result[prop])
-			} else {
-				result, err := source.
-					Where(fkn).Eq(key).
+			default:
+				result, err := ql.
 					Data(props...).
 					One()
 				if err != nil {
