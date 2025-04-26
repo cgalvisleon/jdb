@@ -70,7 +70,7 @@ func (s *Postgres) QueryRow(query string, dest ...any) (bool, error) {
 func (s *Postgres) Query(sql string, arg ...any) (et.Items, error) {
 	rows, err := s.query(s.db, sql, arg...)
 	if err != nil {
-		return et.Items{}, console.QueryError(err, sql)
+		return et.Items{}, err
 	}
 	defer rows.Close()
 
@@ -87,7 +87,7 @@ func (s *Postgres) Query(sql string, arg ...any) (et.Items, error) {
 func (s *Postgres) One(sql string, arg ...any) (et.Item, error) {
 	rows, err := s.query(s.db, sql, arg...)
 	if err != nil {
-		return et.Item{}, console.QueryError(err, sql)
+		return et.Item{}, err
 	}
 	defer rows.Close()
 
@@ -104,7 +104,7 @@ func (s *Postgres) One(sql string, arg ...any) (et.Item, error) {
 func (s *Postgres) Data(sourceFiled, sql string, arg ...any) (et.Items, error) {
 	rows, err := s.query(s.db, sql, arg...)
 	if err != nil {
-		return et.Items{}, console.QueryError(err, sql)
+		return et.Items{}, err
 	}
 	defer rows.Close()
 

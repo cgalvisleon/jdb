@@ -1,6 +1,9 @@
 package jdb
 
 import (
+	"strings"
+
+	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/strs"
 )
@@ -29,6 +32,7 @@ type Ql struct {
 	Limit      int        `json:"limit"`
 	Sql        string     `json:"sql"`
 	Result     et.Items   `json:"result"`
+	Help       et.Json    `json:"help"`
 }
 
 /**
@@ -45,6 +49,7 @@ func (s *Ql) Describe() et.Json {
 		"order_by": s.listOrders(),
 		"select":   s.listSelects(),
 		"limit":    s.listLimit(),
+		"help":     s.Help,
 	}
 }
 
@@ -67,14 +72,48 @@ func (s *Ql) addFrom(m *Model) *QlFrom {
 }
 
 /**
+* validator
+* validate this val is a field or basic type
+* @param val interface{}
+* @return interface{}
+**/
+func (s *Ql) validator(val interface{}) interface{} {
+	console.Debug("validator:", val)
+	switch v := val.(type) {
+	case string:
+		if strings.HasPrefix(v, "v:") || strings.HasPrefix(v, "V:") {
+			v = strings.TrimPrefix(v, "v:")
+			v = strings.TrimPrefix(v, "V:")
+			return v
+		}
+		result := s.getField(v)
+		if result != nil {
+			return result
+		}
+
+		return v
+	case *Field:
+		return v
+	case Field:
+		return v
+	case *Column:
+		return v.GetField()
+	case Column:
+		return v.GetField()
+	default:
+		return v
+	}
+}
+
+/**
 * getField
-* @param name string bool
+* @param name string, isCreated bool
 * @return *Field
 **/
-func (s *Ql) getField(name string) *Field {
+func (s *Ql) getField(name string, isCreated bool) *Field {
 	findField := func(name string) *Field {
 		for _, from := range s.Froms.Froms {
-			field := from.getField(name)
+			field := from.getField(name, isCreated)
 			if field != nil {
 				return field
 			}

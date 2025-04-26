@@ -266,44 +266,6 @@ func GetModel(name string, isCreate bool) *Model {
 }
 
 /**
-* GetField
-* @param name string
-* @return *Field
-**/
-func GetField(name string) *Field {
-	list := strs.Split(name, ".")
-
-	switch len(list) {
-	case 2: // model
-		modelName := list[0]
-		model := GetModel(modelName, false)
-		if model == nil {
-			return nil
-		}
-
-		return model.GetField(list[1])
-	case 3: // schema, model
-		modelName := strs.Format(`%s.%s`, list[0], list[1])
-		model := GetModel(modelName, false)
-		if model == nil {
-			return nil
-		}
-
-		return model.GetField(list[2])
-	case 4: // db, schema, model
-		modelName := strs.Format(`%s.%s.%s`, list[0], list[1], list[2])
-		model := GetModel(modelName, false)
-		if model == nil {
-			return nil
-		}
-
-		return model.GetField(list[3])
-	default:
-		return nil
-	}
-}
-
-/**
 * Describe
 * @param name string
 * @return et.Json
@@ -373,7 +335,7 @@ func Describe(name string) (et.Json, error) {
 			return et.Json{}, mistake.Newf(MSG_MODEL_NOT_FOUND, list[2])
 		}
 
-		field := model.GetField(list[3])
+		field := model.getField(list[3], false)
 		if field != nil {
 			return field.Describe(), nil
 		}

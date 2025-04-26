@@ -1,9 +1,11 @@
 package jdb
 
 import (
+	"slices"
+	"strings"
+
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/mistake"
-	"github.com/cgalvisleon/et/strs"
 )
 
 type TypeCommand int
@@ -158,7 +160,7 @@ func (s *Command) Rollback() error {
 **/
 func (s *Command) Return(fields ...string) *Command {
 	for _, name := range fields {
-		field := s.getField(name)
+		field := s.getField(name, true)
 		if field == nil {
 			continue
 		}
@@ -170,16 +172,40 @@ func (s *Command) Return(fields ...string) *Command {
 }
 
 /**
-* asField
-* @param field *Field
-* @return string
+* validator
+* validate this val is a field or basic type
+* @return interface{}
 **/
-func (s *Command) asField(field *Field) string {
-	if s.From == nil {
-		return field.Name
-	}
+func (s *Command) validator(val interface{}) interface{} {
+	switch v := val.(type) {
+	case string:
+		if strings.HasPrefix(v, "v:") || strings.HasPrefix(v, "V:") {
+			v = strings.TrimPrefix(v, "v:")
+			v = strings.TrimPrefix(v, "V:")
+			return v
+		}
+		result := s.getField(v, false)
+		if result != nil {
+			return result
+		}
 
-	return strs.Format("%s.%s", field.Table, field.Name)
+		return v
+	default:
+		if v == nil {
+			return "nil"
+		}
+
+		return v
+	}
+}
+
+/**
+* getField
+* @param name string, isCreate bool
+* @return *Field
+**/
+func (s *Command) getField(name string, isCreate bool) *Field {
+	return s.From.getField(name, isCreate)
 }
 
 /**
@@ -188,7 +214,46 @@ func (s *Command) asField(field *Field) string {
 * @return *Command
 **/
 func (s *Command) setWhere(wheres et.Json) *Command {
-	s.QlWhere.setWheres(wheres, s.getField)
+	if len(wheres) == 0 {
+		return s
+	}
+
+	and := func(vals []et.Json) {
+		for _, val := range vals {
+			for key := range val {
+				s.and(key)
+				s.setValue(val.Json(key), s.validator)
+			}
+		}
+	}
+
+	or := func(vals []et.Json) {
+		for _, val := range vals {
+			for key := range val {
+				s.or(key)
+				s.setValue(val.Json(key), s.validator)
+			}
+		}
+	}
+
+	for key := range wheres {
+		if slices.Contains([]string{"and", "AND", "or", "OR"}, key) {
+			continue
+		}
+
+		s.Where(key).setValue(wheres.Json(key), s.validator)
+	}
+
+	for key := range wheres {
+		switch key {
+		case "and", "AND":
+			vals := wheres.ArrayJson(key)
+			and(vals)
+		case "or", "OR":
+			vals := wheres.ArrayJson(key)
+			or(vals)
+		}
+	}
 
 	return s
 }
@@ -198,5 +263,5 @@ func (s *Command) setWhere(wheres et.Json) *Command {
 * @return et.Json
 **/
 func (s *Command) listWheres() et.Json {
-	return s.QlWhere.listWheres(s.asField)
+	return s.QlWhere.listWheres()
 }

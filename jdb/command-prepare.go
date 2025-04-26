@@ -33,7 +33,7 @@ func (s *Command) prepare() {
 	for _, data := range s.Data {
 		item := make(map[string]*Field, 0)
 		for k, v := range data {
-			field := from.GetField(k)
+			field := from.getField(k, true)
 			if field == nil {
 				continue
 			}

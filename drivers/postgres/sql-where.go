@@ -37,14 +37,10 @@ func whereCondition(con *jdb.QlCondition) string {
 		return ""
 	}
 
-	key := whereKey(con.Field)
+	key := whereValue(con.Field)
 	values := whereValue(con.Value)
 	def := whereOperator(con, values)
 	return strs.Format("%v%v", key, def)
-}
-
-func whereKey(val interface{}) string {
-	return whereValue(val)
 }
 
 func whereValue(val interface{}) string {

@@ -442,13 +442,7 @@ func (s *Model) defineSourceField() *Column {
 **/
 func (s *Model) defineAtribute(name string, typeData TypeData) *Column {
 	s.defineSourceField()
-	result := s.GetColumn(name)
-	if result != nil {
-		return result
-	}
-
-	result = newColumn(s, name, "", TpAtribute, typeData, typeData.DefaultValue())
-	result.Source = s.SourceField
+	result := newAtribute(s, name, typeData)
 	s.Columns = append(s.Columns, result)
 
 	return result

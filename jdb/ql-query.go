@@ -161,18 +161,7 @@ func (s *Ql) List(page, rows int) (et.List, error) {
 **/
 func (s *Ql) Query(params et.Json) (interface{}, error) {
 	if len(params) == 0 {
-		return et.Json{
-			"data":     []string{"name"},
-			"select":   []string{SYSID},
-			"join":     []et.Json{},
-			"where":    et.Json{},
-			"group_by": []string{},
-			"having":   et.Json{},
-			"order_by": et.Json{},
-			"page":     1,
-			"limit":    30,
-			"details":  []et.Json{},
-		}, nil
+		return s.Help, nil
 	}
 
 	joins := params.ArrayJson("join")

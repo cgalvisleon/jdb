@@ -64,8 +64,7 @@ func (s Operator) Str() string {
 		return "<="
 	case Between:
 		return "between"
-	case
-		IsNull:
+	case IsNull:
 		return "is null"
 	case NotNull:
 		return "is not null"
@@ -193,12 +192,31 @@ func StrToOperator(str string) Operator {
 
 type QlCondition struct {
 	Connector Connector
-	Field     *Field
+	Field     interface{}
 	Operator  Operator
 	Value     interface{}
 	Language  string
 }
 
+/**
+* NewQlCondition
+* @params field interface{}
+* @return QlWhere
+**/
+func NewQlCondition(field interface{}) *QlCondition {
+	return &QlCondition{
+		Connector: NoC,
+		Field:     field,
+		Operator:  NoP,
+		Value:     []interface{}{},
+	}
+}
+
+/**
+* setVal
+* @param val interface{}
+* @return *QlCondition
+**/
 func (s *QlCondition) setVal(val interface{}) {
 	switch v := val.(type) {
 	case *Field:
@@ -215,27 +233,33 @@ func (s *QlCondition) setVal(val interface{}) {
 }
 
 /**
-* GetValue
-* @param val interface{}
+* getField
 * @return string
 **/
-func (s *QlCondition) GetValue() interface{} {
+func (s *QlCondition) getField() string {
 	switch v := s.Value.(type) {
 	case *Field:
 		return v.AsName()
 	case Field:
 		return v.AsName()
 	default:
-		return strs.Format(`%v`, utility.Quote(v))
+		return fmt.Sprintf(`%v`, utility.Quote(v))
 	}
 }
 
 /**
-* ValStr
-* @return *string
+* getValue
+* @return string
 **/
-func (s *QlCondition) ValStr() string {
-	return fmt.Sprintf(`%v`, s.GetValue())
+func (s *QlCondition) getValue() string {
+	switch v := s.Value.(type) {
+	case *Field:
+		return v.AsName()
+	case Field:
+		return v.AsName()
+	default:
+		return fmt.Sprintf(`%v`, utility.Quote(v))
+	}
 }
 
 /**
@@ -248,23 +272,9 @@ func (s *QlCondition) String() string {
 	if s.Connector != NoC {
 		result = strs.Append(result, s.Connector.Str(), " ")
 	}
-	result = strs.Append(result, s.Field.AsName(), " ")
+	result = strs.Append(result, s.getField(), " ")
 	result = strs.Append(result, s.Operator.Str(), " ")
-	result = strs.Append(result, s.ValStr(), " ")
+	result = strs.Append(result, s.getValue(), " ")
 
 	return result
-}
-
-/**
-* NewQlCondition
-* @params key interface{}
-* @return QlWhere
-**/
-func NewQlCondition(field *Field) *QlCondition {
-	return &QlCondition{
-		Connector: NoC,
-		Field:     field,
-		Operator:  NoP,
-		Value:     []interface{}{},
-	}
 }

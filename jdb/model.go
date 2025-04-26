@@ -413,34 +413,34 @@ func (s *Model) GetColumnsArray(names ...string) []string {
 
 /**
 * getField
-* @param name string
+* @param name string, isCreate bool
 * @return *Field
 **/
-func (s *Model) getField(name string) *Field {
-	col := s.GetColumn(name)
-	if col != nil {
-		return col.GetField()
+func (s *Model) getField(name string, isCreate bool) *Field {
+
+	getField := func(name string, isCreate bool) *Field {
+		col := s.GetColumn(name)
+		if col != nil {
+			return col.GetField()
+		}
+
+		if s.Integrity {
+			return nil
+		}
+
+		if s.SourceField == nil {
+			return nil
+		}
+
+		if !isCreate {
+			return nil
+		}
+
+		result := newAtribute(s, name, TypeDataText)
+
+		return result.GetField()
 	}
 
-	if s.Integrity {
-		return nil
-	}
-
-	if s.SourceField == nil {
-		return nil
-	}
-
-	result := s.defineAtribute(name, TypeDataText)
-
-	return result.GetField()
-}
-
-/**
-* GetField
-* @param name string
-* @return *Field
-**/
-func (s *Model) GetField(name string) *Field {
 	list := strs.Split(name, ":")
 	alias := ""
 	if len(list) > 1 {
@@ -451,7 +451,7 @@ func (s *Model) GetField(name string) *Field {
 	list = strs.Split(name, ".")
 	switch len(list) {
 	case 1:
-		result := s.getField(list[0])
+		result := getField(list[0], isCreate)
 		if alias != "" {
 			result.Alias = alias
 		}
@@ -462,7 +462,7 @@ func (s *Model) GetField(name string) *Field {
 			return nil
 		}
 
-		result := s.getField(list[1])
+		result := getField(list[1], isCreate)
 		if alias != "" {
 			result.Alias = alias
 		}
@@ -474,7 +474,7 @@ func (s *Model) GetField(name string) *Field {
 			return nil
 		}
 
-		result := s.getField(list[2])
+		result := getField(list[2], isCreate)
 		if alias != "" {
 			result.Alias = alias
 		}

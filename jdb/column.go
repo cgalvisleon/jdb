@@ -304,6 +304,27 @@ func newColumn(model *Model, name string, description string, typeColumn TypeCol
 }
 
 /**
+* newAtribute
+* @param model *Model, name string, typeData TypeData
+* @return *Column
+**/
+func newAtribute(model *Model, name string, typeData TypeData) *Column {
+	if model.SourceField == nil {
+		return nil
+	}
+
+	result := model.GetColumn(name)
+	if result != nil {
+		return result
+	}
+
+	result = newColumn(model, name, "", TpAtribute, typeData, typeData.DefaultValue())
+	result.Source = model.SourceField
+
+	return result
+}
+
+/**
 * Describe
 * @return et.Json
 **/

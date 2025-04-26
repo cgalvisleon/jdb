@@ -2,6 +2,7 @@ package jdb
 
 import (
 	"encoding/json"
+	"slices"
 
 	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
@@ -65,17 +66,13 @@ func (s *QlJoin) Describe() et.Json {
 
 /**
 * On
-* @param name string
-* @return *Ql
+* @param val string
+* @return *QlJoin
 **/
-func (s *QlJoin) On(val interface{}) *QlJoin {
-	switch v := val.(type) {
-	case string:
-		field := s.Ql.getField(v)
-		if field != nil {
-			s.where(field)
-			return s
-		}
+func (s *QlJoin) On(val string) *QlJoin {
+	field := s.Ql.getField(val)
+	if field != nil {
+		s.where(field)
 	}
 
 	return s
@@ -83,17 +80,13 @@ func (s *QlJoin) On(val interface{}) *QlJoin {
 
 /**
 * And
-* @param field string
-* @return *QlFilter
+* @param val interface{}
+* @return *QlJoin
 **/
 func (s *QlJoin) And(val interface{}) *QlJoin {
-	switch v := val.(type) {
-	case string:
-		field := s.Ql.getField(v)
-		if field != nil {
-			s.and(field)
-			return s
-		}
+	val = s.Ql.validator(val)
+	if val != nil {
+		s.and(val)
 	}
 
 	return s
@@ -101,42 +94,13 @@ func (s *QlJoin) And(val interface{}) *QlJoin {
 
 /**
 * Or
-* @param field string
-* @return *QlFilter
-**/
-func (s *QlJoin) Or(val interface{}) *QlJoin {
-	switch v := val.(type) {
-	case string:
-		field := s.Ql.getField(v)
-		if field != nil {
-			s.or(field)
-			return s
-		}
-	}
-
-	return s
-}
-
-/**
-* setValue
-* @param val et.Json
+* @param val interface{}
 * @return *QlJoin
 **/
-func (s *QlJoin) setValue(val et.Json) *QlJoin {
-	for key, value := range val {
-		switch v := value.(type) {
-		case string:
-			field := s.Ql.getField(v)
-			if field != nil {
-				console.Debug("QlJoin:", field.Describe().ToString())
-				s.QlWhere.setValue(et.Json{key: field})
-				continue
-			}
-
-			s.QlWhere.setValue(et.Json{key: v})
-		default:
-			s.QlWhere.setValue(et.Json{key: v})
-		}
+func (s *QlJoin) Or(val interface{}) *QlJoin {
+	val = s.Ql.validator(val)
+	if val != nil {
+		s.or(val)
 	}
 
 	return s
@@ -162,15 +126,11 @@ func (s *QlJoin) Data(fields ...string) *Ql {
 
 /**
 * QlJoin
-* @param m *Model
+* @param name interface{}
 * @return *Ql
 **/
-func (s *Ql) Join(m *Model) *QlJoin {
-	with := s.addFrom(m)
-	if with == nil {
-		return nil
-	}
-
+func (s *Ql) Join(model *Model) *QlJoin {
+	with := s.addFrom(model)
 	result := &QlJoin{
 		QlWhere:  NewQlWhere(),
 		Ql:       s,
@@ -220,7 +180,7 @@ func (s *Ql) FullJoin(m *Model) *QlJoin {
 }
 
 /**
-* SetValue
+* setWheres
 * @param wheres et.Json
 * @return *QlJoin
 **/
@@ -229,9 +189,41 @@ func (s *QlJoin) setWheres(wheres et.Json) *QlJoin {
 		return s
 	}
 
+	and := func(vals []et.Json) {
+		for _, val := range vals {
+			for key := range val {
+				s.and(key)
+				s.setValue(val.Json(key), s.Ql.validator)
+			}
+		}
+	}
+
+	or := func(vals []et.Json) {
+		for _, val := range vals {
+			for key := range val {
+				s.or(key)
+				s.setValue(val.Json(key), s.Ql.validator)
+			}
+		}
+	}
+
 	for key := range wheres {
-		val := wheres.Json(key)
-		s.On(key).setValue(val)
+		if slices.Contains([]string{"and", "AND", "or", "OR"}, key) {
+			continue
+		}
+
+		s.On(key).setValue(wheres.Json(key), s.Ql.validator)
+	}
+
+	for key := range wheres {
+		switch key {
+		case "and", "AND":
+			vals := wheres.ArrayJson(key)
+			and(vals)
+		case "or", "OR":
+			vals := wheres.ArrayJson(key)
+			or(vals)
+		}
 	}
 
 	return s
@@ -263,7 +255,7 @@ func (s *Ql) listJoins() []et.Json {
 	result := []et.Json{}
 	for _, join := range s.Joins {
 		item := et.Json{
-			join.With.Name: join.listWheres(s.asField),
+			join.With.Name: join.listWheres(),
 		}
 		result = append(result, item)
 	}

@@ -1,6 +1,7 @@
 package jdb
 
 import (
+	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/strs"
 )
 
@@ -14,21 +15,7 @@ type QlFroms struct {
 	index int
 }
 
-func From(name any) *Ql {
-	var model *Model
-	switch v := name.(type) {
-	case string:
-		model = GetModel(v, false)
-	case *Model:
-		model = v
-	default:
-		return nil
-	}
-
-	if model == nil {
-		return nil
-	}
-
+func From(model *Model) *Ql {
 	result := &Ql{
 		Db:         model.Db,
 		TypeSelect: Select,
@@ -42,23 +29,53 @@ func From(name any) *Ql {
 		Offset:     0,
 		Limit:      0,
 		Sheet:      0,
+		Help: et.Json{
+			"from":   model.Name,
+			"data":   []string{"name", "status_id", "kinds.name:status"},
+			"select": []string{SYSID},
+			"join": []et.Json{
+				{
+					"kinds": et.Json{
+						"status_id": et.Json{
+							"eq": "kinds.id",
+						},
+					},
+					"AND": []et.Json{},
+					"OR":  []et.Json{},
+				},
+			},
+			"where": et.Json{
+				"status_id": et.Json{
+					"eq": "kinds.id",
+				},
+				"AND": []et.Json{
+					{
+						"name": et.Json{
+							"eq": "v:name",
+						},
+					},
+				},
+				"OR": []et.Json{},
+			},
+			"group_by": []string{"name"},
+			"having": et.Json{
+				"name": et.Json{
+					"eq": "name",
+				},
+				"AND": []et.Json{},
+				"OR":  []et.Json{},
+			},
+			"order_by": et.Json{
+				"ASC":  []string{"name"},
+				"DESC": []string{"name"},
+			},
+			"page":    1,
+			"limit":   30,
+			"details": []et.Json{},
+		},
 	}
 	result.Havings = &QlHaving{Ql: result, QlWhere: NewQlWhere()}
 	result.addFrom(model)
-
-	return result
-}
-
-/**
-* getField
-* @param name string, isCreated bool
-* @return *Field
-**/
-func (s *QlFrom) getField(name string) *Field {
-	result := s.GetField(name)
-	if result != nil {
-		result.As = s.As
-	}
 
 	return result
 }
