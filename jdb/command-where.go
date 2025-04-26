@@ -48,7 +48,10 @@ func (s *Command) Or(val string) *Command {
 * @return *Command
 **/
 func (s *Command) Eq(val interface{}) *Command {
-	s.QlWhere.Eq(val)
+	val = s.validator(val)
+	if val != nil {
+		s.QlWhere.Eq(val)
+	}
 
 	return s
 }
@@ -59,7 +62,10 @@ func (s *Command) Eq(val interface{}) *Command {
 * @return *Command
 **/
 func (s *Command) Neg(val interface{}) *Command {
-	s.QlWhere.Neg(val)
+	val = s.validator(val)
+	if val != nil {
+		s.QlWhere.Neg(val)
+	}
 
 	return s
 }
@@ -81,7 +87,10 @@ func (s *Command) In(val ...any) *Command {
 * @return *Command
 **/
 func (s *Command) Like(val interface{}) *Command {
-	s.QlWhere.Like(val)
+	val = s.validator(val)
+	if val != nil {
+		s.QlWhere.Like(val)
+	}
 
 	return s
 }
@@ -92,7 +101,10 @@ func (s *Command) Like(val interface{}) *Command {
 * @return *Command
 **/
 func (s *Command) More(val interface{}) *Command {
-	s.QlWhere.More(val)
+	val = s.validator(val)
+	if val != nil {
+		s.QlWhere.More(val)
+	}
 
 	return s
 }
@@ -103,7 +115,10 @@ func (s *Command) More(val interface{}) *Command {
 * @return *Command
 **/
 func (s *Command) Less(val interface{}) *Command {
-	s.QlWhere.Less(val)
+	val = s.validator(val)
+	if val != nil {
+		s.QlWhere.Less(val)
+	}
 
 	return s
 }
@@ -114,7 +129,10 @@ func (s *Command) Less(val interface{}) *Command {
 * @return *Command
 **/
 func (s *Command) MoreEq(val interface{}) *Command {
-	s.QlWhere.MoreEq(val)
+	val = s.validator(val)
+	if val != nil {
+		s.QlWhere.MoreEq(val)
+	}
 
 	return s
 }
@@ -125,7 +143,10 @@ func (s *Command) MoreEq(val interface{}) *Command {
 * @return *Command
 **/
 func (s *Command) LessEq(val interface{}) *Command {
-	s.QlWhere.LessEq(val)
+	val = s.validator(val)
+	if val != nil {
+		s.QlWhere.LessEq(val)
+	}
 
 	return s
 }
@@ -137,7 +158,10 @@ func (s *Command) LessEq(val interface{}) *Command {
 * @return *Command
 **/
 func (s *Command) Between(vals interface{}) *Command {
-	s.QlWhere.Between(vals)
+	vals = s.validator(vals)
+	if vals != nil {
+		s.QlWhere.Between(vals)
+	}
 
 	return s
 }

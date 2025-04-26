@@ -107,8 +107,8 @@ func (s *Ql) One() (et.Item, error) {
 }
 
 /**
-* Offset
-* @param offset int
+* Page
+* @param page int
 * @return *Ql
 **/
 func (s *Ql) Page(val int) *Ql {
@@ -117,9 +117,9 @@ func (s *Ql) Page(val int) *Ql {
 }
 
 /**
-* Limit
+* Rows
 * @param limit int
-* @return *Ql
+* @return et.Items, error
 **/
 func (s *Ql) Rows(val int) (et.Items, error) {
 	if s.Db == nil {
@@ -131,8 +131,7 @@ func (s *Ql) Rows(val int) (et.Items, error) {
 
 /**
 * List
-* @param page int
-* @param rows int
+* @param page, rows int
 * @return et.List, error
 **/
 func (s *Ql) List(page, rows int) (et.List, error) {

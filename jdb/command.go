@@ -172,6 +172,15 @@ func (s *Command) Return(fields ...string) *Command {
 }
 
 /**
+* getField
+* @param name string, isCreate bool
+* @return *Field
+**/
+func (s *Command) getField(name string, isCreate bool) *Field {
+	return s.From.getField(name, isCreate)
+}
+
+/**
 * validator
 * validate this val is a field or basic type
 * @return interface{}
@@ -179,14 +188,24 @@ func (s *Command) Return(fields ...string) *Command {
 func (s *Command) validator(val interface{}) interface{} {
 	switch v := val.(type) {
 	case string:
-		if strings.HasPrefix(v, "v:") || strings.HasPrefix(v, "V:") {
-			v = strings.TrimPrefix(v, "v:")
-			v = strings.TrimPrefix(v, "V:")
-			return v
+		if strings.HasPrefix(v, "$") {
+			v = strings.TrimPrefix(v, "$")
+			field := s.getField(v, false)
+			if field != nil {
+				return field
+			}
+			return nil
 		}
 		result := s.getField(v, false)
 		if result != nil {
 			return result
+		}
+
+		v = strings.Replace(v, `\\$`, `\$`, 1)
+		v = strings.Replace(v, `\$`, `$`, 1)
+		field := s.getField(v, false)
+		if field != nil {
+			return field
 		}
 
 		return v
@@ -197,15 +216,6 @@ func (s *Command) validator(val interface{}) interface{} {
 
 		return v
 	}
-}
-
-/**
-* getField
-* @param name string, isCreate bool
-* @return *Field
-**/
-func (s *Command) getField(name string, isCreate bool) *Field {
-	return s.From.getField(name, isCreate)
 }
 
 /**

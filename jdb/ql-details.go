@@ -145,7 +145,7 @@ func (s *Ql) Detail(name string, page, rows int, tp TypeResult) *Ql {
 		return s
 	}
 
-	idx := slices.IndexFunc(s.Details, func(e *Field) bool { return e.AsField() == field.AsField() })
+	idx := slices.IndexFunc(s.Details, func(e *Field) bool { return e.asField() == field.asField() })
 	if idx == -1 {
 		s.Details = append(s.Details, field)
 	}

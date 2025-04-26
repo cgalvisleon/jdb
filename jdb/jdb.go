@@ -26,6 +26,37 @@ func init() {
 	}
 }
 
+type ConnectParams struct {
+	Driver   string  `json:"driver"`
+	Name     string  `json:"name"`
+	Params   et.Json `json:"params"`
+	UserCore bool    `json:"user_core"`
+}
+
+/**
+* Validate
+* @return error
+**/
+func (s *ConnectParams) validate() error {
+	if conn == nil {
+		return mistake.New(MSG_JDB_NOT_DEFINED)
+	}
+
+	if s.Driver == "" {
+		return mistake.New(MSG_DRIVER_NOT_DEFINED)
+	}
+
+	if s.Name == "" {
+		return mistake.New(MSG_DATABASE_NOT_DEFINED)
+	}
+
+	if _, ok := conn.Drivers[s.Driver]; !ok {
+		return mistake.New(MSG_DRIVER_NOT_DEFINED)
+	}
+
+	return nil
+}
+
 /**
 * Describe
 * @return et.Json
@@ -64,7 +95,7 @@ func (s *JDB) Describe() et.Json {
 * @return *DB, error
 **/
 func ConnectTo(params ConnectParams) (*DB, error) {
-	err := params.Validate()
+	err := params.validate()
 	if err != nil {
 		return nil, err
 	}
@@ -337,7 +368,7 @@ func Describe(name string) (et.Json, error) {
 
 		field := model.getField(list[3], false)
 		if field != nil {
-			return field.Describe(), nil
+			return field.describe(), nil
 		}
 
 		return model.Describe(), nil

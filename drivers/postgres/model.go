@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/strs"
 	"github.com/cgalvisleon/jdb/jdb"
 )
@@ -18,17 +19,21 @@ func (s *Postgres) LoadModel(model *jdb.Model) error {
 
 	if !existTable {
 		sql := s.ddlTable(model)
-		err := s.Exec(sql)
-		if err != nil {
-			return err
+		sqlIndex := s.ddlTableIndex(model)
+		sql = strs.Append(sql, sqlIndex, "\n")
+		if model.IsDebug {
+			console.Debug(sql)
 		}
 
-		sql = s.ddlTableIndex(model)
 		err = s.Exec(sql)
 		if err != nil {
 			return err
 		}
 
+		return nil
+	}
+
+	if model.UseCore {
 		return nil
 	}
 
@@ -73,6 +78,10 @@ func (s *Postgres) LoadModel(model *jdb.Model) error {
 **/
 func (s *Postgres) DropModel(model *jdb.Model) error {
 	sql := s.ddlTableDrop(model.Table)
+	if model.IsDebug {
+		console.Debug(sql)
+	}
+
 	err := s.Exec(sql)
 	if err != nil {
 		return err
@@ -93,6 +102,9 @@ func (s *Postgres) MutateModel(model *jdb.Model) error {
 	sql = strs.Append(sql, s.ddlTable(model), "\n")
 	sql = strs.Append(sql, s.ddlTableInsertTo(model, backupTable), "\n\n")
 	sql = strs.Append(sql, s.ddlTableIndex(model), "\n\n")
+	if model.IsDebug {
+		console.Debug(sql)
+	}
 	err := s.Exec(sql)
 	if err != nil {
 		return err

@@ -36,10 +36,10 @@ type Event func(model *Model, before et.Json, after et.Json) error
 type EventError func(model *Model, data et.Json)
 
 /**
-* EventErrorDefault
+* eventErrorDefault
 * @param model *Model, err et.Json
 **/
-func EventErrorDefault(model *Model, err et.Json) {
+func eventErrorDefault(model *Model, err et.Json) {
 	schema := ""
 	if model.Schema != nil {
 		schema = model.Schema.Name
@@ -58,11 +58,11 @@ func EventErrorDefault(model *Model, err et.Json) {
 }
 
 /**
-* EventInsertDefault
+* eventInsertDefault
 * @param model *Model, before et.Json, after et.Json
 * @return error
 **/
-func EventInsertDefault(model *Model, before et.Json, after et.Json) error {
+func eventInsertDefault(model *Model, before et.Json, after et.Json) error {
 	schema := ""
 	if model.Schema != nil {
 		schema = model.Schema.Name
@@ -84,11 +84,11 @@ func EventInsertDefault(model *Model, before et.Json, after et.Json) error {
 }
 
 /**
-* EventUpdateDefault
+* eventUpdateDefault
 * @param model *Model, before et.Json, after et.Json
 * @return error
 **/
-func EventUpdateDefault(model *Model, before et.Json, after et.Json) error {
+func eventUpdateDefault(model *Model, before et.Json, after et.Json) error {
 	schema := ""
 	if model.Schema != nil {
 		schema = model.Schema.Name
@@ -119,11 +119,11 @@ func EventUpdateDefault(model *Model, before et.Json, after et.Json) error {
 }
 
 /**
-* EventDeleteDefault
+* eventDeleteDefault
 * @param model *Model, before et.Json, after et.Json
 * @return error
 **/
-func EventDeleteDefault(model *Model, before et.Json, after et.Json) error {
+func eventDeleteDefault(model *Model, before et.Json, after et.Json) error {
 	schema := ""
 	if model.Schema != nil {
 		schema = model.Schema.Name
@@ -150,11 +150,11 @@ func EventDeleteDefault(model *Model, before et.Json, after et.Json) error {
 }
 
 /**
-* EventHistoryDefault
-* @param model *Model, before et.Json, after et.Json
+* eventHistoryDefault
+* @param model *Model, before et.Json
 * @return error
 **/
-func EventHistoryDefault(model *Model, before et.Json, after et.Json) error {
+func eventHistoryDefault(model *Model, before et.Json) error {
 	if model.History == nil {
 		return nil
 	}

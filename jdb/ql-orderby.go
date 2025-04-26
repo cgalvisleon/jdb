@@ -76,10 +76,10 @@ func (s *Ql) listOrders() et.Json {
 	asc := []string{}
 	desc := []string{}
 	for _, sel := range s.Orders.Asc {
-		asc = append(asc, sel.AsField())
+		asc = append(asc, sel.asField())
 	}
 	for _, sel := range s.Orders.Desc {
-		desc = append(desc, sel.AsField())
+		desc = append(desc, sel.asField())
 	}
 
 	return et.Json{

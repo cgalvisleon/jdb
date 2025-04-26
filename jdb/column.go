@@ -211,7 +211,7 @@ type Relation struct {
 	OnUpdateCascade bool              `json:"on_update_cascade"`
 }
 
-func (s *Relation) Describe() et.Json {
+func (s *Relation) describe() et.Json {
 	definition, err := json.Marshal(s)
 	if err != nil {
 		return et.Json{}
@@ -234,7 +234,7 @@ type Rollup struct {
 	Props  []string          `json:"props"`
 }
 
-func (s *Rollup) Describe() et.Json {
+func (s *Rollup) describe() et.Json {
 	definition, err := json.Marshal(s)
 	if err != nil {
 		return et.Json{}
@@ -256,7 +256,7 @@ type FullText struct {
 	Columns  []string `json:"columns"`
 }
 
-func (s *FullText) Describe() et.Json {
+func (s *FullText) describe() et.Json {
 	result := et.Json{
 		"language": s.Language,
 		"columns":  s.Columns,
@@ -313,7 +313,7 @@ func newAtribute(model *Model, name string, typeData TypeData) *Column {
 		return nil
 	}
 
-	result := model.GetColumn(name)
+	result := model.getColumn(name)
 	if result != nil {
 		return result
 	}
@@ -329,19 +329,14 @@ func newAtribute(model *Model, name string, typeData TypeData) *Column {
 * @return et.Json
 **/
 func (s *Column) Describe() et.Json {
-	var fulltext = []string{}
-	if s.FullText != nil {
-		fulltext = append(fulltext, s.FullText.Columns...)
-	}
-
 	detail := et.Json{}
 	if s.Detail != nil {
-		detail = s.Detail.Describe()
+		detail = s.Detail.describe()
 	}
 
 	rollup := et.Json{}
 	if s.Rollup != nil {
-		rollup = s.Rollup.Describe()
+		rollup = s.Rollup.describe()
 	}
 
 	result := et.Json{
@@ -358,7 +353,7 @@ func (s *Column) Describe() et.Json {
 		"hidden":      s.Hidden,
 		"detail":      detail,
 		"rollup":      rollup,
-		"fulltext":    fulltext,
+		"fulltext":    s.FullText.describe(),
 		"values":      s.Values,
 	}
 
@@ -369,7 +364,7 @@ func (s *Column) Describe() et.Json {
 * Idx
 * @return int
 **/
-func (s *Column) Idx() int {
+func (s *Column) idx() int {
 	if s.Model == nil {
 		return -1
 	}

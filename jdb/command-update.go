@@ -65,7 +65,7 @@ func (s *Command) updated() error {
 
 		changed := before.IsChanged(after)
 		if s.history && changed && model.History != nil {
-			err := EventHistoryDefault(model, before, after)
+			err := eventHistoryDefault(model, before)
 			if err != nil {
 				return err
 			}

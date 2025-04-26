@@ -289,7 +289,7 @@ func (s *Model) setDefine(tp TypeDefinition, args ...any) {
 * @return *Column
 **/
 func (s *Model) defineColumnIdx(name string, typeData TypeData, idx int) *Column {
-	result := s.GetColumn(name)
+	result := s.getColumn(name)
 	if result != nil {
 		return result
 	}
@@ -320,14 +320,14 @@ func (s *Model) defineColumn(name string, typeData TypeData) *Column {
 * @return *Model
 **/
 func (s *Model) defineIndex(sort bool, colums []string) *Model {
-	cols := s.GetColumns(colums...)
+	cols := s.getColumns(colums...)
 	if len(cols) == 0 {
 		return s
 	}
 
 	for _, col := range cols {
 		if col.TypeColumn == TpColumn {
-			idx := NewIndex(col, sort)
+			idx := newIndex(col, sort)
 			name := strs.Format("%s_%s_idx", s.Name, col.Name)
 			s.Indices[name] = idx
 		}
@@ -342,13 +342,13 @@ func (s *Model) defineIndex(sort bool, colums []string) *Model {
 * @return *Model
 **/
 func (s *Model) defineUnique(colums []string) *Model {
-	cols := s.GetColumns(colums...)
+	cols := s.getColumns(colums...)
 	if len(cols) == 0 {
 		return s
 	}
 
 	for _, col := range cols {
-		idx := NewIndex(col, true)
+		idx := newIndex(col, true)
 		name := strs.Format("%s_%s_idx", s.Name, col.Name)
 		s.Uniques[name] = idx
 	}
@@ -363,7 +363,7 @@ func (s *Model) defineUnique(colums []string) *Model {
 **/
 func (s *Model) definePrimaryKey(primaryKeys []string) *Model {
 	for _, primaryKey := range primaryKeys {
-		col := s.GetColumn(primaryKey)
+		col := s.getColumn(primaryKey)
 		if col != nil {
 			s.Required[col.Name] = true
 			s.PrimaryKeys[col.Name] = col
@@ -404,7 +404,7 @@ func (s *Model) defineForeignKey(fks map[string]string, withName string, onDelet
 	}
 
 	for fkn, pkn := range fks {
-		pk := with.GetColumn(pkn)
+		pk := with.getColumn(pkn)
 		if pk == nil {
 			continue
 		}
@@ -513,7 +513,7 @@ func (s *Model) defineIndexField() *Column {
 * @return *Column
 **/
 func (s *Model) defineFullText(language string, fields []string) *Column {
-	cols := s.GetColumnsArray(fields...)
+	cols := s.getColumnsArray(fields...)
 	result := s.defineColumn(string(FullTextField), FullTextField.TypeData())
 	result.FullText = &FullText{
 		Language: language,
@@ -552,7 +552,7 @@ func (s *Model) defineProjectField() *Column {
 **/
 func (s *Model) defineHidden(colums []string) *Model {
 	for _, name := range colums {
-		col := s.GetColumn(name)
+		col := s.getColumn(name)
 		if col != nil {
 			col.Hidden = true
 		}
@@ -568,7 +568,7 @@ func (s *Model) defineHidden(colums []string) *Model {
 **/
 func (s *Model) defineRequired(colums []string) *Model {
 	for _, name := range colums {
-		col := s.GetColumn(name)
+		col := s.getColumn(name)
 		if col != nil {
 			s.Required[name] = true
 		}
@@ -592,7 +592,7 @@ func (s *Model) defineRelation(name, relatedTo string, fks map[string]string, li
 		Limit: limit,
 	}
 	for fkn, pkn := range fks {
-		fk := with.GetColumn(fkn)
+		fk := with.getColumn(fkn)
 		if fk == nil {
 			continue
 		}
@@ -620,7 +620,7 @@ func (s *Model) defineRollup(name, rollupFrom string, fks map[string]string, pro
 
 	props := make([]string, 0)
 	for _, property := range properties {
-		col := source.GetColumn(property)
+		col := source.getColumn(property)
 		if col != nil {
 			props = append(props, col.Name)
 		}
@@ -632,7 +632,7 @@ func (s *Model) defineRollup(name, rollupFrom string, fks map[string]string, pro
 	}
 
 	for fkn, pkn := range fks {
-		pk := source.GetColumn(pkn)
+		pk := source.getColumn(pkn)
 		if pk == nil {
 			return nil
 		}

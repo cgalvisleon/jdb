@@ -18,12 +18,12 @@ func (s *Ql) setSelect(field *Field) *Ql {
 		}
 
 		if slices.Contains([]TypeColumn{TpColumn, TpAtribute}, field.Column.TypeColumn) {
-			idx := slices.IndexFunc(s.Selects, func(e *Field) bool { return e.AsField() == field.AsField() })
+			idx := slices.IndexFunc(s.Selects, func(e *Field) bool { return e.asField() == field.asField() })
 			if idx == -1 {
 				s.Selects = append(s.Selects, field)
 			}
 		} else if slices.Contains([]TypeColumn{TpRelatedTo, TpGenerated, TpRollup}, field.Column.TypeColumn) {
-			idx := slices.IndexFunc(s.Details, func(e *Field) bool { return e.AsField() == field.AsField() })
+			idx := slices.IndexFunc(s.Details, func(e *Field) bool { return e.asField() == field.asField() })
 			if idx == -1 {
 				s.Details = append(s.Details, field)
 			}
@@ -74,7 +74,7 @@ func (s *Ql) Exec() (et.Items, error) {
 func (s *Ql) listSelects() []string {
 	result := []string{}
 	for _, sel := range s.Selects {
-		result = append(result, sel.AsField())
+		result = append(result, sel.asField())
 	}
 
 	return result

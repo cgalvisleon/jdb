@@ -54,7 +54,7 @@ type Model struct {
 	eventsInsert    []Event              `json:"-"`
 	eventsUpdate    []Event              `json:"-"`
 	eventsDelete    []Event              `json:"-"`
-	isDebug         bool                 `json:"-"`
+	IsDebug         bool                 `json:"-"`
 	isInit          bool                 `json:"-"`
 }
 
@@ -99,10 +99,10 @@ func NewModel(schema *Schema, name string, version int) *Model {
 			eventsDelete:    make([]Event, 0),
 			Version:         version,
 		}
-		result.DefineEventError(EventErrorDefault)
-		result.DefineEvent(EventInsert, EventInsertDefault)
-		result.DefineEvent(EventUpdate, EventUpdateDefault)
-		result.DefineEvent(EventDelete, EventDeleteDefault)
+		result.DefineEventError(eventErrorDefault)
+		result.DefineEvent(EventInsert, eventInsertDefault)
+		result.DefineEvent(EventUpdate, eventUpdateDefault)
+		result.DefineEvent(EventDelete, eventDeleteDefault)
 
 		schema.models = append(schema.models, result)
 		schema.Db.models = append(schema.Db.models, result)
@@ -138,10 +138,10 @@ func NewModel(schema *Schema, name string, version int) *Model {
 		result.eventsInsert = make([]Event, 0)
 		result.eventsUpdate = make([]Event, 0)
 		result.eventsDelete = make([]Event, 0)
-		result.DefineEventError(EventErrorDefault)
-		result.DefineEvent(EventInsert, EventInsertDefault)
-		result.DefineEvent(EventUpdate, EventUpdateDefault)
-		result.DefineEvent(EventDelete, EventDeleteDefault)
+		result.DefineEventError(eventErrorDefault)
+		result.DefineEvent(EventInsert, eventInsertDefault)
+		result.DefineEvent(EventUpdate, eventUpdateDefault)
+		result.DefineEvent(EventDelete, eventDeleteDefault)
 		// define columns
 		for _, definition := range result.Definitions {
 			args := definition.Array("args")
@@ -228,7 +228,7 @@ func (s *Model) Init() error {
 	}
 
 	if s.SourceField != nil {
-		idx := s.SourceField.Idx()
+		idx := s.SourceField.idx()
 		if idx != len(s.Columns)-1 && idx > -1 {
 			s.Columns = append(s.Columns[:idx], s.Columns[idx+1:]...)
 			s.Columns = append(s.Columns, s.SourceField)
@@ -236,7 +236,7 @@ func (s *Model) Init() error {
 	}
 
 	if s.IndexField != nil {
-		idx := s.IndexField.Idx()
+		idx := s.IndexField.idx()
 		if idx != len(s.Columns)-1 && idx > -1 {
 			s.Columns = append(s.Columns[:idx], s.Columns[idx+1:]...)
 			s.Columns = append(s.Columns, s.IndexField)
@@ -244,7 +244,7 @@ func (s *Model) Init() error {
 	}
 
 	if s.SystemKeyField != nil {
-		idx := s.SystemKeyField.Idx()
+		idx := s.SystemKeyField.idx()
 		if idx != len(s.Columns)-1 && idx > -1 {
 			s.Columns = append(s.Columns[:idx], s.Columns[idx+1:]...)
 			s.Columns = append(s.Columns, s.SystemKeyField)
@@ -280,14 +280,6 @@ func (s *Model) Drop() {
 	}
 
 	s.Db.DropModel(s)
-}
-
-/**
-* IsDebug
-* @return bool
-**/
-func (s *Model) IsDebug() bool {
-	return s.isDebug
 }
 
 /**
@@ -350,7 +342,7 @@ func (s *Model) sourceIdx() int {
 		return -1
 	}
 
-	return s.SourceField.Idx()
+	return s.SourceField.idx()
 }
 
 /**
@@ -358,17 +350,17 @@ func (s *Model) sourceIdx() int {
 * @return *Model
 **/
 func (s *Model) Debug() *Model {
-	s.isDebug = true
+	s.IsDebug = true
 
 	return s
 }
 
 /**
-* GetColumn
+* getColumn
 * @param name string
 * @return *Column
 **/
-func (s *Model) GetColumn(name string) *Column {
+func (s *Model) getColumn(name string) *Column {
 	for _, col := range s.Columns {
 		if col.Name == name {
 			return col
@@ -379,15 +371,15 @@ func (s *Model) GetColumn(name string) *Column {
 }
 
 /**
-* GetColumns
+* getColumns
 * @param name string
 * @return *Column
 *
  */
-func (s *Model) GetColumns(names ...string) []*Column {
+func (s *Model) getColumns(names ...string) []*Column {
 	result := []*Column{}
 	for _, name := range names {
-		if col := s.GetColumn(name); col != nil {
+		if col := s.getColumn(name); col != nil {
 			result = append(result, col)
 		}
 	}
@@ -396,14 +388,14 @@ func (s *Model) GetColumns(names ...string) []*Column {
 }
 
 /**
-* GetColumnsArray
+* getColumnsArray
 * @param names ...string
 * @return []string
 **/
-func (s *Model) GetColumnsArray(names ...string) []string {
+func (s *Model) getColumnsArray(names ...string) []string {
 	result := []string{}
 	for _, name := range names {
-		if col := s.GetColumn(name); col != nil {
+		if col := s.getColumn(name); col != nil {
 			result = append(result, col.Name)
 		}
 	}
@@ -419,7 +411,7 @@ func (s *Model) GetColumnsArray(names ...string) []string {
 func (s *Model) getField(name string, isCreate bool) *Field {
 
 	getField := func(name string, isCreate bool) *Field {
-		col := s.GetColumn(name)
+		col := s.getColumn(name)
 		if col != nil {
 			return col.GetField()
 		}
@@ -483,19 +475,6 @@ func (s *Model) getField(name string, isCreate bool) *Field {
 	default:
 		return nil
 	}
-}
-
-/**
-* GetKeys
-* @return []*Column
-**/
-func (s *Model) GetKeys() []*Column {
-	result := []*Column{}
-	for _, col := range s.PrimaryKeys {
-		result = append(result, col)
-	}
-
-	return result
 }
 
 /**

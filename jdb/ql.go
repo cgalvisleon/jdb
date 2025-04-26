@@ -113,7 +113,7 @@ func (s *Ql) validator(val interface{}) interface{} {
 
 func (s *Ql) getColumnField(name string, isCreated bool) *Field {
 	for _, from := range s.Froms.Froms {
-		column := from.GetColumn(name)
+		column := from.getColumn(name)
 		if column != nil {
 			return column.GetField()
 		}

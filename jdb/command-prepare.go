@@ -11,7 +11,7 @@ func (s *Command) beforeInsert(item map[string]*Field) map[string]*Field {
 
 	if s.From.UseCore && s.From.IndexField != nil {
 		field := s.From.IndexField.GetField()
-		if field != nil && field.AsInt64() == 0 {
+		if field != nil {
 			field.Value = utility.GenIndex()
 			item[field.Name] = field
 		}
@@ -19,7 +19,7 @@ func (s *Command) beforeInsert(item map[string]*Field) map[string]*Field {
 
 	if s.From.UseCore && s.From.SystemKeyField != nil {
 		field := s.From.SystemKeyField.GetField()
-		if field != nil && field.AsStr() == "" {
+		if field != nil {
 			field.Value = s.From.GenId()
 			item[field.Name] = field
 		}
@@ -37,7 +37,7 @@ func (s *Command) prepare() {
 			if field == nil {
 				continue
 			}
-			field.SetValue(v)
+			field.setValue(v)
 			item[field.Name] = field
 		}
 		if s.Command == Insert {

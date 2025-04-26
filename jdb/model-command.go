@@ -51,3 +51,11 @@ func (s *Model) Undo(key string, index int64) *Command {
 
 	return result
 }
+
+/**
+* Sync
+* @return *Command
+**/
+func (s *Model) Sync() *Command {
+	return NewCommand(s, []et.Json{}, Sync)
+}

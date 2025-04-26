@@ -3,8 +3,6 @@ package jdb
 import (
 	"encoding/json"
 	"regexp"
-	"strconv"
-	"time"
 
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/strs"
@@ -106,11 +104,11 @@ type Field struct {
 }
 
 /**
-* NewField
+* newField
 * @param column *Column
 * @return *Field
 **/
-func NewField(column *Column) *Field {
+func newField(column *Column) *Field {
 	result := &Field{}
 	if column == nil {
 		return result
@@ -144,10 +142,10 @@ func NewField(column *Column) *Field {
 }
 
 /**
-* Describe
+* describe
 * @return et.Json
 **/
-func (s *Field) Describe() et.Json {
+func (s *Field) describe() et.Json {
 	definition, err := json.Marshal(s)
 	if err != nil {
 		return et.Json{}
@@ -163,10 +161,10 @@ func (s *Field) Describe() et.Json {
 }
 
 /**
-* SetValue
+* setValue
 * @param value interface{}
 **/
-func (s *Field) SetValue(value interface{}) {
+func (s *Field) setValue(value interface{}) {
 	regexpMust := func(pattern string, value interface{}) (string, bool) {
 		re := regexp.MustCompile(pattern)
 		matches := re.FindStringSubmatch(value.(string))
@@ -193,10 +191,10 @@ func (s *Field) SetValue(value interface{}) {
 }
 
 /**
-* SetAgregation
+* setAgregation
 * @param agr TypeAgregation
 **/
-func (s *Field) SetAgregation(agr TypeAgregation) {
+func (s *Field) setAgregation(agr TypeAgregation) {
 	s.Agregation = agr
 	switch agr {
 	case AgregationSum:
@@ -233,18 +231,10 @@ func (s *Field) ValueUnquoted() any {
 }
 
 /**
-* AsTable
+* asField
 * @return string
 **/
-func (s *Field) AsTable() string {
-	return strs.Format("%s.%s", s.Table, s.Name)
-}
-
-/**
-* AsField
-* @return string
-**/
-func (s *Field) AsField() string {
+func (s *Field) asField() string {
 	result := ""
 	result = strs.Append(result, s.Schema, "")
 	result = strs.Append(result, s.Table, ".")
@@ -255,10 +245,10 @@ func (s *Field) AsField() string {
 }
 
 /**
-* AsName
+* asName
 * @return string
 **/
-func (s *Field) AsName() string {
+func (s *Field) asName() string {
 	if s.As != "" {
 		return strs.Format("%s.%s", s.As, s.Name)
 	}
@@ -267,131 +257,11 @@ func (s *Field) AsName() string {
 }
 
 /**
-* AsString
-* @return string
-**/
-func (s *Field) AsStr() string {
-	if s.Value == nil {
-		return ""
-	}
-
-	return strs.Format("%v", s.Value)
-}
-
-/**
-* AsInt
-* @return int
-**/
-func (s *Field) AsInt() int {
-	if s.Value == nil {
-		return 0
-	}
-
-	result, err := strconv.Atoi(s.Value.(string))
-	if err != nil {
-		return 0
-	}
-
-	return result
-}
-
-/**
-* AsInt64
-* @return int64
-**/
-func (s *Field) AsInt64() int64 {
-	if s.Value == nil {
-		return 0
-	}
-
-	result, err := strconv.ParseInt(s.Value.(string), 10, 64)
-	if err != nil {
-		return 0
-	}
-
-	return result
-}
-
-/**
-* AsFloat
-* @return float64
-**/
-func (s *Field) AsFloat() float64 {
-	if s.Value == nil {
-		return 0
-	}
-
-	result, err := strconv.ParseFloat(s.Value.(string), 64)
-	if err != nil {
-		return 0
-	}
-
-	return result
-}
-
-/**
-* AsBool
-* @return bool
-**/
-func (s *Field) AsBool() bool {
-	if s.Value == nil {
-		return false
-	}
-
-	result, err := strconv.ParseBool(s.Value.(string))
-	if err != nil {
-		return false
-	}
-
-	return result
-}
-
-/**
-* AsTime
-* @return time.Time
-**/
-func (s *Field) AsTime() time.Time {
-	if s.Value == nil {
-		return time.Time{}
-	}
-
-	result, err := time.Parse(time.RFC3339, s.Value.(string))
-	if err != nil {
-		return time.Time{}
-	}
-
-	return result
-}
-
-/**
-* AsJson
-* @return et.Json
-**/
-func (s *Field) AsJson() et.Json {
-	if s.Value == nil {
-		return et.Json{}
-	}
-
-	bt, err := json.Marshal(s.Value)
-	if err != nil {
-		return et.Json{}
-	}
-
-	var result et.Json
-	err = json.Unmarshal(bt, &result)
-	if err != nil {
-		return et.Json{}
-	}
-
-	return result
-}
-
-/**
 * GetField
 * @return *Field
 **/
 func (s *Column) GetField() *Field {
-	result := NewField(s)
+	result := newField(s)
 
 	return result
 }

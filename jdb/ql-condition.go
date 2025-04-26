@@ -239,9 +239,9 @@ func (s *QlCondition) setVal(val interface{}) {
 func (s *QlCondition) getField() string {
 	switch v := s.Value.(type) {
 	case *Field:
-		return v.AsName()
+		return v.asName()
 	case Field:
-		return v.AsName()
+		return v.asName()
 	default:
 		return fmt.Sprintf(`%v`, utility.Quote(v))
 	}
@@ -254,9 +254,9 @@ func (s *QlCondition) getField() string {
 func (s *QlCondition) getValue() string {
 	switch v := s.Value.(type) {
 	case *Field:
-		return v.AsName()
+		return v.asName()
 	case Field:
-		return v.AsName()
+		return v.asName()
 	default:
 		return fmt.Sprintf(`%v`, utility.Quote(v))
 	}
