@@ -17,11 +17,9 @@ type QlHaving struct {
 * @return *QlHaving
 **/
 func (s *QlHaving) And(val string) *QlHaving {
-	field := s.Ql.getField(val)
+	field := s.Ql.getColumnField(val, true)
 	if field != nil {
 		s.and(field)
-	} else {
-		s.and(val)
 	}
 
 	return s
@@ -33,11 +31,9 @@ func (s *QlHaving) And(val string) *QlHaving {
 * @return *QlHaving
 **/
 func (s *QlHaving) Or(val string) *QlHaving {
-	field := s.Ql.getField(val)
+	field := s.Ql.getColumnField(val, true)
 	if field != nil {
 		s.or(field)
-	} else {
-		s.or(val)
 	}
 
 	return s
@@ -67,11 +63,9 @@ func (s *QlHaving) Data(fields ...string) *Ql {
 * @return *QlWhere
 **/
 func (s *Ql) Having(val string) *QlHaving {
-	field := s.getField(val)
+	field := s.getColumnField(val, true)
 	if field != nil {
 		s.Havings.where(field)
-	} else {
-		s.Havings.where(val)
 	}
 
 	return s.Havings

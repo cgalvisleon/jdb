@@ -8,7 +8,7 @@ import "github.com/cgalvisleon/et/utility"
 * @return *Ql
 **/
 func (s *Ql) Sum(field string) *Ql {
-	agr := s.getField(field)
+	agr := s.getField(field, false)
 	if agr != nil {
 		agr.SetAgregation(AgregationSum)
 		s.setSelect(agr)
@@ -27,7 +27,7 @@ func (s *Ql) Count(field string) *Ql {
 		return s
 	}
 
-	agr := s.getField(field)
+	agr := s.getField(field, false)
 	if agr != nil {
 		agr.SetAgregation(AgregationCount)
 		s.setSelect(agr)
@@ -46,7 +46,7 @@ func (s *Ql) Avg(field string) *Ql {
 		return s
 	}
 
-	agr := s.getField(field)
+	agr := s.getField(field, false)
 	if agr != nil {
 		agr.SetAgregation(AgregationAvg)
 		s.setSelect(agr)
@@ -65,7 +65,7 @@ func (s *Ql) Min(field string) *Ql {
 		return s
 	}
 
-	agr := s.getField(field)
+	agr := s.getField(field, false)
 	if agr != nil {
 		agr.SetAgregation(AgregationMin)
 		s.setSelect(agr)
@@ -84,7 +84,7 @@ func (s *Ql) Max(field string) *Ql {
 		return s
 	}
 
-	agr := s.getField(field)
+	agr := s.getField(field, false)
 	if agr != nil {
 		agr.SetAgregation(AgregationMax)
 		s.setSelect(agr)

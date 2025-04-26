@@ -38,11 +38,11 @@ func (s *Ql) setSelect(field *Field) *Ql {
 * @return *Ql
 **/
 func (s *Ql) Select(fields ...string) *Ql {
-	s.TypeSelect = Select
 	for _, name := range fields {
-		field := s.getField(name)
+		field := s.getField(name, true)
 		s.setSelect(field)
 	}
+	s.TypeSelect = Select
 
 	return s
 }

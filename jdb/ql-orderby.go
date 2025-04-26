@@ -17,7 +17,7 @@ type QlOrder struct {
 **/
 func (s *Ql) OrderBy(sorted bool, columns ...string) *Ql {
 	for _, col := range columns {
-		field := s.getField(col)
+		field := s.getField(col, false)
 		if field != nil {
 			if sorted {
 				s.Orders.Asc = append(s.Orders.Asc, field)

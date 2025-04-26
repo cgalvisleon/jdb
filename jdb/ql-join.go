@@ -70,7 +70,7 @@ func (s *QlJoin) Describe() et.Json {
 * @return *QlJoin
 **/
 func (s *QlJoin) On(val string) *QlJoin {
-	field := s.Ql.getField(val)
+	field := s.Ql.getField(val, false)
 	if field != nil {
 		s.where(field)
 	}

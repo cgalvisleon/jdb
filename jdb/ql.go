@@ -81,14 +81,20 @@ func (s *Ql) validator(val interface{}) interface{} {
 	console.Debug("validator:", val)
 	switch v := val.(type) {
 	case string:
-		if strings.HasPrefix(v, "v:") || strings.HasPrefix(v, "V:") {
-			v = strings.TrimPrefix(v, "v:")
-			v = strings.TrimPrefix(v, "V:")
-			return v
+		if strings.HasPrefix(v, "$") {
+			v = strings.TrimPrefix(v, "$")
+			field := s.getField(v, false)
+			if field != nil {
+				return field
+			}
+			return nil
 		}
-		result := s.getField(v)
-		if result != nil {
-			return result
+
+		v = strings.Replace(v, `\\$`, `\$`, 1)
+		v = strings.Replace(v, `\$`, `$`, 1)
+		field := s.getField(v, false)
+		if field != nil {
+			return field
 		}
 
 		return v
@@ -103,6 +109,23 @@ func (s *Ql) validator(val interface{}) interface{} {
 	default:
 		return v
 	}
+}
+
+func (s *Ql) getColumnField(name string, isCreated bool) *Field {
+	for _, from := range s.Froms.Froms {
+		column := from.GetColumn(name)
+		if column != nil {
+			return column.GetField()
+		}
+	}
+
+	if isCreated {
+		return &Field{
+			Name: name,
+		}
+	}
+
+	return nil
 }
 
 /**

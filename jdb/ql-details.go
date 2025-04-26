@@ -140,7 +140,7 @@ func (s *Ql) GetDetails(data *et.Json) *et.Json {
 * @return *Ql
 **/
 func (s *Ql) Detail(name string, page, rows int, tp TypeResult) *Ql {
-	field := s.getField(name)
+	field := s.getField(name, false)
 	if field == nil {
 		return s
 	}
