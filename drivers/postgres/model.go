@@ -6,6 +6,10 @@ import (
 	"github.com/cgalvisleon/jdb/jdb"
 )
 
+func table(model *jdb.Model) string {
+	return strs.Format(`%s.%s`, model.Schema.Name, model.Name)
+}
+
 /**
 * LoadModel
 * @param model *jdb.Model
@@ -77,7 +81,7 @@ func (s *Postgres) LoadModel(model *jdb.Model) error {
 * @return error
 **/
 func (s *Postgres) DropModel(model *jdb.Model) error {
-	sql := s.ddlTableDrop(model.Table)
+	sql := s.ddlTableDrop(table(model))
 	if model.IsDebug {
 		console.Debug(sql)
 	}
@@ -96,9 +100,9 @@ func (s *Postgres) DropModel(model *jdb.Model) error {
 * @return error
 **/
 func (s *Postgres) MutateModel(model *jdb.Model) error {
-	backupTable := strs.Format(`%s_backup`, model.Table)
+	backupTable := strs.Format(`%s_backup`, table(model))
 	sql := "\n"
-	sql = strs.Append(sql, s.ddlTableRename(model.Table, backupTable), "\n")
+	sql = strs.Append(sql, s.ddlTableRename(table(model), backupTable), "\n")
 	sql = strs.Append(sql, s.ddlTable(model), "\n")
 	sql = strs.Append(sql, s.ddlTableInsertTo(model, backupTable), "\n\n")
 	sql = strs.Append(sql, s.ddlTableIndex(model), "\n\n")

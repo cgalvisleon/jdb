@@ -89,7 +89,7 @@ func init() {
 type Field struct {
 	Column     *Column        `json:"column"`
 	Schema     string         `json:"schema"`
-	Table      string         `json:"table"`
+	Model      string         `json:"model"`
 	As         string         `json:"as"`
 	Name       string         `json:"name"`
 	Source     string         `json:"source"`
@@ -101,52 +101,50 @@ type Field struct {
 	Rows       int            `json:"rows"`
 	TpResult   TypeResult     `json:"tp_result"`
 	Unquoted   bool           `json:"unquoted"`
+	Select     []interface{}  `json:"select"`
+	Joins      []et.Json      `json:"joins"`
+	Where      et.Json        `json:"where"`
+	GroupBy    []string       `json:"group_by"`
+	Havings    et.Json        `json:"havings"`
+	OrderBy    et.Json        `json:"order_by"`
 }
 
 /**
 * newField
-* @param column *Column
+* @param name string
 * @return *Field
 **/
-func newField(column *Column) *Field {
-	result := &Field{}
-	if column == nil {
-		return result
+func newField(name string) *Field {
+	return &Field{
+		Name:    name,
+		Select:  make([]interface{}, 0),
+		Joins:   make([]et.Json, 0),
+		Where:   et.Json{},
+		GroupBy: make([]string, 0),
+		Havings: et.Json{},
+		OrderBy: et.Json{},
 	}
-
-	result.Column = column
-	result.Name = column.Name
-	result.Alias = column.Name
-	result.Hidden = column.Hidden
-
-	if column.TypeColumn == TpRelatedTo {
-		result.Page = 1
-		result.Rows = 30
-		result.TpResult = TpResult
-	}
-
-	if column.Model == nil {
-		return result
-	}
-
-	result.Schema = column.Model.Schema.Name
-	result.Table = column.Model.Name
-
-	if column.Source == nil {
-		return result
-	}
-
-	result.Source = column.Source.Name
-
-	return result
 }
 
 /**
-* describe
+* Serialize
+* @return []byte, error
+**/
+func (s *Field) Serialize() ([]byte, error) {
+	result, err := json.Marshal(s)
+	if err != nil {
+		return []byte{}, err
+	}
+
+	return result, nil
+}
+
+/**
+* Describe
 * @return et.Json
 **/
-func (s *Field) describe() et.Json {
-	definition, err := json.Marshal(s)
+func (s *Field) Describe() et.Json {
+	definition, err := s.Serialize()
 	if err != nil {
 		return et.Json{}
 	}
@@ -237,7 +235,7 @@ func (s *Field) ValueUnquoted() any {
 func (s *Field) asField() string {
 	result := ""
 	result = strs.Append(result, s.Schema, "")
-	result = strs.Append(result, s.Table, ".")
+	result = strs.Append(result, s.Model, ".")
 	result = strs.Append(result, s.Source, ".")
 	result = strs.Append(result, s.Name, ".")
 
@@ -261,7 +259,30 @@ func (s *Field) asName() string {
 * @return *Field
 **/
 func (s *Column) GetField() *Field {
-	result := newField(s)
+	result := newField(s.Name)
+	result.Column = s
+	result.Name = s.Name
+	result.Alias = s.Name
+	result.Hidden = s.Hidden
+
+	if s.TypeColumn == TpRelatedTo {
+		result.Page = 1
+		result.Rows = 30
+		result.TpResult = TpResult
+	}
+
+	if s.Model == nil {
+		return result
+	}
+
+	result.Schema = s.Model.Schema.Name
+	result.Model = s.Model.Name
+
+	if s.Source == nil {
+		return result
+	}
+
+	result.Source = s.Source.Name
 
 	return result
 }

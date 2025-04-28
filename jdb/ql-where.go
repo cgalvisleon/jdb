@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/strs"
 )
@@ -84,10 +83,10 @@ func (s *QlWhere) condition() *QlCondition {
 * String
 * @return string
 **/
-func (s *QlWhere) String() string {
+func (s *QlWhere) string() string {
 	var result string
 	for _, val := range s.Wheres {
-		result = strs.Append(result, val.String(), " ")
+		result = strs.Append(result, val.string(), " ")
 	}
 
 	return result
@@ -403,7 +402,11 @@ func (s *QlWhere) listWheres() et.Json {
 func (s *Ql) Where(val interface{}) *Ql {
 	val = s.validator(val)
 	if val != nil {
-		s.where(val)
+		if len(s.Wheres) == 0 {
+			s.where(val)
+		} else {
+			s.and(val)
+		}
 	}
 
 	return s
@@ -591,17 +594,22 @@ func (s *Ql) Debug() *Ql {
 }
 
 /**
+* setDebug
+* @param debug bool
+* @return *Ql
+**/
+func (s *Ql) setDebug(debug bool) *Ql {
+	s.IsDebug = debug
+
+	return s
+}
+
+/**
 * setWheres
-* @param wheres []et.Json
-*
- */
+* @param wheres et.Json
+* @return *Ql
+**/
 func (s *Ql) setWheres(wheres et.Json) *Ql {
-	if len(wheres) == 0 {
-		return s
-	}
-
-	console.Debug(wheres.ToString())
-
 	and := func(vals []et.Json) {
 		for _, val := range vals {
 			for key := range val {

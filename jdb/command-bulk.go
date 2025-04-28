@@ -1,12 +1,14 @@
 package jdb
 
 import (
+	"database/sql"
+
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/event"
 	"github.com/cgalvisleon/et/strs"
 )
 
-func (s *Command) bulk() error {
+func (s *Command) bulk(tx *sql.Tx) error {
 	s.prepare()
 	model := s.From
 
@@ -29,9 +31,8 @@ func (s *Command) bulk() error {
 		return nil
 	}
 
-	if model.UseCore {
+	if model.UseCore && model.SystemKeyField != nil {
 		syncChannel := strs.Format("sync:%s", model.Db.Name)
-		s.Db.upsertRecord(model.Table, "insert", s.Result.Result[0].ValStr(SYSID))
 		event.Publish(syncChannel, et.Json{
 			"fromId":  model.Db.Id,
 			"command": "insert",
@@ -41,9 +42,23 @@ func (s *Command) bulk() error {
 		})
 	}
 
-	if s.rollback {
+	if s.isUndo {
 		return nil
 	}
+
+	go func() {
+		for _, result := range s.Result.Result {
+			before := result.ValJson(et.Json{}, "result", "before")
+			after := result.ValJson(et.Json{}, "result", "after")
+
+			for _, event := range model.eventsInsert {
+				err := event(tx, model, before, after)
+				if err != nil {
+					continue
+				}
+			}
+		}
+	}()
 
 	return nil
 }

@@ -11,15 +11,14 @@ type QlOrder struct {
 
 /**
 * OrderBy
-* @param sorted bool
-* @param columns ...string
+* @param asc bool, columns ...string
 * @return *Ql
 **/
-func (s *Ql) OrderBy(sorted bool, columns ...string) *Ql {
+func (s *Ql) OrderBy(asc bool, columns ...string) *Ql {
 	for _, col := range columns {
 		field := s.getField(col, false)
 		if field != nil {
-			if sorted {
+			if asc {
 				s.Orders.Asc = append(s.Orders.Asc, field)
 			} else {
 				s.Orders.Desc = append(s.Orders.Desc, field)
@@ -49,11 +48,15 @@ func (s *Ql) OrderByDesc(columns ...string) *Ql {
 }
 
 /**
-* setOrders
-* @param orders []et.Json
+* setOrderBy
+* @param orders et.Json
 * @return *Ql
 **/
-func (s *Ql) setOrders(orders et.Json) *Ql {
+func (s *Ql) setOrderBy(orders et.Json) *Ql {
+	if len(orders) == 0 {
+		return s
+	}
+
 	for key := range orders {
 		switch key {
 		case "asc", "ASC":

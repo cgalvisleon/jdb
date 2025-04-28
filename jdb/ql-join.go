@@ -42,11 +42,24 @@ type QlJoin struct {
 type QlJoins []*QlJoin
 
 /**
+* Serialize
+* @return []byte, error
+**/
+func (s *QlJoin) Serialize() ([]byte, error) {
+	result, err := json.Marshal(s)
+	if err != nil {
+		return []byte{}, err
+	}
+
+	return result, nil
+}
+
+/**
 * Describe
 * @return *et.Json
 **/
 func (s *QlJoin) Describe() et.Json {
-	definition, err := json.Marshal(s)
+	definition, err := s.Serialize()
 	if err != nil {
 		console.Errorf("QlJoin error: %s", err.Error())
 		return et.Json{}
@@ -108,19 +121,19 @@ func (s *QlJoin) Or(val interface{}) *QlJoin {
 
 /**
 * Select
-* @param fields ...string
+* @param fields ...interface{}
 * @return *Ql
 **/
-func (s *QlJoin) Select(fields ...string) *Ql {
+func (s *QlJoin) Select(fields ...interface{}) *Ql {
 	return s.Ql.Select(fields...)
 }
 
 /**
 * Data
-* @param fields ...string
+* @param fields ...interface{}
 * @return *Ql
 **/
-func (s *QlJoin) Data(fields ...string) *Ql {
+func (s *QlJoin) Data(fields ...interface{}) *Ql {
 	return s.Ql.Data(fields...)
 }
 

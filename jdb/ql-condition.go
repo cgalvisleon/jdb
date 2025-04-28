@@ -266,7 +266,7 @@ func (s *QlCondition) getValue() string {
 * String
 * @return string
 **/
-func (s *QlCondition) String() string {
+func (s *QlCondition) string() string {
 	var result string
 
 	if s.Connector != NoC {

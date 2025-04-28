@@ -12,35 +12,50 @@ import (
 * @return *Ql
 **/
 func (s *Ql) setSelect(field *Field) *Ql {
-	if field != nil {
-		if field.Column == nil {
-			return s
-		}
+	if field == nil || field.Column == nil {
+		return s
+	}
 
-		if slices.Contains([]TypeColumn{TpColumn, TpAtribute}, field.Column.TypeColumn) {
-			idx := slices.IndexFunc(s.Selects, func(e *Field) bool { return e.asField() == field.asField() })
-			if idx == -1 {
-				s.Selects = append(s.Selects, field)
-			}
-		} else if slices.Contains([]TypeColumn{TpRelatedTo, TpGenerated, TpRollup}, field.Column.TypeColumn) {
-			idx := slices.IndexFunc(s.Details, func(e *Field) bool { return e.asField() == field.asField() })
-			if idx == -1 {
-				s.Details = append(s.Details, field)
-			}
+	if slices.Contains([]TypeColumn{TpColumn, TpAtribute}, field.Column.TypeColumn) {
+		idx := slices.IndexFunc(s.Selects, func(e *Field) bool { return e.asField() == field.asField() })
+		if idx == -1 {
+			s.Selects = append(s.Selects, field)
+		}
+	} else if slices.Contains([]TypeColumn{TpGenerated, TpRelatedTo, TpRollup}, field.Column.TypeColumn) {
+		idx := slices.IndexFunc(s.Details, func(e *Field) bool { return e.asField() == field.asField() })
+		if idx == -1 {
+			s.Details = append(s.Details, field)
 		}
 	}
+
 	return s
 }
 
 /**
 * Select
-* @param fields ...string
+* @param fields ...interface{}
 * @return *Ql
 **/
-func (s *Ql) Select(fields ...string) *Ql {
+func (s *Ql) Select(fields ...interface{}) *Ql {
+	setRelationTo := func(v map[string]interface{}) {
+		for key := range v {
+			field := s.getField(key, true)
+			if field.Column.TypeColumn == TpRelatedTo {
+				s.setDetail(v)
+			}
+		}
+	}
+
 	for _, name := range fields {
-		field := s.getField(name, true)
-		s.setSelect(field)
+		switch v := name.(type) {
+		case string:
+			field := s.getField(v, true)
+			s.setSelect(field)
+		case et.Json:
+			setRelationTo(v)
+		case map[string]interface{}:
+			setRelationTo(v)
+		}
 	}
 	s.TypeSelect = Select
 
@@ -49,10 +64,10 @@ func (s *Ql) Select(fields ...string) *Ql {
 
 /**
 * Data
-* @param fields ...string
+* @param fields ...interface{}
 * @return *Ql
 **/
-func (s *Ql) Data(fields ...string) *Ql {
+func (s *Ql) Data(fields ...interface{}) *Ql {
 	result := s.Select(fields...)
 	result.TypeSelect = Data
 
@@ -65,6 +80,35 @@ func (s *Ql) Data(fields ...string) *Ql {
 **/
 func (s *Ql) Exec() (et.Items, error) {
 	return et.Items{}, nil
+}
+
+/**
+* setSelects
+* @param fields ...interface{}
+* @return *Ql
+**/
+func (s *Ql) setSelects(fields ...interface{}) *Ql {
+	if len(fields) == 0 {
+		return s
+	}
+
+	froms := s.Froms.Froms
+	if len(froms) == 0 {
+		return s
+	}
+
+	model := froms[0].Model
+	if model == nil {
+		return s
+	}
+
+	if model.SourceField != nil {
+		s.Data(fields...)
+	} else {
+		s.Select(fields...)
+	}
+
+	return s
 }
 
 /**

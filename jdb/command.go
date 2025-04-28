@@ -1,9 +1,11 @@
 package jdb
 
 import (
+	"database/sql"
 	"slices"
 	"strings"
 
+	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/mistake"
 )
@@ -15,22 +17,21 @@ const (
 	Update
 	Delete
 	Bulk
-	Undo
 	Sync
 )
 
 type Command struct {
 	*QlWhere
-	Command  TypeCommand
-	Db       *DB
-	From     *Model
-	Data     []et.Json
-	Values   []map[string]*Field
-	Returns  []*Field
-	Undo     et.Json
-	Sql      string
-	Result   et.Items
-	rollback bool
+	Tx      *sql.Tx
+	Command TypeCommand
+	Db      *DB
+	From    *Model
+	Data    []et.Json
+	Values  []map[string]*Field
+	Returns []*Field
+	Sql     string
+	Result  et.Items
+	isUndo  bool
 }
 
 /**
@@ -47,7 +48,6 @@ func NewCommand(model *Model, data []et.Json, command TypeCommand) *Command {
 		From:    model,
 		QlWhere: NewQlWhere(),
 		Data:    data,
-		Undo:    et.Json{},
 		Values:  []map[string]*Field{},
 		Returns: []*Field{},
 		Result:  et.Items{},
@@ -70,17 +70,18 @@ func (s *Command) Describe() et.Json {
 }
 
 /**
-* Exec
+* ExecTx
+* @param tx *sql.Tx
 * @return et.Items, error
 **/
-func (s *Command) Exec() (et.Items, error) {
+func (s *Command) ExecTx(tx *sql.Tx) (et.Items, error) {
 	switch s.Command {
 	case Insert:
 		if len(s.Data) == 0 {
 			return et.Items{}, mistake.New(MSG_NOT_DATA)
 		}
 
-		err := s.inserted()
+		err := s.inserted(tx)
 		if err != nil {
 			return et.Items{}, err
 		}
@@ -89,12 +90,12 @@ func (s *Command) Exec() (et.Items, error) {
 			return et.Items{}, mistake.New(MSG_NOT_DATA)
 		}
 
-		err := s.updated()
+		err := s.updated(tx)
 		if err != nil {
 			return et.Items{}, err
 		}
 	case Delete:
-		err := s.delete()
+		err := s.deleted(tx)
 		if err != nil {
 			return et.Items{}, err
 		}
@@ -103,12 +104,7 @@ func (s *Command) Exec() (et.Items, error) {
 			return et.Items{}, mistake.New(MSG_NOT_DATA)
 		}
 
-		err := s.bulk()
-		if err != nil {
-			return et.Items{}, err
-		}
-	case Undo:
-		err := s.undo()
+		err := s.bulk(tx)
 		if err != nil {
 			return et.Items{}, err
 		}
@@ -120,55 +116,53 @@ func (s *Command) Exec() (et.Items, error) {
 }
 
 /**
-* One
+* OneTx
+* @param tx *sql.Tx
 * @return et.Item, error
 **/
-func (s *Command) One() (et.Item, error) {
-	result, err := s.Exec()
+func (s *Command) OneTx(tx *sql.Tx) (et.Item, error) {
+	result, err := s.ExecTx(tx)
 	if err != nil {
 		return et.Item{}, err
 	}
 
-	if !result.Ok {
-		return et.Item{Result: et.Json{}}, nil
-	}
-
-	return et.Item{
-		Ok:     true,
-		Result: result.Result[0],
-	}, nil
+	return result.First(), nil
 }
 
 /**
 * Rollback
-* @return et.Items, error
+* @param tx *sql.Tx
+* @return error
 **/
-func (s *Command) Rollback() error {
-	s.rollback = true
-	_, err := s.Exec()
-	if err != nil {
+func Rollback(tx *sql.Tx, err error) error {
+	if tx == nil {
 		return err
 	}
 
-	return nil
+	rollbackErr := tx.Rollback()
+	if rollbackErr != nil {
+		console.Error(mistake.Newf(MSG_ROLLBACK_ERROR, rollbackErr))
+	}
+
+	return err
 }
 
 /**
-* Return
-* @param fields ...string
-* @return *Command
+* Commit
+* @param tx *sql.Tx
+* @return error
 **/
-func (s *Command) Return(fields ...string) *Command {
-	for _, name := range fields {
-		field := s.getField(name, true)
-		if field == nil {
-			continue
-		}
-
-		s.Returns = append(s.Returns, field)
+func Commit(tx *sql.Tx) error {
+	if tx == nil {
+		return nil
 	}
 
-	return s
+	err := tx.Commit()
+	if err != nil {
+		console.Error(mistake.Newf(MSG_COMMIT_ERROR, err))
+	}
+
+	return err
 }
 
 /**
@@ -220,14 +214,10 @@ func (s *Command) validator(val interface{}) interface{} {
 
 /**
 * setWhere
-* @param wheres et.Json
+* @param setWheres et.Json
 * @return *Command
 **/
-func (s *Command) setWhere(wheres et.Json) *Command {
-	if len(wheres) == 0 {
-		return s
-	}
-
+func (s *Command) setWheres(wheres et.Json) *Command {
 	and := func(vals []et.Json) {
 		for _, val := range vals {
 			for key := range val {

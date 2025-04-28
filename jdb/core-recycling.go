@@ -1,6 +1,7 @@
 package jdb
 
 import (
+	"database/sql"
 	"net/http"
 
 	"github.com/cgalvisleon/et/console"
@@ -25,10 +26,11 @@ func (s *DB) defineRecycling() error {
 	coreRecycling = NewModel(coreSchema, "recycling", 1)
 	coreRecycling.DefineColumn(CREATED_AT, CreatedAtField.TypeData())
 	coreRecycling.DefineColumn(UPDATED_AT, UpdatedAtField.TypeData())
+	coreRecycling.DefineColumn("schema_name", TypeDataText)
 	coreRecycling.DefineColumn("table_name", TypeDataText)
 	coreRecycling.DefineColumn(SYSID, SystemKeyField.TypeData())
 	coreRecycling.DefineIndexField()
-	coreRecycling.DefinePrimaryKey("table_name", SYSID)
+	coreRecycling.DefinePrimaryKey("schema_name", "table_name", SYSID)
 	coreRecycling.DefineIndex(true,
 		INDEX,
 	)
@@ -41,16 +43,17 @@ func (s *DB) defineRecycling() error {
 
 /**
 * upsertRecycling
-* @param table, sysId, statusId string
+* @param schema, name, sysId, statusId string
 * @return error
 **/
-func (s *DB) upsertRecycling(table, sysId, statusId string) error {
+func (s *DB) upsertRecycling(tx *sql.Tx, schema, name, sysId, statusId string) error {
 	if statusId != utility.FOR_DELETE {
 		_, err := coreRecycling.
 			Delete().
-			Where("table_name").Eq(table).
+			Where("schema_name").Eq(schema).
+			And("table_name").Eq(name).
 			And(SYSID).Eq(sysId).
-			Exec()
+			ExecTx(tx)
 		if err != nil {
 			return err
 		}
@@ -63,9 +66,10 @@ func (s *DB) upsertRecycling(table, sysId, statusId string) error {
 		Update(et.Json{
 			UPDATED_AT: now,
 		}).
-		Where("table_name").Eq(table).
+		Where("schema_name").Eq(schema).
+		And("table_name").Eq(name).
 		And(SYSID).Eq(sysId).
-		One()
+		OneTx(tx)
 	if err != nil {
 		return err
 	}
@@ -76,12 +80,13 @@ func (s *DB) upsertRecycling(table, sysId, statusId string) error {
 
 	_, err = coreRecycling.
 		Insert(et.Json{
-			CREATED_AT:   now,
-			UPDATED_AT:   now,
-			"table_name": table,
-			SYSID:        sysId,
+			CREATED_AT:    now,
+			UPDATED_AT:    now,
+			"schema_name": schema,
+			"table_name":  name,
+			SYSID:         sysId,
 		}).
-		Exec()
+		ExecTx(tx)
 	if err != nil {
 		return err
 	}
@@ -91,12 +96,16 @@ func (s *DB) upsertRecycling(table, sysId, statusId string) error {
 
 /**
 * GetRecycling
-* @param table, sysId string
+* @param schema, name, sysId string
 * @return et.Item, error
 **/
-func (s *DB) GetRecycling(table, sysId string) (et.Item, error) {
-	if !utility.ValidName(table) {
-		return et.Item{}, mistake.Newf(MSG_ATTR_REQUIRED, "table")
+func (s *DB) GetRecycling(schema, name, sysId string) (et.Item, error) {
+	if !utility.ValidName(schema) {
+		return et.Item{}, mistake.Newf(MSG_ATTR_REQUIRED, "schema")
+	}
+
+	if !utility.ValidName(name) {
+		return et.Item{}, mistake.Newf(MSG_ATTR_REQUIRED, "name")
 	}
 
 	if !utility.ValidId(sysId) {
@@ -104,7 +113,8 @@ func (s *DB) GetRecycling(table, sysId string) (et.Item, error) {
 	}
 
 	item, err := coreRecycling.
-		Where("table_name").Eq(table).
+		Where("schema_name").Eq(schema).
+		And("table_name").Eq(name).
 		And(SYSID).Eq(sysId).
 		One()
 	if err != nil {
@@ -116,19 +126,24 @@ func (s *DB) GetRecycling(table, sysId string) (et.Item, error) {
 
 /**
 * deleteRecycling
-* @param table, sysId string
+* @param tx *sql.Tx, schema, name, sysId string
 * @return error
 **/
-func (s *DB) deleteRecycling(table, sysId string) error {
-	if !utility.ValidName(table) {
-		return mistake.Newf(MSG_ATTR_REQUIRED, "table")
+func (s *DB) deleteRecycling(tx *sql.Tx, schema, name, sysId string) error {
+	if !utility.ValidName(schema) {
+		return mistake.Newf(MSG_ATTR_REQUIRED, "schema")
+	}
+
+	if !utility.ValidName(name) {
+		return mistake.Newf(MSG_ATTR_REQUIRED, "name")
 	}
 
 	item, err := coreRecycling.
 		Delete().
-		Where("table_name").Eq(table).
+		Where("schema_name").Eq(schema).
+		And("table_name").Eq(name).
 		And(SYSID).Eq(sysId).
-		One()
+		OneTx(tx)
 	if err != nil {
 		return err
 	}
@@ -161,9 +176,10 @@ func (s *DB) QueryRecycling(search et.Json) (interface{}, error) {
 * @param r *http.Request
 **/
 func (s *DB) HandlerGetRecycling(w http.ResponseWriter, r *http.Request) {
-	table := r.PathValue("table")
+	schema := r.PathValue("schema")
+	name := r.PathValue("name")
 	id := r.PathValue("id")
-	result, err := s.GetRecycling(table, id)
+	result, err := s.GetRecycling(schema, name, id)
 	if err != nil {
 		response.HTTPError(w, r, http.StatusBadRequest, err.Error())
 		return
@@ -178,9 +194,10 @@ func (s *DB) HandlerGetRecycling(w http.ResponseWriter, r *http.Request) {
 * @param r *http.Request
 **/
 func (s *DB) HandlerDeleteRecycling(w http.ResponseWriter, r *http.Request) {
-	table := r.PathValue("table")
+	schema := r.PathValue("schema")
+	name := r.PathValue("name")
 	id := r.PathValue("id")
-	err := s.deleteRecycling(table, id)
+	err := s.deleteRecycling(nil, schema, name, id)
 	if err != nil {
 		response.HTTPError(w, r, http.StatusBadRequest, err.Error())
 		return
@@ -190,7 +207,8 @@ func (s *DB) HandlerDeleteRecycling(w http.ResponseWriter, r *http.Request) {
 		Ok: true,
 		Result: et.Json{
 			"message": "Recycling deleted successfully",
-			"table":   table,
+			"schema":  schema,
+			"name":    name,
 			"id":      id,
 		},
 	})

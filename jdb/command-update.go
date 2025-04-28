@@ -1,12 +1,14 @@
 package jdb
 
 import (
+	"database/sql"
+
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/event"
 	"github.com/cgalvisleon/et/strs"
 )
 
-func (s *Command) updated() error {
+func (s *Command) updated(tx *sql.Tx) error {
 	s.prepare()
 	model := s.From
 
@@ -41,31 +43,21 @@ func (s *Command) updated() error {
 		})
 	}
 
-	if s.rollback {
+	if s.isUndo {
 		return nil
 	}
 
 	for _, result := range s.Result.Result {
 		before := result.ValJson(et.Json{}, "result", "before")
 		after := result.ValJson(et.Json{}, "result", "after")
+		changed := before.IsChanged(after)
 
-		go func() {
-			if model.SystemKeyField != nil {
-				sysid := after.Str(model.SystemKeyField.Name)
-				s.Db.upsertRecord(model.Table, "update", sysid)
-			}
-		}()
-
-		for _, event := range model.eventsUpdate {
-			err := event(model, before, after)
-			if err != nil {
-				return err
-			}
+		if !changed {
+			continue
 		}
 
-		changed := before.IsChanged(after)
-		if s.history && changed && model.History != nil {
-			err := eventHistoryDefault(model, before)
+		for _, event := range model.eventsUpdate {
+			err := event(tx, model, before, after)
 			if err != nil {
 				return err
 			}

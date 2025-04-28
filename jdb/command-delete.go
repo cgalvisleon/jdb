@@ -1,12 +1,14 @@
 package jdb
 
 import (
+	"database/sql"
+
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/event"
 	"github.com/cgalvisleon/et/strs"
 )
 
-func (s *Command) delete() error {
+func (s *Command) deleted(tx *sql.Tx) error {
 	model := s.From
 	results, err := s.Db.Command(s)
 	if err != nil {
@@ -38,7 +40,7 @@ func (s *Command) delete() error {
 		})
 	}
 
-	if s.rollback {
+	if s.isUndo {
 		return nil
 	}
 
@@ -46,15 +48,8 @@ func (s *Command) delete() error {
 		before := result.ValJson(et.Json{}, "result", "before")
 		after := result.ValJson(et.Json{}, "result", "after")
 
-		go func() {
-			if model.SystemKeyField != nil {
-				sysid := after.Str(model.SystemKeyField.Name)
-				s.Db.upsertRecord(model.Table, "delete", sysid)
-			}
-		}()
-
 		for _, event := range model.eventsDelete {
-			err := event(model, before, after)
+			err := event(tx, model, before, after)
 			if err != nil {
 				return err
 			}

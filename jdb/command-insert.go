@@ -1,12 +1,15 @@
 package jdb
 
 import (
+	"database/sql"
+
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/event"
 	"github.com/cgalvisleon/et/strs"
 )
 
-func (s *Command) inserted() error {
+func (s *Command) inserted(tx *sql.Tx) error {
+	s.Tx = tx
 	s.prepare()
 	model := s.From
 
@@ -25,22 +28,20 @@ func (s *Command) inserted() error {
 	}
 
 	s.Result = results
-	if !results.Ok {
+	if !s.Result.Ok {
 		return nil
 	}
 
-	if model.UseCore && model.SystemKeyField != nil {
-		syncChannel := strs.Format("sync:%s", model.Db.Name)
-		event.Publish(syncChannel, et.Json{
-			"fromId":  model.Db.Id,
-			"command": "insert",
-			"sql":     s.Sql,
-			"values":  s.Values,
-			"result":  s.Result,
-		})
-	}
+	syncChannel := strs.Format("sync:%s", model.Db.Name)
+	event.Publish(syncChannel, et.Json{
+		"fromId":  model.Db.Id,
+		"command": "insert",
+		"sql":     s.Sql,
+		"values":  s.Values,
+		"result":  s.Result,
+	})
 
-	if s.rollback {
+	if !s.isUndo {
 		return nil
 	}
 
@@ -48,18 +49,12 @@ func (s *Command) inserted() error {
 		before := result.ValJson(et.Json{}, "result", "before")
 		after := result.ValJson(et.Json{}, "result", "after")
 
-		go func() {
-			if model.SystemKeyField != nil {
-				sysid := after.Str(model.SystemKeyField.Name)
-				s.Db.upsertRecord(model.Table, "insert", sysid)
-			}
-		}()
-
 		for _, event := range model.eventsInsert {
-			err := event(model, before, after)
+			err := event(tx, model, before, after)
 			if err != nil {
-				return err
+				return Rollback(tx, err)
 			}
+
 		}
 	}
 

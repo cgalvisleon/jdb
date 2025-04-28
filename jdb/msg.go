@@ -1,6 +1,7 @@
 package jdb
 
 const (
+	MSG_KIND_NOT_DEFINED         = "Kind not defined"
 	MSG_INVALID_NAME             = "Invalid name (%s)"
 	MSG_JDB_NOT_DEFINED          = "JDB not defined"
 	MSG_DRIVER_NOT_FOUND         = "Driver not found (%s)"
@@ -13,6 +14,7 @@ const (
 	MSG_QUERY_FAILED             = "Query failed: %s\nSQL: %s"
 	MSG_MODEL_NOT_FOUND          = "Model not found (%s)"
 	MSG_MODEL_REQUIRED           = "Model is required"
+	MSG_FIELD_NOT_FOUND          = "Field not found (%s)"
 	MSG_QUERY_EMPTY              = "Query is empty"
 	MSG_QUERY_FROM_REQUIRED      = "Query 'from' is required"
 	MSG_SYSTEMKEYFIELD_NOT_FOUND = "SystemKeyField not found"
@@ -35,4 +37,7 @@ const (
 	MSG_ATTR_REQUIRED            = "Attribute required (%s)"
 	MSG_SERIE_NOT_FOUND          = "Serie not found (%s)"
 	MSG_RECORD_NOT_FOUND         = "Record not found"
+	MSG_INVALID_MODEL_PARAM      = "Invalid model param"
+	MSG_ROLLBACK_ERROR           = "Rollback error: %s"
+	MSG_COMMIT_ERROR             = "Commit error: %s"
 )

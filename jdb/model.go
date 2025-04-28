@@ -11,15 +11,6 @@ import (
 	"github.com/cgalvisleon/et/timezone"
 )
 
-func tableName(schema *Schema, name string) string {
-	table := strs.Lowcase(name)
-	if schema != nil {
-		return strs.Format(`%s.%s`, strs.Lowcase(schema.Name), table)
-	}
-
-	return table
-}
-
 type Model struct {
 	Db              *DB                  `json:"-"`
 	Schema          *Schema              `json:"-"`
@@ -29,7 +20,6 @@ type Model struct {
 	Name            string               `json:"name"`
 	Description     string               `json:"description"`
 	UseCore         bool                 `json:"use_core"`
-	Table           string               `json:"table"`
 	Integrity       bool                 `json:"integrity"`
 	Definitions     []et.Json            `json:"definitions"`
 	Columns         []*Column            `json:"-"`
@@ -55,6 +45,7 @@ type Model struct {
 	eventsUpdate    []Event              `json:"-"`
 	eventsDelete    []Event              `json:"-"`
 	IsDebug         bool                 `json:"-"`
+	isLocked        bool                 `json:"-"`
 	isInit          bool                 `json:"-"`
 }
 
@@ -71,7 +62,6 @@ func NewModel(schema *Schema, name string, version int) *Model {
 	}
 
 	newModel := func() *Model {
-		table := tableName(schema, name)
 		now := timezone.NowTime()
 		result := &Model{
 			Db:              schema.Db,
@@ -81,7 +71,6 @@ func NewModel(schema *Schema, name string, version int) *Model {
 			Id:              reg.Id("model"),
 			Name:            name,
 			UseCore:         schema.UseCore,
-			Table:           table,
 			Definitions:     make([]et.Json, 0),
 			Columns:         make([]*Column, 0),
 			GeneratedFields: make([]*Column, 0),
@@ -158,11 +147,24 @@ func NewModel(schema *Schema, name string, version int) *Model {
 }
 
 /**
+* Serialize
+* @return []byte, error
+**/
+func (s *Model) Serialize() ([]byte, error) {
+	result, err := json.Marshal(s)
+	if err != nil {
+		return []byte{}, err
+	}
+
+	return result, nil
+}
+
+/**
 * Describe
 * @return et.Json
 **/
 func (s *Model) Describe() et.Json {
-	definition, err := json.Marshal(s)
+	definition, err := s.Serialize()
 	if err != nil {
 		return et.Json{}
 	}
@@ -173,23 +175,30 @@ func (s *Model) Describe() et.Json {
 		return et.Json{}
 	}
 
-	result.Set("columns", s.Columns)
-	result.Set("generated_fields", s.GeneratedFields)
-	result.Set("primary_keys", s.PrimaryKeys)
-	result.Set("foreign_keys", s.ForeignKeys)
-	result.Set("indices", s.Indices)
-	result.Set("uniques", s.Uniques)
-	result.Set("relations_to", s.RelationsTo)
-	result.Set("details", s.Details)
-	result.Set("rollups", s.Rollups)
-	result.Set("history", s.History)
-	result.Set("required", s.Required)
-	result.Set("system_key_field", s.SystemKeyField)
-	result.Set("status_field", s.StatusField)
-	result.Set("index_field", s.IndexField)
-	result.Set("source_field", s.SourceField)
-	result.Set("full_text_field", s.FullTextField)
-	result.Set("project_field", s.ProjectField)
+	columns := make([]et.Json, 0)
+	for _, column := range s.Columns {
+		columns = append(columns, column.Describe())
+	}
+
+	delete(result, "definitions")
+	result["kind"] = "model"
+	result["columns"] = columns
+	result["generated_fields"] = s.GeneratedFields
+	result["primary_keys"] = s.PrimaryKeys
+	result["foreign_keys"] = s.ForeignKeys
+	result["indices"] = s.Indices
+	result["uniques"] = s.Uniques
+	result["relations_to"] = s.RelationsTo
+	result["details"] = s.Details
+	result["rollups"] = s.Rollups
+	result["history"] = s.History
+	result["required"] = s.Required
+	result["system_key_field"] = s.SystemKeyField
+	result["status_field"] = s.StatusField
+	result["index_field"] = s.IndexField
+	result["source_field"] = s.SourceField
+	result["full_text_field"] = s.FullTextField
+	result["project_field"] = s.ProjectField
 
 	return result
 }
@@ -203,7 +212,7 @@ func (s *Model) Save() error {
 		return nil
 	}
 
-	definition, err := json.Marshal(s)
+	definition, err := s.Serialize()
 	if err != nil {
 		return err
 	}
@@ -296,7 +305,7 @@ func (s *Model) GetFrom() *QlFrom {
 * @return string
 **/
 func (s *Model) GetId(id string) string {
-	return reg.GetId(s.Table, id)
+	return reg.GetId(s.Name, id)
 }
 
 /**
@@ -304,7 +313,7 @@ func (s *Model) GetId(id string) string {
 * @return string
 **/
 func (s *Model) GenId() string {
-	return reg.Id(s.Table)
+	return reg.Id(s.Name)
 }
 
 /**
@@ -312,7 +321,7 @@ func (s *Model) GenId() string {
 * @return int64, error
 **/
 func (s *Model) GetSerie() (int64, error) {
-	return s.Db.GetSerie(s.Table)
+	return s.Db.GetSerie(s.Name)
 }
 
 /**
@@ -444,7 +453,7 @@ func (s *Model) getField(name string, isCreate bool) *Field {
 	switch len(list) {
 	case 1:
 		result := getField(list[0], isCreate)
-		if alias != "" {
+		if result != nil && alias != "" {
 			result.Alias = alias
 		}
 
@@ -455,19 +464,22 @@ func (s *Model) getField(name string, isCreate bool) *Field {
 		}
 
 		result := getField(list[1], isCreate)
-		if alias != "" {
+		if result != nil && alias != "" {
 			result.Alias = alias
 		}
 
 		return result
 	case 3:
-		table := strs.Format(`%s.%s`, list[0], list[1])
-		if !strs.Same(s.Table, table) {
+		if !strs.Same(s.Schema.Name, list[0]) {
+			return nil
+		}
+
+		if !strs.Same(s.Name, list[1]) {
 			return nil
 		}
 
 		result := getField(list[2], isCreate)
-		if alias != "" {
+		if result != nil && alias != "" {
 			result.Alias = alias
 		}
 

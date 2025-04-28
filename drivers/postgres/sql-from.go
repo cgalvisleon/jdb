@@ -22,5 +22,5 @@ func (s *Postgres) tableAs(from *jdb.QlFrom) string {
 		return ""
 	}
 
-	return strs.Append(from.Table, from.As, " AS ")
+	return strs.Append(table(from.Model), from.As, " AS ")
 }

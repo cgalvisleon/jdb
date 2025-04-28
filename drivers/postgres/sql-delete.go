@@ -17,5 +17,5 @@ func (s *Postgres) sqlDelete(command *jdb.Command) string {
 		}
 	}
 	result := "WITH deleted_rows AS (\nSELECT\nctid,\n%s AS old_data\nFROM %s\nWHERE %s\n)\nDELETE FROM %s AS oc\nUSING deleted_rows dr\nWHERE oc.ctid = dr.ctid\nRETURNING\n%s;"
-	return strs.Format(result, objects, from.Table, where, from.Table, returns)
+	return strs.Format(result, objects, table(from), where, table(from), returns)
 }

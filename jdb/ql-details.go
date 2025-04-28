@@ -19,43 +19,34 @@ func (s *Ql) GetDetails(data *et.Json) *et.Json {
 
 		switch col.TypeColumn {
 		case TpGenerated:
-			if col.generatedFunction != nil {
-				col.generatedFunction(col, data)
+			if col.GeneratedFunction != nil {
+				col.GeneratedFunction(col, data)
 			}
 		case TpRelatedTo:
 			if col.Detail == nil {
 				continue
 			}
-			if len(col.Detail.Fk) <= 0 {
-				continue
-			}
-
-			n := 0
 			with := col.Detail.With
 			if with == nil {
 				continue
 			}
 
-			ql := From(with)
-			for fkn, pk := range col.Detail.Fk {
-				key := (*data)[pk]
-				if key == nil {
-					continue
-				}
-
-				if n == 0 {
-					ql.Where(fkn).Eq(key)
-				} else {
-					ql.And(fkn).Eq(key)
-				}
-				n++
-			}
+			ql := From(with).
+				setJoins(field.Joins).
+				setWheres(col.Detail.getFkJson()).
+				setWheres(field.Where).
+				setSelects(field.Select).
+				setGroupBy(field.GroupBy...).
+				setHavings(field.Havings).
+				setOrderBy(field.OrderBy).
+				setDebug(s.IsDebug)
 
 			if field.TpResult == TpResult {
 				result, err := ql.All()
 				if err != nil {
 					continue
 				}
+
 				data.Set(col.Name, result.Result)
 			} else {
 				all, err := ql.
@@ -77,50 +68,42 @@ func (s *Ql) GetDetails(data *et.Json) *et.Json {
 			if col.Rollup == nil {
 				continue
 			}
-			if len(col.Rollup.Fk) <= 0 {
-				continue
-			}
-
-			n := 0
 			source := col.Rollup.Source
 			if source == nil {
 				continue
 			}
 
-			ql := From(source)
-			for fkn, pk := range col.Rollup.Fk {
-				key := (*data)[pk]
-				if key == nil {
-					continue
-				}
+			ql := From(source).
+				setJoins(field.Joins).
+				setWheres(col.Rollup.getFkJson()).
+				setWheres(field.Where).
+				setSelects(field.Select).
+				setGroupBy(field.GroupBy...).
+				setHavings(field.Havings).
+				setOrderBy(field.OrderBy).
+				setDebug(s.IsDebug)
 
-				if n == 0 {
-					ql.Where(fkn).Eq(key)
-				} else {
-					ql.And(fkn).Eq(key)
-				}
-				n++
-			}
+			fields := col.Rollup.Fields
 
-			props := make([]string, 0)
-			props = append(props, col.Rollup.Props...)
-
-			switch len(props) {
+			switch len(fields) {
 			case 0:
 				continue
 			case 1:
-				prop := props[0]
+				field, ok := fields[0].(string)
+				if !ok {
+					continue
+				}
 				result, err := ql.
-					Data(prop).
+					Data(field).
 					One()
 				if err != nil {
 					continue
 				}
 
-				data.Set(col.Name, result.Result[prop])
+				data.Set(col.Name, result.Result[field])
 			default:
 				result, err := ql.
-					Data(props...).
+					Data(fields...).
 					One()
 				if err != nil {
 					continue
@@ -136,12 +119,12 @@ func (s *Ql) GetDetails(data *et.Json) *et.Json {
 
 /**
 * Detail
-* @param name string, page, rows int
+* @param name string, selects []interface{}, joins []et.Json, where et.Json, groups []string, havings et.Json, orderBy et.Json, page, rows int
 * @return *Ql
 **/
-func (s *Ql) Detail(name string, page, rows int, tp TypeResult) *Ql {
+func (s *Ql) Detail(name string, selects []interface{}, joins []et.Json, where et.Json, groups []string, havings et.Json, orderBy et.Json, page, rows int, tp TypeResult) *Ql {
 	field := s.getField(name, false)
-	if field == nil {
+	if field == nil || field.Column == nil || field.Column.Detail == nil || field.Column.Detail.With == nil {
 		return s
 	}
 
@@ -150,6 +133,12 @@ func (s *Ql) Detail(name string, page, rows int, tp TypeResult) *Ql {
 		s.Details = append(s.Details, field)
 	}
 
+	field.Select = selects
+	field.Joins = joins
+	field.Where = where
+	field.GroupBy = groups
+	field.Havings = havings
+	field.OrderBy = orderBy
 	field.Page = page
 	field.Rows = rows
 	field.TpResult = tp
@@ -159,17 +148,27 @@ func (s *Ql) Detail(name string, page, rows int, tp TypeResult) *Ql {
 
 /**
 * setDetail
-* @param params []et.Json
+* @param params et.Json
 * @return *Ql
 **/
-func (s *Ql) setDetail(params []et.Json) *Ql {
-	for _, param := range params {
-		name := param.Str("name")
-		page := param.Int("page")
-		rows := param.Int("rows")
-		tp := StrToTypeResult(param.Str("type"))
+func (s *Ql) setDetail(params et.Json) *Ql {
+	for name := range params {
+		val := params.Json(name)
+		selects := val.Array("select")
+		joins := val.ArrayJson("join")
+		where := val.Json("where")
+		groups := val.ArrayStr("group_by")
+		havings := val.Json("having")
+		orderBy := val.Json("order_by")
+		page := val.Int("page")
+		rows := val.Int("rows")
+		list := val.Bool("list")
+		tp := TpResult
+		if list {
+			tp = TpList
+		}
 
-		s.Detail(name, page, rows, tp)
+		s.Detail(name, selects, joins, where, groups, havings, orderBy, page, rows, tp)
 	}
 
 	return s

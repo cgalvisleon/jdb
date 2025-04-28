@@ -31,7 +31,7 @@ type DB struct {
 	schemas     []*Schema `json:"-"`
 	models      []*Model  `json:"-"`
 	isInit      bool      `json:"-"`
-	debug       bool      `json:"-"`
+	IsDebug     bool      `json:"-"`
 }
 
 /**
@@ -71,11 +71,24 @@ func NewDatabase(name, driver string) (*DB, error) {
 }
 
 /**
+* Serialize
+* @return []byte, error
+**/
+func (s *DB) Serialize() ([]byte, error) {
+	result, err := json.Marshal(s)
+	if err != nil {
+		return []byte{}, err
+	}
+
+	return result, nil
+}
+
+/**
 * Describe
 * @return et.Json
 **/
 func (s *DB) Describe() et.Json {
-	definition, err := json.Marshal(s)
+	definition, err := s.Serialize()
 	if err != nil {
 		return et.Json{}
 	}
@@ -91,6 +104,7 @@ func (s *DB) Describe() et.Json {
 		schemas = append(schemas, schema.Describe())
 	}
 
+	result["kind"] = "db"
 	result["schemas"] = schemas
 	result["driver"] = s.driver.Name()
 
@@ -121,7 +135,7 @@ func (s *DB) Load(kind, name string, out interface{}) error {
 		return err
 	}
 
-	if s.debug {
+	if s.IsDebug {
 		console.Debug(kind, ":", string(definition))
 	}
 	err = json.Unmarshal(definition, out)
@@ -141,7 +155,7 @@ func (s *DB) Save() error {
 		return nil
 	}
 
-	definition, err := json.Marshal(s)
+	definition, err := s.Serialize()
 	if err != nil {
 		return err
 	}
@@ -158,7 +172,7 @@ func (s *DB) Save() error {
 * Debug
 **/
 func (s *DB) Debug() {
-	s.debug = true
+	s.IsDebug = true
 }
 
 /**

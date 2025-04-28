@@ -45,5 +45,5 @@ func (s *Postgres) sqlInsert(command *jdb.Command) string {
 	}
 
 	result := "INSERT INTO %s(%s)\nVALUES %s\nRETURNING\n%s"
-	return strs.Format(result, from.Table, columns, values, returns)
+	return strs.Format(result, table(from), columns, values, returns)
 }

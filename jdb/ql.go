@@ -3,7 +3,6 @@ package jdb
 import (
 	"strings"
 
-	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/strs"
 )
@@ -78,7 +77,6 @@ func (s *Ql) addFrom(m *Model) *QlFrom {
 * @return interface{}
 **/
 func (s *Ql) validator(val interface{}) interface{} {
-	console.Debug("validator:", val)
 	switch v := val.(type) {
 	case string:
 		if strings.HasPrefix(v, "$") {
@@ -120,9 +118,7 @@ func (s *Ql) getColumnField(name string, isCreated bool) *Field {
 	}
 
 	if isCreated {
-		return &Field{
-			Name: name,
-		}
+		return newField(name)
 	}
 
 	return nil
@@ -138,6 +134,7 @@ func (s *Ql) getField(name string, isCreated bool) *Field {
 		for _, from := range s.Froms.Froms {
 			field := from.getField(name, isCreated)
 			if field != nil {
+				field.As = from.As
 				return field
 			}
 		}
@@ -169,5 +166,5 @@ func (s *Ql) asField(field *Field) string {
 		return field.Name
 	}
 
-	return strs.Format("%s.%s", field.Table, field.Name)
+	return strs.Format("%s.%s", field.Model, field.Name)
 }

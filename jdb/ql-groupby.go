@@ -22,6 +22,10 @@ func (s *Ql) GroupBy(fields ...string) *Ql {
 * @return *Ql
 **/
 func (s *Ql) setGroupBy(fields ...string) *Ql {
+	if len(fields) == 0 {
+		return s
+	}
+
 	return s.GroupBy(fields...)
 }
 

@@ -76,11 +76,24 @@ func NewSchema(db *DB, name string) *Schema {
 }
 
 /**
+* Serialize
+* @return []byte, error
+**/
+func (s *Schema) Serialize() ([]byte, error) {
+	result, err := json.Marshal(s)
+	if err != nil {
+		return []byte{}, err
+	}
+
+	return result, nil
+}
+
+/**
 * Describe
 * @return et.Json
 **/
 func (s *Schema) Describe() et.Json {
-	definition, err := json.Marshal(s)
+	definition, err := s.Serialize()
 	if err != nil {
 		return et.Json{}
 	}
@@ -96,6 +109,7 @@ func (s *Schema) Describe() et.Json {
 		models = append(models, model.Describe())
 	}
 
+	result["kind"] = "schema"
 	result["models"] = models
 
 	return result
@@ -110,7 +124,7 @@ func (s *Schema) Save() error {
 		return nil
 	}
 
-	definition, err := json.Marshal(s)
+	definition, err := s.Serialize()
 	if err != nil {
 		return err
 	}

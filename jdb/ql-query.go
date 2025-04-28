@@ -6,42 +6,6 @@ import (
 )
 
 /**
-* Exist
-* @return bool, error
-**/
-func (s *Ql) Exist() (bool, error) {
-	if s.Db == nil {
-		return false, mistake.New(MSG_DATABASE_NOT_FOUND)
-	}
-
-	s.prepare()
-	result, err := s.Db.Exists(s)
-	if err != nil {
-		return false, err
-	}
-
-	return result, nil
-}
-
-/**
-* Counted
-* @return int, error
-**/
-func (s *Ql) Counted() (int, error) {
-	if s.Db == nil {
-		return 0, mistake.New(MSG_DATABASE_NOT_FOUND)
-	}
-
-	s.prepare()
-	result, err := s.Db.Count(s)
-	if err != nil {
-		return 0, err
-	}
-
-	return result, nil
-}
-
-/**
 * First
 * @param n int
 * @return et.Items, error
@@ -154,6 +118,42 @@ func (s *Ql) List(page, rows int) (et.List, error) {
 }
 
 /**
+* Exist
+* @return bool, error
+**/
+func (s *Ql) Exist() (bool, error) {
+	if s.Db == nil {
+		return false, mistake.New(MSG_DATABASE_NOT_FOUND)
+	}
+
+	s.prepare()
+	result, err := s.Db.Exists(s)
+	if err != nil {
+		return false, err
+	}
+
+	return result, nil
+}
+
+/**
+* Counted
+* @return int, error
+**/
+func (s *Ql) Counted() (int, error) {
+	if s.Db == nil {
+		return 0, mistake.New(MSG_DATABASE_NOT_FOUND)
+	}
+
+	s.prepare()
+	result, err := s.Db.Count(s)
+	if err != nil {
+		return 0, err
+	}
+
+	return result, nil
+}
+
+/**
 * Query
 * @param params et.Json
 * @return interface{}, error
@@ -163,33 +163,23 @@ func (s *Ql) Query(params et.Json) (interface{}, error) {
 		return s.Help, nil
 	}
 
+	selects := params.Array("select")
 	joins := params.ArrayJson("join")
 	where := params.Json("where")
 	groups := params.ArrayStr("group_by")
 	havings := params.Json("having")
-	orders := params.Json("order_by")
+	orderBy := params.Json("order_by")
 	page := params.Int("page")
 	limit := params.ValInt(30, "limit")
-	details := params.ArrayJson("details")
 	debug := params.Bool("debug")
 
-	s.setJoins(joins).
+	return s.setJoins(joins).
 		setWheres(where).
 		setGroupBy(groups...).
 		setHavings(havings).
-		setOrders(orders).
-		setDetail(details)
-	if params["data"] != nil {
-		data := params.ArrayStr("data")
-		s.Data(data...)
-	} else {
-		selects := params.ArrayStr("select")
-		s.Select(selects...)
-	}
-	s.setPage(page)
-	if debug {
-		s.Debug()
-	}
-
-	return s.setLimit(limit)
+		setOrderBy(orderBy).
+		setSelects(selects...).
+		setDebug(debug).
+		setPage(page).
+		setLimit(limit)
 }

@@ -178,7 +178,7 @@ func (s *Postgres) ddlTable(model *jdb.Model) string {
 			columnsDef = strs.Append(columnsDef, def, ",")
 		}
 	}
-	result := strs.Format("\nCREATE TABLE IF NOT EXISTS %s (%s\n);", model.Table, columnsDef)
+	result := strs.Format("\nCREATE TABLE IF NOT EXISTS %s (%s\n);", table(model), columnsDef)
 
 	return result
 }
@@ -196,7 +196,7 @@ func (s *Postgres) ddlTableInsertTo(model *jdb.Model, tableOrigin string) string
 			fields = strs.Append(fields, strs.Format("%s", column.Name), ", ")
 		}
 	}
-	result := strs.Format("INSERT INTO %s (%s)\nSELECT %s FROM %s;", model.Table, fields, fields, tableOrigin)
+	result := strs.Format("INSERT INTO %s (%s)\nSELECT %s FROM %s;", table(model), fields, fields, tableOrigin)
 
 	return result
 }

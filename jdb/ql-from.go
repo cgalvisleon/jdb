@@ -30,9 +30,22 @@ func From(model *Model) *Ql {
 		Limit:      0,
 		Sheet:      0,
 		Help: et.Json{
-			"from":   model.Name,
-			"data":   []string{"name", "status_id", "kinds.name:status"},
-			"select": []string{SYSID},
+			"from": model.Name,
+			"data": []interface{}{
+				"name",
+				"status_id",
+				"kinds.name:status",
+				et.Json{
+					"folders": et.Json{
+						"select": []interface{}{
+							"name",
+						},
+						"page": 1,
+						"rows": 30,
+						"list": true,
+					},
+				},
+			},
 			"join": []et.Json{
 				{
 					"kinds": et.Json{
@@ -69,9 +82,8 @@ func From(model *Model) *Ql {
 				"ASC":  []string{"name"},
 				"DESC": []string{"name"},
 			},
-			"page":    1,
-			"limit":   30,
-			"details": []et.Json{},
+			"page":  1,
+			"limit": 30,
 		},
 	}
 	result.Havings = &QlHaving{Ql: result, QlWhere: NewQlWhere()}
@@ -87,7 +99,7 @@ func From(model *Model) *Ql {
 func (s *Ql) listForms() []string {
 	var result []string
 	for _, from := range s.Froms.Froms {
-		result = append(result, strs.Format(`%s, %s`, from.Table, from.As))
+		result = append(result, strs.Format(`%s.%s, %s`, from.Schema.Name, from.Name, from.As))
 	}
 
 	return result

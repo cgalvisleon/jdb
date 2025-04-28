@@ -1,6 +1,7 @@
 package jdb
 
 import (
+	"database/sql"
 	"net/http"
 
 	"github.com/cgalvisleon/et/console"
@@ -25,12 +26,13 @@ func (s *DB) defineRecords() error {
 	coreRecords = NewModel(coreSchema, "records", 1)
 	coreRecords.DefineColumn(CREATED_AT, CreatedAtField.TypeData())
 	coreRecords.DefineColumn(UPDATED_AT, UpdatedAtField.TypeData())
+	coreRecords.DefineColumn("schema_name", TypeDataText)
 	coreRecords.DefineColumn("table_name", TypeDataText)
 	coreRecords.DefineColumn("option", TypeDataShortText)
 	coreRecords.DefineColumn("sync", TypeDataBool)
 	coreRecords.DefineColumn(SYSID, SystemKeyField.TypeData())
 	coreRecords.DefineIndexField()
-	coreRecords.DefinePrimaryKey("table_name", SYSID)
+	coreRecords.DefinePrimaryKey("schema_name", "table_name", SYSID)
 	coreRecords.DefineIndex(true,
 		"option",
 		"sync",
@@ -44,7 +46,7 @@ func (s *DB) defineRecords() error {
 	return nil
 }
 
-func (s *DB) upsertRecord(table, option, sysid string) error {
+func (s *DB) upsertRecord(tx *sql.Tx, schema, name, sysid, option string) error {
 	if sysid == "" {
 		return mistake.New(MSG_SYSID_REQUIRED)
 	}
@@ -56,9 +58,10 @@ func (s *DB) upsertRecord(table, option, sysid string) error {
 			"option":   option,
 			"sync":     false,
 		}).
-		Where("table_name").Eq(table).
+		Where("schema_name").Eq(schema).
+		And("table_name").Eq(name).
 		And(SYSID).Eq(sysid).
-		One()
+		ExecTx(tx)
 	if err != nil {
 		return err
 	}
@@ -69,15 +72,16 @@ func (s *DB) upsertRecord(table, option, sysid string) error {
 
 	_, err = coreRecords.
 		Insert(et.Json{
-			CREATED_AT:   now,
-			UPDATED_AT:   now,
-			"table_name": table,
-			"option":     option,
-			"sync":       false,
-			SYSID:        sysid,
-			INDEX:        utility.GenIndex(),
+			CREATED_AT:    now,
+			UPDATED_AT:    now,
+			"schema_name": schema,
+			"table_name":  name,
+			"option":      option,
+			"sync":        false,
+			SYSID:         sysid,
+			INDEX:         utility.GenIndex(),
 		}).
-		One()
+		ExecTx(tx)
 	if err != nil {
 		return err
 	}

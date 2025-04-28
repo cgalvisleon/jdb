@@ -133,6 +133,21 @@ func toArrayString(val interface{}) ([]string, error) {
 	return nil, mistake.New("invalid type []string")
 }
 
+func toArrayInterface(val interface{}) ([]interface{}, error) {
+	switch v := val.(type) {
+	case []interface{}:
+		return v, nil
+	case []string:
+		fields := make([]interface{}, 0)
+		for _, field := range v {
+			fields = append(fields, field)
+		}
+
+		return fields, nil
+	}
+
+	return nil, mistake.New("invalid type []interface{}")
+}
 func toMapString(val interface{}) (map[string]string, error) {
 	switch v := val.(type) {
 	case map[string]string:
@@ -247,7 +262,7 @@ func (s *Model) defineColumns(tp int, args ...interface{}) error {
 			return mistake.Newf("invalid type: %v error: %s", args[2], err.Error())
 		}
 
-		rollups, err := toArrayString(args[3])
+		rollups, err := toArrayInterface(args[3])
 		if err != nil {
 			return mistake.Newf("invalid type: %v error: %s", args[3], err.Error())
 		}
@@ -532,9 +547,11 @@ func (s *Model) defineFullText(language string, fields []string) *Column {
 func (s *Model) defineProjectField() *Column {
 	idx := -1
 	for _, pk := range s.PrimaryKeys {
-		idx = slices.IndexFunc(s.Columns, func(e *Column) bool { return e.Name == pk.Name })
-		if idx != -1 {
-			break
+		min := slices.IndexFunc(s.Columns, func(e *Column) bool { return e.Name == pk.Name })
+		if min != -1 && idx == -1 {
+			idx = min
+		} else if min != -1 && min < idx {
+			idx = min
 		}
 	}
 
@@ -609,26 +626,19 @@ func (s *Model) defineRelation(name, relatedTo string, fks map[string]string, li
 
 /**
 * defineRollup
-* @param name, rollupFrom string, fks map[string]string, properties []string
+* @param name, rollupFrom string, fks map[string]string, fields []interface{}
 * @return *Rollup
 **/
-func (s *Model) defineRollup(name, rollupFrom string, fks map[string]string, properties []string) *Rollup {
+func (s *Model) defineRollup(name, rollupFrom string, fks map[string]string, fields []interface{}) *Rollup {
 	source := s.Db.GetModel(rollupFrom)
 	if source == nil {
 		return nil
 	}
 
-	props := make([]string, 0)
-	for _, property := range properties {
-		col := source.getColumn(property)
-		if col != nil {
-			props = append(props, col.Name)
-		}
-	}
 	result := &Rollup{
 		Source: source,
 		Fk:     make(map[string]string),
-		Props:  props,
+		Fields: fields,
 	}
 
 	for fkn, pkn := range fks {
@@ -667,15 +677,14 @@ func (s *Model) defineDetail(name string, fks map[string]string, limit int) *Mod
 * @return *Model
 **/
 func (s *Model) defineHistory(pkn string, limit int) *Model {
-	name := "historical"
-	relatedTo := s.Name + "_" + name
-	result := s.defineRelation(name, relatedTo, map[string]string{"history_id": pkn}, limit)
+	relatedTo := s.Name + "_" + HISTORYCAL
+	result := s.defineRelation(HISTORYCAL, relatedTo, map[string]string{"history_id": pkn}, limit)
 	with := result.With
 	with.defineColumn(CREATED_AT, CreatedAtField.TypeData())
-	with.defineSourceField()
-	with.defineColumn(HISTORY_INDEX, IndexField.TypeData())
-	with.defineSystemKeyField()
-	with.defineIndex(true, []string{HISTORY_INDEX, CREATED_AT})
+	with.defineColumn(SYSID, SystemKeyField.TypeData())
+	with.defineColumn(HISTORYCAL, SourceField.TypeData())
+	with.defineColumn(INDEX, IndexField.TypeData())
+	with.defineIndex(true, []string{SYSID, INDEX})
 	s.History = result
 
 	return with
@@ -895,10 +904,10 @@ func (s *Model) DefineRelation(name, relatedTo string, fks map[string]string, li
 
 /**
 * DefineRollup
-* @param name, rollupFrom string, fks map[string]string, properties []string
+* @param name, rollupFrom string, fks map[string]string, properties []interface{}
 * @return *Rollup
 **/
-func (s *Model) DefineRollup(name, rollupFrom string, fks map[string]string, properties []string) *Rollup {
+func (s *Model) DefineRollup(name, rollupFrom string, fks map[string]string, properties []interface{}) *Rollup {
 	s.setDefine(TypeDefinitionRollup, name, rollupFrom, fks, properties)
 	return s.defineRollup(name, rollupFrom, fks, properties)
 }
@@ -948,7 +957,7 @@ func (s *Model) DefineProjectModel() *Model {
 **/
 func (s *Model) DefineGenerated(name string, fn GeneratedFunction) *Column {
 	result := newColumn(s, name, "", TpGenerated, TypeDataNone, TypeDataNone.DefaultValue())
-	result.generatedFunction = fn
+	result.GeneratedFunction = fn
 	s.Columns = append(s.Columns, result)
 	s.GeneratedFields = append(s.GeneratedFields, result)
 

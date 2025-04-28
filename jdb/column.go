@@ -140,20 +140,21 @@ func (s TypeData) Str() string {
 type ColumnField string
 
 const (
-	PRIMARYKEY    = "id"
-	PK            = PRIMARYKEY
-	KEY           = PRIMARYKEY
-	SOURCE        = "source"
-	INDEX         = "index"
-	PROJECT       = "project_id"
-	CREATED_AT    = "created_at"
-	UPDATED_AT    = "updated_at"
-	STATUS        = "status_id"
-	SYSID         = "jdbid"
-	CREATED_TO    = "created_to"
-	UPDATED_TO    = "updated_to"
-	FULLTEXT      = "fulltext"
-	HISTORY_INDEX = "hindex"
+	PRIMARYKEY = "id"
+	PK         = PRIMARYKEY
+	KEY        = PRIMARYKEY
+	SOURCE     = "source"
+	INDEX      = "index"
+	PROJECT    = "project_id"
+	CREATED_AT = "created_at"
+	UPDATED_AT = "updated_at"
+	STATUS     = "status_id"
+	SYSID      = "jdbid"
+	CREATED_TO = "created_to"
+	UPDATED_TO = "updated_to"
+	FULLTEXT   = "fulltext"
+	HISTORYCAL = "historical"
+	ASC        = true
 )
 
 var (
@@ -211,8 +212,38 @@ type Relation struct {
 	OnUpdateCascade bool              `json:"on_update_cascade"`
 }
 
+/**
+* getFkJson
+* @return et.Json
+**/
+func (s *Relation) getFkJson() et.Json {
+	result := et.Json{}
+	for key, val := range s.Fk {
+		result[key] = val
+	}
+
+	return result
+}
+
+/**
+* Serialize
+* @return []byte, error
+**/
+func (s *Relation) Serialize() ([]byte, error) {
+	result, err := json.Marshal(s)
+	if err != nil {
+		return []byte{}, err
+	}
+
+	return result, nil
+}
+
+/**
+* describe
+* @return et.Json
+**/
 func (s *Relation) describe() et.Json {
-	definition, err := json.Marshal(s)
+	definition, err := s.Serialize()
 	if err != nil {
 		return et.Json{}
 	}
@@ -231,11 +262,41 @@ func (s *Relation) describe() et.Json {
 type Rollup struct {
 	Source *Model            `json:"-"`
 	Fk     map[string]string `json:"fk"`
-	Props  []string          `json:"props"`
+	Fields []interface{}     `json:"fields"`
 }
 
+/**
+* getFkJson
+* @return et.Json
+**/
+func (s *Rollup) getFkJson() et.Json {
+	result := et.Json{}
+	for key, val := range s.Fk {
+		result[key] = val
+	}
+
+	return result
+}
+
+/**
+* Serialize
+* @return []byte, error
+**/
+func (s *Rollup) Serialize() ([]byte, error) {
+	result, err := json.Marshal(s)
+	if err != nil {
+		return []byte{}, err
+	}
+
+	return result, nil
+}
+
+/**
+* describe
+* @return et.Json
+**/
 func (s *Rollup) describe() et.Json {
-	definition, err := json.Marshal(s)
+	definition, err := s.Serialize()
 	if err != nil {
 		return et.Json{}
 	}
@@ -282,7 +343,7 @@ type Column struct {
 	Rollup            *Rollup                `json:"rollup"`
 	FullText          *FullText              `json:"fulltext"`
 	Values            map[string]interface{} `json:"values"`
-	generatedFunction GeneratedFunction      `json:"-"`
+	GeneratedFunction GeneratedFunction      `json:"-"`
 }
 
 func init() {
@@ -339,21 +400,29 @@ func (s *Column) Describe() et.Json {
 		rollup = s.Rollup.describe()
 	}
 
+	source := ""
+	if s.Source != nil {
+		source = s.Source.Name
+	}
+
+	fulltext := et.Json{}
+	if s.FullText != nil {
+		fulltext = s.FullText.describe()
+	}
+
 	result := et.Json{
-		"model":       s.Model.Name,
-		"table":       s.Model.Table,
-		"source":      s.Source.Name,
+		"source":      source,
 		"name":        s.Name,
 		"description": s.Description,
 		"type_column": s.TypeColumn.Str(),
-		"type_data":   s.TypeData.DefaultValue(),
+		"type_data":   s.TypeData.Str(),
 		"default":     s.Default,
 		"max":         s.Max,
 		"min":         s.Min,
 		"hidden":      s.Hidden,
 		"detail":      detail,
 		"rollup":      rollup,
-		"fulltext":    s.FullText.describe(),
+		"fulltext":    fulltext,
 		"values":      s.Values,
 	}
 

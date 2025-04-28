@@ -41,19 +41,19 @@ func (s *QlHaving) Or(val string) *QlHaving {
 
 /**
 * Select
-* @param fields ...string
+* @param fields ...interface{}
 * @return *Ql
 **/
-func (s *QlHaving) Select(fields ...string) *Ql {
+func (s *QlHaving) Select(fields ...interface{}) *Ql {
 	return s.Ql.Select(fields...)
 }
 
 /**
 * Data
-* @param fields ...string
+* @param fields ...interface{}
 * @return *Ql
 **/
-func (s *QlHaving) Data(fields ...string) *Ql {
+func (s *QlHaving) Data(fields ...interface{}) *Ql {
 	return s.Ql.Data(fields...)
 }
 

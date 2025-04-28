@@ -45,5 +45,5 @@ func (s *Postgres) sqlUpdate(command *jdb.Command) string {
 	}
 
 	result := "WITH updated_rows AS (\nSELECT\noc.ctid,\n%s AS old_data\nFROM %s AS oc\nWHERE %s)\nUPDATE %s AS oc SET\n%s\nFROM updated_rows ur\nWHERE oc.ctid = ur.ctid\nRETURNING\n%s;"
-	return strs.Format(result, objects, from.Table, where, from.Table, set, returns)
+	return strs.Format(result, objects, table(from), where, table(from), set, returns)
 }
