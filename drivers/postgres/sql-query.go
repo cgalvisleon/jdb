@@ -1,7 +1,7 @@
 package postgres
 
 import (
-	"database/sql"
+	"fmt"
 
 	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
@@ -9,68 +9,38 @@ import (
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
-func (s *Postgres) query(db *sql.DB, sql string, arg ...any) (*sql.Rows, error) {
-	result, err := db.Query(sql, arg...)
-	if err != nil {
-		sql = jdb.SQLParse(sql, arg...)
-		return nil, console.QueryError(err, sql)
-	}
-
-	return result, nil
-}
-
-func (s *Postgres) exec(db *sql.DB, sql string, arg ...any) (sql.Result, error) {
-	result, err := db.Exec(sql, arg...)
-	if err != nil {
-		sql = jdb.SQLParse(sql, arg...)
-		return nil, console.QueryError(err, sql)
-	}
-
-	return result, nil
-}
-
 /**
-* Exec
-* @param sql string, arg ...any
-* @return error
+* queryTx
+* @param tx *sql.Tx, sql string, arg ...any
+* @return *sql.Rows, error
 **/
-func (s *Postgres) Exec(sql string, arg ...any) error {
-	_, err := s.exec(s.db, sql, arg...)
-	if err != nil {
-		return err
-	}
-
-	return nil
-
-}
-
-/**
-* QueryRow
-* @param query string, dest ...any
-* @return error
-**/
-func (s *Postgres) QueryRow(query string, dest ...any) (bool, error) {
-	err := s.db.QueryRow(query).Scan(dest...)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return true, nil
+func (s *Postgres) queryTx(tx *jdb.Tx, sql string, arg ...any) (et.Items, error) {
+	if tx != nil {
+		err := tx.Begin(s.db)
+		if err != nil {
+			return et.Items{}, err
 		}
 
-		return false, err
+		rows, err := tx.Tx.Query(sql, arg...)
+		if err != nil {
+			errRollback := tx.Rollback()
+			if errRollback != nil {
+				err = fmt.Errorf("error on rollback: %w: %s", errRollback, err)
+			}
+
+			return et.Items{}, console.QueryError(err, sql)
+		}
+		defer rows.Close()
+
+		result := jdb.RowsToItems(rows)
+
+		return result, nil
 	}
 
-	return false, nil
-}
-
-/**
-* Query
-* @param sql string, arg ...any
-* @return et.Items, error
-**/
-func (s *Postgres) Query(sql string, arg ...any) (et.Items, error) {
-	rows, err := s.query(s.db, sql, arg...)
+	rows, err := s.db.Query(sql, arg...)
 	if err != nil {
-		return et.Items{}, err
+		sql = jdb.SQLParse(sql, arg...)
+		return et.Items{}, console.QueryError(err, sql)
 	}
 	defer rows.Close()
 
@@ -80,37 +50,70 @@ func (s *Postgres) Query(sql string, arg ...any) (et.Items, error) {
 }
 
 /**
-* One
+* query
 * @param sql string, arg ...any
-* @return et.Item, error
+* @return et.Items, error
 **/
-func (s *Postgres) One(sql string, arg ...any) (et.Item, error) {
-	rows, err := s.query(s.db, sql, arg...)
-	if err != nil {
-		return et.Item{}, err
-	}
-	defer rows.Close()
-
-	result := jdb.RowsToItem(rows)
-
-	return result, nil
+func (s *Postgres) query(sql string, arg ...any) (et.Items, error) {
+	return s.queryTx(nil, sql, arg...)
 }
 
 /**
-* Data
-* @param source, sql string, arg ...any
+* data
+* @param tx *sql.Tx, sourceFiled, sql string, arg ...any
 * @return et.Items, error
 **/
-func (s *Postgres) Data(sourceFiled, sql string, arg ...any) (et.Items, error) {
-	rows, err := s.query(s.db, sql, arg...)
+func (s *Postgres) dataTx(tx *jdb.Tx, sourceFiled, sql string, arg ...any) (et.Items, error) {
+	if tx != nil {
+		err := tx.Begin(s.db)
+		if err != nil {
+			return et.Items{}, err
+		}
+
+		rows, err := tx.Tx.Query(sql, arg...)
+		if err != nil {
+			errRollback := tx.Rollback()
+			if errRollback != nil {
+				err = fmt.Errorf("error on rollback: %w: %s", errRollback, err)
+			}
+
+			return et.Items{}, console.QueryError(err, sql)
+		}
+		defer rows.Close()
+
+		result := jdb.RowsToSource(sourceFiled, rows)
+
+		return result, nil
+	}
+
+	rows, err := s.db.Query(sql, arg...)
 	if err != nil {
-		return et.Items{}, err
+		sql = jdb.SQLParse(sql, arg...)
+		return et.Items{}, console.QueryError(err, sql)
 	}
 	defer rows.Close()
 
 	result := jdb.RowsToSource(sourceFiled, rows)
 
 	return result, nil
+}
+
+/**
+* QueryTx
+* @param tx *jdb.Tx, sql string, arg ...any
+* @return et.Items, error
+**/
+func (s *Postgres) QueryTx(tx *jdb.Tx, sql string, arg ...any) (et.Items, error) {
+	return s.queryTx(tx, sql, arg...)
+}
+
+/**
+* Query
+* @param sql string, arg ...any
+* @return et.Items, error
+**/
+func (s *Postgres) Query(sql string, arg ...any) (et.Items, error) {
+	return s.query(sql, arg...)
 }
 
 /**
@@ -135,7 +138,7 @@ func (s *Postgres) Select(ql *jdb.Ql) (et.Items, error) {
 	}
 
 	if ql.TypeSelect == jdb.Data {
-		result, err := s.Data("result", ql.Sql)
+		result, err := s.dataTx(ql.Tx(), "result", ql.Sql)
 		if err != nil {
 			return et.Items{}, err
 		}
@@ -143,7 +146,7 @@ func (s *Postgres) Select(ql *jdb.Ql) (et.Items, error) {
 		return result, nil
 	}
 
-	result, err := s.Query(ql.Sql)
+	result, err := s.queryTx(ql.Tx(), ql.Sql)
 	if err != nil {
 		return et.Items{}, err
 	}

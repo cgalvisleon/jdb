@@ -1,14 +1,12 @@
 package jdb
 
 import (
-	"database/sql"
-
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/event"
 	"github.com/cgalvisleon/et/strs"
 )
 
-func (s *Command) deleted(tx *sql.Tx) error {
+func (s *Command) deleted() error {
 	model := s.From
 	results, err := s.Db.Command(s)
 	if err != nil {
@@ -29,11 +27,12 @@ func (s *Command) deleted(tx *sql.Tx) error {
 		return nil
 	}
 
-	if model.UseCore {
+	if !s.isSync && model.UseCore {
 		syncChannel := strs.Format("sync:%s", model.Db.Name)
 		event.Publish(syncChannel, et.Json{
 			"fromId":  model.Db.Id,
 			"command": "delete",
+			"model":   model.Name,
 			"sql":     s.Sql,
 			"where":   s.listWheres(),
 			"result":  s.Result,
@@ -49,7 +48,7 @@ func (s *Command) deleted(tx *sql.Tx) error {
 		after := result.ValJson(et.Json{}, "result", "after")
 
 		for _, event := range model.eventsDelete {
-			err := event(tx, model, before, after)
+			err := event(s.tx, model, before, after)
 			if err != nil {
 				return err
 			}

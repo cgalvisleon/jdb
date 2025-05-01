@@ -74,13 +74,13 @@ func (s *Systemd) SetConfig(cfg string) {
 		k = strs.Uppcase(k)
 		switch val := v.(type) {
 		case string:
-			envar.UpSetStr(k, val)
+			envar.SetStr(k, val)
 		case int:
-			envar.UpSetInt(k, val)
+			envar.SetInt(k, val)
 		case bool:
-			envar.UpSetBool(k, val)
+			envar.SetBool(k, val)
 		case float64:
-			envar.UpSetFloat(k, val)
+			envar.SetFloat(k, val)
 		}
 	}
 }

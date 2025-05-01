@@ -40,7 +40,7 @@ func NewSchema(db *DB, name string) *Schema {
 			Db:        db,
 			CreatedAt: now,
 			UpdateAt:  now,
-			Id:        reg.Id("schema"),
+			Id:        reg.GenId("schema"),
 			Name:      name,
 			UseCore:   db.UseCore,
 			models:    make([]*Model, 0),

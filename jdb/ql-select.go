@@ -75,23 +75,11 @@ func (s *Ql) Data(fields ...interface{}) *Ql {
 }
 
 /**
-* Exec
-* @return et.Items, error
-**/
-func (s *Ql) Exec() (et.Items, error) {
-	return et.Items{}, nil
-}
-
-/**
 * setSelects
 * @param fields ...interface{}
 * @return *Ql
 **/
 func (s *Ql) setSelects(fields ...interface{}) *Ql {
-	if len(fields) == 0 {
-		return s
-	}
-
 	froms := s.Froms.Froms
 	if len(froms) == 0 {
 		return s

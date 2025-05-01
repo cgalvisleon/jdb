@@ -7,6 +7,11 @@ import (
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
+/**
+* LoadSchema
+* @param name string
+* @return error
+**/
 func (s *Postgres) LoadSchema(name string) error {
 	if s.db == nil {
 		return mistake.Newf(msg.NOT_DRIVER_DB)
@@ -22,7 +27,7 @@ func (s *Postgres) LoadSchema(name string) error {
 	}
 
 	sql := jdb.SQLDDL(`CREATE SCHEMA IF NOT EXISTS $1`, name)
-	err = s.Exec(sql)
+	_, err = s.query(sql)
 	if err != nil {
 		return err
 	}
@@ -32,13 +37,18 @@ func (s *Postgres) LoadSchema(name string) error {
 	return nil
 }
 
+/**
+* DropSchema
+* @param name string
+* @return error
+**/
 func (s *Postgres) DropSchema(name string) error {
 	if s.db == nil {
 		return mistake.Newf(msg.NOT_DRIVER_DB)
 	}
 
 	sql := jdb.SQLDDL(`DROP SCHEMA IF EXISTS $1 CASCADE`, name)
-	err := s.Exec(sql)
+	_, err := s.query(sql)
 	if err != nil {
 		return err
 	}
@@ -48,13 +58,18 @@ func (s *Postgres) DropSchema(name string) error {
 	return nil
 }
 
+/**
+* ExistSchema
+* @param name string
+* @return bool, error
+**/
 func (s *Postgres) ExistSchema(name string) (bool, error) {
 	if s.db == nil {
 		return false, mistake.Newf(msg.NOT_DRIVER_DB)
 	}
 
 	sql := jdb.SQLDDL(`SELECT 1 FROM pg_namespace WHERE nspname = '$1';`, name)
-	items, err := s.Query(sql)
+	items, err := s.query(sql)
 	if err != nil {
 		return false, err
 	}

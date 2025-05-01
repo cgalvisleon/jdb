@@ -19,6 +19,7 @@ const (
 	TypeDefinitionPrimaryKey
 	TypeDefinitionPrimaryKeyField
 	TypeDefinitionForeignKey
+	TypeDefinitionSource
 	TypeDefinitionSourceField
 	TypeDefinitionAtribute
 	TypeDefinitionCreatedAtField
@@ -52,6 +53,8 @@ func (s TypeDefinition) Str() string {
 		return "primary_key_field"
 	case TypeDefinitionForeignKey:
 		return "foreign_key"
+	case TypeDefinitionSource:
+		return "source"
 	case TypeDefinitionSourceField:
 		return "source_field"
 	case TypeDefinitionAtribute:
@@ -207,6 +210,8 @@ func (s *Model) defineColumns(tp int, args ...interface{}) error {
 		}
 
 		s.defineForeignKey(fks, args[1].(string), args[2].(bool), args[3].(bool))
+	case TypeDefinitionSource:
+		s.defineSource(args[0].(string))
 	case TypeDefinitionSourceField:
 		s.defineSourceField()
 	case TypeDefinitionAtribute:
@@ -435,6 +440,19 @@ func (s *Model) defineForeignKey(fks map[string]string, withName string, onDelet
 }
 
 /**
+* defineSource
+* @param name string
+* @return *Column
+**/
+func (s *Model) defineSource(name string) *Column {
+	result := s.defineColumn(name, SourceField.TypeData())
+	s.defineIndex(true, []string{name})
+	s.SourceField = result
+
+	return result
+}
+
+/**
 * defineSourceField
 * @return *Column
 **/
@@ -443,11 +461,7 @@ func (s *Model) defineSourceField() *Column {
 		return s.SourceField
 	}
 
-	result := s.defineColumn(SOURCE, SourceField.TypeData())
-	s.defineIndex(true, []string{SOURCE})
-	s.SourceField = result
-
-	return result
+	return s.defineSource(SourceField.Str())
 }
 
 /**
@@ -700,8 +714,8 @@ func (s *Model) defineModel() *Model {
 	s.defineStatusField()
 	s.definePrimaryKeyField()
 	s.defineSourceField()
-	s.defineIndexField()
 	s.defineSystemKeyField()
+	s.defineIndexField()
 
 	return s
 }
@@ -717,8 +731,8 @@ func (s *Model) defineProjectModel() *Model {
 	s.defineStatusField()
 	s.definePrimaryKeyField()
 	s.defineSourceField()
-	s.defineIndexField()
 	s.defineSystemKeyField()
+	s.defineIndexField()
 
 	return s
 }
@@ -787,6 +801,16 @@ func (s *Model) DefinePrimaryKeyField() *Column {
 func (s *Model) DefineForeignKey(fks map[string]string, withName string, onDeleteCascade, onUpdateCascade bool) *Relation {
 	s.setDefine(TypeDefinitionForeignKey, fks, withName, onDeleteCascade, onUpdateCascade)
 	return s.defineForeignKey(fks, withName, onDeleteCascade, onUpdateCascade)
+}
+
+/**
+* DefineSource
+* @param name string
+* @return *Column
+**/
+func (s *Model) DefineSource(name string) *Column {
+	s.setDefine(TypeDefinitionSource, name)
+	return s.defineSource(name)
 }
 
 /**

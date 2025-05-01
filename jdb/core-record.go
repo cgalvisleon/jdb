@@ -1,15 +1,14 @@
 package jdb
 
 import (
-	"database/sql"
 	"net/http"
 
 	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/mistake"
+	"github.com/cgalvisleon/et/reg"
 	"github.com/cgalvisleon/et/response"
 	"github.com/cgalvisleon/et/timezone"
-	"github.com/cgalvisleon/et/utility"
 )
 
 var coreRecords *Model
@@ -46,7 +45,7 @@ func (s *DB) defineRecords() error {
 	return nil
 }
 
-func (s *DB) upsertRecord(tx *sql.Tx, schema, name, sysid, option string) error {
+func (s *DB) upsertRecord(tx *Tx, schema, name, sysid, option string) error {
 	if sysid == "" {
 		return mistake.New(MSG_SYSID_REQUIRED)
 	}
@@ -79,7 +78,7 @@ func (s *DB) upsertRecord(tx *sql.Tx, schema, name, sysid, option string) error 
 			"option":      option,
 			"sync":        false,
 			SYSID:         sysid,
-			INDEX:         utility.GenIndex(),
+			INDEX:         reg.GenIndex(),
 		}).
 		ExecTx(tx)
 	if err != nil {

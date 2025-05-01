@@ -3,7 +3,6 @@ package sqlite
 import (
 	"database/sql"
 
-	"github.com/cgalvisleon/et/envar"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/mistake"
 	"github.com/cgalvisleon/jdb/jdb"
@@ -35,7 +34,6 @@ func (s *SqlLite) Name() string {
 
 func init() {
 	jdb.Register(jdb.SqliteDriver, NewDriver)
-	envar.UpSetStr("DB_DRIVER", jdb.SqliteDriver)
 }
 
 func (s *SqlLite) Disconnect() error {

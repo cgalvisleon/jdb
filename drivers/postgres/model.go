@@ -29,7 +29,7 @@ func (s *Postgres) LoadModel(model *jdb.Model) error {
 			console.Debug(sql)
 		}
 
-		err = s.Exec(sql)
+		_, err = s.query(sql)
 		if err != nil {
 			return err
 		}
@@ -59,7 +59,7 @@ func (s *Postgres) LoadModel(model *jdb.Model) error {
 	AND a.attnum > 0
 	AND NOT a.attisdropped;`
 
-	items, err := s.Query(sql, model.Schema.Name, model.Name)
+	items, err := s.query(sql, model.Schema.Name, model.Name)
 	if err != nil {
 		return err
 	}
@@ -86,7 +86,7 @@ func (s *Postgres) DropModel(model *jdb.Model) error {
 		console.Debug(sql)
 	}
 
-	err := s.Exec(sql)
+	_, err := s.query(sql)
 	if err != nil {
 		return err
 	}
@@ -109,7 +109,8 @@ func (s *Postgres) MutateModel(model *jdb.Model) error {
 	if model.IsDebug {
 		console.Debug(sql)
 	}
-	err := s.Exec(sql)
+
+	_, err := s.query(sql)
 	if err != nil {
 		return err
 	}

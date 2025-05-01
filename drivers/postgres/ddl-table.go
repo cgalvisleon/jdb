@@ -16,7 +16,7 @@ func (s *Postgres) existTable(schema, name string) (bool, error) {
 		WHERE UPPER(table_schema) = UPPER($1)
 		AND UPPER(table_name) = UPPER($2));`
 
-	items, err := s.Query(sql, schema, name)
+	items, err := s.queryTx(nil, sql, schema, name)
 	if err != nil {
 		return false, err
 	}

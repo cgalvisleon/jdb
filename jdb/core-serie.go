@@ -104,7 +104,7 @@ func (s *DB) GetSerie(tag string) (int64, error) {
 			"value":    1,
 		}).
 		Return("value").
-		One()
+		Exec()
 	if err != nil {
 		return 0, err
 	}
@@ -165,7 +165,7 @@ func (s *DB) SetSerie(tag string, val int64) (int64, error) {
 			"value":    val,
 		}).
 		Return("value").
-		One()
+		Exec()
 	if err != nil {
 		return 0, err
 	}
@@ -173,10 +173,14 @@ func (s *DB) SetSerie(tag string, val int64) (int64, error) {
 	return val, nil
 }
 
+/**
+* DeleteSerie
+* @param tag string
+* @return error
+**/
 func (s *DB) DeleteSerie(tag string) error {
 	item, err := coreSeries.
-		Delete().
-		Where("tag").Eq(tag).
+		Delete("tag").Eq(tag).
 		Exec()
 	if err != nil {
 		return err

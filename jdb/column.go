@@ -143,7 +143,6 @@ const (
 	PRIMARYKEY = "id"
 	PK         = PRIMARYKEY
 	KEY        = PRIMARYKEY
-	SOURCE     = "source"
 	INDEX      = "index"
 	PROJECT    = "project_id"
 	CREATED_AT = "created_at"
@@ -159,7 +158,7 @@ const (
 
 var (
 	IndexField      ColumnField = INDEX
-	SourceField     ColumnField = SOURCE
+	SourceField     ColumnField = "source"
 	ProjectField    ColumnField = PROJECT
 	CreatedAtField  ColumnField = CREATED_AT
 	UpdatedAtField  ColumnField = UPDATED_AT
@@ -213,13 +212,17 @@ type Relation struct {
 }
 
 /**
-* getFkJson
+* Where
+* @param from et.Json
 * @return et.Json
 **/
-func (s *Relation) getFkJson() et.Json {
+func (s *Relation) Where(from et.Json) et.Json {
 	result := et.Json{}
-	for key, val := range s.Fk {
-		result[key] = val
+	for fkn, pkn := range s.Fk {
+		fk := from.Str(fkn)
+		result[pkn] = et.Json{
+			"eq": fk,
+		}
 	}
 
 	return result
@@ -266,13 +269,17 @@ type Rollup struct {
 }
 
 /**
-* getFkJson
+* Where
+* @param from et.Json
 * @return et.Json
 **/
-func (s *Rollup) getFkJson() et.Json {
+func (s *Rollup) Where(from et.Json) et.Json {
 	result := et.Json{}
-	for key, val := range s.Fk {
-		result[key] = val
+	for fkn, pkn := range s.Fk {
+		fk := from.Str(fkn)
+		result[pkn] = et.Json{
+			"eq": fk,
+		}
 	}
 
 	return result

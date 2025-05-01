@@ -1,16 +1,51 @@
 package jdb
 
 import (
-	"github.com/cgalvisleon/et/envar"
+	"github.com/cgalvisleon/et/config"
 	"github.com/cgalvisleon/et/et"
+	"github.com/cgalvisleon/et/mistake"
 )
+
+/**
+* Page
+* @param page int
+* @return *Ql
+**/
+func (s *Ql) Page(val int) *Ql {
+	s.Sheet = val
+	return s
+}
+
+/**
+* List
+* @param page, rows int
+* @return et.List, error
+**/
+func (s *Ql) List(page, rows int) (et.List, error) {
+	if s.Db == nil {
+		return et.List{}, mistake.New(MSG_DATABASE_NOT_FOUND)
+	}
+
+	all, err := s.Db.Count(s)
+	if err != nil {
+		return et.List{}, err
+	}
+
+	s.Page(page)
+	result, err := s.RowsTx(s.tx, rows)
+	if err != nil {
+		return et.List{}, err
+	}
+
+	return result.ToList(all, s.Sheet, s.Limit), nil
+}
 
 /**
 * calcOffset
 * @return *Ql
 **/
 func (s *Ql) calcOffset() *Ql {
-	max := envar.GetInt(1000, "QUERY_LIMIT")
+	max := config.Int("DB_RECORD_LIMIT", 1000)
 	if s.Limit > max {
 		s.Limit = max
 	}
@@ -35,19 +70,49 @@ func (s *Ql) setPage(page int) *Ql {
 }
 
 /**
-* SetLimit
-* @param limit int
-* @return *Ql
+* SetLimitTx
+* @param tx *Tx, limit int
+* @return interface{}, error
 **/
-func (s *Ql) setLimit(limit int) (interface{}, error) {
+func (s *Ql) setLimitTx(tx *Tx, limit int) (interface{}, error) {
 	s.Limit = limit
 	if s.Limit <= 0 {
-		return s.All()
-	} else if s.Limit == 1 {
-		return s.One()
-	}
+		result, err := s.AllTx(tx)
+		if err != nil {
+			return nil, err
+		}
 
-	return s.First(s.Limit)
+		res := result.ToJson()
+		if s.IsDebug {
+			res["sql"] = s.Sql
+		}
+
+		return res, nil
+	} else if s.Limit == 1 {
+		result, err := s.OneTx(tx)
+		if err != nil {
+			return nil, err
+		}
+
+		res := result.ToJson()
+		if s.IsDebug {
+			res["sql"] = s.Sql
+		}
+
+		return res, nil
+	} else {
+		result, err := s.FirstTx(tx, s.Limit)
+		if err != nil {
+			return nil, err
+		}
+
+		res := result.ToJson()
+		if s.IsDebug {
+			res["sql"] = s.Sql
+		}
+
+		return res, nil
+	}
 }
 
 /**

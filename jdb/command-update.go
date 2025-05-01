@@ -1,14 +1,12 @@
 package jdb
 
 import (
-	"database/sql"
-
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/event"
 	"github.com/cgalvisleon/et/strs"
 )
 
-func (s *Command) updated(tx *sql.Tx) error {
+func (s *Command) updated() error {
 	s.prepare()
 	model := s.From
 
@@ -32,19 +30,16 @@ func (s *Command) updated(tx *sql.Tx) error {
 		return nil
 	}
 
-	if model.UseCore {
+	if !s.isSync && model.UseCore {
 		syncChannel := strs.Format("sync:%s", model.Db.Name)
 		event.Publish(syncChannel, et.Json{
 			"fromId":  model.Db.Id,
 			"command": "update",
+			"model":   model.Name,
 			"sql":     s.Sql,
 			"values":  s.Values,
 			"result":  s.Result,
 		})
-	}
-
-	if s.isUndo {
-		return nil
 	}
 
 	for _, result := range s.Result.Result {
@@ -56,8 +51,12 @@ func (s *Command) updated(tx *sql.Tx) error {
 			continue
 		}
 
+		if !s.isUndo {
+			go eventHistoryDefault(s.tx, model, before)
+		}
+
 		for _, event := range model.eventsUpdate {
-			err := event(tx, model, before, after)
+			err := event(s.tx, model, before, after)
 			if err != nil {
 				return err
 			}

@@ -1,15 +1,12 @@
 package jdb
 
 import (
-	"database/sql"
-
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/event"
 	"github.com/cgalvisleon/et/strs"
 )
 
-func (s *Command) inserted(tx *sql.Tx) error {
-	s.Tx = tx
+func (s *Command) inserted() error {
 	s.prepare()
 	model := s.From
 
@@ -32,17 +29,16 @@ func (s *Command) inserted(tx *sql.Tx) error {
 		return nil
 	}
 
-	syncChannel := strs.Format("sync:%s", model.Db.Name)
-	event.Publish(syncChannel, et.Json{
-		"fromId":  model.Db.Id,
-		"command": "insert",
-		"sql":     s.Sql,
-		"values":  s.Values,
-		"result":  s.Result,
-	})
-
-	if !s.isUndo {
-		return nil
+	if !s.isSync && model.UseCore {
+		syncChannel := strs.Format("sync:%s", model.Db.Name)
+		event.Publish(syncChannel, et.Json{
+			"fromId":  model.Db.Id,
+			"command": "insert",
+			"model":   model.Name,
+			"sql":     s.Sql,
+			"values":  s.Values,
+			"result":  s.Result,
+		})
 	}
 
 	for _, result := range s.Result.Result {
@@ -50,11 +46,10 @@ func (s *Command) inserted(tx *sql.Tx) error {
 		after := result.ValJson(et.Json{}, "result", "after")
 
 		for _, event := range model.eventsInsert {
-			err := event(tx, model, before, after)
+			err := event(s.tx, model, before, after)
 			if err != nil {
-				return Rollback(tx, err)
+				return err
 			}
-
 		}
 	}
 

@@ -3,7 +3,7 @@ package jdb
 import (
 	"fmt"
 
-	"github.com/cgalvisleon/et/strs"
+	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/utility"
 )
 
@@ -263,18 +263,11 @@ func (s *QlCondition) getValue() string {
 }
 
 /**
-* String
-* @return string
+* describe
+* @return et.Json
 **/
-func (s *QlCondition) string() string {
-	var result string
-
-	if s.Connector != NoC {
-		result = strs.Append(result, s.Connector.Str(), " ")
+func (s *QlCondition) describe() et.Json {
+	return et.Json{
+		s.Operator.Str(): s.getValue(),
 	}
-	result = strs.Append(result, s.getField(), " ")
-	result = strs.Append(result, s.Operator.Str(), " ")
-	result = strs.Append(result, s.getValue(), " ")
-
-	return result
 }

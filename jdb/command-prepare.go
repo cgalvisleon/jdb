@@ -1,8 +1,6 @@
 package jdb
 
-import (
-	"github.com/cgalvisleon/et/utility"
-)
+import "github.com/cgalvisleon/et/reg"
 
 func (s *Command) beforeInsert(item map[string]*Field) map[string]*Field {
 	if s.From == nil {
@@ -12,7 +10,7 @@ func (s *Command) beforeInsert(item map[string]*Field) map[string]*Field {
 	if s.From.UseCore && s.From.IndexField != nil {
 		field := s.From.IndexField.GetField()
 		if field != nil {
-			field.Value = utility.GenIndex()
+			field.Value = reg.GenIndex()
 			item[field.Name] = field
 		}
 	}

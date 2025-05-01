@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"slices"
 
-	"github.com/cgalvisleon/et/envar"
+	"github.com/cgalvisleon/et/config"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/mistake"
 	"github.com/cgalvisleon/et/response"
@@ -153,16 +153,28 @@ func ConnectTo(params ConnectParams) (*DB, error) {
 * @return *DB, error
 **/
 func Load() (*DB, error) {
+	err := config.Validate([]string{
+		"DB_DRIVER",
+		"DB_NAME",
+		"DB_HOST",
+		"DB_PORT",
+		"DB_USER",
+		"DB_PASSWORD",
+	})
+	if err != nil {
+		return nil, err
+	}
+
 	return ConnectTo(ConnectParams{
-		Driver: envar.GetStr(PostgresDriver, "DB_DRIVER"),
-		Name:   envar.GetStr("data", "DB_NAME"),
+		Driver: config.String("DB_DRIVER", "postgres"),
+		Name:   config.String("DB_NAME", "test"),
 		Params: et.Json{
-			"database": envar.GetStr("data", "DB_NAME"),
-			"host":     envar.GetStr("localhost", "DB_HOST"),
-			"port":     envar.GetInt(5432, "DB_PORT"),
-			"username": envar.GetStr("", "DB_USER"),
-			"password": envar.GetStr("", "DB_PASSWORD"),
-			"app":      envar.GetStr("jdb", "APP_NAME"),
+			"database": config.String("DB_NAME", "test"),
+			"host":     config.String("DB_HOST", "localhost"),
+			"port":     config.Int("DB_PORT", 5432),
+			"username": config.String("DB_USER", "test"),
+			"password": config.String("DB_PASSWORD", "test"),
+			"app":      config.App.Name,
 		},
 		UserCore: true,
 	})
@@ -424,8 +436,24 @@ func Define(params et.Json) (et.Json, error) {
 }
 
 /**
+* QueryTx
+* @param tx *Tx, params et.Json
+* @return interface{}, error
+**/
+func QueryTx(tx *Tx, params et.Json) (interface{}, error) {
+	from := params.Str("from")
+	model := GetModel(from, false)
+	if model == nil {
+		return nil, mistake.Newf(MSG_MODEL_NOT_FOUND, from)
+	}
+
+	return From(model).
+		queryTx(tx, params)
+}
+
+/**
 * Query
-* @param params et.Json
+* @param tx *Tx, params et.Json
 * @return interface{}, error
 **/
 func Query(params et.Json) (interface{}, error) {
@@ -441,10 +469,10 @@ func Query(params et.Json) (interface{}, error) {
 
 /**
 * Commands
-* @param params et.Json
+* @param tx *Tx, params et.Json
 * @return interface{}, error
 **/
-func Commands(params et.Json) (interface{}, error) {
+func Commands(tx *Tx, params et.Json) (interface{}, error) {
 	insert := params.Str("insert")
 	update := params.Str("update")
 	delete := params.Str("delete")
@@ -472,13 +500,13 @@ func Commands(params et.Json) (interface{}, error) {
 			return nil, mistake.Newf(MSG_MODEL_NOT_FOUND, delete)
 		}
 
-		comm = model.Delete().
+		comm = NewCommand(model, []et.Json{}, Delete).
 			setWheres(where)
 	} else {
 		return nil, mistake.New(MSG_COMMAND_NOT_FOUND)
 	}
 
-	return comm.Exec()
+	return comm.ExecTx(tx)
 }
 
 /**
@@ -539,7 +567,7 @@ func ModelQuery(w http.ResponseWriter, r *http.Request) {
 **/
 func ModelCommand(w http.ResponseWriter, r *http.Request) {
 	params, _ := response.GetBody(r)
-	result, err := Commands(params)
+	result, err := Commands(nil, params)
 	if err != nil {
 		response.HTTPError(w, r, http.StatusBadRequest, err.Error())
 		return

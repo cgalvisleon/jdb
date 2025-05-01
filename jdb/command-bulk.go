@@ -1,14 +1,12 @@
 package jdb
 
 import (
-	"database/sql"
-
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/event"
 	"github.com/cgalvisleon/et/strs"
 )
 
-func (s *Command) bulk(tx *sql.Tx) error {
+func (s *Command) bulk() error {
 	s.prepare()
 	model := s.From
 
@@ -46,19 +44,17 @@ func (s *Command) bulk(tx *sql.Tx) error {
 		return nil
 	}
 
-	go func() {
-		for _, result := range s.Result.Result {
-			before := result.ValJson(et.Json{}, "result", "before")
-			after := result.ValJson(et.Json{}, "result", "after")
+	for _, result := range s.Result.Result {
+		before := result.ValJson(et.Json{}, "result", "before")
+		after := result.ValJson(et.Json{}, "result", "after")
 
-			for _, event := range model.eventsInsert {
-				err := event(tx, model, before, after)
-				if err != nil {
-					continue
-				}
+		for _, event := range model.eventsInsert {
+			err := event(s.tx, model, before, after)
+			if err != nil {
+				continue
 			}
 		}
-	}()
+	}
 
 	return nil
 }

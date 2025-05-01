@@ -6,6 +6,11 @@ import (
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
+/**
+* Count
+* @param ql *jdb.Ql
+* @return int, error
+**/
 func (s *Postgres) Count(ql *jdb.Ql) (int, error) {
 	ql.Sql = ""
 	ql.Sql = strs.Append(ql.Sql, "SELECT COUNT(*) AS Count", "\n")
@@ -17,7 +22,7 @@ func (s *Postgres) Count(ql *jdb.Ql) (int, error) {
 		console.Debug(ql.Sql)
 	}
 
-	result, err := s.Query(ql.Sql)
+	result, err := s.query(ql.Sql)
 	if err != nil {
 		return 0, err
 	}

@@ -16,6 +16,7 @@ const (
 
 type Ql struct {
 	*QlWhere
+	tx         *Tx        `json:"-"`
 	Db         *DB        `json:"-"`
 	TypeSelect TypeSelect `json:"type_select"`
 	Froms      *QlFroms   `json:"froms"`
@@ -50,6 +51,25 @@ func (s *Ql) Describe() et.Json {
 		"limit":    s.listLimit(),
 		"help":     s.Help,
 	}
+}
+
+/**
+* setTx
+* @param tx *Tx
+* @return *Ql
+**/
+func (s *Ql) setTx(tx *Tx) *Ql {
+	s.tx = tx
+
+	return s
+}
+
+/**
+* Tx
+* @return *Tx
+**/
+func (s *Ql) Tx() *Tx {
+	return s.tx
 }
 
 /**

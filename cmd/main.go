@@ -9,12 +9,12 @@ import (
 )
 
 func main() {
-	_, err := cache.Load()
+	err := cache.Load()
 	if err != nil {
 		panic(err)
 	}
 
-	_, err = event.Load()
+	err = event.Load()
 	if err != nil {
 		panic(err)
 	}

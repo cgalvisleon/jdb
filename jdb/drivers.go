@@ -1,6 +1,7 @@
 package jdb
 
 import (
+	"github.com/cgalvisleon/et/config"
 	"github.com/cgalvisleon/et/et"
 )
 
@@ -31,17 +32,16 @@ type Driver interface {
 	LoadModel(model *Model) error
 	DropModel(model *Model) error
 	MutateModel(model *Model) error
-	// Query
-	Exec(sql string, arg ...any) error
-	Query(sql string, arg ...any) (et.Items, error)
-	One(sql string, arg ...any) (et.Item, error)
-	Data(source, sql string, arg ...any) (et.Items, error)
+	// Ql
 	Select(ql *Ql) (et.Items, error)
 	Count(ql *Ql) (int, error)
 	Exists(ql *Ql) (bool, error)
 	// Command
 	Command(command *Command) (et.Items, error)
 	Sync(command string, data et.Json) error
+	// Query
+	QueryTx(tx *Tx, sql string, arg ...any) (et.Items, error)
+	Query(sql string, arg ...any) (et.Items, error)
 }
 
 /**
@@ -50,4 +50,5 @@ type Driver interface {
 **/
 func Register(name string, driver func() Driver) {
 	conn.Drivers[name] = driver
+	config.Set("DB_DRIVER", name)
 }

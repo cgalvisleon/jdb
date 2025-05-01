@@ -1,11 +1,9 @@
 package jdb
 
 import (
-	"fmt"
 	"slices"
 
 	"github.com/cgalvisleon/et/et"
-	"github.com/cgalvisleon/et/strs"
 )
 
 type QlWhere struct {
@@ -77,19 +75,6 @@ func (s *QlWhere) condition() *QlCondition {
 	}
 
 	return s.Wheres[idx-1]
-}
-
-/**
-* String
-* @return string
-**/
-func (s *QlWhere) string() string {
-	var result string
-	for _, val := range s.Wheres {
-		result = strs.Append(result, val.string(), " ")
-	}
-
-	return result
 }
 
 /**
@@ -373,14 +358,13 @@ func (s *QlWhere) listWheres() et.Json {
 			continue
 		}
 
-		field := fmt.Sprintf(`%v`, condition.getField())
-		def := et.Json{condition.Operator.Str(): condition.getValue()}
+		field := condition.getField()
 		if condition.Connector == And {
-			and = append(and, et.Json{field: def})
+			and = append(and, et.Json{field: condition.describe()})
 		} else if condition.Connector == Or {
-			or = append(or, et.Json{field: def})
+			or = append(or, et.Json{field: condition.describe()})
 		} else if i == 0 {
-			result.Set(field, def)
+			result.Set(field, condition.describe())
 		}
 	}
 
@@ -646,12 +630,4 @@ func (s *Ql) setWheres(wheres et.Json) *Ql {
 	}
 
 	return s
-}
-
-/**
-* listWheres
-* @return et.Json
-**/
-func (s *Ql) listWheres() et.Json {
-	return s.QlWhere.listWheres()
 }

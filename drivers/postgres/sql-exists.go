@@ -6,6 +6,11 @@ import (
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
+/**
+* Exists
+* @param ql *jdb.Ql
+* @return bool, error
+**/
 func (s *Postgres) Exists(ql *jdb.Ql) (bool, error) {
 	ql.Sql = ""
 	ql.Sql = strs.Append(ql.Sql, "SELECT 1", "\n")
@@ -21,7 +26,7 @@ func (s *Postgres) Exists(ql *jdb.Ql) (bool, error) {
 		console.Debug(ql.Sql)
 	}
 
-	result, err := s.Query(ql.Sql)
+	result, err := s.query(ql.Sql)
 	if err != nil {
 		return false, err
 	}

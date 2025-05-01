@@ -37,7 +37,7 @@ const (
 	MSG_ATTR_REQUIRED            = "Attribute required (%s)"
 	MSG_SERIE_NOT_FOUND          = "Serie not found (%s)"
 	MSG_RECORD_NOT_FOUND         = "Record not found"
-	MSG_INVALID_MODEL_PARAM      = "Invalid model param"
-	MSG_ROLLBACK_ERROR           = "Rollback error: %s"
-	MSG_COMMIT_ERROR             = "Commit error: %s"
+	MSG_INVALID_MODEL_PARAM      = "Invalid model param (%s)"
+	MSG_ROLLBACK_ERROR           = "Rollback error: (%s)"
+	MSG_COMMIT_ERROR             = "Commit error: (%s)"
 )

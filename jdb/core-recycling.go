@@ -1,7 +1,6 @@
 package jdb
 
 import (
-	"database/sql"
 	"net/http"
 
 	"github.com/cgalvisleon/et/console"
@@ -43,14 +42,13 @@ func (s *DB) defineRecycling() error {
 
 /**
 * upsertRecycling
-* @param schema, name, sysId, statusId string
+* @param tx *Tx, schema, name, sysId, statusId string
 * @return error
 **/
-func (s *DB) upsertRecycling(tx *sql.Tx, schema, name, sysId, statusId string) error {
+func (s *DB) upsertRecycling(tx *Tx, schema, name, sysId, statusId string) error {
 	if statusId != utility.FOR_DELETE {
 		_, err := coreRecycling.
-			Delete().
-			Where("schema_name").Eq(schema).
+			Delete("schema_name").Eq(schema).
 			And("table_name").Eq(name).
 			And(SYSID).Eq(sysId).
 			ExecTx(tx)
@@ -69,7 +67,7 @@ func (s *DB) upsertRecycling(tx *sql.Tx, schema, name, sysId, statusId string) e
 		Where("schema_name").Eq(schema).
 		And("table_name").Eq(name).
 		And(SYSID).Eq(sysId).
-		OneTx(tx)
+		ExecTx(tx)
 	if err != nil {
 		return err
 	}
@@ -126,10 +124,10 @@ func (s *DB) GetRecycling(schema, name, sysId string) (et.Item, error) {
 
 /**
 * deleteRecycling
-* @param tx *sql.Tx, schema, name, sysId string
+* @param tx *Tx, schema, name, sysId string
 * @return error
 **/
-func (s *DB) deleteRecycling(tx *sql.Tx, schema, name, sysId string) error {
+func (s *DB) deleteRecycling(tx *Tx, schema, name, sysId string) error {
 	if !utility.ValidName(schema) {
 		return mistake.Newf(MSG_ATTR_REQUIRED, "schema")
 	}
@@ -139,11 +137,10 @@ func (s *DB) deleteRecycling(tx *sql.Tx, schema, name, sysId string) error {
 	}
 
 	item, err := coreRecycling.
-		Delete().
-		Where("schema_name").Eq(schema).
+		Delete("schema_name").Eq(schema).
 		And("table_name").Eq(name).
 		And(SYSID).Eq(sysId).
-		OneTx(tx)
+		ExecTx(tx)
 	if err != nil {
 		return err
 	}

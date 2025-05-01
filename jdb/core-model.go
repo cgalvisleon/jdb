@@ -66,7 +66,7 @@ func (s *DB) upsertModel(kind, name string, version int, definition []byte) erro
 		}).
 		Where("kind").Eq(kind).
 		And("name").Eq(name).
-		One()
+		Exec()
 	if err != nil {
 		return err
 	}
@@ -99,8 +99,7 @@ func (s *DB) upsertModel(kind, name string, version int, definition []byte) erro
 **/
 func (s *DB) deleteModel(kind, name string) error {
 	_, err := coreModel.
-		Delete().
-		Where("kind").Eq(kind).
+		Delete("kind").Eq(kind).
 		And("name").Eq(name).
 		Exec()
 	if err != nil {

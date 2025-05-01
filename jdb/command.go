@@ -1,11 +1,9 @@
 package jdb
 
 import (
-	"database/sql"
 	"slices"
 	"strings"
 
-	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/mistake"
 )
@@ -22,23 +20,22 @@ const (
 
 type Command struct {
 	*QlWhere
-	Tx      *sql.Tx
-	Command TypeCommand
-	Db      *DB
-	From    *Model
-	Data    []et.Json
-	Values  []map[string]*Field
-	Returns []*Field
-	Sql     string
-	Result  et.Items
-	isUndo  bool
+	tx      *Tx                 `json:"-"`
+	Command TypeCommand         `json:"command"`
+	Db      *DB                 `json:"-"`
+	From    *Model              `json:"-"`
+	Data    []et.Json           `json:"data"`
+	Values  []map[string]*Field `json:"values"`
+	Returns []*Field            `json:"returns"`
+	Sql     string              `json:"sql"`
+	Result  et.Items            `json:"result"`
+	isUndo  bool                `json:"-"`
+	isSync  bool                `json:"-"`
 }
 
 /**
 * NewCommand
-* @param model *Model
-* @param data []et.Json
-* @param command TypeCommand
+* @param model *Model, data []et.Json, command TypeCommand
 * @return *Command
 **/
 func NewCommand(model *Model, data []et.Json, command TypeCommand) *Command {
@@ -57,6 +54,26 @@ func NewCommand(model *Model, data []et.Json, command TypeCommand) *Command {
 }
 
 /**
+* setTx
+* @param tx *Tx
+* @return *Command
+**/
+func (s *Command) setTx(tx *Tx) *Command {
+	s.tx = tx
+	return s
+}
+
+/**
+* setSync
+* @param isSync bool
+* @return *Command
+**/
+func (s *Command) setSync() *Command {
+	s.isSync = true
+	return s
+}
+
+/**
 * Describe
 * @return et.Json
 **/
@@ -70,18 +87,28 @@ func (s *Command) Describe() et.Json {
 }
 
 /**
+* Tx
+* @return *Tx
+**/
+func (s *Command) Tx() *Tx {
+	return s.tx
+}
+
+/**
 * ExecTx
-* @param tx *sql.Tx
+* @param tx *Tx
 * @return et.Items, error
 **/
-func (s *Command) ExecTx(tx *sql.Tx) (et.Items, error) {
+func (s *Command) ExecTx(tx *Tx) (et.Items, error) {
+	s.setTx(tx)
+
 	switch s.Command {
 	case Insert:
 		if len(s.Data) == 0 {
 			return et.Items{}, mistake.New(MSG_NOT_DATA)
 		}
 
-		err := s.inserted(tx)
+		err := s.inserted()
 		if err != nil {
 			return et.Items{}, err
 		}
@@ -90,12 +117,12 @@ func (s *Command) ExecTx(tx *sql.Tx) (et.Items, error) {
 			return et.Items{}, mistake.New(MSG_NOT_DATA)
 		}
 
-		err := s.updated(tx)
+		err := s.updated()
 		if err != nil {
 			return et.Items{}, err
 		}
 	case Delete:
-		err := s.deleted(tx)
+		err := s.deleted()
 		if err != nil {
 			return et.Items{}, err
 		}
@@ -104,7 +131,16 @@ func (s *Command) ExecTx(tx *sql.Tx) (et.Items, error) {
 			return et.Items{}, mistake.New(MSG_NOT_DATA)
 		}
 
-		err := s.bulk(tx)
+		err := s.bulk()
+		if err != nil {
+			return et.Items{}, err
+		}
+	case Sync:
+		if len(s.Data) == 0 {
+			return et.Items{}, mistake.New(MSG_NOT_DATA)
+		}
+
+		err := s.sync()
 		if err != nil {
 			return et.Items{}, err
 		}
@@ -117,10 +153,10 @@ func (s *Command) ExecTx(tx *sql.Tx) (et.Items, error) {
 
 /**
 * OneTx
-* @param tx *sql.Tx
+* @param tx *Tx
 * @return et.Item, error
 **/
-func (s *Command) OneTx(tx *sql.Tx) (et.Item, error) {
+func (s *Command) OneTx(tx *Tx) (et.Item, error) {
 	result, err := s.ExecTx(tx)
 	if err != nil {
 		return et.Item{}, err
@@ -130,39 +166,19 @@ func (s *Command) OneTx(tx *sql.Tx) (et.Item, error) {
 }
 
 /**
-* Rollback
-* @param tx *sql.Tx
-* @return error
+* Exec
+* @return et.Items, error
 **/
-func Rollback(tx *sql.Tx, err error) error {
-	if tx == nil {
-		return err
-	}
-
-	rollbackErr := tx.Rollback()
-	if rollbackErr != nil {
-		console.Error(mistake.Newf(MSG_ROLLBACK_ERROR, rollbackErr))
-	}
-
-	return err
+func (s *Command) Exec() (et.Items, error) {
+	return s.ExecTx(nil)
 }
 
 /**
-* Commit
-* @param tx *sql.Tx
-* @return error
+* One
+* @return et.Item, error
 **/
-func Commit(tx *sql.Tx) error {
-	if tx == nil {
-		return nil
-	}
-
-	err := tx.Commit()
-	if err != nil {
-		console.Error(mistake.Newf(MSG_COMMIT_ERROR, err))
-	}
-
-	return err
+func (s *Command) One() (et.Item, error) {
+	return s.OneTx(nil)
 }
 
 /**

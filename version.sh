@@ -47,7 +47,7 @@ if [ "$HELP" == true ]; then
   echo "  --n, --minor    Incrementa la versión menor"
   exit 0
 elif [ "$CURRENT_VERSION" == "v0.0.0" ]; then
-  new_version="v1.0.0"
+  new_version="v0.0.0"
   version
 else
   # Obtiene la última etiqueta

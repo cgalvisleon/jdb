@@ -3,14 +3,16 @@ package jdb
 import (
 	"slices"
 
+	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
 )
 
 /**
-* GetDetails
+* GetDetailsTx
+* @param tx *Tx, data *et.Json
 * @return et.Json
 **/
-func (s *Ql) GetDetails(data *et.Json) *et.Json {
+func (s *Ql) GetDetailsTx(tx *Tx, data *et.Json) *et.Json {
 	for _, field := range s.Details {
 		col := field.Column
 		if col == nil {
@@ -31,9 +33,13 @@ func (s *Ql) GetDetails(data *et.Json) *et.Json {
 				continue
 			}
 
+			where := col.Detail.Where(*data)
+			if s.IsDebug {
+				console.Debug(where.ToString())
+			}
 			ql := From(with).
 				setJoins(field.Joins).
-				setWheres(col.Detail.getFkJson()).
+				setWheres(where).
 				setWheres(field.Where).
 				setSelects(field.Select).
 				setGroupBy(field.GroupBy...).
@@ -42,7 +48,7 @@ func (s *Ql) GetDetails(data *et.Json) *et.Json {
 				setDebug(s.IsDebug)
 
 			if field.TpResult == TpResult {
-				result, err := ql.All()
+				result, err := ql.AllTx(tx)
 				if err != nil {
 					continue
 				}
@@ -50,14 +56,14 @@ func (s *Ql) GetDetails(data *et.Json) *et.Json {
 				data.Set(col.Name, result.Result)
 			} else {
 				all, err := ql.
-					Counted()
+					CountedTx(tx)
 				if err != nil {
 					continue
 				}
 
 				result, err := ql.
 					Page(field.Page).
-					Rows(field.Rows)
+					RowsTx(tx, field.Rows)
 				if err != nil {
 					continue
 				}
@@ -73,9 +79,13 @@ func (s *Ql) GetDetails(data *et.Json) *et.Json {
 				continue
 			}
 
+			where := col.Rollup.Where(*data)
+			if s.IsDebug {
+				console.Debug(where.ToString())
+			}
 			ql := From(source).
 				setJoins(field.Joins).
-				setWheres(col.Rollup.getFkJson()).
+				setWheres(where).
 				setWheres(field.Where).
 				setSelects(field.Select).
 				setGroupBy(field.GroupBy...).
@@ -95,7 +105,7 @@ func (s *Ql) GetDetails(data *et.Json) *et.Json {
 				}
 				result, err := ql.
 					Data(field).
-					One()
+					OneTx(tx)
 				if err != nil {
 					continue
 				}
@@ -104,7 +114,7 @@ func (s *Ql) GetDetails(data *et.Json) *et.Json {
 			default:
 				result, err := ql.
 					Data(fields...).
-					One()
+					OneTx(tx)
 				if err != nil {
 					continue
 				}

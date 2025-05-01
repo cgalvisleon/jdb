@@ -58,7 +58,7 @@ func NewDatabase(name, driver string) (*DB, error) {
 	result := &DB{
 		CreatedAt: now,
 		UpdateAt:  now,
-		Id:        reg.Id("db"),
+		Id:        reg.GenId("db"),
 		Name:      name,
 		UseCore:   false,
 		driver:    conn.Drivers[driver](),
@@ -360,63 +360,6 @@ func (s *DB) DropModel(model *Model) error {
 }
 
 /**
-* Exec
-* @param sql string
-* @param params ...any
-* @return error
-**/
-func (s *DB) Exec(sql string, params ...any) error {
-	if s.driver == nil {
-		return mistake.New(MSG_DRIVER_NOT_DEFINED)
-	}
-
-	return s.driver.Exec(sql, params...)
-}
-
-/**
-* Query
-* @param sql string
-* @param params ...any
-* @return et.Items, error
-**/
-func (s *DB) Query(sql string, params ...any) (et.Items, error) {
-	if s.driver == nil {
-		return et.Items{}, mistake.New(MSG_DRIVER_NOT_DEFINED)
-	}
-
-	return s.driver.Query(sql, params...)
-}
-
-/**
-* One
-* @param sql string
-* @param params ...any
-* @return et.Item, error
-**/
-func (s *DB) One(sql string, params ...any) (et.Item, error) {
-	if s.driver == nil {
-		return et.Item{}, mistake.New(MSG_DRIVER_NOT_DEFINED)
-	}
-
-	return s.driver.One(sql, params...)
-}
-
-/**
-* Data
-* @param source string
-* @param sql string
-* @param params ...any
-* @return et.Item, error
-**/
-func (s *DB) Data(source, sql string, params ...any) (et.Items, error) {
-	if s.driver == nil {
-		return et.Items{}, mistake.New(MSG_DRIVER_NOT_DEFINED)
-	}
-
-	return s.driver.Data(source, sql, params...)
-}
-
-/**
 * Select
 * @param ql *Ql
 * @return et.Items, error
@@ -430,19 +373,6 @@ func (s *DB) Select(ql *Ql) (et.Items, error) {
 }
 
 /**
-* Exists
-* @param ql *Ql
-* @return bool, error
-**/
-func (s *DB) Exists(ql *Ql) (bool, error) {
-	if s.driver == nil {
-		return false, mistake.New(MSG_DRIVER_NOT_DEFINED)
-	}
-
-	return s.driver.Exists(ql)
-}
-
-/**
 * Count
 * @param ql *Ql
 * @return int, error
@@ -453,6 +383,19 @@ func (s *DB) Count(ql *Ql) (int, error) {
 	}
 
 	return s.driver.Count(ql)
+}
+
+/**
+* Exists
+* @param ql *Ql
+* @return bool, error
+**/
+func (s *DB) Exists(ql *Ql) (bool, error) {
+	if s.driver == nil {
+		return false, mistake.New(MSG_DRIVER_NOT_DEFINED)
+	}
+
+	return s.driver.Exists(ql)
 }
 
 /**
@@ -482,11 +425,43 @@ func (s *DB) Sync(command string, data et.Json) error {
 }
 
 /**
+* QueryTx
+* @param tx *Tx, sql string, arg ...any
+* @return et.Items, error
+**/
+func (s *DB) QueryTx(tx *Tx, sql string, arg ...any) (et.Items, error) {
+	return s.driver.QueryTx(tx, sql, arg...)
+}
+
+/**
+* Query
+* @param sql string, arg ...any
+* @return et.Items, error
+**/
+func (s *DB) Query(sql string, arg ...any) (et.Items, error) {
+	return s.driver.Query(sql, arg...)
+}
+
+/**
+* One
+* @param sql string, arg ...any
+* @return et.Item, error
+**/
+func (s *DB) One(sql string, arg ...any) (et.Item, error) {
+	result, err := s.Query(sql, arg...)
+	if err != nil {
+		return et.Item{}, err
+	}
+
+	return result.First(), nil
+}
+
+/**
 * EventSync
 **/
 func (s *DB) EventSync() {
 	syncChannel := strs.Format("sync:%s", s.Name)
-	event.Subscribe(syncChannel, func(msg event.EvenMessage) {
+	event.Subscribe(syncChannel, func(msg event.Message) {
 		data := msg.Data
 		fromId := data.ValStr("", "fromId")
 		if fromId == "" || fromId == s.Id {

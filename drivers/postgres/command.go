@@ -8,6 +8,11 @@ import (
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
+/**
+* Command
+* @param command *jdb.Command
+* @return et.Items, error
+**/
 func (s *Postgres) Command(command *jdb.Command) (et.Items, error) {
 	command.Sql = ""
 	switch command.Command {
@@ -25,7 +30,7 @@ func (s *Postgres) Command(command *jdb.Command) (et.Items, error) {
 		console.Debug(command.Sql)
 	}
 
-	result, err := s.Query(command.Sql)
+	result, err := s.queryTx(command.Tx(), command.Sql)
 	if err != nil {
 		return et.Items{}, err
 	}
@@ -33,6 +38,12 @@ func (s *Postgres) Command(command *jdb.Command) (et.Items, error) {
 	return result, nil
 }
 
+/**
+* Sync
+* @param command string
+* @param data et.Json
+* @return error
+**/
 func (s *Postgres) Sync(command string, data et.Json) error {
 	return mistake.New(MSG_FUNCION_NOT_FOUND)
 }

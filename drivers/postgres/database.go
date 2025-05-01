@@ -97,7 +97,7 @@ func (s *Postgres) existDatabase(name string) (bool, error) {
 	SELECT 1
 	FROM pg_database
 	WHERE UPPER(datname) = UPPER($1));`
-	items, err := s.Query(sql, name)
+	items, err := s.query(sql, name)
 	if err != nil {
 		return false, err
 	}
@@ -132,7 +132,7 @@ func (s *Postgres) CreateDatabase(name string) error {
 	CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 	CREATE EXTENSION IF NOT EXISTS pgcrypto;
 	CREATE DATABASE $1`, name)
-	err = s.Exec(sql)
+	_, err = s.query(sql, name)
 	if err != nil {
 		return err
 	}
@@ -162,7 +162,7 @@ func (s *Postgres) DropDatabase(name string) error {
 	}
 
 	sql := jdb.SQLDDL(`DROP DATABASE $1`, name)
-	err = s.Exec(sql)
+	_, err = s.query(sql, name)
 	if err != nil {
 		return err
 	}

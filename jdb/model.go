@@ -6,47 +6,50 @@ import (
 	"time"
 
 	"github.com/cgalvisleon/et/et"
+	"github.com/cgalvisleon/et/event"
 	"github.com/cgalvisleon/et/reg"
 	"github.com/cgalvisleon/et/strs"
 	"github.com/cgalvisleon/et/timezone"
 )
 
 type Model struct {
-	Db              *DB                  `json:"-"`
-	Schema          *Schema              `json:"-"`
-	CreatedAt       time.Time            `json:"created_at"`
-	UpdateAt        time.Time            `json:"updated_at"`
-	Id              string               `json:"id"`
-	Name            string               `json:"name"`
-	Description     string               `json:"description"`
-	UseCore         bool                 `json:"use_core"`
-	Integrity       bool                 `json:"integrity"`
-	Definitions     []et.Json            `json:"definitions"`
-	Columns         []*Column            `json:"-"`
-	GeneratedFields []*Column            `json:"-"`
-	PrimaryKeys     map[string]*Column   `json:"-"`
-	ForeignKeys     map[string]*Column   `json:"-"`
-	Indices         map[string]*Index    `json:"-"`
-	Uniques         map[string]*Index    `json:"-"`
-	RelationsTo     map[string]*Relation `json:"-"`
-	Details         map[string]*Relation `json:"-"`
-	Rollups         map[string]*Rollup   `json:"-"`
-	History         *Relation            `json:"-"`
-	Required        map[string]bool      `json:"-"`
-	SystemKeyField  *Column              `json:"-"`
-	StatusField     *Column              `json:"-"`
-	IndexField      *Column              `json:"-"`
-	SourceField     *Column              `json:"-"`
-	FullTextField   *Column              `json:"-"`
-	ProjectField    *Column              `json:"-"`
-	Version         int                  `json:"version"`
-	eventError      []EventError         `json:"-"`
-	eventsInsert    []Event              `json:"-"`
-	eventsUpdate    []Event              `json:"-"`
-	eventsDelete    []Event              `json:"-"`
-	IsDebug         bool                 `json:"-"`
-	isLocked        bool                 `json:"-"`
-	isInit          bool                 `json:"-"`
+	Db                 *DB                      `json:"-"`
+	Schema             *Schema                  `json:"-"`
+	CreatedAt          time.Time                `json:"created_at"`
+	UpdateAt           time.Time                `json:"updated_at"`
+	Id                 string                   `json:"id"`
+	Name               string                   `json:"name"`
+	Description        string                   `json:"description"`
+	UseCore            bool                     `json:"use_core"`
+	Integrity          bool                     `json:"integrity"`
+	Definitions        []et.Json                `json:"definitions"`
+	Columns            []*Column                `json:"-"`
+	GeneratedFields    []*Column                `json:"-"`
+	PrimaryKeys        map[string]*Column       `json:"-"`
+	ForeignKeys        map[string]*Column       `json:"-"`
+	Indices            map[string]*Index        `json:"-"`
+	Uniques            map[string]*Index        `json:"-"`
+	RelationsTo        map[string]*Relation     `json:"-"`
+	Details            map[string]*Relation     `json:"-"`
+	Rollups            map[string]*Rollup       `json:"-"`
+	History            *Relation                `json:"-"`
+	Required           map[string]bool          `json:"-"`
+	SystemKeyField     *Column                  `json:"-"`
+	StatusField        *Column                  `json:"-"`
+	IndexField         *Column                  `json:"-"`
+	SourceField        *Column                  `json:"-"`
+	FullTextField      *Column                  `json:"-"`
+	ProjectField       *Column                  `json:"-"`
+	Version            int                      `json:"version"`
+	eventError         []EventError             `json:"-"`
+	eventsInsert       []Event                  `json:"-"`
+	eventsUpdate       []Event                  `json:"-"`
+	eventsDelete       []Event                  `json:"-"`
+	eventEmiterChannel chan event.Message       `json:"-"`
+	eventsEmiter       map[string]event.Handler `json:"-"`
+	IsDebug            bool                     `json:"-"`
+	isLocked           bool                     `json:"-"`
+	isInit             bool                     `json:"-"`
 }
 
 /**
@@ -64,29 +67,31 @@ func NewModel(schema *Schema, name string, version int) *Model {
 	newModel := func() *Model {
 		now := timezone.NowTime()
 		result := &Model{
-			Db:              schema.Db,
-			Schema:          schema,
-			CreatedAt:       now,
-			UpdateAt:        now,
-			Id:              reg.Id("model"),
-			Name:            name,
-			UseCore:         schema.UseCore,
-			Definitions:     make([]et.Json, 0),
-			Columns:         make([]*Column, 0),
-			GeneratedFields: make([]*Column, 0),
-			PrimaryKeys:     make(map[string]*Column),
-			ForeignKeys:     make(map[string]*Column),
-			Indices:         make(map[string]*Index),
-			Uniques:         make(map[string]*Index),
-			RelationsTo:     make(map[string]*Relation),
-			Details:         make(map[string]*Relation),
-			Rollups:         make(map[string]*Rollup),
-			Required:        make(map[string]bool),
-			eventError:      make([]EventError, 0),
-			eventsInsert:    make([]Event, 0),
-			eventsUpdate:    make([]Event, 0),
-			eventsDelete:    make([]Event, 0),
-			Version:         version,
+			Db:                 schema.Db,
+			Schema:             schema,
+			CreatedAt:          now,
+			UpdateAt:           now,
+			Id:                 reg.GenId("model"),
+			Name:               name,
+			UseCore:            schema.UseCore,
+			Definitions:        make([]et.Json, 0),
+			Columns:            make([]*Column, 0),
+			GeneratedFields:    make([]*Column, 0),
+			PrimaryKeys:        make(map[string]*Column),
+			ForeignKeys:        make(map[string]*Column),
+			Indices:            make(map[string]*Index),
+			Uniques:            make(map[string]*Index),
+			RelationsTo:        make(map[string]*Relation),
+			Details:            make(map[string]*Relation),
+			Rollups:            make(map[string]*Rollup),
+			Required:           make(map[string]bool),
+			eventEmiterChannel: make(chan event.Message),
+			eventsEmiter:       make(map[string]event.Handler),
+			eventError:         make([]EventError, 0),
+			eventsInsert:       make([]Event, 0),
+			eventsUpdate:       make([]Event, 0),
+			eventsDelete:       make([]Event, 0),
+			Version:            version,
 		}
 		result.DefineEventError(eventErrorDefault)
 		result.DefineEvent(EventInsert, eventInsertDefault)
@@ -123,6 +128,8 @@ func NewModel(schema *Schema, name string, version int) *Model {
 		result.History = nil
 		result.Required = make(map[string]bool)
 		// event
+		result.eventEmiterChannel = make(chan event.Message)
+		result.eventsEmiter = make(map[string]event.Handler)
 		result.eventError = make([]EventError, 0)
 		result.eventsInsert = make([]Event, 0)
 		result.eventsUpdate = make([]Event, 0)
@@ -131,6 +138,7 @@ func NewModel(schema *Schema, name string, version int) *Model {
 		result.DefineEvent(EventInsert, eventInsertDefault)
 		result.DefineEvent(EventUpdate, eventUpdateDefault)
 		result.DefineEvent(EventDelete, eventDeleteDefault)
+
 		// define columns
 		for _, definition := range result.Definitions {
 			args := definition.Array("args")
@@ -232,23 +240,21 @@ func (s *Model) Save() error {
 * @return error
 **/
 func (s *Model) Init() error {
+	go func() {
+		for message := range s.eventEmiterChannel {
+			s.eventEmiter(message)
+		}
+	}()
+
 	if !s.UseCore || s.isInit {
 		return nil
 	}
 
 	if s.SourceField != nil {
 		idx := s.SourceField.idx()
-		if idx != len(s.Columns)-1 && idx > -1 {
+		if idx != len(s.Columns)-1 && idx != -1 {
 			s.Columns = append(s.Columns[:idx], s.Columns[idx+1:]...)
 			s.Columns = append(s.Columns, s.SourceField)
-		}
-	}
-
-	if s.IndexField != nil {
-		idx := s.IndexField.idx()
-		if idx != len(s.Columns)-1 && idx > -1 {
-			s.Columns = append(s.Columns[:idx], s.Columns[idx+1:]...)
-			s.Columns = append(s.Columns, s.IndexField)
 		}
 	}
 
@@ -257,6 +263,14 @@ func (s *Model) Init() error {
 		if idx != len(s.Columns)-1 && idx > -1 {
 			s.Columns = append(s.Columns[:idx], s.Columns[idx+1:]...)
 			s.Columns = append(s.Columns, s.SystemKeyField)
+		}
+	}
+
+	if s.IndexField != nil {
+		idx := s.IndexField.idx()
+		if idx != len(s.Columns)-1 && idx != -1 {
+			s.Columns = append(s.Columns[:idx], s.Columns[idx+1:]...)
+			s.Columns = append(s.Columns, s.IndexField)
 		}
 	}
 
@@ -313,7 +327,7 @@ func (s *Model) GetId(id string) string {
 * @return string
 **/
 func (s *Model) GenId() string {
-	return reg.Id(s.Name)
+	return reg.GenId(s.Name)
 }
 
 /**
@@ -418,7 +432,6 @@ func (s *Model) getColumnsArray(names ...string) []string {
 * @return *Field
 **/
 func (s *Model) getField(name string, isCreate bool) *Field {
-
 	getField := func(name string, isCreate bool) *Field {
 		col := s.getColumn(name)
 		if col != nil {
@@ -504,11 +517,21 @@ func (s *Model) Where(val string) *Ql {
 }
 
 /**
+* QueryTx
+* @param tx *Tx, params et.Json
+* @return interface{}, error
+**/
+func (s *Model) QueryTx(tx *Tx, params et.Json) (interface{}, error) {
+	return From(s).
+		queryTx(tx, params)
+}
+
+/**
 * Query
 * @param params et.Json
 * @return interface{}, error
 **/
 func (s *Model) Query(params et.Json) (interface{}, error) {
 	return From(s).
-		Query(params)
+		queryTx(nil, params)
 }
