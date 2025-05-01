@@ -3,7 +3,7 @@ module github.com/cgalvisleon/jdb
 go 1.23.0
 
 require (
-	github.com/cgalvisleon/et v1.0.9
+	github.com/cgalvisleon/et v0.0.0
 	github.com/go-chi/chi/v5 v5.2.1
 	github.com/lib/pq v1.10.9
 	modernc.org/sqlite v1.35.0
