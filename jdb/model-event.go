@@ -155,7 +155,10 @@ func eventUpdateDefault(tx *Tx, model *Model, before et.Json, after et.Json) err
 		newStatus := after.Str(model.StatusField.Name)
 		if oldStatus != newStatus {
 			sysId := before.Str(model.SystemKeyField.Name)
-			go model.Db.upsertRecycling(tx, model.Schema.Name, model.Name, sysId, newStatus)
+			err := model.Db.upsertRecycling(tx, model.Schema.Name, model.Name, sysId, newStatus)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -180,12 +183,18 @@ func eventUpdateDefault(tx *Tx, model *Model, before et.Json, after et.Json) err
 func eventDeleteDefault(tx *Tx, model *Model, before et.Json, after et.Json) error {
 	if model.UseCore && model.SystemKeyField != nil {
 		sysid := after.Str(model.SystemKeyField.Name)
-		go model.Db.upsertRecord(tx, model.Schema.Name, model.Name, sysid, "delete")
+		err := model.Db.upsertRecord(tx, model.Schema.Name, model.Name, sysid, "delete")
+		if err != nil {
+			return err
+		}
 	}
 
 	if model.UseCore && model.SystemKeyField != nil && model.StatusField != nil {
 		sysId := before.Str(model.SystemKeyField.Name)
-		go model.Db.deleteRecycling(tx, model.Schema.Name, model.Name, sysId)
+		err := model.Db.deleteRecycling(tx, model.Schema.Name, model.Name, sysId)
+		if err != nil {
+			return err
+		}
 	}
 
 	data := et.Json{

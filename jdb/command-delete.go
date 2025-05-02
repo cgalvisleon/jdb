@@ -3,6 +3,7 @@ package jdb
 import (
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/event"
+	"github.com/cgalvisleon/et/mistake"
 	"github.com/cgalvisleon/et/strs"
 )
 
@@ -24,7 +25,7 @@ func (s *Command) deleted() error {
 
 	s.Result = results
 	if !results.Ok {
-		return nil
+		return mistake.New(MSG_NOT_DELETE_DATA)
 	}
 
 	if !s.isSync && model.UseCore {

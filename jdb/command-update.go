@@ -3,6 +3,7 @@ package jdb
 import (
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/event"
+	"github.com/cgalvisleon/et/mistake"
 	"github.com/cgalvisleon/et/strs"
 )
 
@@ -29,7 +30,7 @@ func (s *Command) updated() error {
 
 	s.Result = results
 	if !s.Result.Ok {
-		return nil
+		return mistake.New(MSG_NOT_UPDATE_DATA)
 	}
 
 	if !s.isSync && model.UseCore {
@@ -54,7 +55,10 @@ func (s *Command) updated() error {
 		}
 
 		if !s.isUndo {
-			go eventHistoryDefault(s.tx, model, before)
+			err := eventHistoryDefault(s.tx, model, before)
+			if err != nil {
+				return err
+			}
 		}
 
 		for _, event := range model.eventsUpdate {
