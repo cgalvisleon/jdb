@@ -79,7 +79,7 @@ func NewSchema(db *DB, name string) *Schema {
 * Serialize
 * @return []byte, error
 **/
-func (s *Schema) Serialize() ([]byte, error) {
+func (s *Schema) serialize() ([]byte, error) {
 	result, err := json.Marshal(s)
 	if err != nil {
 		return []byte{}, err
@@ -93,7 +93,7 @@ func (s *Schema) Serialize() ([]byte, error) {
 * @return et.Json
 **/
 func (s *Schema) Describe() et.Json {
-	definition, err := s.Serialize()
+	definition, err := s.serialize()
 	if err != nil {
 		return et.Json{}
 	}
@@ -124,7 +124,7 @@ func (s *Schema) Save() error {
 		return nil
 	}
 
-	definition, err := s.Serialize()
+	definition, err := s.serialize()
 	if err != nil {
 		return err
 	}

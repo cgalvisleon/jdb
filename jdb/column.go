@@ -15,7 +15,7 @@ type TypeColumn int
 const (
 	TpColumn TypeColumn = iota
 	TpAtribute
-	TpGenerated
+	TpCalc
 	TpRelatedTo
 	TpRollup
 	TpIA
@@ -27,8 +27,8 @@ func (s TypeColumn) Str() string {
 		return "column"
 	case TpAtribute:
 		return "attribute"
-	case TpGenerated:
-		return "generated"
+	case TpCalc:
+		return "calc"
 	case TpRelatedTo:
 		return "related_to"
 	case TpRollup:
@@ -54,7 +54,7 @@ const (
 	TypeDataBool
 	TypeDataTime
 	TypeDataBytes
-	// Special
+	/* Special */
 	TypeDataObject
 	TypeDataArray
 	TypeDataGeometry
@@ -263,7 +263,7 @@ func (s *Relation) describe() et.Json {
 }
 
 type Rollup struct {
-	Source *Model            `json:"-"`
+	With   *Model            `json:"-"`
 	Fk     map[string]string `json:"fk"`
 	Fields []interface{}     `json:"fields"`
 }
@@ -314,7 +314,7 @@ func (s *Rollup) describe() et.Json {
 		return et.Json{}
 	}
 
-	result["source"] = s.Source.Name
+	result["with"] = s.With.Name
 
 	return result
 }
@@ -333,41 +333,45 @@ func (s *FullText) describe() et.Json {
 	return result
 }
 
-type GeneratedFunction func(col *Column, data *et.Json)
-
 type Column struct {
-	Model             *Model                 `json:"-"`
-	Source            *Column                `json:"-"`
-	Name              string                 `json:"name"`
-	Description       string                 `json:"description"`
-	TypeColumn        TypeColumn             `json:"type_column"`
-	TypeData          TypeData               `json:"type_data"`
-	Default           interface{}            `json:"default"`
-	Max               float64                `json:"max"`
-	Min               float64                `json:"min"`
-	Hidden            bool                   `json:"hidden"`
-	Detail            *Relation              `json:"detail"`
-	Rollup            *Rollup                `json:"rollup"`
-	FullText          *FullText              `json:"fulltext"`
-	Values            map[string]interface{} `json:"values"`
-	GeneratedFunction GeneratedFunction      `json:"-"`
+	Model        *Model                  `json:"-"`
+	Source       *Column                 `json:"-"`
+	Name         string                  `json:"name"`
+	Description  string                  `json:"description"`
+	TypeColumn   TypeColumn              `json:"type_column"`
+	TypeData     TypeData                `json:"type_data"`
+	Default      interface{}             `json:"default"`
+	Max          float64                 `json:"max"`
+	Min          float64                 `json:"min"`
+	Hidden       bool                    `json:"hidden"`
+	Detail       *Relation               `json:"detail"`
+	Rollup       *Rollup                 `json:"rollup"`
+	FullText     *FullText               `json:"fulltext"`
+	Values       interface{}             `json:"values"`
+	CalcFunction map[string]DataFunction `json:"-"`
 }
 
 func init() {
 	gob.Register(&Column{})
 }
 
+/**
+* newColumn
+* @param model *Model, name string, description string, typeColumn TypeColumn, typeData TypeData, def interface{}
+* @return *Column
+**/
 func newColumn(model *Model, name string, description string, typeColumn TypeColumn, typeData TypeData, def interface{}) *Column {
 	return &Column{
-		Model:       model,
-		Name:        name,
-		Description: description,
-		TypeColumn:  typeColumn,
-		TypeData:    typeData,
-		Default:     def,
-		Max:         0,
-		Min:         0,
-		Values:      make(map[string]interface{}),
+		Model:        model,
+		Name:         name,
+		Description:  description,
+		TypeColumn:   typeColumn,
+		TypeData:     typeData,
+		Default:      def,
+		Max:          0,
+		Min:          0,
+		Values:       "",
+		CalcFunction: make(map[string]DataFunction, 0),
 	}
 }
 
@@ -446,6 +450,14 @@ func (s *Column) idx() int {
 	}
 
 	return slices.IndexFunc(s.Model.Columns, func(e *Column) bool { return e.Name == s.Name })
+}
+
+/**
+* SetValue
+* @param value interface{}
+**/
+func (s *Column) SetValue(value interface{}) {
+	s.Values = value
 }
 
 /**

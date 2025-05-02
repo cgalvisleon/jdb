@@ -21,7 +21,7 @@ func (s *Ql) setSelect(field *Field) *Ql {
 		if idx == -1 {
 			s.Selects = append(s.Selects, field)
 		}
-	} else if slices.Contains([]TypeColumn{TpGenerated, TpRelatedTo, TpRollup}, field.Column.TypeColumn) {
+	} else if slices.Contains([]TypeColumn{TpCalc, TpRelatedTo, TpRollup}, field.Column.TypeColumn) {
 		idx := slices.IndexFunc(s.Details, func(e *Field) bool { return e.asField() == field.asField() })
 		if idx == -1 {
 			s.Details = append(s.Details, field)

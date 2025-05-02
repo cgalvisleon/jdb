@@ -7,35 +7,35 @@ import (
 )
 
 func (s *Postgres) GrantPrivileges(username, database string) error {
-	// Otorgar acceso a la base de datos
+	/* Grant privileges */
 	grantDatabase := fmt.Sprintf("GRANT CONNECT ON DATABASE %s TO %s;", database, username)
 	_, err := s.db.Exec(grantDatabase)
 	if err != nil {
 		return err
 	}
 
-	// Otorgar acceso al esquema público
+	/* Grant schema */
 	grantSchema := fmt.Sprintf("GRANT USAGE ON SCHEMA public TO %s;", username)
 	_, err = s.db.Exec(grantSchema)
 	if err != nil {
 		return err
 	}
 
-	// Otorgar permisos de lectura y escritura en todas las tablas actuales
+	/* Grant tables */
 	grantTables := fmt.Sprintf("GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO %s;", username)
 	_, err = s.db.Exec(grantTables)
 	if err != nil {
 		return err
 	}
 
-	// Asegurar que el usuario no pueda eliminar tablas ni modificar el esquema
+	/* Revoke drop */
 	revokeDrop := fmt.Sprintf("ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE ALL ON TABLES FROM %s;", username)
 	_, err = s.db.Exec(revokeDrop)
 	if err != nil {
 		return err
 	}
 
-	// Establecer que los permisos sean aplicables a futuras tablas creadas
+	/* Grant future tables */
 	grantFutureTables := fmt.Sprintf("ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO %s;", username)
 	_, err = s.db.Exec(grantFutureTables)
 	if err != nil {

@@ -48,7 +48,7 @@ func (s *DB) defineSeries() error {
 **/
 func (s *DB) CurrentSerie(tag string) (int64, error) {
 	if !utility.ValidStr(tag, 0, []string{}) {
-		return 0, mistake.Newf(MSG_ATTR_REQUIRED, "tag")
+		return 0, mistake.Newf(MSG_ATTRIBUTE_REQUIRED, "tag")
 	}
 
 	if !s.UseCore {
@@ -76,7 +76,7 @@ func (s *DB) CurrentSerie(tag string) (int64, error) {
 **/
 func (s *DB) GetSerie(tag string) (int64, error) {
 	if !utility.ValidStr(tag, 0, []string{}) {
-		return 0, mistake.Newf(MSG_ATTR_REQUIRED, "tag")
+		return 0, mistake.Newf(MSG_ATTRIBUTE_REQUIRED, "tag")
 	}
 
 	item, err := coreSeries.
@@ -137,7 +137,7 @@ func (s *DB) GetCode(tag, format string) (string, error) {
 **/
 func (s *DB) SetSerie(tag string, val int64) (int64, error) {
 	if !utility.ValidStr(tag, 0, []string{}) {
-		return 0, mistake.Newf(MSG_ATTR_REQUIRED, "tag")
+		return 0, mistake.Newf(MSG_ATTRIBUTE_REQUIRED, "tag")
 	}
 
 	now := timezone.Now()

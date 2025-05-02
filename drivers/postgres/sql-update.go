@@ -11,15 +11,17 @@ func (s *Postgres) sqlUpdate(command *jdb.Command) string {
 	atribs := ""
 	where := ""
 	for _, value := range command.Values {
-		for key, fld := range value {
-			if fld.Column == from.SourceField || fld.Column == from.FullTextField {
+		for key, field := range value {
+			if field.Column == from.SourceField || field.Column == from.FullTextField {
 				continue
-			} else if fld.Column.TypeColumn == jdb.TpColumn {
-				val := fld.ValueQuoted()
+			}
+
+			if field.Column.TypeColumn == jdb.TpColumn {
+				val := field.ValueQuoted()
 				def := strs.Format(`%s = %v`, key, val)
 				set = strs.Append(set, def, ",\n")
-			} else if fld.Column.TypeColumn == jdb.TpAtribute && from.SourceField != nil {
-				val := JsonQuote(fld.Value)
+			} else if field.Column.TypeColumn == jdb.TpAtribute && from.SourceField != nil {
+				val := JsonQuote(field.Value)
 				if len(atribs) == 0 {
 					atribs = from.SourceField.Name
 					atribs = strs.Format("jsonb_set(%s, '{%s}', %v::jsonb, true)", atribs, key, val)

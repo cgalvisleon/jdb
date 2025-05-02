@@ -99,15 +99,15 @@ func (s *DB) upsertRecycling(tx *Tx, schema, name, sysId, statusId string) error
 **/
 func (s *DB) GetRecycling(schema, name, sysId string) (et.Item, error) {
 	if !utility.ValidName(schema) {
-		return et.Item{}, mistake.Newf(MSG_ATTR_REQUIRED, "schema")
+		return et.Item{}, mistake.Newf(MSG_ATTRIBUTE_REQUIRED, "schema_name")
 	}
 
 	if !utility.ValidName(name) {
-		return et.Item{}, mistake.Newf(MSG_ATTR_REQUIRED, "name")
+		return et.Item{}, mistake.Newf(MSG_ATTRIBUTE_REQUIRED, "table_name")
 	}
 
 	if !utility.ValidId(sysId) {
-		return et.Item{}, mistake.Newf(MSG_ATTR_REQUIRED, SYSID)
+		return et.Item{}, mistake.Newf(MSG_ATTRIBUTE_REQUIRED, SYSID)
 	}
 
 	item, err := coreRecycling.
@@ -129,11 +129,11 @@ func (s *DB) GetRecycling(schema, name, sysId string) (et.Item, error) {
 **/
 func (s *DB) deleteRecycling(tx *Tx, schema, name, sysId string) error {
 	if !utility.ValidName(schema) {
-		return mistake.Newf(MSG_ATTR_REQUIRED, "schema")
+		return mistake.Newf(MSG_ATTRIBUTE_REQUIRED, "schema_name")
 	}
 
 	if !utility.ValidName(name) {
-		return mistake.Newf(MSG_ATTR_REQUIRED, "name")
+		return mistake.Newf(MSG_ATTRIBUTE_REQUIRED, "table_name")
 	}
 
 	item, err := coreRecycling.

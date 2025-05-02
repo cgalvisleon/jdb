@@ -13,17 +13,21 @@ func (s *Postgres) sqlInsert(command *jdb.Command) string {
 	values := ""
 	atribs := et.Json{}
 	for _, val := range command.Values {
-		for key, fld := range val {
-			if fld.Column == from.SourceField || fld.Column == from.FullTextField {
+		for key, field := range val {
+			if field.Column == from.SourceField || field.Column == from.FullTextField {
 				continue
-			} else if fld.Column.TypeColumn == jdb.TpColumn {
+			}
+
+			switch field.Column.TypeColumn {
+			case jdb.TpColumn:
 				columns = strs.Append(columns, key, ", ")
-				def := strs.Format(`%v`, fld.ValueQuoted())
+				def := strs.Format(`%v`, field.ValueQuoted())
 				value = strs.Append(value, def, ", ")
-			} else if fld.Column.TypeColumn == jdb.TpAtribute && from.SourceField != nil {
-				atribs.Set(key, fld.Value)
+			case jdb.TpAtribute:
+				atribs.Set(key, field.Value)
 			}
 		}
+
 		if from.SourceField != nil && len(atribs) > 0 {
 			column := from.SourceField.Name
 			columns = strs.Append(columns, column, ", ")
@@ -31,6 +35,7 @@ func (s *Postgres) sqlInsert(command *jdb.Command) string {
 			def := strs.Format(`'%v'::jsonb`, atribs.ToString())
 			value = strs.Append(value, def, ", ")
 		}
+
 		value = strs.Format(`(%s)`, value)
 		values = strs.Append(values, value, ",\n")
 	}

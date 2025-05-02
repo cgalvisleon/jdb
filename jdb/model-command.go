@@ -23,6 +23,15 @@ func (s *Model) Update(data et.Json) *Command {
 }
 
 /**
+* Upsert
+* @param data []et.Json
+* @return *Command
+**/
+func (s *Model) Upsert(data et.Json) *Command {
+	return NewCommand(s, []et.Json{data}, Upsert)
+}
+
+/**
 * Delete
 * @param val string
 * @return *Command

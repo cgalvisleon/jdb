@@ -20,9 +20,10 @@ func (s *Ql) GetDetailsTx(tx *Tx, data *et.Json) *et.Json {
 		}
 
 		switch col.TypeColumn {
-		case TpGenerated:
-			if col.GeneratedFunction != nil {
-				col.GeneratedFunction(col, data)
+		case TpCalc:
+			for name, fn := range col.CalcFunction {
+				val := fn(*data)
+				data.Set(name, val)
 			}
 		case TpRelatedTo:
 			if col.Detail == nil {
@@ -74,8 +75,8 @@ func (s *Ql) GetDetailsTx(tx *Tx, data *et.Json) *et.Json {
 			if col.Rollup == nil {
 				continue
 			}
-			source := col.Rollup.Source
-			if source == nil {
+			with := col.Rollup.With
+			if with == nil {
 				continue
 			}
 
@@ -83,37 +84,35 @@ func (s *Ql) GetDetailsTx(tx *Tx, data *et.Json) *et.Json {
 			if s.IsDebug {
 				console.Debug(where.ToString())
 			}
-			ql := From(source).
+
+			fields := col.Rollup.Fields
+			if len(field.Select) > 0 {
+				fields = field.Select
+			}
+			ql := From(with).
 				setJoins(field.Joins).
 				setWheres(where).
 				setWheres(field.Where).
-				setSelects(field.Select).
+				setSelects(fields).
 				setGroupBy(field.GroupBy...).
 				setHavings(field.Havings).
 				setOrderBy(field.OrderBy).
 				setDebug(s.IsDebug)
 
-			fields := col.Rollup.Fields
-
-			switch len(fields) {
+			switch len(ql.Selects) {
 			case 0:
 				continue
 			case 1:
-				field, ok := fields[0].(string)
-				if !ok {
-					continue
-				}
+				field := ql.Selects[0]
 				result, err := ql.
-					Data(field).
 					OneTx(tx)
 				if err != nil {
 					continue
 				}
 
-				data.Set(col.Name, result.Result[field])
+				data.Set(col.Name, result.Result[field.Name])
 			default:
 				result, err := ql.
-					Data(fields...).
 					OneTx(tx)
 				if err != nil {
 					continue

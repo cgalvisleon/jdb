@@ -13,24 +13,29 @@ type TypeCommand int
 const (
 	Insert TypeCommand = iota
 	Update
+	Upsert
 	Delete
 	Bulk
 	Sync
 )
 
+type DataFunction func(data et.Json) et.Json
+
 type Command struct {
 	*QlWhere
-	tx      *Tx                 `json:"-"`
-	Command TypeCommand         `json:"command"`
-	Db      *DB                 `json:"-"`
-	From    *Model              `json:"-"`
-	Data    []et.Json           `json:"data"`
-	Values  []map[string]*Field `json:"values"`
-	Returns []*Field            `json:"returns"`
-	Sql     string              `json:"sql"`
-	Result  et.Items            `json:"result"`
-	isUndo  bool                `json:"-"`
-	isSync  bool                `json:"-"`
+	tx           *Tx                 `json:"-"`
+	Command      TypeCommand         `json:"command"`
+	Db           *DB                 `json:"-"`
+	From         *Model              `json:"-"`
+	Data         []et.Json           `json:"data"`
+	Values       []map[string]*Field `json:"values"`
+	Returns      []*Field            `json:"returns"`
+	Sql          string              `json:"sql"`
+	Result       et.Items            `json:"result"`
+	beforeInsert []DataFunction      `json:"-"`
+	beforeUpdate []DataFunction      `json:"-"`
+	isUndo       bool                `json:"-"`
+	isSync       bool                `json:"-"`
 }
 
 /**
@@ -40,15 +45,19 @@ type Command struct {
 **/
 func NewCommand(model *Model, data []et.Json, command TypeCommand) *Command {
 	result := &Command{
-		Command: command,
-		Db:      model.Db,
-		From:    model,
-		QlWhere: NewQlWhere(),
-		Data:    data,
-		Values:  []map[string]*Field{},
-		Returns: []*Field{},
-		Result:  et.Items{},
+		Command:      command,
+		Db:           model.Db,
+		From:         model,
+		QlWhere:      NewQlWhere(),
+		Data:         data,
+		Values:       []map[string]*Field{},
+		beforeInsert: []DataFunction{},
+		beforeUpdate: []DataFunction{},
+		Returns:      []*Field{},
+		Result:       et.Items{},
 	}
+	result.beforeInsert = append(result.beforeInsert, result.beforeInsertDefault)
+	result.beforeUpdate = append(result.beforeUpdate, result.beforeUpdateDefault)
 
 	return result
 }
@@ -118,6 +127,11 @@ func (s *Command) ExecTx(tx *Tx) (et.Items, error) {
 		}
 
 		err := s.updated()
+		if err != nil {
+			return et.Items{}, err
+		}
+	case Upsert:
+		err := s.upsert()
 		if err != nil {
 			return et.Items{}, err
 		}

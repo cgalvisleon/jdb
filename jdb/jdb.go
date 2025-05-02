@@ -265,7 +265,7 @@ func GetModel(name string, isCreate bool) *Model {
 	var result *Model
 	list := strs.Split(name, ".")
 	switch len(list) {
-	case 1: // model
+	case 1: /* model */
 		db = conn.DBS[0]
 		if db == nil {
 			return nil
@@ -275,7 +275,7 @@ func GetModel(name string, isCreate bool) *Model {
 		if result != nil {
 			return result
 		}
-	case 2: // schema, model
+	case 2: /* schema, model */
 		db = conn.DBS[0]
 		if db == nil {
 			return nil
@@ -291,7 +291,7 @@ func GetModel(name string, isCreate bool) *Model {
 		if result != nil {
 			return result
 		}
-	case 3: // db, schema, model
+	case 3: /* db, schema, model */
 		db = GetDB(list[0])
 		if db == nil {
 			return nil

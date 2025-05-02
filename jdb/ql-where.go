@@ -402,12 +402,7 @@ func (s *Ql) Where(val interface{}) *Ql {
 * @return *Ql
 **/
 func (s *Ql) And(val interface{}) *Ql {
-	val = s.validator(val)
-	if val != nil {
-		s.and(val)
-	}
-
-	return s
+	return s.Where(val)
 }
 
 /**
@@ -418,7 +413,11 @@ func (s *Ql) And(val interface{}) *Ql {
 func (s *Ql) Or(val interface{}) *Ql {
 	val = s.validator(val)
 	if val != nil {
-		s.or(val)
+		if len(s.Wheres) == 0 {
+			s.where(val)
+		} else {
+			s.or(val)
+		}
 	}
 
 	return s

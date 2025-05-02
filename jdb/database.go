@@ -74,7 +74,7 @@ func NewDatabase(name, driver string) (*DB, error) {
 * Serialize
 * @return []byte, error
 **/
-func (s *DB) Serialize() ([]byte, error) {
+func (s *DB) serialize() ([]byte, error) {
 	result, err := json.Marshal(s)
 	if err != nil {
 		return []byte{}, err
@@ -88,7 +88,7 @@ func (s *DB) Serialize() ([]byte, error) {
 * @return et.Json
 **/
 func (s *DB) Describe() et.Json {
-	definition, err := s.Serialize()
+	definition, err := s.serialize()
 	if err != nil {
 		return et.Json{}
 	}
@@ -155,7 +155,7 @@ func (s *DB) Save() error {
 		return nil
 	}
 
-	definition, err := s.Serialize()
+	definition, err := s.serialize()
 	if err != nil {
 		return err
 	}

@@ -34,6 +34,7 @@ const (
 	TypeDefinitionRelation
 	TypeDefinitionRollup
 	TypeDefinitionDetail
+	TypeDefinitionValues
 	TypeDefinitionHistory
 	TypeDefinitionModel
 	TypeDefinitionProjectModel
@@ -83,6 +84,8 @@ func (s TypeDefinition) Str() string {
 		return "rollup"
 	case TypeDefinitionDetail:
 		return "detail"
+	case TypeDefinitionValues:
+		return "values"
 	case TypeDefinitionHistory:
 		return "history"
 	case TypeDefinitionModel:
@@ -280,6 +283,8 @@ func (s *Model) defineColumns(tp int, args ...interface{}) error {
 		}
 
 		s.defineDetail(args[0].(string), fks, args[2].(int))
+	case TypeDefinitionValues:
+		s.defineValues(args[0].(string), args[1])
 	case TypeDefinitionHistory:
 		s.defineHistory(args[0].(string), args[1].(int))
 	case TypeDefinitionModel:
@@ -423,6 +428,7 @@ func (s *Model) defineForeignKey(fks map[string]string, withName string, onDelet
 		OnUpdateCascade: onUpdateCascade,
 	}
 
+	name := strs.Format("%s_%s_fk", s.Name, with.Name)
 	for fkn, pkn := range fks {
 		pk := with.getColumn(pkn)
 		if pk == nil {
@@ -432,9 +438,9 @@ func (s *Model) defineForeignKey(fks map[string]string, withName string, onDelet
 		result.Fk[fkn] = pk.Name
 		fk := s.defineColumn(fkn, pk.TypeData)
 		fk.Detail = result
-		name := strs.Format("%s_%s_fk", s.Name, with.Name)
-		s.ForeignKeys[name] = fk
+		s.Required[fkn] = true
 	}
+	s.ForeignKeys[name] = result
 
 	return result
 }
@@ -484,6 +490,7 @@ func (s *Model) defineAtribute(name string, typeData TypeData) *Column {
 func (s *Model) defineCreatedAtField() *Column {
 	result := s.defineColumn(string(CreatedAtField), CreatedAtField.TypeData())
 	s.defineIndex(true, []string{CreatedAtField.Str()})
+	s.CreatedAtField = result
 
 	return result
 }
@@ -495,6 +502,7 @@ func (s *Model) defineCreatedAtField() *Column {
 func (s *Model) defineUpdatedAtField() *Column {
 	result := s.defineColumn(string(UpdatedAtField), UpdatedAtField.TypeData())
 	s.defineIndex(true, []string{UpdatedAtField.Str()})
+	s.UpdatedAtField = result
 
 	return result
 }
@@ -617,25 +625,16 @@ func (s *Model) defineRelation(name, relatedTo string, fks map[string]string, li
 	with := NewModel(s.Schema, relatedTo, 1)
 	with.defineForeignKey(fks, s.Name, true, true)
 
-	result := &Relation{
+	col := newColumn(s, name, "", TpRelatedTo, TypeDataNone, TypeDataNone.DefaultValue())
+	col.Detail = &Relation{
 		With:  with,
-		Fk:    make(map[string]string),
+		Fk:    fks,
 		Limit: limit,
 	}
-	for fkn, pkn := range fks {
-		fk := with.getColumn(fkn)
-		if fk == nil {
-			continue
-		}
-
-		result.Fk[pkn] = fk.Name
-	}
-	col := newColumn(s, name, "", TpRelatedTo, TypeDataNone, TypeDataNone.DefaultValue())
-	col.Detail = result
-	s.RelationsTo[with.Name] = result
+	s.RelationsTo[with.Name] = col.Detail
 	s.Columns = append(s.Columns, col)
 
-	return result
+	return col.Detail
 }
 
 /**
@@ -644,19 +643,19 @@ func (s *Model) defineRelation(name, relatedTo string, fks map[string]string, li
 * @return *Rollup
 **/
 func (s *Model) defineRollup(name, rollupFrom string, fks map[string]string, fields []interface{}) *Rollup {
-	source := s.Db.GetModel(rollupFrom)
-	if source == nil {
+	with := s.Db.GetModel(rollupFrom)
+	if with == nil {
 		return nil
 	}
 
 	result := &Rollup{
-		Source: source,
+		With:   with,
 		Fk:     make(map[string]string),
 		Fields: fields,
 	}
 
 	for fkn, pkn := range fks {
-		pk := source.getColumn(pkn)
+		pk := with.getColumn(pkn)
 		if pk == nil {
 			return nil
 		}
@@ -737,11 +736,19 @@ func (s *Model) defineProjectModel() *Model {
 	return s
 }
 
+func (s *Model) defineValues(name string, values interface{}) *Model {
+	col := s.defineAtribute(name, TypeDataNone)
+	col.Values = values
+
+	return s
+}
+
 /**
 * DefineIntegrity
 **/
-func (s *Model) DefineIntegrity() {
+func (s *Model) DefineIntegrity() *Model {
 	s.Integrity = true
+	return s
 }
 
 /**
@@ -749,9 +756,10 @@ func (s *Model) DefineIntegrity() {
 * @param name string, typeData TypeData
 * @return *Column
 **/
-func (s *Model) DefineColumn(name string, typeData TypeData) *Column {
+func (s *Model) DefineColumn(name string, typeData TypeData) *Model {
 	s.setDefine(TypeDefinitionColumn, name, typeData)
-	return s.defineColumn(name, typeData)
+	s.defineColumn(name, typeData)
+	return s
 }
 
 /**
@@ -786,114 +794,126 @@ func (s *Model) DefinePrimaryKey(colums ...string) *Model {
 
 /**
 * DefinePrimaryKeyField
-* @return *Column
+* @return *Model
 **/
-func (s *Model) DefinePrimaryKeyField() *Column {
+func (s *Model) DefinePrimaryKeyField() *Model {
 	s.setDefine(TypeDefinitionPrimaryKeyField)
-	return s.definePrimaryKeyField()
+	s.definePrimaryKeyField()
+	return s
 }
 
 /**
 * DefineForeignKey
 * @param fks map[string]string, withName string, onDeleteCascade, onUpdateCascade bool
-* @return *Relation
+* @return *Model
 **/
-func (s *Model) DefineForeignKey(fks map[string]string, withName string, onDeleteCascade, onUpdateCascade bool) *Relation {
+func (s *Model) DefineForeignKey(fks map[string]string, withName string, onDeleteCascade, onUpdateCascade bool) *Model {
 	s.setDefine(TypeDefinitionForeignKey, fks, withName, onDeleteCascade, onUpdateCascade)
-	return s.defineForeignKey(fks, withName, onDeleteCascade, onUpdateCascade)
+	s.defineForeignKey(fks, withName, onDeleteCascade, onUpdateCascade)
+	return s
 }
 
 /**
 * DefineSource
 * @param name string
-* @return *Column
+* @return *Model
 **/
-func (s *Model) DefineSource(name string) *Column {
+func (s *Model) DefineSource(name string) *Model {
 	s.setDefine(TypeDefinitionSource, name)
-	return s.defineSource(name)
+	s.defineSource(name)
+	return s
 }
 
 /**
 * DefineSourceField
-* @return *Column
+* @return *Model
 **/
-func (s *Model) DefineSourceField() *Column {
+func (s *Model) DefineSourceField() *Model {
 	s.setDefine(TypeDefinitionSourceField)
-	return s.defineSourceField()
+	s.defineSourceField()
+	return s
 }
 
 /**
 * DefineAtribute
 * @param name string, typeData TypeData
-* @return *Column
+* @return *Model
 **/
-func (s *Model) DefineAtribute(name string, typeData TypeData) *Column {
+func (s *Model) DefineAtribute(name string, typeData TypeData) *Model {
 	s.setDefine(TypeDefinitionAtribute, name, typeData)
-	return s.defineAtribute(name, typeData)
+	s.defineAtribute(name, typeData)
+	return s
 }
 
 /**
 * DefineCreatedAtField
-* @return *Column
+* @return *Model
 **/
-func (s *Model) DefineCreatedAtField() *Column {
+func (s *Model) DefineCreatedAtField() *Model {
 	s.setDefine(TypeDefinitionCreatedAtField)
-	return s.defineCreatedAtField()
+	s.defineCreatedAtField()
+	return s
 }
 
 /**
 * DefineUpdatedAtField
-* @return *Column
+* @return *Model
 **/
-func (s *Model) DefineUpdatedAtField() *Column {
+func (s *Model) DefineUpdatedAtField() *Model {
 	s.setDefine(TypeDefinitionUpdatedAtField)
-	return s.defineUpdatedAtField()
+	s.defineUpdatedAtField()
+	return s
 }
 
 /**
 * DefineStatusField
-* @return *Column
+* @return *Model
 **/
-func (s *Model) DefineStatusField() *Column {
+func (s *Model) DefineStatusField() *Model {
 	s.setDefine(TypeDefinitionStatusField)
-	return s.defineStatusField()
+	s.defineStatusField()
+	return s
 }
 
 /**
 * DefineSystemKeyField
-* @return *Column
+* @return *Model
 **/
-func (s *Model) DefineSystemKeyField() *Column {
+func (s *Model) DefineSystemKeyField() *Model {
 	s.setDefine(TypeDefinitionSystemKeyField)
-	return s.defineSystemKeyField()
+	s.defineSystemKeyField()
+	return s
 }
 
 /**
 * DefineIndexField
-* @return *Column
+* @return *Model
 **/
-func (s *Model) DefineIndexField() *Column {
+func (s *Model) DefineIndexField() *Model {
 	s.setDefine(TypeDefinitionIndexField)
-	return s.defineIndexField()
+	s.defineIndexField()
+	return s
 }
 
 /**
 * DefineFullText
 * @param language string, fields []string
-* @return *Column
+* @return *Model
 **/
-func (s *Model) DefineFullText(language string, fields []string) *Column {
+func (s *Model) DefineFullText(language string, fields []string) *Model {
 	s.setDefine(TypeDefinitionFullTextField, language, fields)
-	return s.defineFullText(language, fields)
+	s.defineFullText(language, fields)
+	return s
 }
 
 /**
 * DefineProjectField
-* @return *Column
+* @return *Model
 **/
-func (s *Model) DefineProjectField() *Column {
+func (s *Model) DefineProjectField() *Model {
 	s.setDefine(TypeDefinitionProjectField)
-	return s.defineProjectField()
+	s.defineProjectField()
+	return s
 }
 
 /**
@@ -903,7 +923,8 @@ func (s *Model) DefineProjectField() *Column {
 **/
 func (s *Model) DefineHidden(colums ...string) *Model {
 	s.setDefine(TypeDefinitionHidden, colums)
-	return s.defineHidden(colums)
+	s.defineHidden(colums)
+	return s
 }
 
 /**
@@ -913,27 +934,30 @@ func (s *Model) DefineHidden(colums ...string) *Model {
 **/
 func (s *Model) DefineRequired(colums ...string) *Model {
 	s.setDefine(TypeDefinitionRequired, colums)
-	return s.defineRequired(colums)
+	s.defineRequired(colums)
+	return s
 }
 
 /**
 * DefineRelation
 * @param name, relatedTo string, fks map[string]string, limit int
-* @return *Relation
+* @return *Model
 **/
-func (s *Model) DefineRelation(name, relatedTo string, fks map[string]string, limit int) *Relation {
+func (s *Model) DefineRelation(name, relatedTo string, fks map[string]string, limit int) *Model {
 	s.setDefine(TypeDefinitionRelation, name, relatedTo, fks, limit)
-	return s.defineRelation(name, relatedTo, fks, limit)
+	s.defineRelation(name, relatedTo, fks, limit)
+	return s
 }
 
 /**
 * DefineRollup
 * @param name, rollupFrom string, fks map[string]string, properties []interface{}
-* @return *Rollup
+* @return *Model
 **/
-func (s *Model) DefineRollup(name, rollupFrom string, fks map[string]string, properties []interface{}) *Rollup {
+func (s *Model) DefineRollup(name, rollupFrom string, fks map[string]string, properties []interface{}) *Model {
 	s.setDefine(TypeDefinitionRollup, name, rollupFrom, fks, properties)
-	return s.defineRollup(name, rollupFrom, fks, properties)
+	s.defineRollup(name, rollupFrom, fks, properties)
+	return s
 }
 
 /**
@@ -975,24 +999,34 @@ func (s *Model) DefineProjectModel() *Model {
 }
 
 /**
-* DefineGenerated
-* @param name string, fn GeneratedFunction
-* @return *Column
+* DefineValues
+* @param name string, values interface{}
+* @return *Model
 **/
-func (s *Model) DefineGenerated(name string, fn GeneratedFunction) *Column {
-	result := newColumn(s, name, "", TpGenerated, TypeDataNone, TypeDataNone.DefaultValue())
-	result.GeneratedFunction = fn
-	s.Columns = append(s.Columns, result)
-	s.GeneratedFields = append(s.GeneratedFields, result)
+func (s *Model) DefineValues(name string, values interface{}) *Model {
+	s.setDefine(TypeDefinitionValues, name, values)
+	return s.defineValues(name, values)
+}
 
-	return result
+/**
+* DefineCalc
+* @param name string, fn DataFunction
+* @return Model
+**/
+func (s *Model) DefineCalc(name string, fn DataFunction) *Model {
+	result := newColumn(s, name, "", TpCalc, TypeDataNone, TypeDataNone.DefaultValue())
+	result.CalcFunction[name] = fn
+	s.Columns = append(s.Columns, result)
+
+	return s
 }
 
 /**
 * DefineEvent
 * @param tp TypeEvent, event Event
+* @return Model
 **/
-func (s *Model) DefineEvent(tp TypeEvent, event Event) {
+func (s *Model) DefineEvent(tp TypeEvent, event Event) *Model {
 	switch tp {
 	case EventInsert:
 		s.eventsInsert = append(s.eventsInsert, event)
@@ -1001,12 +1035,16 @@ func (s *Model) DefineEvent(tp TypeEvent, event Event) {
 	case EventDelete:
 		s.eventsDelete = append(s.eventsDelete, event)
 	}
+
+	return s
 }
 
 /**
 * DefineEventError
 * @param event EventError
+* @return Model
 **/
-func (s *Model) DefineEventError(event EventError) {
+func (s *Model) DefineEventError(event EventError) *Model {
 	s.eventError = append(s.eventError, event)
+	return s
 }

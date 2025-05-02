@@ -24,9 +24,8 @@ type Model struct {
 	Integrity          bool                     `json:"integrity"`
 	Definitions        []et.Json                `json:"definitions"`
 	Columns            []*Column                `json:"-"`
-	GeneratedFields    []*Column                `json:"-"`
 	PrimaryKeys        map[string]*Column       `json:"-"`
-	ForeignKeys        map[string]*Column       `json:"-"`
+	ForeignKeys        map[string]*Relation     `json:"-"`
 	Indices            map[string]*Index        `json:"-"`
 	Uniques            map[string]*Index        `json:"-"`
 	RelationsTo        map[string]*Relation     `json:"-"`
@@ -34,6 +33,8 @@ type Model struct {
 	Rollups            map[string]*Rollup       `json:"-"`
 	History            *Relation                `json:"-"`
 	Required           map[string]bool          `json:"-"`
+	CreatedAtField     *Column                  `json:"-"`
+	UpdatedAtField     *Column                  `json:"-"`
 	SystemKeyField     *Column                  `json:"-"`
 	StatusField        *Column                  `json:"-"`
 	IndexField         *Column                  `json:"-"`
@@ -76,9 +77,8 @@ func NewModel(schema *Schema, name string, version int) *Model {
 			UseCore:            schema.UseCore,
 			Definitions:        make([]et.Json, 0),
 			Columns:            make([]*Column, 0),
-			GeneratedFields:    make([]*Column, 0),
 			PrimaryKeys:        make(map[string]*Column),
-			ForeignKeys:        make(map[string]*Column),
+			ForeignKeys:        make(map[string]*Relation),
 			Indices:            make(map[string]*Index),
 			Uniques:            make(map[string]*Index),
 			RelationsTo:        make(map[string]*Relation),
@@ -117,9 +117,8 @@ func NewModel(schema *Schema, name string, version int) *Model {
 		result.Db = schema.Db
 		result.Schema = schema
 		result.Columns = make([]*Column, 0)
-		result.GeneratedFields = make([]*Column, 0)
 		result.PrimaryKeys = make(map[string]*Column)
-		result.ForeignKeys = make(map[string]*Column)
+		result.ForeignKeys = make(map[string]*Relation)
 		result.Indices = make(map[string]*Index)
 		result.Uniques = make(map[string]*Index)
 		result.RelationsTo = make(map[string]*Relation)
@@ -127,7 +126,7 @@ func NewModel(schema *Schema, name string, version int) *Model {
 		result.Rollups = make(map[string]*Rollup)
 		result.History = nil
 		result.Required = make(map[string]bool)
-		// event
+		/* Event */
 		result.eventEmiterChannel = make(chan event.Message)
 		result.eventsEmiter = make(map[string]event.Handler)
 		result.eventError = make([]EventError, 0)
@@ -139,7 +138,7 @@ func NewModel(schema *Schema, name string, version int) *Model {
 		result.DefineEvent(EventUpdate, eventUpdateDefault)
 		result.DefineEvent(EventDelete, eventDeleteDefault)
 
-		// define columns
+		/* Define columns */
 		for _, definition := range result.Definitions {
 			args := definition.Array("args")
 			tp := definition.Int("tp")
@@ -158,7 +157,7 @@ func NewModel(schema *Schema, name string, version int) *Model {
 * Serialize
 * @return []byte, error
 **/
-func (s *Model) Serialize() ([]byte, error) {
+func (s *Model) serialize() ([]byte, error) {
 	result, err := json.Marshal(s)
 	if err != nil {
 		return []byte{}, err
@@ -172,7 +171,7 @@ func (s *Model) Serialize() ([]byte, error) {
 * @return et.Json
 **/
 func (s *Model) Describe() et.Json {
-	definition, err := s.Serialize()
+	definition, err := s.serialize()
 	if err != nil {
 		return et.Json{}
 	}
@@ -191,7 +190,6 @@ func (s *Model) Describe() et.Json {
 	delete(result, "definitions")
 	result["kind"] = "model"
 	result["columns"] = columns
-	result["generated_fields"] = s.GeneratedFields
 	result["primary_keys"] = s.PrimaryKeys
 	result["foreign_keys"] = s.ForeignKeys
 	result["indices"] = s.Indices
@@ -220,7 +218,7 @@ func (s *Model) Save() error {
 		return nil
 	}
 
-	definition, err := s.Serialize()
+	definition, err := s.serialize()
 	if err != nil {
 		return err
 	}

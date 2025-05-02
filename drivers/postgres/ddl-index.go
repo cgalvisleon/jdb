@@ -52,23 +52,23 @@ func (s *Postgres) ddlPrimaryKey(model *jdb.Model) string {
 
 func (s *Postgres) ddlForeignKeys(model *jdb.Model) string {
 	var result string
-	for name, fk := range model.ForeignKeys {
-		reference := fk.Detail.With
+	for name, relation := range model.ForeignKeys {
+		reference := relation.With
 		if reference == nil {
 			continue
 		}
 
 		referenceKey := ""
 		key := ""
-		for fkn, pkn := range fk.Detail.Fk {
+		for fkn, pkn := range relation.Fk {
 			key = strs.Append(key, fkn, ", ")
 			referenceKey = strs.Append(referenceKey, pkn, ", ")
 		}
 		def := strs.Format(`ALTER TABLE IF EXISTS %s ADD CONSTRAINT %s FOREIGN KEY (%s) REFERENCES %s(%s)`, table(model), name, key, table(reference), referenceKey)
-		if fk.Detail.OnDeleteCascade {
+		if relation.OnDeleteCascade {
 			def = def + " ON DELETE CASCADE"
 		}
-		if fk.Detail.OnUpdateCascade {
+		if relation.OnUpdateCascade {
 			def = def + " ON UPDATE CASCADE"
 		}
 		def = def + ";"
