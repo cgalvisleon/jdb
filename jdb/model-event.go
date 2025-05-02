@@ -117,7 +117,10 @@ func eventHistoryDefault(tx *Tx, model *Model, before et.Json) error {
 func eventInsertDefault(tx *Tx, model *Model, before et.Json, after et.Json) error {
 	if model.UseCore && model.SystemKeyField != nil {
 		sysid := after.Str(model.SystemKeyField.Name)
-		go model.Db.upsertRecord(tx, model.Schema.Name, model.Name, sysid, "insert")
+		err := model.Db.upsertRecord(tx, model.Schema.Name, model.Name, sysid, "insert")
+		if err != nil {
+			return err
+		}
 	}
 
 	data := et.Json{
@@ -141,7 +144,10 @@ func eventInsertDefault(tx *Tx, model *Model, before et.Json, after et.Json) err
 func eventUpdateDefault(tx *Tx, model *Model, before et.Json, after et.Json) error {
 	if model.UseCore && model.SystemKeyField != nil {
 		sysid := after.Str(model.SystemKeyField.Name)
-		go model.Db.upsertRecord(tx, model.Schema.Name, model.Name, sysid, "update")
+		err := model.Db.upsertRecord(tx, model.Schema.Name, model.Name, sysid, "update")
+		if err != nil {
+			return err
+		}
 	}
 
 	if model.UseCore && model.SystemKeyField != nil && model.StatusField != nil {

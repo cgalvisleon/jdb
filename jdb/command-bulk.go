@@ -7,7 +7,10 @@ import (
 )
 
 func (s *Command) bulk() error {
-	s.prepare()
+	if err := s.prepare(); err != nil {
+		return err
+	}
+
 	model := s.From
 
 	results, err := s.Db.Command(s)

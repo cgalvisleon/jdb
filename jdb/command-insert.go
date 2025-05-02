@@ -7,7 +7,9 @@ import (
 )
 
 func (s *Command) inserted() error {
-	s.prepare()
+	if err := s.prepare(); err != nil {
+		return err
+	}
 	model := s.From
 
 	results, err := s.Db.Command(s)
@@ -51,6 +53,11 @@ func (s *Command) inserted() error {
 				return err
 			}
 		}
+	}
+
+	err = s.relationsTo()
+	if err != nil {
+		return err
 	}
 
 	return nil

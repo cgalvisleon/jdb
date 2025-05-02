@@ -191,11 +191,11 @@ func StrToOperator(str string) Operator {
 }
 
 type QlCondition struct {
-	Connector Connector
-	Field     interface{}
-	Operator  Operator
-	Value     interface{}
-	Language  string
+	Connector Connector   `json:"connector"`
+	Field     interface{} `json:"field"`
+	Operator  Operator    `json:"operator"`
+	Value     interface{} `json:"value"`
+	Language  string      `json:"language"`
 }
 
 /**

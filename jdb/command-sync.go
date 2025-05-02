@@ -1,7 +1,9 @@
 package jdb
 
 func (s *Command) sync() error {
-	s.prepare()
+	if err := s.prepare(); err != nil {
+		return err
+	}
 	model := s.From
 
 	if len(s.Data) == 0 {

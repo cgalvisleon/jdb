@@ -12,10 +12,6 @@ func (s *Postgres) sqlUpdate(command *jdb.Command) string {
 	where := ""
 	for _, value := range command.Values {
 		for key, field := range value {
-			if field.Column == from.SourceField || field.Column == from.FullTextField {
-				continue
-			}
-
 			if field.Column.TypeColumn == jdb.TpColumn {
 				val := field.ValueQuoted()
 				def := strs.Format(`%s = %v`, key, val)

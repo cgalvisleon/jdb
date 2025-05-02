@@ -60,24 +60,8 @@ func (s *DB) upsertRecycling(tx *Tx, schema, name, sysId, statusId string) error
 	}
 
 	now := timezone.Now()
-	item, err := coreRecycling.
-		Update(et.Json{
-			UPDATED_AT: now,
-		}).
-		Where("schema_name").Eq(schema).
-		And("table_name").Eq(name).
-		And(SYSID).Eq(sysId).
-		ExecTx(tx)
-	if err != nil {
-		return err
-	}
-
-	if item.Ok {
-		return nil
-	}
-
-	_, err = coreRecycling.
-		Insert(et.Json{
+	_, err := coreRecycling.
+		Upsert(et.Json{
 			CREATED_AT:    now,
 			UPDATED_AT:    now,
 			"schema_name": schema,

@@ -72,11 +72,11 @@ func (s *Ql) RowsTx(tx *Tx, val int) (et.Items, error) {
 }
 
 /**
-* ExistTx
+* ItExistsTx
 * @param tx *Tx
 * @return bool, error
 **/
-func (s *Ql) ExistTx(tx *Tx) (bool, error) {
+func (s *Ql) ItExistsTx(tx *Tx) (bool, error) {
 	if s.Db == nil {
 		return false, mistake.New(MSG_DATABASE_NOT_FOUND)
 	}
@@ -155,11 +155,11 @@ func (s *Ql) Rows(n int) (et.Items, error) {
 }
 
 /**
-* Exist
+* ItExists
 * @return bool, error
 **/
-func (s *Ql) Exist() (bool, error) {
-	return s.ExistTx(nil)
+func (s *Ql) ItExists() (bool, error) {
+	return s.ItExistsTx(nil)
 }
 
 /**

@@ -10,9 +10,9 @@ import (
 /**
 * GetDetailsTx
 * @param tx *Tx, data *et.Json
-* @return et.Json
+* @return et.Json, error
 **/
-func (s *Ql) GetDetailsTx(tx *Tx, data *et.Json) *et.Json {
+func (s *Ql) GetDetailsTx(tx *Tx, data *et.Json) (*et.Json, error) {
 	for _, field := range s.Details {
 		col := field.Column
 		if col == nil {
@@ -22,7 +22,11 @@ func (s *Ql) GetDetailsTx(tx *Tx, data *et.Json) *et.Json {
 		switch col.TypeColumn {
 		case TpCalc:
 			for name, fn := range col.CalcFunction {
-				val := fn(*data)
+				val, err := fn(*data)
+				if err != nil {
+					return data, err
+				}
+
 				data.Set(name, val)
 			}
 		case TpRelatedTo:
@@ -123,7 +127,7 @@ func (s *Ql) GetDetailsTx(tx *Tx, data *et.Json) *et.Json {
 		}
 	}
 
-	return data
+	return data, nil
 }
 
 /**

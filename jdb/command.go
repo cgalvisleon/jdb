@@ -19,7 +19,26 @@ const (
 	Sync
 )
 
-type DataFunction func(data et.Json) et.Json
+func (s TypeCommand) Str() string {
+	switch s {
+	case Insert:
+		return "insert"
+	case Update:
+		return "update"
+	case Upsert:
+		return "upsert"
+	case Delete:
+		return "delete"
+	case Bulk:
+		return "bulk"
+	case Sync:
+		return "sync"
+	default:
+		return "No command"
+	}
+}
+
+type DataFunction func(data et.Json) (et.Json, error)
 
 type Command struct {
 	*QlWhere
@@ -29,6 +48,7 @@ type Command struct {
 	From         *Model              `json:"-"`
 	Data         []et.Json           `json:"data"`
 	Values       []map[string]*Field `json:"values"`
+	RelationsTo  []map[string]*Field `json:"relations_to"`
 	Returns      []*Field            `json:"returns"`
 	Sql          string              `json:"sql"`
 	Result       et.Items            `json:"result"`
@@ -50,7 +70,8 @@ func NewCommand(model *Model, data []et.Json, command TypeCommand) *Command {
 		From:         model,
 		QlWhere:      NewQlWhere(),
 		Data:         data,
-		Values:       []map[string]*Field{},
+		Values:       make([]map[string]*Field, 0),
+		RelationsTo:  make([]map[string]*Field, 0),
 		beforeInsert: []DataFunction{},
 		beforeUpdate: []DataFunction{},
 		Returns:      []*Field{},
@@ -69,6 +90,7 @@ func NewCommand(model *Model, data []et.Json, command TypeCommand) *Command {
 **/
 func (s *Command) setTx(tx *Tx) *Command {
 	s.tx = tx
+
 	return s
 }
 
@@ -92,6 +114,17 @@ func (s *Command) Describe() et.Json {
 		return et.Json{}
 	}
 
+	values := []et.Json{}
+	for _, val := range s.Values {
+		for _, field := range val {
+			values = append(values, field.describe())
+		}
+	}
+
+	result["command"] = s.Command.Str()
+	result["wheres"] = s.listWheres()
+	result["values"] = values
+
 	return result
 }
 
@@ -109,12 +142,23 @@ func (s *Command) Tx() *Tx {
 * @return et.Items, error
 **/
 func (s *Command) ExecTx(tx *Tx) (et.Items, error) {
+	var err error
+	if tx == nil {
+		tx = NewTx()
+
+		defer func() {
+			if err == nil {
+				tx.Commit()
+			}
+		}()
+	}
+
 	s.setTx(tx)
 
 	switch s.Command {
 	case Insert:
 		if len(s.Data) == 0 {
-			return et.Items{}, mistake.New(MSG_NOT_DATA)
+			return et.Items{}, mistake.Newf(MSG_NOT_DATA, s.Command.Str(), s.From.Name)
 		}
 
 		err := s.inserted()
@@ -123,7 +167,7 @@ func (s *Command) ExecTx(tx *Tx) (et.Items, error) {
 		}
 	case Update:
 		if len(s.Data) == 0 {
-			return et.Items{}, mistake.New(MSG_NOT_DATA)
+			return et.Items{}, mistake.Newf(MSG_NOT_DATA, s.Command.Str(), s.From.Name)
 		}
 
 		err := s.updated()
@@ -142,7 +186,7 @@ func (s *Command) ExecTx(tx *Tx) (et.Items, error) {
 		}
 	case Bulk:
 		if len(s.Data) == 0 {
-			return et.Items{}, mistake.New(MSG_NOT_DATA)
+			return et.Items{}, mistake.Newf(MSG_NOT_DATA, s.Command.Str(), s.From.Name)
 		}
 
 		err := s.bulk()
@@ -151,7 +195,7 @@ func (s *Command) ExecTx(tx *Tx) (et.Items, error) {
 		}
 	case Sync:
 		if len(s.Data) == 0 {
-			return et.Items{}, mistake.New(MSG_NOT_DATA)
+			return et.Items{}, mistake.Newf(MSG_NOT_DATA, s.Command.Str(), s.From.Name)
 		}
 
 		err := s.sync()
@@ -240,6 +284,16 @@ func (s *Command) validator(val interface{}) interface{} {
 
 		return v
 	}
+}
+
+/**
+* setDebug
+* @param v bool
+* @return *Command
+**/
+func (s *Command) setDebug(v bool) *Command {
+	s.IsDebug = v
+	return s
 }
 
 /**

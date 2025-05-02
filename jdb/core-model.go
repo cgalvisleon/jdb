@@ -58,25 +58,8 @@ func (s *DB) getModel(kind, name string) (et.Item, error) {
 **/
 func (s *DB) upsertModel(kind, name string, version int, definition []byte) error {
 	now := timezone.Now()
-	item, err := coreModel.
-		Update(et.Json{
-			UPDATED_AT:   now,
-			"version":    version,
-			"definition": definition,
-		}).
-		Where("kind").Eq(kind).
-		And("name").Eq(name).
-		Exec()
-	if err != nil {
-		return err
-	}
-
-	if item.Ok {
-		return nil
-	}
-
-	_, err = coreModel.
-		Insert(et.Json{
+	_, err := coreModel.
+		Upsert(et.Json{
 			CREATED_AT:   now,
 			UPDATED_AT:   now,
 			"kind":       kind,

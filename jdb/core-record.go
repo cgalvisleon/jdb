@@ -51,26 +51,8 @@ func (s *DB) upsertRecord(tx *Tx, schema, name, sysid, option string) error {
 	}
 
 	now := timezone.Now()
-	item, err := coreRecords.
-		Update(et.Json{
-			UPDATED_AT: now,
-			"option":   option,
-			"sync":     false,
-		}).
-		Where("schema_name").Eq(schema).
-		And("table_name").Eq(name).
-		And(SYSID).Eq(sysid).
-		ExecTx(tx)
-	if err != nil {
-		return err
-	}
-
-	if item.Ok {
-		return nil
-	}
-
-	_, err = coreRecords.
-		Insert(et.Json{
+	_, err := coreRecords.
+		Upsert(et.Json{
 			CREATED_AT:    now,
 			UPDATED_AT:    now,
 			"schema_name": schema,

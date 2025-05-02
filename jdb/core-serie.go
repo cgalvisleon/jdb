@@ -79,25 +79,9 @@ func (s *DB) GetSerie(tag string) (int64, error) {
 		return 0, mistake.Newf(MSG_ATTRIBUTE_REQUIRED, "tag")
 	}
 
-	item, err := coreSeries.
-		Update(et.Json{
-			UPDATED_AT: timezone.Now(),
-			"value":    "CALC(value + 1)",
-		}).
-		Where("tag").Eq(tag).
-		Return("value").
-		One()
-	if err != nil {
-		return 0, err
-	}
-
-	if item.Ok {
-		return item.Int64("value"), nil
-	}
-
 	now := timezone.Now()
-	_, err = coreSeries.
-		Insert(et.Json{
+	_, err := coreSeries.
+		Upsert(et.Json{
 			CREATED_AT: now,
 			UPDATED_AT: now,
 			"tag":      tag,

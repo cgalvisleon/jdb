@@ -87,7 +87,7 @@ func init() {
 }
 
 type Field struct {
-	Column     *Column        `json:"column"`
+	Column     *Column        `json:"-"`
 	Schema     string         `json:"schema"`
 	Model      string         `json:"model"`
 	As         string         `json:"as"`
@@ -107,6 +107,31 @@ type Field struct {
 	GroupBy    []string       `json:"group_by"`
 	Havings    et.Json        `json:"havings"`
 	OrderBy    et.Json        `json:"order_by"`
+}
+
+func (s *Field) describe() et.Json {
+	return et.Json{
+		"column_type": s.Column.TypeColumn.Str(),
+		"schema":      s.Schema,
+		"model":       s.Model,
+		"as":          s.As,
+		"name":        s.Name,
+		"source":      s.Source,
+		"agregation":  s.Agregation.Str(),
+		"value":       s.Value,
+		"alias":       s.Alias,
+		"hidden":      s.Hidden,
+		"page":        s.Page,
+		"rows":        s.Rows,
+		"tp_result":   s.TpResult,
+		"unquoted":    s.Unquoted,
+		"select":      s.Select,
+		"joins":       s.Joins,
+		"where":       s.Where,
+		"group_by":    s.GroupBy,
+		"havings":     s.Havings,
+		"order_by":    s.OrderBy,
+	}
 }
 
 /**
@@ -221,11 +246,22 @@ func (s *Field) ValueQuoted() any {
 }
 
 /**
-* ValueUnquoted
-* @return any
+* valueJson
+* @return et.Json, error
 **/
-func (s *Field) ValueUnquoted() any {
-	return utility.Unquote(s.Value)
+func (s *Field) valueJson() (et.Json, error) {
+	jsonbytes, err := json.Marshal(s.Value)
+	if err != nil {
+		return et.Json{}, err
+	}
+
+	var result et.Json
+	err = json.Unmarshal(jsonbytes, &result)
+	if err != nil {
+		return et.Json{}, err
+	}
+
+	return result, nil
 }
 
 /**

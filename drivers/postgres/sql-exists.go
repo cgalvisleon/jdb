@@ -25,14 +25,12 @@ func (s *Postgres) Exists(ql *jdb.Ql) (bool, error) {
 		console.Debug(ql.Sql)
 	}
 
-	result, err := s.query(ql.Sql)
+	item, err := s.query(ql.Sql)
 	if err != nil {
 		return false, err
 	}
 
-	if result.Count == 0 {
-		return false, nil
-	}
+	result := item.Bool(0, "exists")
 
-	return result.Bool(0, "exists"), nil
+	return result, nil
 }

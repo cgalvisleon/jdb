@@ -24,7 +24,11 @@ func (s *Model) New(fields ...interface{}) et.Json {
 			result.Set(col.Name, val)
 		case TpCalc:
 			for name, fn := range col.CalcFunction {
-				val := fn(result)
+				val, err := fn(result)
+				if err != nil {
+					continue
+				}
+
 				result.Set(name, val)
 			}
 		case TpRelatedTo:

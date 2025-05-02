@@ -7,11 +7,11 @@ import (
 )
 
 type QlWhere struct {
-	Wheres   []*QlCondition
-	getField func(name string) *Field
-	history  bool
-	language string
-	IsDebug  bool
+	Wheres   []*QlCondition           `json:"wheres"`
+	getField func(name string) *Field `json:"-"`
+	history  bool                     `json:"-"`
+	language string                   `json:"-"`
+	IsDebug  bool                     `json:"-"`
 }
 
 /**
@@ -33,6 +33,10 @@ func NewQlWhere() *QlWhere {
 **/
 func (s *QlWhere) where(field interface{}) *QlWhere {
 	where := NewQlCondition(field)
+	if len(s.Wheres) > 0 {
+		where.Connector = And
+	}
+
 	s.Wheres = append(s.Wheres, where)
 
 	return s
@@ -386,11 +390,7 @@ func (s *QlWhere) listWheres() et.Json {
 func (s *Ql) Where(val interface{}) *Ql {
 	val = s.validator(val)
 	if val != nil {
-		if len(s.Wheres) == 0 {
-			s.where(val)
-		} else {
-			s.and(val)
-		}
+		s.where(val)
 	}
 
 	return s

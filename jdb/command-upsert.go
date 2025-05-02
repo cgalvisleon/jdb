@@ -5,7 +5,9 @@ import (
 )
 
 func (s *Command) upsert() error {
-	s.prepare()
+	if err := s.prepare(); err != nil {
+		return err
+	}
 	model := s.From
 
 	ql := From(model)
@@ -13,21 +15,26 @@ func (s *Command) upsert() error {
 		for k := range model.Required {
 			field := value[k]
 			if field == nil {
-				return mistake.Newf(MSG_FIELD_REQUIRED, k)
+				return mistake.Newf(MSG_FIELD_REQUIRED_RELATION, k, model.Name)
 			}
 
+			s.Where(k).Eq(field.Value)
 			ql.Where(k).Eq(field.Value)
 		}
 	}
 
-	exist, err := ql.ExistTx(s.tx)
+	exist, err := ql.
+		setDebug(s.IsDebug).
+		ItExistsTx(s.tx)
 	if err != nil {
 		return err
 	}
 
 	if exist {
+		s.Command = Update
 		return s.updated()
 	}
 
+	s.Command = Insert
 	return s.inserted()
 }

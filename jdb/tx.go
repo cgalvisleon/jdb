@@ -7,8 +7,9 @@ import (
 )
 
 type Tx struct {
-	Id string
-	Tx *sql.Tx
+	Id        string
+	Committed bool
+	Tx        *sql.Tx
 }
 
 /**
@@ -63,7 +64,14 @@ func (s *Tx) Commit() error {
 		return nil
 	}
 
-	return s.Tx.Commit()
+	if s.Committed {
+		return nil
+	}
+
+	err := s.Tx.Commit()
+	s.Committed = true
+
+	return err
 }
 
 /**
@@ -75,5 +83,12 @@ func (s *Tx) Rollback() error {
 		return nil
 	}
 
-	return s.Tx.Rollback()
+	if s.Committed {
+		return nil
+	}
+
+	err := s.Tx.Rollback()
+	s.Committed = true
+
+	return err
 }
