@@ -143,10 +143,10 @@ const (
 	PK         = PRIMARYKEY
 	KEY        = PRIMARYKEY
 	INDEX      = "index"
-	PROJECT    = "project_id"
+	PROJECT_ID = "project_id"
 	CREATED_AT = "created_at"
 	UPDATED_AT = "updated_at"
-	STATUS     = "status_id"
+	STATUS_ID  = "status_id"
 	SYSID      = "jdbid"
 	CREATED_TO = "created_to"
 	UPDATED_TO = "updated_to"
@@ -158,10 +158,10 @@ const (
 var (
 	IndexField      ColumnField = INDEX
 	SourceField     ColumnField = "source"
-	ProjectField    ColumnField = PROJECT
+	ProjectField    ColumnField = PROJECT_ID
 	CreatedAtField  ColumnField = CREATED_AT
 	UpdatedAtField  ColumnField = UPDATED_AT
-	StatusField     ColumnField = STATUS
+	StatusField     ColumnField = STATUS_ID
 	PrimaryKeyField ColumnField = PRIMARYKEY
 	SystemKeyField  ColumnField = SYSID
 	CreatedToField  ColumnField = CREATED_TO
@@ -261,10 +261,40 @@ func (s *Relation) describe() et.Json {
 	return result
 }
 
+type TypeRollup int
+
+const (
+	TpAtribs TypeRollup = iota
+	TpObjects
+)
+
+/**
+* Str
+* @return string
+**/
+func (s TypeRollup) Str() string {
+	switch s {
+	case TpObjects:
+		return "objects"
+	default:
+		return "attribs"
+	}
+}
+
+func toTypeRollup(val interface{}) (TypeRollup, error) {
+	switch val {
+	case TpObjects:
+		return TpObjects, nil
+	default:
+		return TpAtribs, nil
+	}
+}
+
 type Rollup struct {
 	With   *Model            `json:"-"`
 	Fk     map[string]string `json:"fk"`
-	Fields []interface{}     `json:"fields"`
+	Fields map[string]string `json:"fields"`
+	Type   TypeRollup        `json:"type"`
 }
 
 /**
@@ -314,7 +344,7 @@ func (s *Rollup) describe() et.Json {
 	}
 
 	result["with"] = s.With.Name
-
+	result["type"] = s.Type.Str()
 	return result
 }
 

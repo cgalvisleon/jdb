@@ -42,6 +42,7 @@ func (s *Ql) GetDetailsTx(tx *Tx, data *et.Json) (*et.Json, error) {
 			if s.IsDebug {
 				console.Debug(where.ToString())
 			}
+
 			ql := From(with).
 				setJoins(field.Joins).
 				setWheres(where).
@@ -89,40 +90,40 @@ func (s *Ql) GetDetailsTx(tx *Tx, data *et.Json) (*et.Json, error) {
 				console.Debug(where.ToString())
 			}
 
-			fields := col.Rollup.Fields
-			if len(field.Select) > 0 {
-				fields = field.Select
-			}
 			ql := From(with).
 				setJoins(field.Joins).
 				setWheres(where).
 				setWheres(field.Where).
-				setSelects(fields).
+				setSelects(field.Select...).
 				setGroupBy(field.GroupBy...).
 				setHavings(field.Havings).
 				setOrderBy(field.OrderBy).
 				setDebug(s.IsDebug)
 
-			switch len(ql.Selects) {
-			case 0:
+			if len(ql.Selects) == 0 {
 				continue
-			case 1:
-				field := ql.Selects[0]
-				result, err := ql.
-					OneTx(tx)
-				if err != nil {
-					continue
-				}
+			}
 
-				data.Set(col.Name, result.Result[field.Name])
-			default:
-				result, err := ql.
-					OneTx(tx)
-				if err != nil {
-					continue
-				}
+			result, err := ql.
+				OneTx(tx)
+			if err != nil {
+				continue
+			}
 
-				data.Set(col.Name, result.Result)
+			if col.Rollup.Type == TpObjects {
+				object := et.Json{}
+				for fkn, pkn := range col.Rollup.Fields {
+					val := data.Str(fkn)
+					object.Set(pkn, val)
+				}
+				for key, val := range result.Result {
+					object.Set(key, val)
+				}
+				data.Set(col.Name, object)
+			} else {
+				for key, val := range result.Result {
+					data.Set(key, val)
+				}
 			}
 		}
 	}

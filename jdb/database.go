@@ -49,7 +49,7 @@ func NewDatabase(name, driver string) (*DB, error) {
 	}
 
 	name = Name(name)
-	idx := slices.IndexFunc(conn.DBS, func(db *DB) bool { return db.Name == name })
+	idx := slices.IndexFunc(conn.DBS, func(e *DB) bool { return e.Name == name })
 	if idx != -1 {
 		return conn.DBS[idx], nil
 	}
@@ -127,7 +127,7 @@ func (s *DB) Load(kind, name string, out interface{}) error {
 	}
 
 	if !item.Ok {
-		return nil
+		return mistake.Newf(MSG_MODEL_NOT_FOUND, name)
 	}
 
 	definition, err := item.Byte("definition")
@@ -138,6 +138,7 @@ func (s *DB) Load(kind, name string, out interface{}) error {
 	if s.IsDebug {
 		console.Debug(kind, ":", string(definition))
 	}
+
 	err = json.Unmarshal(definition, out)
 	if err != nil {
 		return err
@@ -200,12 +201,25 @@ func (s *DB) Disconected() error {
 }
 
 /**
+* AddSchema
+* @param schema *Schema
+**/
+func (s *DB) addSchema(schema *Schema) {
+	idx := slices.IndexFunc(s.schemas, func(e *Schema) bool { return e.Name == schema.Name })
+	if idx != -1 {
+		return
+	}
+
+	s.schemas = append(s.schemas, schema)
+}
+
+/**
 * GetSchema
 * @param name string
 * @return *Schema
 **/
 func (s *DB) GetSchema(name string) *Schema {
-	idx := slices.IndexFunc(s.schemas, func(schema *Schema) bool { return schema.Name == name })
+	idx := slices.IndexFunc(s.schemas, func(e *Schema) bool { return e.Name == name })
 	if idx != -1 {
 		return s.schemas[idx]
 	}
@@ -219,7 +233,7 @@ func (s *DB) GetSchema(name string) *Schema {
 * @return *Model
 **/
 func (s *DB) GetModel(name string) *Model {
-	idx := slices.IndexFunc(s.models, func(model *Model) bool { return model.Name == name })
+	idx := slices.IndexFunc(s.models, func(e *Model) bool { return e.Name == name })
 	if idx != -1 {
 		return s.models[idx]
 	}

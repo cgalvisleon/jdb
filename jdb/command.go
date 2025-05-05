@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/cgalvisleon/et/et"
+	"github.com/cgalvisleon/et/reg"
 )
 
 type TypeCommand int
@@ -41,6 +42,7 @@ type DataFunction func(data et.Json) (et.Json, error)
 
 type Command struct {
 	*QlWhere
+	Id           string              `json:"id"`
 	tx           *Tx                 `json:"-"`
 	Command      TypeCommand         `json:"command"`
 	Db           *DB                 `json:"-"`
@@ -53,6 +55,10 @@ type Command struct {
 	Result       et.Items            `json:"result"`
 	beforeInsert []DataFunction      `json:"-"`
 	beforeUpdate []DataFunction      `json:"-"`
+	beforeDelete []DataFunction      `json:"-"`
+	afterInsert  []DataFunction      `json:"-"`
+	afterUpdate  []DataFunction      `json:"-"`
+	afterDelete  []DataFunction      `json:"-"`
 	isUndo       bool                `json:"-"`
 	isSync       bool                `json:"-"`
 }
@@ -64,6 +70,7 @@ type Command struct {
 **/
 func NewCommand(model *Model, data []et.Json, command TypeCommand) *Command {
 	result := &Command{
+		Id:           reg.GenId("command"),
 		Command:      command,
 		Db:           model.Db,
 		From:         model,
@@ -73,6 +80,8 @@ func NewCommand(model *Model, data []et.Json, command TypeCommand) *Command {
 		RelationsTo:  make([]map[string]*Field, 0),
 		beforeInsert: []DataFunction{},
 		beforeUpdate: []DataFunction{},
+		afterInsert:  []DataFunction{},
+		afterUpdate:  []DataFunction{},
 		Returns:      []*Field{},
 		Result:       et.Items{},
 	}

@@ -8,6 +8,11 @@ import (
 	"github.com/cgalvisleon/et/timezone"
 )
 
+/**
+* beforeInsertDefault
+* @param data et.Json
+* @return et.Json, error
+**/
 func (s *Command) beforeInsertDefault(data et.Json) (et.Json, error) {
 	if s.From == nil {
 		return data, mistake.New(MSG_MODEL_REQUIRED)
@@ -48,6 +53,11 @@ func (s *Command) beforeInsertDefault(data et.Json) (et.Json, error) {
 	return data, nil
 }
 
+/**
+* beforeUpdateDefault
+* @param data et.Json
+* @return et.Json, error
+**/
 func (s *Command) beforeUpdateDefault(data et.Json) (et.Json, error) {
 	if s.From == nil {
 		return data, mistake.New(MSG_MODEL_REQUIRED)
@@ -79,6 +89,10 @@ func (s *Command) beforeUpdateDefault(data et.Json) (et.Json, error) {
 	return data, nil
 }
 
+/**
+* prepare
+* @return error
+**/
 func (s *Command) prepare() error {
 	from := s.From
 	s.Values = make([]map[string]*Field, 0)
@@ -99,6 +113,15 @@ func (s *Command) prepare() error {
 			}
 		case Update:
 			for _, fn := range s.beforeUpdate {
+				val, err := fn(data)
+				if err != nil {
+					return err
+				}
+
+				s.Data[i] = val
+			}
+		case Delete:
+			for _, fn := range s.beforeDelete {
 				val, err := fn(data)
 				if err != nil {
 					return err

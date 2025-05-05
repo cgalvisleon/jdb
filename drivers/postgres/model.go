@@ -7,7 +7,7 @@ import (
 )
 
 func table(model *jdb.Model) string {
-	return strs.Format(`%s.%s`, model.Schema.Name, model.Name)
+	return strs.Format(`%s.%s`, model.Schema, model.Name)
 }
 
 /**
@@ -16,7 +16,7 @@ func table(model *jdb.Model) string {
 * @return error
 **/
 func (s *Postgres) LoadModel(model *jdb.Model) error {
-	existTable, err := s.existTable(model.Schema.Name, model.Name)
+	existTable, err := s.existTable(model.Schema, model.Name)
 	if err != nil {
 		return err
 	}
@@ -59,7 +59,7 @@ func (s *Postgres) LoadModel(model *jdb.Model) error {
 	AND a.attnum > 0
 	AND NOT a.attisdropped;`
 
-	items, err := s.query(sql, model.Schema.Name, model.Name)
+	items, err := s.query(sql, model.Schema, model.Name)
 	if err != nil {
 		return err
 	}

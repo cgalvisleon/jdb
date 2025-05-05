@@ -194,7 +194,7 @@ func Jdb() *JDB {
 * @return *DB
 **/
 func GetDB(name string) *DB {
-	idx := slices.IndexFunc(conn.DBS, func(db *DB) bool { return db.Name == name })
+	idx := slices.IndexFunc(conn.DBS, func(e *DB) bool { return e.Name == name })
 	if idx != -1 {
 		return conn.DBS[idx]
 	}

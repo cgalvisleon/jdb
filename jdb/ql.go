@@ -16,7 +16,7 @@ const (
 
 type Ql struct {
 	*QlWhere
-	tx         *Tx        `json:"-"`
+	Id         string     `json:"id"`
 	Db         *DB        `json:"-"`
 	TypeSelect TypeSelect `json:"type_select"`
 	Froms      *QlFroms   `json:"froms"`
@@ -33,6 +33,7 @@ type Ql struct {
 	Sql        string     `json:"sql"`
 	Result     et.Items   `json:"result"`
 	Help       et.Json    `json:"help"`
+	tx         *Tx        `json:"-"`
 }
 
 /**

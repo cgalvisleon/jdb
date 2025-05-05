@@ -8,13 +8,9 @@ import (
 * New
 * @return et.Json
 **/
-func (s *Model) New(fields ...interface{}) et.Json {
+func (s *Model) New(fields ...string) et.Json {
 	var result = et.Json{}
-	for _, col := range s.Columns {
-		if s.SourceField != nil && s.SourceField == col {
-			continue
-		}
-
+	setValue := func(col *Column) {
 		switch col.TypeColumn {
 		case TpColumn:
 			val := col.DefaultValue()
@@ -26,32 +22,51 @@ func (s *Model) New(fields ...interface{}) et.Json {
 			for name, fn := range col.CalcFunction {
 				val, err := fn(result)
 				if err != nil {
-					continue
+					return
 				}
 
 				result.Set(name, val)
 			}
 		case TpRelatedTo:
 			if col.Detail == nil {
-				continue
+				return
 			}
 			with := col.Detail.With
 			if with == nil {
-				continue
+				return
 			}
 			val := with.New()
 			result.Set(col.Name, []et.Json{val})
 		case TpRollup:
 			if col.Rollup == nil {
-				continue
+				return
 			}
 			with := col.Rollup.With
 			if with == nil {
-				continue
+				return
 			}
-			val := with.New(col.Rollup.Fields...)
+			val := with.New(col.Rollup.Fields[col.Name])
 			result.Set(col.Name, val)
 		}
 	}
+
+	if len(fields) == 0 {
+		for _, col := range s.Columns {
+			if s.SourceField != nil && s.SourceField == col {
+				continue
+			}
+
+			setValue(col)
+		}
+	} else {
+		for _, field := range fields {
+			col := s.getColumn(field)
+			if col == nil {
+				continue
+			}
+			setValue(col)
+		}
+	}
+
 	return result
 }

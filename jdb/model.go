@@ -5,6 +5,7 @@ import (
 	"slices"
 	"time"
 
+	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/event"
 	"github.com/cgalvisleon/et/reg"
@@ -14,7 +15,8 @@ import (
 
 type Model struct {
 	Db                 *DB                      `json:"-"`
-	Schema             *Schema                  `json:"-"`
+	schema             *Schema                  `json:"-"`
+	Schema             string                   `json:"schema"`
 	CreatedAt          time.Time                `json:"created_at"`
 	UpdateAt           time.Time                `json:"updated_at"`
 	Id                 string                   `json:"id"`
@@ -22,7 +24,7 @@ type Model struct {
 	Description        string                   `json:"description"`
 	UseCore            bool                     `json:"use_core"`
 	Integrity          bool                     `json:"integrity"`
-	Definitions        []et.Json                `json:"definitions"`
+	Definitions        et.Json                  `json:"definitions"`
 	Columns            []*Column                `json:"-"`
 	PrimaryKeys        map[string]*Column       `json:"-"`
 	ForeignKeys        map[string]*Relation     `json:"-"`
@@ -51,6 +53,7 @@ type Model struct {
 	IsDebug            bool                     `json:"-"`
 	isLocked           bool                     `json:"-"`
 	isInit             bool                     `json:"-"`
+	isCore             bool                     `json:"-"`
 }
 
 /**
@@ -60,22 +63,27 @@ type Model struct {
 **/
 func NewModel(schema *Schema, name string, version int) *Model {
 	name = Name(name)
-	idx := slices.IndexFunc(schema.Db.models, func(model *Model) bool { return model.Name == name })
+	idx := slices.IndexFunc(schema.Db.models, func(e *Model) bool { return e.Name == name })
 	if idx != -1 {
 		return schema.Db.models[idx]
 	}
 
 	newModel := func() *Model {
+		if !schema.isCore {
+			console.Logf("model", `Model %s new`, name)
+		}
+
 		now := timezone.NowTime()
 		result := &Model{
 			Db:                 schema.Db,
-			Schema:             schema,
+			schema:             schema,
+			Schema:             schema.Name,
 			CreatedAt:          now,
 			UpdateAt:           now,
 			Id:                 reg.GenId("model"),
 			Name:               name,
 			UseCore:            schema.UseCore,
-			Definitions:        make([]et.Json, 0),
+			Definitions:        et.Json{},
 			Columns:            make([]*Column, 0),
 			PrimaryKeys:        make(map[string]*Column),
 			ForeignKeys:        make(map[string]*Relation),
@@ -92,14 +100,14 @@ func NewModel(schema *Schema, name string, version int) *Model {
 			eventsUpdate:       make([]Event, 0),
 			eventsDelete:       make([]Event, 0),
 			Version:            version,
+			isCore:             schema.isCore,
 		}
 		result.DefineEventError(eventErrorDefault)
 		result.DefineEvent(EventInsert, eventInsertDefault)
 		result.DefineEvent(EventUpdate, eventUpdateDefault)
 		result.DefineEvent(EventDelete, eventDeleteDefault)
 
-		schema.models = append(schema.models, result)
-		schema.Db.models = append(schema.Db.models, result)
+		schema.addModel(result)
 		return result
 	}
 
@@ -110,47 +118,96 @@ func NewModel(schema *Schema, name string, version int) *Model {
 	var result *Model
 	err := schema.Db.Load("model", name, &result)
 	if err != nil {
-		return nil
+		return newModel()
+	}
+
+	result, err = loadModel(schema, result)
+	if err != nil {
+		result = newModel()
+	}
+
+	return result
+}
+
+/**
+* loadModel
+* @param schema *Schema, model *Model
+* @return *Model, error
+**/
+func loadModel(schema *Schema, model *Model) (*Model, error) {
+	idx := slices.IndexFunc(schema.Db.models, func(e *Model) bool { return e.Name == model.Name })
+	if idx != -1 {
+		return schema.Db.models[idx], nil
+	}
+
+	if !schema.isCore {
+		console.Logf("model", `Model %s load`, model.Name)
+	}
+
+	schema.addModel(model)
+	model.schema = schema
+	model.Db = schema.Db
+	model.Schema = schema.Name
+	model.Columns = make([]*Column, 0)
+	model.PrimaryKeys = make(map[string]*Column)
+	model.ForeignKeys = make(map[string]*Relation)
+	model.Indices = make(map[string]*Index)
+	model.Uniques = make(map[string]*Index)
+	model.RelationsTo = make(map[string]*Relation)
+	model.Details = make(map[string]*Relation)
+	model.Rollups = make(map[string]*Rollup)
+	model.History = nil
+	model.Required = make(map[string]bool)
+	/* Event */
+	model.eventEmiterChannel = make(chan event.Message)
+	model.eventsEmiter = make(map[string]event.Handler)
+	model.eventError = make([]EventError, 0)
+	model.eventsInsert = make([]Event, 0)
+	model.eventsUpdate = make([]Event, 0)
+	model.eventsDelete = make([]Event, 0)
+	model.DefineEventError(eventErrorDefault)
+	model.DefineEvent(EventInsert, eventInsertDefault)
+	model.DefineEvent(EventUpdate, eventUpdateDefault)
+	model.DefineEvent(EventDelete, eventDeleteDefault)
+	/* Define columns */
+	for name := range model.Definitions {
+		definition := model.Definitions.Json(name)
+		args := definition.Array("args")
+		tp := definition.Int("tp")
+		model.defineColumns(tp, args...)
+	}
+
+	return model, nil
+}
+
+/**
+* LoadModel
+* @param db *DB, name string
+* @return *Model, error
+**/
+func LoadModel(db *DB, name string) (*Model, error) {
+	name = Name(name)
+	idx := slices.IndexFunc(db.models, func(e *Model) bool { return e.Name == name })
+	if idx != -1 {
+		return db.models[idx], nil
+	}
+
+	var result *Model
+	err := db.Load("model", name, &result)
+	if err != nil {
+		return nil, err
 	}
 
 	if result != nil {
-		result.Db = schema.Db
-		result.Schema = schema
-		result.Columns = make([]*Column, 0)
-		result.PrimaryKeys = make(map[string]*Column)
-		result.ForeignKeys = make(map[string]*Relation)
-		result.Indices = make(map[string]*Index)
-		result.Uniques = make(map[string]*Index)
-		result.RelationsTo = make(map[string]*Relation)
-		result.Details = make(map[string]*Relation)
-		result.Rollups = make(map[string]*Rollup)
-		result.History = nil
-		result.Required = make(map[string]bool)
-		/* Event */
-		result.eventEmiterChannel = make(chan event.Message)
-		result.eventsEmiter = make(map[string]event.Handler)
-		result.eventError = make([]EventError, 0)
-		result.eventsInsert = make([]Event, 0)
-		result.eventsUpdate = make([]Event, 0)
-		result.eventsDelete = make([]Event, 0)
-		result.DefineEventError(eventErrorDefault)
-		result.DefineEvent(EventInsert, eventInsertDefault)
-		result.DefineEvent(EventUpdate, eventUpdateDefault)
-		result.DefineEvent(EventDelete, eventDeleteDefault)
-
-		/* Define columns */
-		for _, definition := range result.Definitions {
-			args := definition.Array("args")
-			tp := definition.Int("tp")
-			result.defineColumns(tp, args...)
+		schema, err := LoadSchema(db, result.Schema)
+		if err != nil {
+			return nil, err
 		}
 
-		schema.models = append(schema.models, result)
-		schema.Db.models = append(schema.Db.models, result)
-		return result
+		return loadModel(schema, result)
 	}
 
-	return newModel()
+	return result, nil
 }
 
 /**
@@ -251,24 +308,21 @@ func (s *Model) Init() error {
 	if s.SourceField != nil {
 		idx := s.SourceField.idx()
 		if idx != len(s.Columns)-1 && idx != -1 {
-			s.Columns = append(s.Columns[:idx], s.Columns[idx+1:]...)
-			s.Columns = append(s.Columns, s.SourceField)
+			s.moveColumnToEnd(s.SourceField, idx)
 		}
 	}
 
 	if s.SystemKeyField != nil {
 		idx := s.SystemKeyField.idx()
-		if idx != len(s.Columns)-1 && idx > -1 {
-			s.Columns = append(s.Columns[:idx], s.Columns[idx+1:]...)
-			s.Columns = append(s.Columns, s.SystemKeyField)
+		if idx != len(s.Columns)-1 && idx != -1 {
+			s.moveColumnToEnd(s.SystemKeyField, idx)
 		}
 	}
 
 	if s.IndexField != nil {
 		idx := s.IndexField.idx()
 		if idx != len(s.Columns)-1 && idx != -1 {
-			s.Columns = append(s.Columns[:idx], s.Columns[idx+1:]...)
-			s.Columns = append(s.Columns, s.IndexField)
+			s.moveColumnToEnd(s.IndexField, idx)
 		}
 	}
 
@@ -377,6 +431,36 @@ func (s *Model) Debug() *Model {
 }
 
 /**
+* addColumn
+* @param column *Column
+**/
+func (s *Model) addColumn(column *Column) {
+	idx := slices.IndexFunc(s.Columns, func(e *Column) bool { return e.Name == column.Name })
+	if idx == -1 {
+		s.Columns = append(s.Columns, column)
+	}
+}
+
+/**
+* addColumnIdx
+* @param column *Column, idx int
+**/
+func (s *Model) addColumnToIdx(column *Column, idx int) {
+	if idx != -1 {
+		s.Columns = append(s.Columns[:idx], append([]*Column{column}, s.Columns[idx:]...)...)
+	}
+}
+
+/**
+* moveColumnToEnd
+* @param column *Column, idx int
+**/
+func (s *Model) moveColumnToEnd(column *Column, idx int) {
+	s.Columns = append(s.Columns[:idx], s.Columns[idx+1:]...)
+	s.addColumn(column)
+}
+
+/**
 * getColumn
 * @param name string
 * @return *Column
@@ -481,7 +565,7 @@ func (s *Model) getField(name string, isCreate bool) *Field {
 
 		return result
 	case 3:
-		if !strs.Same(s.Schema.Name, list[0]) {
+		if !strs.Same(s.Schema, list[0]) {
 			return nil
 		}
 

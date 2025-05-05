@@ -19,3 +19,13 @@ func (s *Command) BeforeUpdate(fn DataFunction) *Command {
 
 	return s
 }
+
+/**
+* BeforeDelete
+* @param fn DataFunction
+**/
+func (s *Command) BeforeDelete(fn DataFunction) *Command {
+	s.beforeDelete = append(s.beforeDelete, fn)
+
+	return s
+}

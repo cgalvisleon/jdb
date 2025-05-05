@@ -5,6 +5,7 @@ import (
 	"slices"
 	"time"
 
+	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/reg"
 	"github.com/cgalvisleon/et/timezone"
@@ -20,6 +21,7 @@ type Schema struct {
 	UseCore     bool      `json:"use_core"`
 	models      []*Model  `json:"-"`
 	isInit      bool      `json:"-"`
+	isCore      bool      `json:"-"`
 }
 
 /**
@@ -29,7 +31,7 @@ type Schema struct {
 **/
 func NewSchema(db *DB, name string) *Schema {
 	name = Name(name)
-	idx := slices.IndexFunc(db.schemas, func(schema *Schema) bool { return schema.Name == name })
+	idx := slices.IndexFunc(db.schemas, func(e *Schema) bool { return e.Name == name })
 	if idx != -1 {
 		return db.schemas[idx]
 	}
@@ -50,7 +52,7 @@ func NewSchema(db *DB, name string) *Schema {
 			return nil
 		}
 
-		db.schemas = append(db.schemas, result)
+		db.addSchema(result)
 		return result
 	}
 
@@ -61,18 +63,64 @@ func NewSchema(db *DB, name string) *Schema {
 	var result *Schema
 	err := db.Load("schema", name, &result)
 	if err != nil {
-		return nil
+		return newSchema()
+	}
+
+	if result == nil {
+		return newSchema()
+	}
+
+	result.Db = db
+	result.models = make([]*Model, 0)
+
+	db.addSchema(result)
+	return result
+}
+
+/**
+* LoadSchema
+* @param db *DB, name string
+* @return *Schema, error
+**/
+func LoadSchema(db *DB, name string) (*Schema, error) {
+	name = Name(name)
+	idx := slices.IndexFunc(db.schemas, func(e *Schema) bool { return e.Name == name })
+	if idx != -1 {
+		return db.schemas[idx], nil
+	}
+
+	var result *Schema
+	err := db.Load("schema", name, &result)
+	if err != nil {
+		return nil, err
 	}
 
 	if result != nil {
 		result.Db = db
 		result.models = make([]*Model, 0)
 
-		db.schemas = append(db.schemas, result)
-		return result
+		db.addSchema(result)
 	}
 
-	return newSchema()
+	console.Logf("schema", `Schema %s loaded`, name)
+
+	return result, nil
+}
+
+/**
+* AddModel
+* @param model *Model
+**/
+func (s *Schema) addModel(model *Model) {
+	idx := slices.IndexFunc(s.Db.models, func(e *Model) bool { return e.Name == model.Name })
+	if idx == -1 {
+		s.Db.models = append(s.Db.models, model)
+	}
+
+	idx = slices.IndexFunc(s.models, func(e *Model) bool { return e.Name == model.Name })
+	if idx == -1 {
+		s.models = append(s.models, model)
+	}
 }
 
 /**
@@ -176,7 +224,7 @@ func (s *Schema) Drop() error {
 **/
 func (s *Schema) GetModel(name string) *Model {
 	name = Name(name)
-	idx := slices.IndexFunc(s.models, func(model *Model) bool { return model.Name == name })
+	idx := slices.IndexFunc(s.models, func(e *Model) bool { return e.Name == name })
 	if idx != -1 {
 		return s.models[idx]
 	}

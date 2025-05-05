@@ -1,6 +1,7 @@
 package jdb
 
 import (
+	"fmt"
 	"slices"
 	"strconv"
 	"strings"
@@ -118,9 +119,14 @@ func toTypeData(val interface{}) (TypeData, error) {
 		return TypeData(i), nil
 	}
 
-	return TypeDataNone, mistake.New("invalid type TypeData")
+	return TypeDataNone, mistake.Newf("invalid type: %T to TypeData", val)
 }
 
+/**
+* toArrayString
+* @param val interface{}
+* @return []string, error
+**/
 func toArrayString(val interface{}) ([]string, error) {
 	switch v := val.(type) {
 	case []string:
@@ -136,24 +142,14 @@ func toArrayString(val interface{}) ([]string, error) {
 		return strings.Split(v, ","), nil
 	}
 
-	return nil, mistake.New("invalid type []string")
+	return nil, mistake.Newf("invalid type: %T to []string", val)
 }
 
-func toArrayInterface(val interface{}) ([]interface{}, error) {
-	switch v := val.(type) {
-	case []interface{}:
-		return v, nil
-	case []string:
-		fields := make([]interface{}, 0)
-		for _, field := range v {
-			fields = append(fields, field)
-		}
-
-		return fields, nil
-	}
-
-	return nil, mistake.New("invalid type []interface{}")
-}
+/**
+* toMapString
+* @param val interface{}
+* @return map[string]string, error
+**/
 func toMapString(val interface{}) (map[string]string, error) {
 	switch v := val.(type) {
 	case map[string]string:
@@ -166,7 +162,32 @@ func toMapString(val interface{}) (map[string]string, error) {
 		return result, nil
 	}
 
-	return nil, mistake.New("invalid type map[string]string")
+	return nil, mistake.Newf("invalid type: %T to map[string]string", val)
+}
+
+/**
+* toMapInt
+* @param val interface{}
+* @return int, error
+**/
+func toMapInt(val interface{}) (int, error) {
+	switch v := val.(type) {
+	case int:
+		return v, nil
+	case int32:
+		return int(v), nil
+	case int64:
+		return int(v), nil
+	case float64:
+		return int(v), nil
+	case float32:
+		return int(v), nil
+	case string:
+		n, err := strconv.Atoi(v)
+		return n, err
+	}
+
+	return 0, fmt.Errorf("invalid type: %T to int", val)
 }
 
 /**
@@ -179,28 +200,28 @@ func (s *Model) defineColumns(tp int, args ...interface{}) error {
 	case TypeDefinitionColumn:
 		tpData, err := toTypeData(args[1])
 		if err != nil {
-			return mistake.Newf("invalid type: %v error: %s", args[1], err.Error())
+			return err
 		}
 
 		s.defineColumn(args[0].(string), tpData)
 	case TypeDefinitionIndex:
 		columns, err := toArrayString(args[1])
 		if err != nil {
-			return mistake.Newf("invalid type: %v error: %s", args[1], err.Error())
+			return err
 		}
 
 		s.defineIndex(args[0].(bool), columns)
 	case TypeDefinitionUnique:
 		colums, err := toArrayString(args[0])
 		if err != nil {
-			return mistake.Newf("invalid type: %v error: %s", args[0], err.Error())
+			return err
 		}
 
 		s.defineUnique(colums)
 	case TypeDefinitionPrimaryKey:
 		colums, err := toArrayString(args[0])
 		if err != nil {
-			return mistake.Newf("invalid type: %v error: %s", args[0], err.Error())
+			return err
 		}
 
 		s.definePrimaryKey(colums)
@@ -209,7 +230,7 @@ func (s *Model) defineColumns(tp int, args ...interface{}) error {
 	case TypeDefinitionForeignKey:
 		fks, err := toMapString(args[0])
 		if err != nil {
-			return mistake.Newf("invalid type: %v error: %s", args[0], err.Error())
+			return err
 		}
 
 		s.defineForeignKey(fks, args[1].(string), args[2].(bool), args[3].(bool))
@@ -220,7 +241,7 @@ func (s *Model) defineColumns(tp int, args ...interface{}) error {
 	case TypeDefinitionAtribute:
 		tpData, err := toTypeData(args[1])
 		if err != nil {
-			return mistake.Newf("invalid type: %v error: %s", args[1], err.Error())
+			return err
 		}
 
 		s.defineAtribute(args[0].(string), tpData)
@@ -237,7 +258,7 @@ func (s *Model) defineColumns(tp int, args ...interface{}) error {
 	case TypeDefinitionFullTextField:
 		fields, err := toArrayString(args[1])
 		if err != nil {
-			return mistake.Newf("invalid type: %v error: %s", args[1], err.Error())
+			return err
 		}
 
 		s.defineFullText(args[0].(string), fields)
@@ -246,47 +267,62 @@ func (s *Model) defineColumns(tp int, args ...interface{}) error {
 	case TypeDefinitionHidden:
 		colums, err := toArrayString(args[0])
 		if err != nil {
-			return mistake.Newf("invalid type: %v error: %s", args[0], err.Error())
+			return err
 		}
 
 		s.defineHidden(colums)
 	case TypeDefinitionRequired:
 		colums, err := toArrayString(args[0])
 		if err != nil {
-			return mistake.Newf("invalid type: %v error: %s", args[0], err.Error())
+			return err
 		}
 
 		s.defineRequired(colums)
 	case TypeDefinitionRelation:
 		fks, err := toMapString(args[2])
 		if err != nil {
-			return mistake.Newf("invalid type: %v error: %s", args[2], err.Error())
+			return err
 		}
 
-		s.defineRelation(args[0].(string), args[1].(string), fks, args[3].(int))
+		limit, err := toMapInt(args[3])
+		if err != nil {
+			return err
+		}
+
+		s.defineRelation(args[0].(string), args[1].(string), fks, limit)
 	case TypeDefinitionRollup:
 		fks, err := toMapString(args[2])
 		if err != nil {
-			return mistake.Newf("invalid type: %v error: %s", args[2], err.Error())
+			return err
 		}
 
-		rollups, err := toArrayInterface(args[3])
+		tpRollup, err := toTypeRollup(args[4])
 		if err != nil {
-			return mistake.Newf("invalid type: %v error: %s", args[3], err.Error())
+			return err
 		}
 
-		s.defineRollup(args[0].(string), args[1].(string), fks, rollups)
+		s.defineRollup(args[0].(string), args[1].(string), fks, args[3].(string), tpRollup)
 	case TypeDefinitionDetail:
 		fks, err := toMapString(args[1])
 		if err != nil {
-			return mistake.Newf("invalid type: %v error: %s", args[1], err.Error())
+			return err
 		}
 
-		s.defineDetail(args[0].(string), fks, args[2].(int))
+		limit, err := toMapInt(args[2])
+		if err != nil {
+			return err
+		}
+
+		s.defineDetail(args[0].(string), fks, limit)
 	case TypeDefinitionValues:
 		s.defineValues(args[0].(string), args[1])
 	case TypeDefinitionHistory:
-		s.defineHistory(args[0].(string), args[1].(int))
+		limit, err := toMapInt(args[1])
+		if err != nil {
+			return err
+		}
+
+		s.defineHistory(args[0].(string), limit)
 	case TypeDefinitionModel:
 		s.defineModel()
 	case TypeDefinitionProjectModel:
@@ -298,14 +334,14 @@ func (s *Model) defineColumns(tp int, args ...interface{}) error {
 
 /**
 * setDefine
-* @param tp TypeDefinition, args ...any
+* @param name string, tp TypeDefinition, args ...any
 **/
-func (s *Model) setDefine(tp TypeDefinition, args ...any) {
-	s.Definitions = append(s.Definitions, et.Json{
+func (s *Model) setDefine(name string, tp TypeDefinition, args ...any) {
+	s.Definitions[name] = et.Json{
 		"tp":   tp,
 		"type": tp.Str(),
 		"args": args,
-	})
+	}
 }
 
 /**
@@ -321,9 +357,9 @@ func (s *Model) defineColumnIdx(name string, typeData TypeData, idx int) *Column
 
 	result = newColumn(s, name, "", TpColumn, typeData, typeData.DefaultValue())
 	if idx == -1 {
-		s.Columns = append(s.Columns, result)
+		s.addColumn(result)
 	} else {
-		s.Columns = append(s.Columns[:idx], append([]*Column{result}, s.Columns[idx:]...)...)
+		s.addColumnToIdx(result, idx)
 	}
 
 	return result
@@ -478,7 +514,7 @@ func (s *Model) defineSourceField() *Column {
 func (s *Model) defineAtribute(name string, typeData TypeData) *Column {
 	s.defineSourceField()
 	result := newAtribute(s, name, typeData)
-	s.Columns = append(s.Columns, result)
+	s.addColumn(result)
 
 	return result
 }
@@ -622,7 +658,7 @@ func (s *Model) defineRequired(colums []string) *Model {
 * @return *Relation
 **/
 func (s *Model) defineRelation(name, relatedTo string, fks map[string]string, limit int) *Relation {
-	with := NewModel(s.Schema, relatedTo, 1)
+	with := NewModel(s.schema, relatedTo, 1)
 	with.defineForeignKey(fks, s.Name, true, true)
 
 	col := newColumn(s, name, "", TpRelatedTo, TypeDataNone, TypeDataNone.DefaultValue())
@@ -632,43 +668,44 @@ func (s *Model) defineRelation(name, relatedTo string, fks map[string]string, li
 		Limit: limit,
 	}
 	s.RelationsTo[with.Name] = col.Detail
-	s.Columns = append(s.Columns, col)
+	s.addColumn(col)
 
 	return col.Detail
 }
 
 /**
 * defineRollup
-* @param name, rollupFrom string, fks map[string]string, fields []interface{}
-* @return *Rollup
+* @param name, rollupFrom string, fks map[string]string, field string, typeRollup TypeRollup
+* @return *Model
 **/
-func (s *Model) defineRollup(name, rollupFrom string, fks map[string]string, fields []interface{}) *Rollup {
-	with := s.Db.GetModel(rollupFrom)
-	if with == nil {
-		return nil
-	}
-
-	result := &Rollup{
-		With:   with,
-		Fk:     make(map[string]string),
-		Fields: fields,
-	}
-
-	for fkn, pkn := range fks {
-		pk := with.getColumn(pkn)
-		if pk == nil {
-			return nil
+func (s *Model) defineRollup(name, rollupFrom string, fks map[string]string, field string, typeRollup TypeRollup) *Model {
+	with := NewModel(s.schema, rollupFrom, 1)
+	result := s.Rollups[with.Name]
+	if result == nil {
+		result = &Rollup{
+			With:   with,
+			Fk:     make(map[string]string),
+			Fields: make(map[string]string, 0),
+			Type:   typeRollup,
 		}
 
-		result.Fk[fkn] = pk.Name
+		for fkn, pkn := range fks {
+			pk := with.getColumn(pkn)
+			if pk == nil {
+				return nil
+			}
+
+			result.Fk[fkn] = pk.Name
+		}
 	}
 
+	result.Fields[name] = field
 	col := newColumn(s, name, "", TpRollup, TypeDataNone, TypeDataNone.DefaultValue())
 	col.Rollup = result
-	s.Columns = append(s.Columns, col)
-	s.Rollups[name] = result
+	s.addColumn(col)
+	s.Rollups[with.Name] = result
 
-	return result
+	return result.With
 }
 
 /**
@@ -757,7 +794,8 @@ func (s *Model) DefineIntegrity() *Model {
 * @return *Column
 **/
 func (s *Model) DefineColumn(name string, typeData TypeData) *Model {
-	s.setDefine(TypeDefinitionColumn, name, typeData)
+	key := fmt.Sprintf("column_%v", name)
+	s.setDefine(key, TypeDefinitionColumn, name, typeData)
 	s.defineColumn(name, typeData)
 	return s
 }
@@ -768,7 +806,8 @@ func (s *Model) DefineColumn(name string, typeData TypeData) *Model {
 * @return *Model
 **/
 func (s *Model) DefineIndex(sort bool, colums ...string) *Model {
-	s.setDefine(TypeDefinitionIndex, sort, colums)
+	key := fmt.Sprintf("index_%v", sort)
+	s.setDefine(key, TypeDefinitionIndex, sort, colums)
 	return s.defineIndex(sort, colums)
 }
 
@@ -778,7 +817,8 @@ func (s *Model) DefineIndex(sort bool, colums ...string) *Model {
 * @return *Model
 **/
 func (s *Model) DefineUnique(colums ...string) *Model {
-	s.setDefine(TypeDefinitionUnique, colums)
+	key := "unique"
+	s.setDefine(key, TypeDefinitionUnique, colums)
 	return s.defineUnique(colums)
 }
 
@@ -788,7 +828,8 @@ func (s *Model) DefineUnique(colums ...string) *Model {
 * @return *Model
 **/
 func (s *Model) DefinePrimaryKey(colums ...string) *Model {
-	s.setDefine(TypeDefinitionPrimaryKey, colums)
+	key := "primary_key"
+	s.setDefine(key, TypeDefinitionPrimaryKey, colums)
 	return s.definePrimaryKey(colums)
 }
 
@@ -797,7 +838,8 @@ func (s *Model) DefinePrimaryKey(colums ...string) *Model {
 * @return *Model
 **/
 func (s *Model) DefinePrimaryKeyField() *Model {
-	s.setDefine(TypeDefinitionPrimaryKeyField)
+	key := "primary_key_field"
+	s.setDefine(key, TypeDefinitionPrimaryKeyField)
 	s.definePrimaryKeyField()
 	return s
 }
@@ -808,7 +850,8 @@ func (s *Model) DefinePrimaryKeyField() *Model {
 * @return *Model
 **/
 func (s *Model) DefineForeignKey(fks map[string]string, withName string, onDeleteCascade, onUpdateCascade bool) *Model {
-	s.setDefine(TypeDefinitionForeignKey, fks, withName, onDeleteCascade, onUpdateCascade)
+	key := fmt.Sprintf("foreign_key_%v", withName)
+	s.setDefine(key, TypeDefinitionForeignKey, fks, withName, onDeleteCascade, onUpdateCascade)
 	s.defineForeignKey(fks, withName, onDeleteCascade, onUpdateCascade)
 	return s
 }
@@ -819,7 +862,8 @@ func (s *Model) DefineForeignKey(fks map[string]string, withName string, onDelet
 * @return *Model
 **/
 func (s *Model) DefineSource(name string) *Model {
-	s.setDefine(TypeDefinitionSource, name)
+	key := fmt.Sprintf("source_%v", name)
+	s.setDefine(key, TypeDefinitionSource, name)
 	s.defineSource(name)
 	return s
 }
@@ -829,7 +873,8 @@ func (s *Model) DefineSource(name string) *Model {
 * @return *Model
 **/
 func (s *Model) DefineSourceField() *Model {
-	s.setDefine(TypeDefinitionSourceField)
+	key := "source_field"
+	s.setDefine(key, TypeDefinitionSourceField)
 	s.defineSourceField()
 	return s
 }
@@ -840,7 +885,8 @@ func (s *Model) DefineSourceField() *Model {
 * @return *Model
 **/
 func (s *Model) DefineAtribute(name string, typeData TypeData) *Model {
-	s.setDefine(TypeDefinitionAtribute, name, typeData)
+	key := fmt.Sprintf("atribute_%v", name)
+	s.setDefine(key, TypeDefinitionAtribute, name, typeData)
 	s.defineAtribute(name, typeData)
 	return s
 }
@@ -850,7 +896,8 @@ func (s *Model) DefineAtribute(name string, typeData TypeData) *Model {
 * @return *Model
 **/
 func (s *Model) DefineCreatedAtField() *Model {
-	s.setDefine(TypeDefinitionCreatedAtField)
+	key := "created_at_field"
+	s.setDefine(key, TypeDefinitionCreatedAtField)
 	s.defineCreatedAtField()
 	return s
 }
@@ -860,7 +907,8 @@ func (s *Model) DefineCreatedAtField() *Model {
 * @return *Model
 **/
 func (s *Model) DefineUpdatedAtField() *Model {
-	s.setDefine(TypeDefinitionUpdatedAtField)
+	key := "updated_at_field"
+	s.setDefine(key, TypeDefinitionUpdatedAtField)
 	s.defineUpdatedAtField()
 	return s
 }
@@ -870,7 +918,8 @@ func (s *Model) DefineUpdatedAtField() *Model {
 * @return *Model
 **/
 func (s *Model) DefineStatusField() *Model {
-	s.setDefine(TypeDefinitionStatusField)
+	key := "status_field"
+	s.setDefine(key, TypeDefinitionStatusField)
 	s.defineStatusField()
 	return s
 }
@@ -880,7 +929,8 @@ func (s *Model) DefineStatusField() *Model {
 * @return *Model
 **/
 func (s *Model) DefineSystemKeyField() *Model {
-	s.setDefine(TypeDefinitionSystemKeyField)
+	key := "system_key_field"
+	s.setDefine(key, TypeDefinitionSystemKeyField)
 	s.defineSystemKeyField()
 	return s
 }
@@ -890,7 +940,8 @@ func (s *Model) DefineSystemKeyField() *Model {
 * @return *Model
 **/
 func (s *Model) DefineIndexField() *Model {
-	s.setDefine(TypeDefinitionIndexField)
+	key := "index_field"
+	s.setDefine(key, TypeDefinitionIndexField)
 	s.defineIndexField()
 	return s
 }
@@ -901,7 +952,8 @@ func (s *Model) DefineIndexField() *Model {
 * @return *Model
 **/
 func (s *Model) DefineFullText(language string, fields []string) *Model {
-	s.setDefine(TypeDefinitionFullTextField, language, fields)
+	key := fmt.Sprintf("full_text_%v", language)
+	s.setDefine(key, TypeDefinitionFullTextField, language, fields)
 	s.defineFullText(language, fields)
 	return s
 }
@@ -911,7 +963,8 @@ func (s *Model) DefineFullText(language string, fields []string) *Model {
 * @return *Model
 **/
 func (s *Model) DefineProjectField() *Model {
-	s.setDefine(TypeDefinitionProjectField)
+	key := "project_field"
+	s.setDefine(key, TypeDefinitionProjectField)
 	s.defineProjectField()
 	return s
 }
@@ -922,7 +975,8 @@ func (s *Model) DefineProjectField() *Model {
 * @return *Model
 **/
 func (s *Model) DefineHidden(colums ...string) *Model {
-	s.setDefine(TypeDefinitionHidden, colums)
+	key := "hidden"
+	s.setDefine(key, TypeDefinitionHidden, colums)
 	s.defineHidden(colums)
 	return s
 }
@@ -933,7 +987,8 @@ func (s *Model) DefineHidden(colums ...string) *Model {
 * @return *Model
 **/
 func (s *Model) DefineRequired(colums ...string) *Model {
-	s.setDefine(TypeDefinitionRequired, colums)
+	key := "required"
+	s.setDefine(key, TypeDefinitionRequired, colums)
 	s.defineRequired(colums)
 	return s
 }
@@ -944,19 +999,33 @@ func (s *Model) DefineRequired(colums ...string) *Model {
 * @return *Model
 **/
 func (s *Model) DefineRelation(name, relatedTo string, fks map[string]string, limit int) *Model {
-	s.setDefine(TypeDefinitionRelation, name, relatedTo, fks, limit)
+	key := fmt.Sprintf("relation_%v", name)
+	s.setDefine(key, TypeDefinitionRelation, name, relatedTo, fks, limit)
 	s.defineRelation(name, relatedTo, fks, limit)
 	return s
 }
 
 /**
 * DefineRollup
-* @param name, rollupFrom string, fks map[string]string, properties []interface{}
+* @param name, rollupFrom string, fks map[string]string, field string
 * @return *Model
 **/
-func (s *Model) DefineRollup(name, rollupFrom string, fks map[string]string, properties []interface{}) *Model {
-	s.setDefine(TypeDefinitionRollup, name, rollupFrom, fks, properties)
-	s.defineRollup(name, rollupFrom, fks, properties)
+func (s *Model) DefineRollup(name, rollupFrom string, fks map[string]string, field string) *Model {
+	key := fmt.Sprintf("rollup_%v", name)
+	s.setDefine(key, TypeDefinitionRollup, name, rollupFrom, fks, field, TpAtribs)
+	s.defineRollup(name, rollupFrom, fks, field, TpAtribs)
+	return s
+}
+
+/**
+* DefineObject
+* @param name string, rollupFrom string, fks map[string]string, field string
+* @return *Model
+**/
+func (s *Model) DefineObject(name, rollupFrom string, fks map[string]string, field string) *Model {
+	key := fmt.Sprintf("object_%v", name)
+	s.setDefine(key, TypeDefinitionRollup, name, rollupFrom, fks, field, TpObjects)
+	s.defineRollup(name, rollupFrom, fks, field, TpObjects)
 	return s
 }
 
@@ -966,7 +1035,8 @@ func (s *Model) DefineRollup(name, rollupFrom string, fks map[string]string, pro
 * @return *Model
 **/
 func (s *Model) DefineDetail(name string, fks map[string]string, limit int) *Model {
-	s.setDefine(TypeDefinitionDetail, name, fks, limit)
+	key := fmt.Sprintf("detail_%v", name)
+	s.setDefine(key, TypeDefinitionDetail, name, fks, limit)
 	return s.defineDetail(name, fks, limit)
 }
 
@@ -976,7 +1046,8 @@ func (s *Model) DefineDetail(name string, fks map[string]string, limit int) *Mod
 * @return *Model
 **/
 func (s *Model) DefineHistory(pkn string, limit int) *Model {
-	s.setDefine(TypeDefinitionHistory, pkn, limit)
+	key := fmt.Sprintf("history_%v", pkn)
+	s.setDefine(key, TypeDefinitionHistory, pkn, limit)
 	return s.defineHistory(pkn, limit)
 }
 
@@ -985,7 +1056,8 @@ func (s *Model) DefineHistory(pkn string, limit int) *Model {
 * @return *Model
 **/
 func (s *Model) DefineModel() *Model {
-	s.setDefine(TypeDefinitionModel)
+	key := "model"
+	s.setDefine(key, TypeDefinitionModel)
 	return s.defineModel()
 }
 
@@ -994,7 +1066,8 @@ func (s *Model) DefineModel() *Model {
 * @return *Model
 **/
 func (s *Model) DefineProjectModel() *Model {
-	s.setDefine(TypeDefinitionProjectModel)
+	key := "project_model"
+	s.setDefine(key, TypeDefinitionProjectModel)
 	return s.defineProjectModel()
 }
 
@@ -1004,7 +1077,8 @@ func (s *Model) DefineProjectModel() *Model {
 * @return *Model
 **/
 func (s *Model) DefineValues(name string, values interface{}) *Model {
-	s.setDefine(TypeDefinitionValues, name, values)
+	key := fmt.Sprintf("values_%v", name)
+	s.setDefine(key, TypeDefinitionValues, name, values)
 	return s.defineValues(name, values)
 }
 
@@ -1016,7 +1090,7 @@ func (s *Model) DefineValues(name string, values interface{}) *Model {
 func (s *Model) DefineCalc(name string, fn DataFunction) *Model {
 	result := newColumn(s, name, "", TpCalc, TypeDataNone, TypeDataNone.DefaultValue())
 	result.CalcFunction[name] = fn
-	s.Columns = append(s.Columns, result)
+	s.addColumn(result)
 
 	return s
 }

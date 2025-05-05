@@ -44,7 +44,7 @@ type EventError func(model *Model, data et.Json)
 func eventErrorDefault(model *Model, err et.Json) {
 	data := et.Json{
 		"db":     model.Db.Name,
-		"schema": model.Schema.Name,
+		"schema": model.Schema,
 		"model":  model.Name,
 		"error":  err,
 	}
@@ -117,7 +117,7 @@ func eventHistoryDefault(tx *Tx, model *Model, before et.Json) error {
 func eventInsertDefault(tx *Tx, model *Model, before et.Json, after et.Json) error {
 	if model.UseCore && model.SystemKeyField != nil {
 		sysid := after.Str(model.SystemKeyField.Name)
-		err := model.Db.upsertRecord(tx, model.Schema.Name, model.Name, sysid, "insert")
+		err := model.Db.upsertRecord(tx, model.Schema, model.Name, sysid, "insert")
 		if err != nil {
 			return err
 		}
@@ -125,7 +125,7 @@ func eventInsertDefault(tx *Tx, model *Model, before et.Json, after et.Json) err
 
 	data := et.Json{
 		"db":     model.Db.Name,
-		"schema": model.Schema.Name,
+		"schema": model.Schema,
 		"model":  model.Name,
 		"before": before,
 		"after":  after,
@@ -144,7 +144,7 @@ func eventInsertDefault(tx *Tx, model *Model, before et.Json, after et.Json) err
 func eventUpdateDefault(tx *Tx, model *Model, before et.Json, after et.Json) error {
 	if model.UseCore && model.SystemKeyField != nil {
 		sysid := after.Str(model.SystemKeyField.Name)
-		err := model.Db.upsertRecord(tx, model.Schema.Name, model.Name, sysid, "update")
+		err := model.Db.upsertRecord(tx, model.Schema, model.Name, sysid, "update")
 		if err != nil {
 			return err
 		}
@@ -155,7 +155,7 @@ func eventUpdateDefault(tx *Tx, model *Model, before et.Json, after et.Json) err
 		newStatus := after.Str(model.StatusField.Name)
 		if oldStatus != newStatus {
 			sysId := before.Str(model.SystemKeyField.Name)
-			err := model.Db.upsertRecycling(tx, model.Schema.Name, model.Name, sysId, newStatus)
+			err := model.Db.upsertRecycling(tx, model.Schema, model.Name, sysId, newStatus)
 			if err != nil {
 				return err
 			}
@@ -164,7 +164,7 @@ func eventUpdateDefault(tx *Tx, model *Model, before et.Json, after et.Json) err
 
 	data := et.Json{
 		"db":     model.Db.Name,
-		"schema": model.Schema.Name,
+		"schema": model.Schema,
 		"model":  model.Name,
 		"before": before,
 		"after":  after,
@@ -183,7 +183,7 @@ func eventUpdateDefault(tx *Tx, model *Model, before et.Json, after et.Json) err
 func eventDeleteDefault(tx *Tx, model *Model, before et.Json, after et.Json) error {
 	if model.UseCore && model.SystemKeyField != nil {
 		sysid := after.Str(model.SystemKeyField.Name)
-		err := model.Db.upsertRecord(tx, model.Schema.Name, model.Name, sysid, "delete")
+		err := model.Db.upsertRecord(tx, model.Schema, model.Name, sysid, "delete")
 		if err != nil {
 			return err
 		}
@@ -191,7 +191,7 @@ func eventDeleteDefault(tx *Tx, model *Model, before et.Json, after et.Json) err
 
 	if model.UseCore && model.SystemKeyField != nil && model.StatusField != nil {
 		sysId := before.Str(model.SystemKeyField.Name)
-		err := model.Db.deleteRecycling(tx, model.Schema.Name, model.Name, sysId)
+		err := model.Db.deleteRecycling(tx, model.Schema, model.Name, sysId)
 		if err != nil {
 			return err
 		}
@@ -199,7 +199,7 @@ func eventDeleteDefault(tx *Tx, model *Model, before et.Json, after et.Json) err
 
 	data := et.Json{
 		"db":     model.Db.Name,
-		"schema": model.Schema.Name,
+		"schema": model.Schema,
 		"model":  model.Name,
 		"before": before,
 		"after":  after,

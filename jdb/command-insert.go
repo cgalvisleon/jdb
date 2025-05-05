@@ -61,5 +61,14 @@ func (s *Command) inserted() error {
 		return err
 	}
 
+	for _, data := range s.Data {
+		for _, fn := range s.afterInsert {
+			_, err := fn(data)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
 	return nil
 }

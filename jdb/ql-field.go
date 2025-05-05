@@ -311,7 +311,7 @@ func (s *Column) GetField() *Field {
 		return result
 	}
 
-	result.Schema = s.Model.Schema.Name
+	result.Schema = s.Model.Schema
 	result.Model = s.Model.Name
 
 	if s.Source == nil {

@@ -74,5 +74,14 @@ func (s *Command) updated() error {
 		return err
 	}
 
+	for _, data := range s.Data {
+		for _, fn := range s.afterUpdate {
+			_, err := fn(data)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
 	return nil
 }

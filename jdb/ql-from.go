@@ -2,6 +2,7 @@ package jdb
 
 import (
 	"github.com/cgalvisleon/et/et"
+	"github.com/cgalvisleon/et/reg"
 	"github.com/cgalvisleon/et/strs"
 )
 
@@ -17,6 +18,7 @@ type QlFroms struct {
 
 func From(model *Model) *Ql {
 	result := &Ql{
+		Id:         reg.GenId("ql"),
 		Db:         model.Db,
 		TypeSelect: Select,
 		Froms:      &QlFroms{index: 65, Froms: make([]*QlFrom, 0)},
@@ -99,7 +101,7 @@ func From(model *Model) *Ql {
 func (s *Ql) listForms() []string {
 	var result []string
 	for _, from := range s.Froms.Froms {
-		result = append(result, strs.Format(`%s.%s, %s`, from.Schema.Name, from.Name, from.As))
+		result = append(result, strs.Format(`%s.%s, %s`, from.Schema, from.Name, from.As))
 	}
 
 	return result

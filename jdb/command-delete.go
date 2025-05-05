@@ -56,5 +56,14 @@ func (s *Command) deleted() error {
 		}
 	}
 
+	for _, data := range s.Data {
+		for _, fn := range s.afterDelete {
+			_, err := fn(data)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
 	return nil
 }
