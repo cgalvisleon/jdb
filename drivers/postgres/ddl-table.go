@@ -3,6 +3,7 @@ package postgres
 import (
 	"slices"
 
+	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/strs"
 	"github.com/cgalvisleon/et/utility"
 	jdb "github.com/cgalvisleon/jdb/jdb"
@@ -44,6 +45,8 @@ func (s *Postgres) typeData(tp jdb.TypeData) interface{} {
 		return "TEXT"
 	case jdb.TypeDataNumber:
 		return "DECIMAL(18,2)"
+	case jdb.TypeDataQuantity:
+		return "JSONB"
 	case jdb.TypeDataPrecision:
 		return "DOUBLE PRECISION"
 	case jdb.TypeDataObject:
@@ -121,7 +124,7 @@ func (s *Postgres) strToTypeData(tp string, lenght int) jdb.TypeData {
 func (s *Postgres) defaultValue(tp jdb.TypeData) interface{} {
 	switch tp {
 	case jdb.TypeDataArray:
-		return utility.Quote("[]")
+		return utility.Quote([]string{})
 	case jdb.TypeDataBool:
 		return utility.Quote("FALSE")
 	case jdb.TypeDataInt:
@@ -134,8 +137,13 @@ func (s *Postgres) defaultValue(tp jdb.TypeData) interface{} {
 		return utility.Quote("")
 	case jdb.TypeDataNumber:
 		return 0.0
+	case jdb.TypeDataQuantity:
+		return utility.Quote(et.Json{
+			"value": 0.00,
+			"unity": "und",
+		})
 	case jdb.TypeDataObject:
-		return utility.Quote("{}")
+		return utility.Quote(et.Json{})
 	case jdb.TypeDataSerie:
 		return 0
 	case jdb.TypeDataIndex:
@@ -149,7 +157,10 @@ func (s *Postgres) defaultValue(tp jdb.TypeData) interface{} {
 	case jdb.TypeDataBytes:
 		return utility.Quote("")
 	case jdb.TypeDataGeometry:
-		return utility.Quote("{type: 'Point', coordinates: [0, 0]}")
+		return utility.Quote(et.Json{
+			"type":        "Point",
+			"coordinates": []float64{0, 0},
+		})
 	default:
 		return utility.Quote("")
 	}

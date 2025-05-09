@@ -22,8 +22,6 @@ func (s *Postgres) Command(command *jdb.Command) (et.Items, error) {
 		command.Sql = strs.Append(command.Sql, s.sqlUpdate(command), "\n")
 	case jdb.Delete:
 		command.Sql = strs.Append(command.Sql, s.sqlDelete(command), "\n")
-	case jdb.Bulk:
-		command.Sql = strs.Append(command.Sql, s.sqlBulk(command), "\n")
 	}
 
 	if command.IsDebug {

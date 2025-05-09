@@ -21,6 +21,7 @@ const (
 	MSG_PRIMARYKEY_NOT_FOUND     = "PrimaryKey not found"
 	MSG_NOT_DATA                 = "No data in %s (%s)"
 	MSG_NOT_INSERT_DATA          = "No insert data"
+	MSG_MANY_INSERT_DATA         = "Many upsert data, only one is allowed"
 	MSG_NOT_UPDATE_DATA          = "No update data"
 	MSG_NOT_DELETE_DATA          = "No delete data"
 	MSG_KEY_NOT_FOUND            = "Key not found"

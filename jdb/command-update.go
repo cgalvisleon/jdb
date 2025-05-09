@@ -54,13 +54,6 @@ func (s *Command) updated() error {
 			continue
 		}
 
-		if !s.isUndo {
-			err := eventHistoryDefault(s.tx, model, before)
-			if err != nil {
-				return err
-			}
-		}
-
 		for _, event := range model.eventsUpdate {
 			err := event(s.tx, model, before, after)
 			if err != nil {
@@ -69,14 +62,9 @@ func (s *Command) updated() error {
 		}
 	}
 
-	err = s.relationsTo()
-	if err != nil {
-		return err
-	}
-
 	for _, data := range s.Data {
 		for _, fn := range s.afterUpdate {
-			_, err := fn(data)
+			err := fn(s.tx, data)
 			if err != nil {
 				return err
 			}

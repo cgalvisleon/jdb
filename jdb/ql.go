@@ -11,7 +11,7 @@ type TypeSelect int
 
 const (
 	Select TypeSelect = iota
-	Data
+	Source
 )
 
 type Ql struct {
@@ -22,8 +22,8 @@ type Ql struct {
 	Froms      *QlFroms   `json:"froms"`
 	Joins      []*QlJoin  `json:"joins"`
 	Selects    []*Field   `json:"selects"`
+	Hiddens    []string   `json:"hiddens"`
 	Details    []*Field   `json:"details"`
-	Rollups    []*Field   `json:"rollups"`
 	Groups     []*Field   `json:"group_bys"`
 	Havings    *QlHaving  `json:"havings"`
 	Orders     *QlOrder   `json:"orders"`
@@ -31,7 +31,6 @@ type Ql struct {
 	Offset     int        `json:"offset"`
 	Limit      int        `json:"limit"`
 	Sql        string     `json:"sql"`
-	Result     et.Items   `json:"result"`
 	Help       et.Json    `json:"help"`
 	tx         *Tx        `json:"-"`
 }
@@ -100,8 +99,8 @@ func (s *Ql) addFrom(m *Model) *QlFrom {
 func (s *Ql) validator(val interface{}) interface{} {
 	switch v := val.(type) {
 	case string:
-		if strings.HasPrefix(v, "$") {
-			v = strings.TrimPrefix(v, "$")
+		if strings.HasPrefix(v, ":") {
+			v = strings.TrimPrefix(v, ":")
 			field := s.getField(v, false)
 			if field != nil {
 				return field
@@ -109,6 +108,13 @@ func (s *Ql) validator(val interface{}) interface{} {
 			return nil
 		}
 
+		if strings.HasPrefix(v, "$") {
+			v = strings.TrimPrefix(v, "$")
+			return v
+		}
+
+		v = strings.Replace(v, `\\:`, `\:`, 1)
+		v = strings.Replace(v, `\:`, `:`, 1)
 		v = strings.Replace(v, `\\$`, `\$`, 1)
 		v = strings.Replace(v, `\$`, `$`, 1)
 		field := s.getField(v, false)
@@ -125,6 +131,12 @@ func (s *Ql) validator(val interface{}) interface{} {
 		return v.GetField()
 	case Column:
 		return v.GetField()
+	case []interface{}:
+		return v
+	case []string:
+		return v
+	case []et.Json:
+		return v
 	default:
 		return v
 	}

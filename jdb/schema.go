@@ -124,6 +124,22 @@ func (s *Schema) addModel(model *Model) {
 }
 
 /**
+* DropModel
+* @param model *Model
+**/
+func (s *Schema) dropModel(model *Model) {
+	idx := slices.IndexFunc(s.Db.models, func(e *Model) bool { return e.Name == model.Name })
+	if idx != -1 {
+		s.Db.models = append(s.Db.models[:idx], s.Db.models[idx+1:]...)
+	}
+
+	idx = slices.IndexFunc(s.models, func(e *Model) bool { return e.Name == model.Name })
+	if idx != -1 {
+		s.models = append(s.models[:idx], s.models[idx+1:]...)
+	}
+}
+
+/**
 * Serialize
 * @return []byte, error
 **/

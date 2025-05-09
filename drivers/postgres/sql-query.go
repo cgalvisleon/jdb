@@ -137,7 +137,7 @@ func (s *Postgres) Select(ql *jdb.Ql) (et.Items, error) {
 		console.Debug(ql.Sql)
 	}
 
-	if ql.TypeSelect == jdb.Data {
+	if ql.TypeSelect == jdb.Source {
 		result, err := s.dataTx(ql.Tx(), "result", ql.Sql)
 		if err != nil {
 			return et.Items{}, err

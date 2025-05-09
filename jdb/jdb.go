@@ -283,13 +283,26 @@ func GetModel(name string, isCreate bool) *Model {
 
 		schema = db.GetSchema(list[0])
 		if schema == nil {
-			return nil
+			if isCreate {
+				schema = NewSchema(db, list[0])
+			} else {
+				return nil
+			}
 		}
 
 		name := list[1]
 		result = schema.GetModel(name)
 		if result != nil {
 			return result
+		}
+
+		if isCreate {
+			result = NewModel(schema, name, 1)
+			if err := result.Init(); err != nil {
+				return nil
+			}
+		} else {
+			return nil
 		}
 	case 3: /* db, schema, model */
 		db = GetDB(list[0])
@@ -299,7 +312,11 @@ func GetModel(name string, isCreate bool) *Model {
 
 		schema = db.GetSchema(list[1])
 		if schema == nil {
-			return nil
+			if isCreate {
+				schema = NewSchema(db, list[1])
+			} else {
+				return nil
+			}
 		}
 
 		name := list[2]
@@ -307,19 +324,18 @@ func GetModel(name string, isCreate bool) *Model {
 		if result != nil {
 			return result
 		}
-	default:
-		return result
+
+		if isCreate {
+			result = NewModel(schema, name, 1)
+			if err := result.Init(); err != nil {
+				return nil
+			}
+		} else {
+			return nil
+		}
 	}
 
-	if !isCreate {
-		return result
-	}
-
-	if schema == nil {
-		return nil
-	}
-
-	return NewModel(schema, name, 0)
+	return result
 }
 
 /**

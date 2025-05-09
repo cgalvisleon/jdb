@@ -4,7 +4,7 @@ package jdb
 * BeforeInsert
 * @param fn DataFunction
 **/
-func (s *Command) BeforeInsert(fn DataFunction) *Command {
+func (s *Command) BeforeInsert(fn DataFunctionTx) *Command {
 	s.beforeInsert = append(s.beforeInsert, fn)
 
 	return s
@@ -14,7 +14,7 @@ func (s *Command) BeforeInsert(fn DataFunction) *Command {
 * BeforeUpdate
 * @param fn DataFunction
 **/
-func (s *Command) BeforeUpdate(fn DataFunction) *Command {
+func (s *Command) BeforeUpdate(fn DataFunctionTx) *Command {
 	s.beforeUpdate = append(s.beforeUpdate, fn)
 
 	return s
@@ -22,9 +22,9 @@ func (s *Command) BeforeUpdate(fn DataFunction) *Command {
 
 /**
 * BeforeDelete
-* @param fn DataFunction
+* @param fn Function
 **/
-func (s *Command) BeforeDelete(fn DataFunction) *Command {
+func (s *Command) BeforeDelete(fn Function) *Command {
 	s.beforeDelete = append(s.beforeDelete, fn)
 
 	return s

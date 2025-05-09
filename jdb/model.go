@@ -2,15 +2,23 @@ package jdb
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"slices"
 	"time"
 
 	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/event"
+	"github.com/cgalvisleon/et/mistake"
 	"github.com/cgalvisleon/et/reg"
 	"github.com/cgalvisleon/et/strs"
 	"github.com/cgalvisleon/et/timezone"
+)
+
+var (
+	ErrNotInserted = errors.New("not inserted")
+	ErrNotUpdated  = errors.New("not updated")
 )
 
 type Model struct {
@@ -32,8 +40,7 @@ type Model struct {
 	Uniques            map[string]*Index        `json:"-"`
 	RelationsTo        map[string]*Relation     `json:"-"`
 	Details            map[string]*Relation     `json:"-"`
-	Rollups            map[string]*Rollup       `json:"-"`
-	History            *Relation                `json:"-"`
+	Joins              map[string]*Join         `json:"-"`
 	Required           map[string]bool          `json:"-"`
 	CreatedAtField     *Column                  `json:"-"`
 	UpdatedAtField     *Column                  `json:"-"`
@@ -91,7 +98,7 @@ func NewModel(schema *Schema, name string, version int) *Model {
 			Uniques:            make(map[string]*Index),
 			RelationsTo:        make(map[string]*Relation),
 			Details:            make(map[string]*Relation),
-			Rollups:            make(map[string]*Rollup),
+			Joins:              make(map[string]*Join),
 			Required:           make(map[string]bool),
 			eventEmiterChannel: make(chan event.Message),
 			eventsEmiter:       make(map[string]event.Handler),
@@ -155,8 +162,6 @@ func loadModel(schema *Schema, model *Model) (*Model, error) {
 	model.Uniques = make(map[string]*Index)
 	model.RelationsTo = make(map[string]*Relation)
 	model.Details = make(map[string]*Relation)
-	model.Rollups = make(map[string]*Rollup)
-	model.History = nil
 	model.Required = make(map[string]bool)
 	/* Event */
 	model.eventEmiterChannel = make(chan event.Message)
@@ -253,8 +258,6 @@ func (s *Model) Describe() et.Json {
 	result["uniques"] = s.Uniques
 	result["relations_to"] = s.RelationsTo
 	result["details"] = s.Details
-	result["rollups"] = s.Rollups
-	result["history"] = s.History
 	result["required"] = s.Required
 	result["system_key_field"] = s.SystemKeyField
 	result["status_field"] = s.StatusField
@@ -397,6 +400,61 @@ func (s *Model) GetSerie() (int64, error) {
 **/
 func (s *Model) GetCode(tag, prefix string) (string, error) {
 	return s.Db.GetCode(tag, prefix)
+}
+
+/**
+* GetWhereByPk
+* @param data et.Json
+* @return et.Json
+**/
+func (s *Model) GetWhereByPk(data et.Json) (et.Json, error) {
+	result := et.Json{}
+	for name := range s.PrimaryKeys {
+		val := data.Get(name)
+		if val == nil {
+			return et.Json{}, mistake.Newf(MSG_FIELD_REQUIRED_RELATION, name, s.Name)
+		}
+
+		col := s.getColumn(name)
+		if col != nil && col.IsKeyfield {
+			vs := fmt.Sprintf(`%v`, val)
+			val = s.GetId(vs)
+		}
+
+		result[name] = et.Json{
+			"eq": val,
+		}
+	}
+
+	return result, nil
+}
+
+/**
+* GetWhereByRequired
+* @param data et.Json
+* @return et.Json
+**/
+func (s *Model) GetWhereByRequired(data et.Json) (et.Json, error) {
+	result := et.Json{}
+	for name := range s.Required {
+		val := data.Get(name)
+
+		if val == nil {
+			return et.Json{}, mistake.Newf(MSG_FIELD_REQUIRED_RELATION, name, s.Name)
+		}
+
+		col := s.getColumn(name)
+		if col != nil && col.IsKeyfield {
+			vs := fmt.Sprintf(`%v`, val)
+			val = s.GetId(vs)
+		}
+
+		result[name] = et.Json{
+			"eq": val,
+		}
+	}
+
+	return result, nil
 }
 
 /**
@@ -592,18 +650,32 @@ func (s *Model) getField(name string, isCreate bool) *Field {
 func (s *Model) Where(val string) *Ql {
 	result := From(s)
 	if s.SourceField != nil {
-		result.TypeSelect = Data
+		result.TypeSelect = Source
 	}
 
 	return result.Where(val)
 }
 
 /**
+* Counted
+* @return int, error
+**/
+func (s *Model) Counted() (int, error) {
+	all, err := From(s).
+		Counted()
+	if err != nil {
+		return 0, err
+	}
+
+	return all, nil
+}
+
+/**
 * QueryTx
 * @param tx *Tx, params et.Json
-* @return interface{}, error
+* @return et.Json, error
 **/
-func (s *Model) QueryTx(tx *Tx, params et.Json) (interface{}, error) {
+func (s *Model) QueryTx(tx *Tx, params et.Json) (et.Json, error) {
 	return From(s).
 		queryTx(tx, params)
 }
@@ -611,9 +683,8 @@ func (s *Model) QueryTx(tx *Tx, params et.Json) (interface{}, error) {
 /**
 * Query
 * @param params et.Json
-* @return interface{}, error
+* @return et.Json, error
 **/
-func (s *Model) Query(params et.Json) (interface{}, error) {
-	return From(s).
-		queryTx(nil, params)
+func (s *Model) Query(params et.Json) (et.Json, error) {
+	return s.QueryTx(nil, params)
 }

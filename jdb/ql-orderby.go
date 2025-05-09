@@ -10,11 +10,11 @@ type QlOrder struct {
 }
 
 /**
-* OrderBy
+* orderBy
 * @param asc bool, columns ...string
 * @return *Ql
 **/
-func (s *Ql) OrderBy(asc bool, columns ...string) *Ql {
+func (s *Ql) orderBy(asc bool, columns ...string) *Ql {
 	for _, col := range columns {
 		field := s.getField(col, false)
 		if field != nil {
@@ -30,12 +30,21 @@ func (s *Ql) OrderBy(asc bool, columns ...string) *Ql {
 }
 
 /**
+* OrderBy
+* @param columns ...any
+* @return *Ql
+**/
+func (s *Ql) OrderBy(columns ...string) *Ql {
+	return s.orderBy(true, columns...)
+}
+
+/**
 * OrderByAsc
 * @param columns ...any
 * @return *Ql
 **/
 func (s *Ql) OrderByAsc(columns ...string) *Ql {
-	return s.OrderBy(true, columns...)
+	return s.orderBy(true, columns...)
 }
 
 /**
@@ -44,7 +53,7 @@ func (s *Ql) OrderByAsc(columns ...string) *Ql {
 * @return *Ql
 **/
 func (s *Ql) OrderByDesc(columns ...string) *Ql {
-	return s.OrderBy(false, columns...)
+	return s.orderBy(false, columns...)
 }
 
 /**

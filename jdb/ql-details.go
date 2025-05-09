@@ -9,10 +9,20 @@ import (
 
 /**
 * GetDetailsTx
-* @param tx *Tx, data *et.Json
-* @return et.Json, error
+* @param tx *Tx, data et.Json
+* @return error
 **/
-func (s *Ql) GetDetailsTx(tx *Tx, data *et.Json) (*et.Json, error) {
+func (s *Ql) GetDetailsTx(tx *Tx, data et.Json) error {
+
+	calcFunction := func(col *Column) error {
+		err := col.CalcFunction(data)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
+
 	for _, field := range s.Details {
 		col := field.Column
 		if col == nil {
@@ -21,26 +31,26 @@ func (s *Ql) GetDetailsTx(tx *Tx, data *et.Json) (*et.Json, error) {
 
 		switch col.TypeColumn {
 		case TpCalc:
-			for name, fn := range col.CalcFunction {
-				val, err := fn(*data)
-				if err != nil {
-					return data, err
-				}
-
-				data.Set(name, val)
+			if col.CalcFunction != nil {
+				return calcFunction(col)
 			}
 		case TpRelatedTo:
+			if col.CalcFunction != nil {
+				return calcFunction(col)
+			}
+
 			if col.Detail == nil {
 				continue
 			}
+
 			with := col.Detail.With
 			if with == nil {
 				continue
 			}
 
-			where := col.Detail.Where(*data)
+			where := col.Detail.GetWhere(data)
 			if s.IsDebug {
-				console.Debug(where.ToString())
+				console.Debug("GetDetailsTx:", where.ToString())
 			}
 
 			ql := From(with).
@@ -51,15 +61,24 @@ func (s *Ql) GetDetailsTx(tx *Tx, data *et.Json) (*et.Json, error) {
 				setGroupBy(field.GroupBy...).
 				setHavings(field.Havings).
 				setOrderBy(field.OrderBy).
-				setDebug(s.IsDebug)
+				setDebug(s.IsDebug).
+				prepare()
+
+			idx := slices.IndexFunc(ql.Details, func(e *Field) bool { return e.Column == field.Column })
+			if idx != -1 {
+				ql.Details = append(ql.Details[:idx], ql.Details[idx+1:]...)
+			}
 
 			if field.TpResult == TpResult {
 				result, err := ql.AllTx(tx)
 				if err != nil {
 					continue
 				}
-
-				data.Set(col.Name, result.Result)
+				if !result.Ok {
+					data.Set(col.Name, et.Json{})
+				} else {
+					data.Set(col.Name, result.Result)
+				}
 			} else {
 				all, err := ql.
 					CountedTx(tx)
@@ -67,27 +86,37 @@ func (s *Ql) GetDetailsTx(tx *Tx, data *et.Json) (*et.Json, error) {
 					continue
 				}
 
-				result, err := ql.
-					Page(field.Page).
-					RowsTx(tx, field.Rows)
-				if err != nil {
-					continue
-				}
+				if all == 0 {
+					data.Set(col.Name, et.Json{})
+				} else {
+					result, err := ql.
+						Page(field.Page).
+						RowsTx(tx, field.Rows)
+					if err != nil {
+						continue
+					}
 
-				data.Set(col.Name, result.ToList(all, field.Page, field.Rows))
+					data.Set(col.Name, result.ToList(all, field.Page, field.Rows))
+				}
 			}
 		case TpRollup:
+			if col.CalcFunction != nil {
+				return calcFunction(col)
+			}
+
 			if col.Rollup == nil {
 				continue
 			}
-			with := col.Rollup.With
+
+			rollup := col.Rollup
+			with := rollup.With
 			if with == nil {
 				continue
 			}
 
-			where := col.Rollup.Where(*data)
+			where := rollup.Where(data)
 			if s.IsDebug {
-				console.Debug(where.ToString())
+				console.Debug("GetDetailsTx:", where.ToString())
 			}
 
 			ql := From(with).
@@ -98,7 +127,13 @@ func (s *Ql) GetDetailsTx(tx *Tx, data *et.Json) (*et.Json, error) {
 				setGroupBy(field.GroupBy...).
 				setHavings(field.Havings).
 				setOrderBy(field.OrderBy).
-				setDebug(s.IsDebug)
+				setDebug(s.IsDebug).
+				prepare()
+
+			idx := slices.IndexFunc(ql.Details, func(e *Field) bool { return e.Column == field.Column })
+			if idx != -1 {
+				ql.Details = append(ql.Details[:idx], ql.Details[idx+1:]...)
+			}
 
 			if len(ql.Selects) == 0 {
 				continue
@@ -110,54 +145,26 @@ func (s *Ql) GetDetailsTx(tx *Tx, data *et.Json) (*et.Json, error) {
 				continue
 			}
 
-			if col.Rollup.Type == TpObjects {
+			if rollup.Show == ShowObject {
 				object := et.Json{}
-				for fkn, pkn := range col.Rollup.Fields {
+				for fkn, pkn := range rollup.Fk {
 					val := data.Str(fkn)
 					object.Set(pkn, val)
 				}
 				for key, val := range result.Result {
 					object.Set(key, val)
 				}
+
 				data.Set(col.Name, object)
 			} else {
-				for key, val := range result.Result {
-					data.Set(key, val)
+				for _, val := range result.Result {
+					data.Set(col.Name, val)
 				}
 			}
 		}
 	}
 
-	return data, nil
-}
-
-/**
-* Detail
-* @param name string, selects []interface{}, joins []et.Json, where et.Json, groups []string, havings et.Json, orderBy et.Json, page, rows int
-* @return *Ql
-**/
-func (s *Ql) Detail(name string, selects []interface{}, joins []et.Json, where et.Json, groups []string, havings et.Json, orderBy et.Json, page, rows int, tp TypeResult) *Ql {
-	field := s.getField(name, false)
-	if field == nil || field.Column == nil || field.Column.Detail == nil || field.Column.Detail.With == nil {
-		return s
-	}
-
-	idx := slices.IndexFunc(s.Details, func(e *Field) bool { return e.asField() == field.asField() })
-	if idx == -1 {
-		s.Details = append(s.Details, field)
-	}
-
-	field.Select = selects
-	field.Joins = joins
-	field.Where = where
-	field.GroupBy = groups
-	field.Havings = havings
-	field.OrderBy = orderBy
-	field.Page = page
-	field.Rows = rows
-	field.TpResult = tp
-
-	return s
+	return nil
 }
 
 /**
@@ -182,7 +189,25 @@ func (s *Ql) setDetail(params et.Json) *Ql {
 			tp = TpList
 		}
 
-		s.Detail(name, selects, joins, where, groups, havings, orderBy, page, rows, tp)
+		field := s.getField(name, false)
+		if field == nil || field.Column == nil || field.Column.Detail == nil || field.Column.Detail.With == nil {
+			return s
+		}
+
+		idx := slices.IndexFunc(s.Details, func(e *Field) bool { return e.asField() == field.asField() })
+		if idx == -1 {
+			s.Details = append(s.Details, field)
+		}
+
+		field.Select = selects
+		field.Joins = joins
+		field.Where = where
+		field.GroupBy = groups
+		field.Havings = havings
+		field.OrderBy = orderBy
+		field.Page = page
+		field.Rows = rows
+		field.TpResult = tp
 	}
 
 	return s

@@ -180,6 +180,8 @@ func (s *Field) Describe() et.Json {
 		return et.Json{}
 	}
 
+	result["column"] = s.Column.Describe()
+
 	return result
 }
 
@@ -243,25 +245,6 @@ func (s *Field) ValueQuoted() any {
 	}
 
 	return utility.Quote(s.Value)
-}
-
-/**
-* valueJson
-* @return et.Json, error
-**/
-func (s *Field) valueJson() (et.Json, error) {
-	jsonbytes, err := json.Marshal(s.Value)
-	if err != nil {
-		return et.Json{}, err
-	}
-
-	var result et.Json
-	err = json.Unmarshal(jsonbytes, &result)
-	if err != nil {
-		return et.Json{}, err
-	}
-
-	return result, nil
 }
 
 /**

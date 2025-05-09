@@ -23,10 +23,15 @@ func (s *Command) ExecTx(tx *Tx) (et.Items, error) {
 	if tx == nil {
 		tx = NewTx()
 
-		defer func() {
+		defer func() (et.Items, error) {
 			if err == nil {
-				tx.Commit()
+				err = tx.Commit()
+				if err != nil {
+					return et.Items{}, err
+				}
 			}
+
+			return s.Result, err
 		}()
 	}
 
@@ -51,22 +56,18 @@ func (s *Command) ExecTx(tx *Tx) (et.Items, error) {
 		if err != nil {
 			return et.Items{}, err
 		}
-	case Upsert:
-		err := s.upsert()
-		if err != nil {
-			return et.Items{}, err
-		}
 	case Delete:
 		err := s.deleted()
 		if err != nil {
 			return et.Items{}, err
 		}
-	case Bulk:
-		if len(s.Data) == 0 {
-			return et.Items{}, mistake.Newf(MSG_NOT_DATA, s.Command.Str(), s.From.Name)
+	case Upsert:
+		err := s.upsert()
+		if err != nil {
+			return et.Items{}, err
 		}
-
-		err := s.bulk()
+	case Delsert:
+		err := s.delsert()
 		if err != nil {
 			return et.Items{}, err
 		}

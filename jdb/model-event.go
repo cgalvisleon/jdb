@@ -5,7 +5,6 @@ import (
 
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/event"
-	"github.com/cgalvisleon/et/timezone"
 )
 
 const EVENT_MODEL_ERROR = "model:error"
@@ -50,63 +49,6 @@ func eventErrorDefault(model *Model, err et.Json) {
 	}
 
 	event.Publish(fmt.Sprintf("%s:%s", EVENT_MODEL_ERROR, model.Db.Name), data)
-}
-
-/**
-* eventHistoryDefault
-* @param tx *Tx, model *Model, before et.Json
-* @return error
-**/
-func eventHistoryDefault(tx *Tx, model *Model, before et.Json) error {
-	if model.History == nil {
-		return nil
-	}
-
-	if model.SystemKeyField == nil {
-		return nil
-	}
-
-	history := model.History.With
-	if history == nil {
-		return nil
-	}
-
-	sysId := before.Str(model.SystemKeyField.Name)
-	if sysId == "" {
-		return nil
-	}
-
-	index, err := model.Db.GetSerie(sysId)
-	if err != nil {
-		return err
-	}
-
-	_, err = history.
-		Insert(et.Json{
-			CREATED_AT: timezone.Now(),
-			SYSID:      sysId,
-			HISTORYCAL: before,
-			INDEX:      index,
-		}).
-		ExecTx(tx)
-	if err != nil {
-		return err
-	}
-
-	limit := index - int64(model.History.Limit)
-	if limit <= 0 {
-		return nil
-	}
-
-	_, err = history.
-		Delete(SYSID).Eq(sysId).
-		And(INDEX).LessEq(limit).
-		ExecTx(tx)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 /**

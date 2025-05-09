@@ -1,6 +1,8 @@
 package jdb
 
 import (
+	"slices"
+
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/mistake"
 )
@@ -23,8 +25,22 @@ func (s *Ql) FirstTx(tx *Tx, n int) (et.Items, error) {
 		return et.Items{}, err
 	}
 
+	for _, name := range s.Hiddens {
+		idx := slices.IndexFunc(s.Details, func(e *Field) bool { return e.Name == name })
+		if idx != -1 {
+			s.Details = append(s.Details[:idx], s.Details[idx+1:]...)
+		}
+	}
+
 	for _, data := range result.Result {
-		s.GetDetailsTx(tx, &data)
+		err := s.GetDetailsTx(tx, data)
+		if err != nil {
+			return result, err
+		}
+
+		for _, name := range s.Hiddens {
+			delete(data, name)
+		}
 	}
 
 	return result, nil
@@ -171,29 +187,29 @@ func (s *Ql) Counted() (int, error) {
 }
 
 /**
-* Query
-* @param params et.Json
-* @return interface{}, error
+* QueryTx
+* @param tx *Tx, params et.Json
+* @return et.Json, error
 **/
-func (s *Ql) Query(params et.Json) (interface{}, error) {
-	return s.queryTx(nil, params)
+func (s *Ql) QueryTx(tx *Tx, params et.Json) (et.Json, error) {
+	return s.queryTx(tx, params)
 }
 
 /**
-* QueryTx
-* @param tx *Tx, params et.Json
-* @return interface{}, error
+* Query
+* @param params et.Json
+* @return et.Json, error
 **/
-func (s *Ql) QueryTx(tx *Tx, params et.Json) (interface{}, error) {
-	return s.queryTx(tx, params)
+func (s *Ql) Query(params et.Json) (et.Json, error) {
+	return s.QueryTx(nil, params)
 }
 
 /**
 * queryTx
 * @param tx *Tx, params et.Json
-* @return interface{}, error
+* @return et.Items, error
 **/
-func (s *Ql) queryTx(tx *Tx, params et.Json) (interface{}, error) {
+func (s *Ql) queryTx(tx *Tx, params et.Json) (et.Json, error) {
 	if len(params) == 0 {
 		return s.Help, nil
 	}
@@ -208,7 +224,7 @@ func (s *Ql) queryTx(tx *Tx, params et.Json) (interface{}, error) {
 	limit := params.ValInt(30, "limit")
 	debug := params.Bool("debug")
 
-	return s.setJoins(joins).
+	result, err := s.setJoins(joins).
 		setWheres(where).
 		setGroupBy(groups...).
 		setHavings(havings).
@@ -217,4 +233,9 @@ func (s *Ql) queryTx(tx *Tx, params et.Json) (interface{}, error) {
 		setDebug(debug).
 		setPage(page).
 		setLimitTx(tx, limit)
+	if err != nil {
+		return et.Json{}, err
+	}
+
+	return result, nil
 }

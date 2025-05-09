@@ -17,14 +17,20 @@ type QlFroms struct {
 }
 
 func From(model *Model) *Ql {
+	tpSelect := Select
+	if model.SourceField != nil {
+		tpSelect = Source
+	}
+
 	result := &Ql{
 		Id:         reg.GenId("ql"),
 		Db:         model.Db,
-		TypeSelect: Select,
+		TypeSelect: tpSelect,
 		Froms:      &QlFroms{index: 65, Froms: make([]*QlFrom, 0)},
 		Joins:      make([]*QlJoin, 0),
 		QlWhere:    NewQlWhere(),
 		Selects:    make([]*Field, 0),
+		Hiddens:    make([]string, 0),
 		Details:    make([]*Field, 0),
 		Groups:     make([]*Field, 0),
 		Orders:     &QlOrder{Asc: make([]*Field, 0), Desc: make([]*Field, 0)},

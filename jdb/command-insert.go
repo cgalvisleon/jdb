@@ -56,14 +56,9 @@ func (s *Command) inserted() error {
 		}
 	}
 
-	err = s.relationsTo()
-	if err != nil {
-		return err
-	}
-
 	for _, data := range s.Data {
 		for _, fn := range s.afterInsert {
-			_, err := fn(data)
+			err := fn(s.tx, data)
 			if err != nil {
 				return err
 			}

@@ -10,12 +10,12 @@ import (
 
 /**
 * beforeInsertDefault
-* @param data et.Json
-* @return et.Json, error
+* @param tx *Tx, data et.Json
+* @return error
 **/
-func (s *Command) beforeInsertDefault(data et.Json) (et.Json, error) {
+func (s *Command) beforeInsertDefault(tx *Tx, data et.Json) error {
 	if s.From == nil {
-		return data, mistake.New(MSG_MODEL_REQUIRED)
+		return mistake.New(MSG_MODEL_REQUIRED)
 	}
 
 	model := s.From
@@ -39,28 +39,24 @@ func (s *Command) beforeInsertDefault(data et.Json) (et.Json, error) {
 
 	for _, col := range model.Columns {
 		if col.CalcFunction != nil {
-			for name, fn := range col.CalcFunction {
-				val, err := fn(data)
-				if err != nil {
-					return data, err
-				}
-
-				data[name] = val
+			err := col.CalcFunction(data)
+			if err != nil {
+				return err
 			}
 		}
 	}
 
-	return data, nil
+	return nil
 }
 
 /**
 * beforeUpdateDefault
-* @param data et.Json
-* @return et.Json, error
+* @param tx *Tx, data et.Json
+* @return error
 **/
-func (s *Command) beforeUpdateDefault(data et.Json) (et.Json, error) {
+func (s *Command) beforeUpdateDefault(tx *Tx, data et.Json) error {
 	if s.From == nil {
-		return data, mistake.New(MSG_MODEL_REQUIRED)
+		return mistake.New(MSG_MODEL_REQUIRED)
 	}
 
 	model := s.From
@@ -75,18 +71,14 @@ func (s *Command) beforeUpdateDefault(data et.Json) (et.Json, error) {
 
 	for _, col := range model.Columns {
 		if col.CalcFunction != nil {
-			for name, fn := range col.CalcFunction {
-				val, err := fn(data)
-				if err != nil {
-					return data, err
-				}
-
-				data[name] = val
+			err := col.CalcFunction(data)
+			if err != nil {
+				return err
 			}
 		}
 	}
 
-	return data, nil
+	return nil
 }
 
 /**
@@ -96,38 +88,33 @@ func (s *Command) beforeUpdateDefault(data et.Json) (et.Json, error) {
 func (s *Command) prepare() error {
 	from := s.From
 	s.Values = make([]map[string]*Field, 0)
-	s.RelationsTo = make([]map[string]*Field, 0)
 	for i, data := range s.Data {
 		value := make(map[string]*Field, 0)
-		relationsTo := make(map[string]*Field, 0)
-
 		switch s.Command {
 		case Insert:
 			for _, fn := range s.beforeInsert {
-				val, err := fn(data)
+				err := fn(s.tx, data)
 				if err != nil {
 					return err
 				}
 
-				s.Data[i] = val
+				s.Data[i] = data
 			}
 		case Update:
 			for _, fn := range s.beforeUpdate {
-				val, err := fn(data)
+				err := fn(s.tx, data)
 				if err != nil {
 					return err
 				}
 
-				s.Data[i] = val
+				s.Data[i] = data
 			}
 		case Delete:
 			for _, fn := range s.beforeDelete {
-				val, err := fn(data)
+				err := fn()
 				if err != nil {
 					return err
 				}
-
-				s.Data[i] = val
 			}
 		}
 
@@ -143,15 +130,12 @@ func (s *Command) prepare() error {
 
 			field.setValue(v)
 
-			if field.Column.TypeColumn == TpRelatedTo {
-				relationsTo[field.Name] = field
-			} else {
+			if field.Column.TypeColumn != TpRelatedTo {
 				value[field.Name] = field
 			}
 		}
 
 		s.Values = append(s.Values, value)
-		s.RelationsTo = append(s.RelationsTo, relationsTo)
 	}
 
 	if s.IsDebug {

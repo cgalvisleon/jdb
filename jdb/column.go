@@ -47,6 +47,7 @@ const (
 	TypeDataState
 	TypeDataInt
 	TypeDataNumber
+	TypeDataQuantity
 	TypeDataPrecision
 	TypeDataSerie
 	TypeDataIndex
@@ -65,29 +66,33 @@ const (
 func (s TypeData) DefaultValue() interface{} {
 	switch s {
 	case TypeDataArray:
-		return "[]"
+		return []interface{}{}
 	case TypeDataBool:
 		return false
 	case TypeDataInt:
 		return 0
-	case TypeDataKey:
-		return "-1"
 	case TypeDataState:
 		return utility.ACTIVE
 	case TypeDataNumber:
 		return 0.0
+	case TypeDataQuantity:
+		return et.Json{
+			"value": 0.00,
+			"unity": "und",
+		}
 	case TypeDataPrecision:
 		return 0.0
 	case TypeDataObject:
-		return "{}"
+		return et.Json{}
 	case TypeDataSerie:
 		return 0
 	case TypeDataIndex:
 		return 0
-	case TypeDataTime:
-		return "NOW()"
 	case TypeDataGeometry:
-		return "{type: 'Point', coordinates: [0, 0]}"
+		return et.Json{
+			"type":        "Point",
+			"coordinates": []float64{0.00, 0.00},
+		}
 	}
 
 	return ""
@@ -109,6 +114,8 @@ func (s TypeData) Str() string {
 		return "memo"
 	case TypeDataNumber:
 		return "number"
+	case TypeDataQuantity:
+		return "quantity"
 	case TypeDataPrecision:
 		return "precision"
 	case TypeDataObject:
@@ -139,20 +146,22 @@ func (s TypeData) Str() string {
 type ColumnField string
 
 const (
-	PRIMARYKEY = "id"
-	PK         = PRIMARYKEY
-	KEY        = PRIMARYKEY
-	INDEX      = "index"
-	PROJECT_ID = "project_id"
-	CREATED_AT = "created_at"
-	UPDATED_AT = "updated_at"
-	STATUS_ID  = "status_id"
-	SYSID      = "jdbid"
-	CREATED_TO = "created_to"
-	UPDATED_TO = "updated_to"
-	FULLTEXT   = "fulltext"
-	HISTORYCAL = "historical"
-	ASC        = true
+	PRIMARYKEY    = "id"
+	PK            = PRIMARYKEY
+	KEY           = PRIMARYKEY
+	INDEX         = "index"
+	PROJECT_ID    = "project_id"
+	CREATED_AT    = "created_at"
+	UPDATED_AT    = "updated_at"
+	STATUS_ID     = "status_id"
+	PERMISSION_ID = "permission_id"
+	SYSID         = "jdbid"
+	CREATED_TO    = "created_to"
+	UPDATED_TO    = "updated_to"
+	FULLTEXT      = "fulltext"
+	HISTORYCAL    = "historical"
+	CHECKED       = "checked"
+	ASC           = true
 )
 
 var (
@@ -208,17 +217,18 @@ type Relation struct {
 	Limit           int               `json:"rows"`
 	OnDeleteCascade bool              `json:"on_delete_cascade"`
 	OnUpdateCascade bool              `json:"on_update_cascade"`
+	IsMultiSelect   bool              `json:"is_multi_select"`
 }
 
 /**
-* Where
+* GetWhere
 * @param from et.Json
 * @return et.Json
 **/
-func (s *Relation) Where(from et.Json) et.Json {
+func (s *Relation) GetWhere(from et.Json) et.Json {
 	result := et.Json{}
 	for fkn, pkn := range s.Fk {
-		fk := from.Str(fkn)
+		fk := from.Get(fkn)
 		result[pkn] = et.Json{
 			"eq": fk,
 		}
@@ -261,40 +271,31 @@ func (s *Relation) describe() et.Json {
 	return result
 }
 
-type TypeRollup int
+type ShowRollup int
 
 const (
-	TpAtribs TypeRollup = iota
-	TpObjects
+	ShowAtrib ShowRollup = iota
+	ShowObject
 )
 
 /**
 * Str
 * @return string
 **/
-func (s TypeRollup) Str() string {
+func (s ShowRollup) Str() string {
 	switch s {
-	case TpObjects:
+	case ShowObject:
 		return "objects"
 	default:
 		return "attribs"
 	}
 }
 
-func toTypeRollup(val interface{}) (TypeRollup, error) {
-	switch val {
-	case TpObjects:
-		return TpObjects, nil
-	default:
-		return TpAtribs, nil
-	}
-}
-
 type Rollup struct {
 	With   *Model            `json:"-"`
 	Fk     map[string]string `json:"fk"`
-	Fields map[string]string `json:"fields"`
-	Type   TypeRollup        `json:"type"`
+	Fields []string          `json:"fields"`
+	Show   ShowRollup        `json:"show"`
 }
 
 /**
@@ -344,8 +345,13 @@ func (s *Rollup) describe() et.Json {
 	}
 
 	result["with"] = s.With.Name
-	result["type"] = s.Type.Str()
+	result["show"] = s.Show.Str()
 	return result
+}
+
+type Join struct {
+	On   et.Json  `json:"on"`
+	Type TypeJoin `json:"type"`
 }
 
 type FullText struct {
@@ -353,6 +359,10 @@ type FullText struct {
 	Columns  []string `json:"columns"`
 }
 
+/**
+* Describe
+* @return et.Json
+**/
 func (s *FullText) describe() et.Json {
 	result := et.Json{
 		"language": s.Language,
@@ -363,21 +373,22 @@ func (s *FullText) describe() et.Json {
 }
 
 type Column struct {
-	Model        *Model                  `json:"-"`
-	Source       *Column                 `json:"-"`
-	Name         string                  `json:"name"`
-	Description  string                  `json:"description"`
-	TypeColumn   TypeColumn              `json:"type_column"`
-	TypeData     TypeData                `json:"type_data"`
-	Default      interface{}             `json:"default"`
-	Max          float64                 `json:"max"`
-	Min          float64                 `json:"min"`
-	Hidden       bool                    `json:"hidden"`
-	Detail       *Relation               `json:"detail"`
-	Rollup       *Rollup                 `json:"rollup"`
-	FullText     *FullText               `json:"fulltext"`
-	Values       interface{}             `json:"values"`
-	CalcFunction map[string]DataFunction `json:"-"`
+	Model        *Model       `json:"-"`
+	Source       *Column      `json:"-"`
+	Name         string       `json:"name"`
+	Description  string       `json:"description"`
+	TypeColumn   TypeColumn   `json:"type_column"`
+	TypeData     TypeData     `json:"type_data"`
+	Default      interface{}  `json:"default"`
+	IsKeyfield   bool         `json:"is_keyfield"`
+	Max          float64      `json:"max"`
+	Min          float64      `json:"min"`
+	Hidden       bool         `json:"hidden"`
+	Detail       *Relation    `json:"detail"`
+	Rollup       *Rollup      `json:"rollup"`
+	FullText     *FullText    `json:"fulltext"`
+	Values       interface{}  `json:"values"`
+	CalcFunction DataFunction `json:"-"`
 }
 
 func init() {
@@ -391,16 +402,15 @@ func init() {
 **/
 func newColumn(model *Model, name string, description string, typeColumn TypeColumn, typeData TypeData, def interface{}) *Column {
 	return &Column{
-		Model:        model,
-		Name:         name,
-		Description:  description,
-		TypeColumn:   typeColumn,
-		TypeData:     typeData,
-		Default:      def,
-		Max:          0,
-		Min:          0,
-		Values:       "",
-		CalcFunction: make(map[string]DataFunction, 0),
+		Model:       model,
+		Name:        name,
+		Description: description,
+		TypeColumn:  typeColumn,
+		TypeData:    typeData,
+		Default:     def,
+		Max:         0,
+		Min:         0,
+		Values:      "",
 	}
 }
 
@@ -485,8 +495,49 @@ func (s *Column) idx() int {
 * SetValue
 * @param value interface{}
 **/
-func (s *Column) SetValue(value interface{}) {
+func (s *Column) SetValue(value interface{}) *Column {
 	s.Values = value
+	return s
+}
+
+/**
+* SetDefaultValue
+* @param value interface{}
+* @return *Column
+**/
+func (s *Column) SetDefaultValue(value interface{}) *Column {
+	s.Default = value
+	return s
+}
+
+/**
+* SetHidden
+* @param hidden bool
+* @return *Column
+**/
+func (s *Column) SetHidden(hidden bool) *Column {
+	s.Hidden = hidden
+	return s
+}
+
+/**
+* SetMax
+* @param max float64
+* @return *Column
+**/
+func (s *Column) SetMax(max float64) *Column {
+	s.Max = max
+	return s
+}
+
+/**
+* SetMin
+* @param min float64
+* @return *Column
+**/
+func (s *Column) SetMin(min float64) *Column {
+	s.Min = min
+	return s
 }
 
 /**

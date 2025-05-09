@@ -1,7 +1,6 @@
 package jdb
 
 import (
-	"fmt"
 	"slices"
 
 	"github.com/cgalvisleon/et/et"
@@ -22,20 +21,24 @@ func (s *Ql) setSelect(field *Field) *Ql {
 		if idx == -1 {
 			s.Selects = append(s.Selects, field)
 		}
-	} else if slices.Contains([]TypeColumn{TpCalc, TpRelatedTo}, field.Column.TypeColumn) {
+	} else if slices.Contains([]TypeColumn{TpCalc}, field.Column.TypeColumn) {
+		idx := slices.IndexFunc(s.Details, func(e *Field) bool { return e.asField() == field.asField() })
+		if idx == -1 {
+			s.Details = append(s.Details, field)
+		}
+	} else if slices.Contains([]TypeColumn{TpRelatedTo}, field.Column.TypeColumn) {
 		idx := slices.IndexFunc(s.Details, func(e *Field) bool { return e.asField() == field.asField() })
 		if idx == -1 {
 			s.Details = append(s.Details, field)
 		}
 	} else if slices.Contains([]TypeColumn{TpRollup}, field.Column.TypeColumn) {
-		name := field.Column.Rollup.Fields[field.Name]
-		def := fmt.Sprintf(`%s:%s`, name, field.Name)
+		rollup := field.Column.Rollup
+		for _, name := range rollup.Fields {
+			field.Select = append(field.Select, name)
+		}
 		idx := slices.IndexFunc(s.Details, func(e *Field) bool { return e.Column.Rollup == field.Column.Rollup })
 		if idx == -1 {
-			field.Select = append(field.Select, def)
 			s.Details = append(s.Details, field)
-		} else {
-			s.Details[idx].Select = append(s.Details[idx].Select, def)
 		}
 	}
 
@@ -80,9 +83,20 @@ func (s *Ql) Select(fields ...interface{}) *Ql {
 **/
 func (s *Ql) Data(fields ...interface{}) *Ql {
 	result := s.Select(fields...)
-	result.TypeSelect = Data
+	result.TypeSelect = Source
 
 	return result
+}
+
+/**
+* Hidden
+* @param fields ...string
+* @return *Ql
+**/
+func (s *Ql) Hidden(fields ...string) *Ql {
+	s.Hiddens = append(s.Hiddens, fields...)
+
+	return s
 }
 
 /**

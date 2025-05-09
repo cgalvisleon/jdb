@@ -242,6 +242,35 @@ func (s *DB) GetModel(name string) *Model {
 }
 
 /**
+* getTableModel
+* @param name string
+* @return *Model, error
+**/
+func (s *DB) getTableModel(name string) (*Model, error) {
+	list := strs.Split(name, ".")
+	if len(list) != 2 {
+		return nil, mistake.Newf(MSG_MODEL_NOT_FOUND, name)
+	}
+
+	model := s.GetModel(list[1])
+	if model != nil {
+		return model, nil
+	}
+
+	schema := s.GetSchema(list[0])
+	if schema == nil {
+		schema = NewSchema(s, list[0])
+	}
+
+	model = NewModel(schema, list[1], 1)
+	if err := model.Init(); err != nil {
+		return nil, err
+	}
+
+	return model, nil
+}
+
+/**
 * SetMain
 * @param params et.Json
 * @return error
@@ -325,6 +354,18 @@ func (s *DB) DropSchema(name string) error {
 		return mistake.New(MSG_DRIVER_NOT_DEFINED)
 	}
 
+	schema := s.GetSchema(name)
+	if schema == nil {
+		return mistake.Newf(MSG_SCHEMA_NOT_FOUND, name)
+	}
+
+	for _, model := range schema.models {
+		err := s.DropModel(model)
+		if err != nil {
+			return err
+		}
+	}
+
 	err := s.driver.DropSchema(name)
 	if err != nil {
 		return err
@@ -363,6 +404,11 @@ func (s *DB) DropModel(model *Model) error {
 	err := s.driver.DropModel(model)
 	if err != nil {
 		return err
+	}
+
+	schema := s.GetSchema(model.Schema)
+	if schema != nil {
+		schema.dropModel(model)
 	}
 
 	err = s.deleteModel("model", model.Name)
@@ -468,6 +514,22 @@ func (s *DB) One(sql string, arg ...any) (et.Item, error) {
 	}
 
 	return result.First(), nil
+}
+
+/**
+* From
+* @param name string
+* @return *Ql, error
+**/
+func (s *DB) From(name string) (*Ql, error) {
+	model, err := s.getTableModel(name)
+	if err != nil {
+		return nil, err
+	}
+
+	result := From(model)
+
+	return result, nil
 }
 
 /**

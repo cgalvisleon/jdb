@@ -5,7 +5,7 @@ package jdb
 * @param fn DataFunction
 * @return *Command
 **/
-func (s *Command) AfterInsert(fn DataFunction) *Command {
+func (s *Command) AfterInsert(fn DataFunctionTx) *Command {
 	s.afterInsert = append(s.afterInsert, fn)
 
 	return s
@@ -13,10 +13,10 @@ func (s *Command) AfterInsert(fn DataFunction) *Command {
 
 /**
 * AfterUpdate
-* @param fn DataFunction
+* @param fn DataFunctionTx
 * @return *Command
 **/
-func (s *Command) AfterUpdate(fn DataFunction) *Command {
+func (s *Command) AfterUpdate(fn DataFunctionTx) *Command {
 	s.afterUpdate = append(s.afterUpdate, fn)
 
 	return s
@@ -24,10 +24,10 @@ func (s *Command) AfterUpdate(fn DataFunction) *Command {
 
 /**
 * AfterDelete
-* @param fn DataFunction
+* @param fn Function
 * @return *Command
 **/
-func (s *Command) AfterDelete(fn DataFunction) *Command {
+func (s *Command) AfterDelete(fn Function) *Command {
 	s.afterDelete = append(s.afterDelete, fn)
 
 	return s

@@ -13,9 +13,9 @@ type TypeCommand int
 const (
 	Insert TypeCommand = iota
 	Update
-	Upsert
 	Delete
-	Bulk
+	Upsert
+	Delsert
 	Sync
 )
 
@@ -25,12 +25,12 @@ func (s TypeCommand) Str() string {
 		return "insert"
 	case Update:
 		return "update"
-	case Upsert:
-		return "upsert"
 	case Delete:
 		return "delete"
-	case Bulk:
-		return "bulk"
+	case Upsert:
+		return "upsert"
+	case Delsert:
+		return "delsert"
 	case Sync:
 		return "sync"
 	default:
@@ -38,7 +38,9 @@ func (s TypeCommand) Str() string {
 	}
 }
 
-type DataFunction func(data et.Json) (et.Json, error)
+type Function func() error
+type DataFunction func(data et.Json) error
+type DataFunctionTx func(tx *Tx, data et.Json) error
 
 type Command struct {
 	*QlWhere
@@ -49,17 +51,15 @@ type Command struct {
 	From         *Model              `json:"-"`
 	Data         []et.Json           `json:"data"`
 	Values       []map[string]*Field `json:"values"`
-	RelationsTo  []map[string]*Field `json:"relations_to"`
 	Returns      []*Field            `json:"returns"`
 	Sql          string              `json:"sql"`
 	Result       et.Items            `json:"result"`
-	beforeInsert []DataFunction      `json:"-"`
-	beforeUpdate []DataFunction      `json:"-"`
-	beforeDelete []DataFunction      `json:"-"`
-	afterInsert  []DataFunction      `json:"-"`
-	afterUpdate  []DataFunction      `json:"-"`
-	afterDelete  []DataFunction      `json:"-"`
-	isUndo       bool                `json:"-"`
+	beforeInsert []DataFunctionTx    `json:"-"`
+	beforeUpdate []DataFunctionTx    `json:"-"`
+	beforeDelete []Function          `json:"-"`
+	afterInsert  []DataFunctionTx    `json:"-"`
+	afterUpdate  []DataFunctionTx    `json:"-"`
+	afterDelete  []Function          `json:"-"`
 	isSync       bool                `json:"-"`
 }
 
@@ -77,11 +77,12 @@ func NewCommand(model *Model, data []et.Json, command TypeCommand) *Command {
 		QlWhere:      NewQlWhere(),
 		Data:         data,
 		Values:       make([]map[string]*Field, 0),
-		RelationsTo:  make([]map[string]*Field, 0),
-		beforeInsert: []DataFunction{},
-		beforeUpdate: []DataFunction{},
-		afterInsert:  []DataFunction{},
-		afterUpdate:  []DataFunction{},
+		beforeInsert: []DataFunctionTx{},
+		beforeUpdate: []DataFunctionTx{},
+		beforeDelete: []Function{},
+		afterInsert:  []DataFunctionTx{},
+		afterUpdate:  []DataFunctionTx{},
+		afterDelete:  []Function{},
 		Returns:      []*Field{},
 		Result:       et.Items{},
 	}
@@ -153,19 +154,22 @@ func (s *Command) getField(name string, isCreate bool) *Field {
 func (s *Command) validator(val interface{}) interface{} {
 	switch v := val.(type) {
 	case string:
-		if strings.HasPrefix(v, "$") {
-			v = strings.TrimPrefix(v, "$")
+		if strings.HasPrefix(v, ":") {
+			v = strings.TrimPrefix(v, ":")
 			field := s.getField(v, false)
 			if field != nil {
 				return field
 			}
 			return nil
 		}
-		result := s.getField(v, false)
-		if result != nil {
-			return result
+
+		if strings.HasPrefix(v, "$") {
+			v = strings.TrimPrefix(v, "$")
+			return v
 		}
 
+		v = strings.Replace(v, `\\:`, `\:`, 1)
+		v = strings.Replace(v, `\:`, `:`, 1)
 		v = strings.Replace(v, `\\$`, `\$`, 1)
 		v = strings.Replace(v, `\$`, `$`, 1)
 		field := s.getField(v, false)
@@ -181,16 +185,6 @@ func (s *Command) validator(val interface{}) interface{} {
 
 		return v
 	}
-}
-
-/**
-* setDebug
-* @param v bool
-* @return *Command
-**/
-func (s *Command) setDebug(v bool) *Command {
-	s.IsDebug = v
-	return s
 }
 
 /**

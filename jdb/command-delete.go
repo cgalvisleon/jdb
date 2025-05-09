@@ -40,10 +40,6 @@ func (s *Command) deleted() error {
 		})
 	}
 
-	if s.isUndo {
-		return nil
-	}
-
 	for _, result := range s.Result.Result {
 		before := result.ValJson(et.Json{}, "result", "before")
 		after := result.ValJson(et.Json{}, "result", "after")
@@ -56,12 +52,10 @@ func (s *Command) deleted() error {
 		}
 	}
 
-	for _, data := range s.Data {
-		for _, fn := range s.afterDelete {
-			_, err := fn(data)
-			if err != nil {
-				return err
-			}
+	for _, fn := range s.afterDelete {
+		err := fn()
+		if err != nil {
+			return err
 		}
 	}
 

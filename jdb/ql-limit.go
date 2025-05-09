@@ -72,9 +72,9 @@ func (s *Ql) setPage(page int) *Ql {
 /**
 * SetLimitTx
 * @param tx *Tx, limit int
-* @return interface{}, error
+* @return et.Json, error
 **/
-func (s *Ql) setLimitTx(tx *Tx, limit int) (interface{}, error) {
+func (s *Ql) setLimitTx(tx *Tx, limit int) (et.Json, error) {
 	s.Limit = limit
 	if s.Limit <= 0 {
 		result, err := s.AllTx(tx)

@@ -6,10 +6,6 @@ package jdb
 * @return *Command
 **/
 func (s *Command) Where(val string) *Command {
-	if s.isUndo {
-		return s
-	}
-
 	field := s.getField(val, false)
 	if field != nil {
 		s.where(field)
@@ -24,10 +20,6 @@ func (s *Command) Where(val string) *Command {
 * @return *Command
 **/
 func (s *Command) And(val string) *Command {
-	if s.isUndo {
-		return s
-	}
-
 	field := s.getField(val, false)
 	if field != nil {
 		s.and(field)
@@ -42,10 +34,6 @@ func (s *Command) And(val string) *Command {
 * @return *Command
 **/
 func (s *Command) Or(val string) *Command {
-	if s.isUndo {
-		return s
-	}
-
 	field := s.getField(val, false)
 	if field != nil {
 		s.or(field)

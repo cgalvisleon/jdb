@@ -2,7 +2,7 @@ package jdb
 
 import "github.com/cgalvisleon/et/mistake"
 
-func (s *Command) upsert() error {
+func (s *Command) delsert() error {
 	if err := s.prepare(); err != nil {
 		return err
 	}
@@ -32,7 +32,7 @@ func (s *Command) upsert() error {
 
 	if exist {
 		s.Command = Update
-		return s.updated()
+		return s.deleted()
 	}
 
 	s.Command = Insert

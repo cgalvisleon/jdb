@@ -19,13 +19,9 @@ func (s *Model) New(fields ...string) et.Json {
 			val := col.DefaultValue()
 			result.Set(col.Name, val)
 		case TpCalc:
-			for name, fn := range col.CalcFunction {
-				val, err := fn(result)
-				if err != nil {
-					return
-				}
-
-				result.Set(name, val)
+			err := col.CalcFunction(result)
+			if err != nil {
+				return
 			}
 		case TpRelatedTo:
 			if col.Detail == nil {
@@ -41,11 +37,13 @@ func (s *Model) New(fields ...string) et.Json {
 			if col.Rollup == nil {
 				return
 			}
-			with := col.Rollup.With
+
+			rollup := col.Rollup
+			with := rollup.With
 			if with == nil {
 				return
 			}
-			val := with.New(col.Rollup.Fields[col.Name])
+			val := with.New(rollup.Fields...)
 			result.Set(col.Name, val)
 		}
 	}

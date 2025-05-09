@@ -48,11 +48,7 @@ func (s *QlWhere) where(field interface{}) *QlWhere {
 * @return *QlWhere
 **/
 func (s *QlWhere) and(field interface{}) *QlWhere {
-	where := NewQlCondition(field)
-	where.Connector = And
-	s.Wheres = append(s.Wheres, where)
-
-	return s
+	return s.where(field)
 }
 
 /**
@@ -62,7 +58,10 @@ func (s *QlWhere) and(field interface{}) *QlWhere {
 **/
 func (s *QlWhere) or(field interface{}) *QlWhere {
 	where := NewQlCondition(field)
-	where.Connector = Or
+	if len(s.Wheres) > 0 {
+		where.Connector = Or
+	}
+
 	s.Wheres = append(s.Wheres, where)
 
 	return s

@@ -21,7 +21,7 @@
 ## Library
 
 ```
-go get github.com/cgalvisleon/et/@v0.0.0
+go get github.com/cgalvisleon/et/@v0.1.0
 ```
 
 ## Run and build
