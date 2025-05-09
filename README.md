@@ -39,6 +39,12 @@ ps aux | grep jdb | grep -v grep
 
 ```
 
+## Version
+
+```
+Version: v0.1.0
+```
+
 ## Go work
 
 ```
