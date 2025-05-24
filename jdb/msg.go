@@ -19,7 +19,7 @@ const (
 	MSG_QUERY_FROM_REQUIRED      = "Query 'from' is required"
 	MSG_SYSTEMKEYFIELD_NOT_FOUND = "SystemKeyField not found"
 	MSG_PRIMARYKEY_NOT_FOUND     = "PrimaryKey not found"
-	MSG_NOT_DATA                 = "No data in %s (%s)"
+	MSG_NOT_DATA                 = "No data to %s %s model"
 	MSG_NOT_INSERT_DATA          = "No insert data"
 	MSG_MANY_INSERT_DATA         = "Many upsert data, only one is allowed"
 	MSG_NOT_UPDATE_DATA          = "No update data"
@@ -40,7 +40,8 @@ const (
 	MSG_FIELD_REQUIRED_RELATION  = "Field required (%s) in relation (%s)"
 	MSG_SERIE_NOT_FOUND          = "Serie not found (%s)"
 	MSG_RECORD_NOT_FOUND         = "Record not found"
-	MSG_INVALID_MODEL_PARAM      = "Invalid model param (%s)"
+	MSG_INVALID_MODEL_PARAM      = "Invalid model params"
 	MSG_ROLLBACK_ERROR           = "Rollback error: (%s)"
 	MSG_COMMIT_ERROR             = "Commit error: (%s)"
+	MSG_DATABASE_NOT_CONNECTED   = "Database not connected"
 )

@@ -25,7 +25,7 @@ func (s *Postgres) Exists(ql *jdb.Ql) (bool, error) {
 		console.Debug(ql.Sql)
 	}
 
-	item, err := s.query(ql.Sql)
+	item, err := jdb.Query(s.db, ql.Sql)
 	if err != nil {
 		return false, err
 	}

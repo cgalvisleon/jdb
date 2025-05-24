@@ -30,7 +30,6 @@ type Schema struct {
 * @return *Schema
 **/
 func NewSchema(db *DB, name string) *Schema {
-	name = Name(name)
 	idx := slices.IndexFunc(db.schemas, func(e *Schema) bool { return e.Name == name })
 	if idx != -1 {
 		return db.schemas[idx]
@@ -83,7 +82,6 @@ func NewSchema(db *DB, name string) *Schema {
 * @return *Schema, error
 **/
 func LoadSchema(db *DB, name string) (*Schema, error) {
-	name = Name(name)
 	idx := slices.IndexFunc(db.schemas, func(e *Schema) bool { return e.Name == name })
 	if idx != -1 {
 		return db.schemas[idx], nil
@@ -239,11 +237,10 @@ func (s *Schema) Drop() error {
 * @return *Model
 **/
 func (s *Schema) GetModel(name string) *Model {
-	name = Name(name)
 	idx := slices.IndexFunc(s.models, func(e *Model) bool { return e.Name == name })
 	if idx != -1 {
 		return s.models[idx]
 	}
 
-	return nil
+	return NewModel(s, name, 1)
 }

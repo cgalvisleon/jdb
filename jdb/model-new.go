@@ -19,10 +19,7 @@ func (s *Model) New(fields ...string) et.Json {
 			val := col.DefaultValue()
 			result.Set(col.Name, val)
 		case TpCalc:
-			err := col.CalcFunction(result)
-			if err != nil {
-				return
-			}
+			col.CalcFunction(result)
 		case TpRelatedTo:
 			if col.Detail == nil {
 				return

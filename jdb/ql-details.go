@@ -12,17 +12,7 @@ import (
 * @param tx *Tx, data et.Json
 * @return error
 **/
-func (s *Ql) GetDetailsTx(tx *Tx, data et.Json) error {
-
-	calcFunction := func(col *Column) error {
-		err := col.CalcFunction(data)
-		if err != nil {
-			return err
-		}
-
-		return nil
-	}
-
+func (s *Ql) GetDetailsTx(tx *Tx, data et.Json) {
 	for _, field := range s.Details {
 		col := field.Column
 		if col == nil {
@@ -32,11 +22,12 @@ func (s *Ql) GetDetailsTx(tx *Tx, data et.Json) error {
 		switch col.TypeColumn {
 		case TpCalc:
 			if col.CalcFunction != nil {
-				return calcFunction(col)
+				col.CalcFunction(data)
 			}
 		case TpRelatedTo:
 			if col.CalcFunction != nil {
-				return calcFunction(col)
+				col.CalcFunction(data)
+				continue
 			}
 
 			if col.Detail == nil {
@@ -101,7 +92,8 @@ func (s *Ql) GetDetailsTx(tx *Tx, data et.Json) error {
 			}
 		case TpRollup:
 			if col.CalcFunction != nil {
-				return calcFunction(col)
+				col.CalcFunction(data)
+				continue
 			}
 
 			if col.Rollup == nil {
@@ -163,8 +155,6 @@ func (s *Ql) GetDetailsTx(tx *Tx, data et.Json) error {
 			}
 		}
 	}
-
-	return nil
 }
 
 /**
@@ -189,7 +179,7 @@ func (s *Ql) setDetail(params et.Json) *Ql {
 			tp = TpList
 		}
 
-		field := s.getField(name, false)
+		field := s.getField(name)
 		if field == nil || field.Column == nil || field.Column.Detail == nil || field.Column.Detail.With == nil {
 			return s
 		}

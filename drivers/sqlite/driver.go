@@ -39,7 +39,3 @@ func init() {
 func (s *SqlLite) Disconnect() error {
 	return mistake.New(MSG_FUNCION_NOT_FOUND)
 }
-
-func (s *SqlLite) SetMain(arg et.Json) error {
-	return mistake.New(MSG_FUNCION_NOT_FOUND)
-}

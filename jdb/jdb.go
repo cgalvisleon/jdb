@@ -18,7 +18,10 @@ type JDB struct {
 	Version string                   `json:"version"`
 }
 
-var conn *JDB
+var (
+	conn        *JDB
+	defaultName = "jdb"
+)
 
 func init() {
 	conn = &JDB{
@@ -153,31 +156,54 @@ func ConnectTo(params ConnectParams) (*DB, error) {
 * @return *DB, error
 **/
 func Load() (*DB, error) {
-	err := config.Validate([]string{
+	driver := config.String("DB_DRIVER", "sqlite")
+	if driver == "" {
+		return nil, mistake.New(MSG_DRIVER_NOT_DEFINED)
+	}
+
+	var params = ConnectParams{
+		Driver: "sqlite",
+		Name:   config.String("DB_NAME", defaultName),
+		Params: et.Json{
+			"database": config.String("DB_NAME", defaultName),
+		},
+		UserCore: true,
+	}
+	var validate = []string{
 		"DB_DRIVER",
 		"DB_NAME",
-		"DB_HOST",
-		"DB_PORT",
-		"DB_USER",
-		"DB_PASSWORD",
-	})
+	}
+
+	if driver == "postgres" {
+		params = ConnectParams{
+			Driver: config.String("DB_DRIVER", "postgres"),
+			Name:   config.String("DB_NAME", defaultName),
+			Params: et.Json{
+				"database": config.String("DB_NAME", defaultName),
+				"host":     config.String("DB_HOST", "localhost"),
+				"port":     config.Int("DB_PORT", 5432),
+				"username": config.String("DB_USER", "admin"),
+				"password": config.String("DB_PASSWORD", "admin"),
+				"app":      config.App.Name,
+			},
+			UserCore: true,
+		}
+		validate = []string{
+			"DB_DRIVER",
+			"DB_NAME",
+			"DB_HOST",
+			"DB_PORT",
+			"DB_USER",
+			"DB_PASSWORD",
+		}
+	}
+
+	err := config.Validate(validate)
 	if err != nil {
 		return nil, err
 	}
 
-	return ConnectTo(ConnectParams{
-		Driver: config.String("DB_DRIVER", "postgres"),
-		Name:   config.String("DB_NAME", "test"),
-		Params: et.Json{
-			"database": config.String("DB_NAME", "test"),
-			"host":     config.String("DB_HOST", "localhost"),
-			"port":     config.Int("DB_PORT", 5432),
-			"username": config.String("DB_USER", "test"),
-			"password": config.String("DB_PASSWORD", "test"),
-			"app":      config.App.Name,
-		},
-		UserCore: true,
-	})
+	return ConnectTo(params)
 }
 
 /**
@@ -199,143 +225,102 @@ func GetDB(name string) *DB {
 		return conn.DBS[idx]
 	}
 
+	result, err := NewDatabase(name, "sqlite")
+	if err != nil {
+		return nil
+	}
+
+	return result
+}
+
+/**
+* GetSchema
+* @param name string
+* @return *Schema
+**/
+func GetSchema(name string) *Schema {
+	list := strs.Split(name, ".")
+	if len(list) > 1 {
+		return GetDB(list[0]).GetSchema(list[1])
+	} else if len(list) == 1 {
+		return GetDB(defaultName).GetSchema(name)
+	}
+
 	return nil
 }
 
 /**
-* GetShema
+* GetModel
 * @param name string
-* @param isCreate bool
-* @return *Schema
+* @return *Model
 **/
-func GetShema(name string, isCreate bool) *Schema {
-	if len(conn.DBS) == 0 {
-		return nil
-	}
-
-	name = Name(name)
-	var db *DB
-	var result *Schema
+func GetModel(name string) *Model {
 	list := strs.Split(name, ".")
-	switch len(list) {
-	case 1:
-		db = conn.DBS[0]
-		if db == nil {
-			return nil
-		}
-
-		result = db.GetSchema(name)
-		if result != nil {
-			return result
-		}
-	case 2:
-		db = GetDB(list[0])
-		if db == nil {
-			return nil
-		}
-
-		name := list[1]
-		result = db.GetSchema(name)
-		if result != nil {
-			return result
-		}
-	default:
-		return result
+	if len(list) > 2 {
+		return GetDB(list[0]).GetSchema(list[1]).GetModel(list[2])
+	} else if len(list) == 2 {
+		return GetSchema(list[0]).GetModel(list[1])
+	} else if len(list) == 1 {
+		return GetSchema(defaultName).GetModel(name)
 	}
 
-	if isCreate {
-		result = NewSchema(db, name)
-	}
-
-	return result
+	return nil
 }
 
 /**
-* GetModel
-* @param name string, isCreate bool
-* @return *Model
+* Define
+* @param params et.Json
+* @return et.Json, error
 **/
-func GetModel(name string, isCreate bool) *Model {
-	if len(conn.DBS) == 0 {
-		return nil
+func define(params et.Json) (et.Json, error) {
+	result := et.Json{}
+	help := et.Json{
+		"message": MSG_INVALID_MODEL_PARAM,
+		"help":    "It is required this params.",
+		"params": et.Json{
+			"name_model": et.Json{
+				"schema":    "schema_name",
+				"version":   1,
+				"integrity": false,
+				"fields":    et.Json{},
+			},
+		},
 	}
 
-	var db *DB
-	var schema *Schema
-	var result *Model
-	list := strs.Split(name, ".")
-	switch len(list) {
-	case 1: /* model */
-		db = conn.DBS[0]
-		if db == nil {
-			return nil
+	for name := range params {
+		param := params.Json(name)
+		if param.IsEmpty() {
+			return et.Json{}, mistake.New(help.ToString())
 		}
 
-		result = db.GetModel(name)
-		if result != nil {
-			return result
-		}
-	case 2: /* schema, model */
-		db = conn.DBS[0]
-		if db == nil {
-			return nil
-		}
-
-		schema = db.GetSchema(list[0])
+		schemaName := param.ValStr(defaultName, "schema")
+		schema := GetSchema(schemaName)
 		if schema == nil {
-			if isCreate {
-				schema = NewSchema(db, list[0])
-			} else {
-				return nil
-			}
+			return et.Json{}, mistake.Newf(MSG_SCHEMA_NOT_FOUND, schemaName)
 		}
 
-		name := list[1]
-		result = schema.GetModel(name)
-		if result != nil {
-			return result
+		version := param.ValInt(1, "version")
+		model := NewModel(schema, name, version)
+		if model == nil {
+			return et.Json{}, mistake.Newf(MSG_MODEL_NOT_FOUND, name)
 		}
 
-		if isCreate {
-			result = NewModel(schema, name, 1)
-			if err := result.Init(); err != nil {
-				return nil
-			}
-		} else {
-			return nil
-		}
-	case 3: /* db, schema, model */
-		db = GetDB(list[0])
-		if db == nil {
-			return nil
+		integrity := param.ValBool(false, "integrity")
+		if integrity {
+			model.DefineIntegrity()
 		}
 
-		schema = db.GetSchema(list[1])
-		if schema == nil {
-			if isCreate {
-				schema = NewSchema(db, list[1])
-			} else {
-				return nil
-			}
+		fields := param.Json("fields")
+		model.setFields(fields)
+
+		if err := model.Init(); err != nil {
+			return et.Json{}, err
 		}
 
-		name := list[2]
-		result = schema.GetModel(name)
-		if result != nil {
-			return result
-		}
-
-		if isCreate {
-			result = NewModel(schema, name, 1)
-			if err := result.Init(); err != nil {
-				return nil
-			}
-		} else {
-			return nil
-		}
+		result[name] = model.Describe()
 	}
 
-	return result
+	return result, nil
 }
 
 /**
@@ -343,7 +328,7 @@ func GetModel(name string, isCreate bool) *Model {
 * @param kind, name string
 * @return et.Json
 **/
-func Describe(kind, name string) (et.Json, error) {
+func describe(kind, name string) (et.Json, error) {
 	help := et.Json{
 		"message": MSG_KIND_NOT_DEFINED,
 		"help":    "Exist four types of objects: db, schema, model and field. It is required at least two params, kind and name.",
@@ -352,6 +337,7 @@ func Describe(kind, name string) (et.Json, error) {
 			"name": "name",
 		},
 	}
+
 	if kind == "" {
 		return help, mistake.New(MSG_KIND_NOT_DEFINED)
 	}
@@ -365,14 +351,14 @@ func Describe(kind, name string) (et.Json, error) {
 
 		return result.Describe(), nil
 	case "schema":
-		result := GetShema(name, false)
+		result := GetSchema(name)
 		if result == nil {
 			return et.Json{}, mistake.Newf(MSG_SCHEMA_NOT_FOUND, name)
 		}
 
 		return result.Describe(), nil
 	case "model":
-		result := GetModel(name, false)
+		result := GetModel(name)
 		if result == nil {
 			return et.Json{}, mistake.Newf(MSG_MODEL_NOT_FOUND, name)
 		}
@@ -388,7 +374,7 @@ func Describe(kind, name string) (et.Json, error) {
 			}, mistake.New(MSG_INVALID_NAME)
 		}
 
-		model := GetModel(list[0], false)
+		model := GetModel(list[0])
 		if model == nil {
 			return et.Json{}, mistake.Newf(MSG_MODEL_NOT_FOUND, list[0])
 		}
@@ -405,60 +391,13 @@ func Describe(kind, name string) (et.Json, error) {
 }
 
 /**
-* Define
-* @param params et.Json
-* @return et.Json, error
-**/
-func Define(params et.Json) (et.Json, error) {
-	result := et.Json{}
-	help := et.Json{
-		"message": MSG_INVALID_MODEL_PARAM,
-		"help":    "It is required this params.",
-		"params": et.Json{
-			"name_model": et.Json{
-				"schema":  "schema_name",
-				"version": 1,
-				"fields":  []et.Json{},
-			},
-		},
-	}
-	for name := range params {
-		param := params.Json(name)
-		if param.IsEmpty() {
-			return help, mistake.Newf(MSG_INVALID_MODEL_PARAM, name)
-		}
-
-		schemaName := param.Str("schema")
-		schema := GetShema(schemaName, true)
-		if schema == nil {
-			return et.Json{}, mistake.Newf(MSG_SCHEMA_NOT_FOUND, schemaName)
-		}
-
-		version := param.Int("version")
-		model := NewModel(schema, name, version)
-		if model == nil {
-			return et.Json{}, mistake.Newf(MSG_MODEL_NOT_FOUND, name)
-		}
-
-		err := model.Save()
-		if err != nil {
-			return et.Json{}, err
-		}
-
-		result[name] = model.Describe()
-	}
-
-	return result, nil
-}
-
-/**
-* QueryTx
+* queryTx
 * @param tx *Tx, params et.Json
 * @return interface{}, error
 **/
-func QueryTx(tx *Tx, params et.Json) (interface{}, error) {
+func queryTx(tx *Tx, params et.Json) (interface{}, error) {
 	from := params.Str("from")
-	model := GetModel(from, false)
+	model := GetModel(from)
 	if model == nil {
 		return nil, mistake.Newf(MSG_MODEL_NOT_FOUND, from)
 	}
@@ -468,90 +407,121 @@ func QueryTx(tx *Tx, params et.Json) (interface{}, error) {
 }
 
 /**
-* Query
+* commandsTx
 * @param tx *Tx, params et.Json
 * @return interface{}, error
 **/
-func Query(params et.Json) (interface{}, error) {
-	from := params.Str("from")
-	model := GetModel(from, false)
-	if model == nil {
-		return nil, mistake.Newf(MSG_MODEL_NOT_FOUND, from)
+func commandsTx(tx *Tx, params et.Json) (et.Items, error) {
+	help := et.Json{
+		"message": MSG_INVALID_MODEL_PARAM,
+		"help":    "It is required this params.",
+		"params": et.Json{
+			"name_model": et.Json{
+				"insert": et.Json{},
+				"update": et.Json{},
+				"delete": et.Json{},
+				"where":  et.Json{},
+			},
+		},
 	}
 
-	return From(model).
-		Query(params)
+	result := et.Items{}
+	for name := range params {
+		model := GetModel(name)
+		if model == nil {
+			return et.Items{}, mistake.Newf(MSG_MODEL_NOT_FOUND, name)
+		}
+
+		param := params.Json(name)
+		if param.IsEmpty() {
+			return et.Items{}, mistake.New(help.ToString())
+		}
+
+		debug := param.ValBool(false, "debug")
+
+		if param["insert"] != nil {
+			data := param.Json("insert")
+			item, err := model.
+				Insert(data).
+				setDebug(debug).
+				ExecTx(tx)
+			if err != nil {
+				return et.Items{}, err
+			}
+
+			result.AddMany(item.Result)
+		}
+
+		if param["update"] != nil {
+			data := param.Json("update")
+			where := param.Json("where")
+			items, err := model.
+				Update(data).
+				setWheres(where).
+				setDebug(debug).
+				ExecTx(tx)
+			if err != nil {
+				return et.Items{}, err
+			}
+
+			result.AddMany(items.Result)
+		}
+
+		if param["delete"] != nil {
+			where := param.Json("where")
+			items, err := model.
+				delete().
+				setWheres(where).
+				setDebug(debug).
+				ExecTx(tx)
+			if err != nil {
+				return et.Items{}, err
+			}
+
+			result.AddMany(items.Result)
+		}
+
+		if param["bulk"] != nil {
+			data := param.ArrayJson("bulk")
+			items, err := model.
+				Bulk(data).
+				setDebug(debug).
+				ExecTx(tx)
+			if err != nil {
+				return et.Items{}, err
+			}
+
+			result.AddMany(items.Result)
+		}
+
+		if param["upsert"] != nil {
+			where := param.Json("where")
+			data := param.Json("upsert")
+			items, err := model.
+				Upsert(data).
+				setWheres(where).
+				setDebug(debug).
+				ExecTx(tx)
+			if err != nil {
+				return et.Items{}, err
+			}
+
+			result.AddMany(items.Result)
+		}
+	}
+
+	return result, nil
 }
 
 /**
-* Commands
-* @param tx *Tx, params et.Json
-* @return interface{}, error
-**/
-func Commands(tx *Tx, params et.Json) (interface{}, error) {
-	insert := params.Str("insert")
-	update := params.Str("update")
-	delete := params.Str("delete")
-	data := params.Json("data")
-	where := params.Json("where")
-	var comm *Command
-	if insert != "" {
-		model := GetModel(insert, false)
-		if model == nil {
-			return nil, mistake.Newf(MSG_MODEL_NOT_FOUND, insert)
-		}
-
-		comm = model.Insert(data)
-	} else if update != "" {
-		model := GetModel(update, false)
-		if model == nil {
-			return nil, mistake.Newf(MSG_MODEL_NOT_FOUND, update)
-		}
-
-		comm = model.Update(data).
-			setWheres(where)
-	} else if delete != "" {
-		model := GetModel(delete, false)
-		if model == nil {
-			return nil, mistake.Newf(MSG_MODEL_NOT_FOUND, delete)
-		}
-
-		comm = NewCommand(model, []et.Json{}, Delete).
-			setWheres(where)
-	} else {
-		return nil, mistake.New(MSG_COMMAND_NOT_FOUND)
-	}
-
-	return comm.ExecTx(tx)
-}
-
-/**
-* ModelDescribe
-* @param w http.ResponseWriter
-* @param r *http.Request
-**/
-func ModelDescribe(w http.ResponseWriter, r *http.Request) {
-	body, _ := response.GetBody(r)
-	kind := body.Str("kind")
-	name := body.Str("name")
-	result, err := Describe(kind, name)
-	if err != nil {
-		response.JSON(w, r, http.StatusBadRequest, result)
-		return
-	}
-
-	response.JSON(w, r, http.StatusOK, result)
-}
-
-/**
-* modelDefine
+* ModelDefine
 * @param w http.ResponseWriter
 * @param r *http.Request
 **/
 func ModelDefine(w http.ResponseWriter, r *http.Request) {
 	body, _ := response.GetBody(r)
 	params := body.Json("params")
-	result, err := Define(params)
+	result, err := define(params)
 	if err != nil {
 		response.HTTPError(w, r, http.StatusBadRequest, err.Error())
 		return
@@ -567,7 +537,7 @@ func ModelDefine(w http.ResponseWriter, r *http.Request) {
 **/
 func ModelQuery(w http.ResponseWriter, r *http.Request) {
 	params, _ := response.GetBody(r)
-	result, err := Query(params)
+	result, err := queryTx(nil, params)
 	if err != nil {
 		response.HTTPError(w, r, http.StatusBadRequest, err.Error())
 		return
@@ -583,11 +553,41 @@ func ModelQuery(w http.ResponseWriter, r *http.Request) {
 **/
 func ModelCommand(w http.ResponseWriter, r *http.Request) {
 	params, _ := response.GetBody(r)
-	result, err := Commands(nil, params)
+	result, err := commandsTx(nil, params)
 	if err != nil {
 		response.HTTPError(w, r, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	response.ANY(w, r, http.StatusOK, result)
+}
+
+/**
+* ModelDescribe
+* @param w http.ResponseWriter
+* @param r *http.Request
+**/
+func ModelDescribe(w http.ResponseWriter, r *http.Request) {
+	body, _ := response.GetBody(r)
+	kind := body.Str("kind")
+	name := body.Str("name")
+	result, err := describe(kind, name)
+	if err != nil {
+		response.JSON(w, r, http.StatusBadRequest, result)
+		return
+	}
+
+	response.JSON(w, r, http.StatusOK, result)
+}
+
+/**
+* JSQL
+* @param w http.ResponseWriter
+* @param r *http.Request
+**/
+func JSQL(w http.ResponseWriter, r *http.Request) {
+	body, _ := response.GetBody(r)
+	result := body
+
+	response.JSON(w, r, http.StatusOK, result)
 }

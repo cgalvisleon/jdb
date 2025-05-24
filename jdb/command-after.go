@@ -23,12 +23,13 @@ func (s *Command) AfterUpdate(fn DataFunctionTx) *Command {
 }
 
 /**
-* AfterDelete
-* @param fn Function
+* AfterInsertOrUpdate
+* @param fn DataFunctionTx
 * @return *Command
 **/
-func (s *Command) AfterDelete(fn Function) *Command {
-	s.afterDelete = append(s.afterDelete, fn)
+func (s *Command) AfterInsertOrUpdate(fn DataFunctionTx) *Command {
+	s.afterInsert = append(s.afterInsert, fn)
+	s.afterUpdate = append(s.afterUpdate, fn)
 
 	return s
 }

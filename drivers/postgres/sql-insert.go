@@ -9,6 +9,11 @@ import (
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
+/**
+* sqlInsert
+* @param command *jdb.Command
+* @return string
+**/
 func (s *Postgres) sqlInsert(command *jdb.Command) string {
 	from := command.From
 	columns := utility.NewList()
@@ -40,7 +45,7 @@ func (s *Postgres) sqlInsert(command *jdb.Command) string {
 	}
 
 	objects := s.sqlJsonObject(from.GetFrom())
-	returns := strs.Format("jsonb_build_object(\n'before', jsonb_build_object(),\n'after', (%s)) AS result", objects)
+	returns := strs.Format("%s AS result", objects)
 	if len(command.Returns) > 0 {
 		returns := ""
 		for _, fld := range command.Returns {
@@ -54,5 +59,5 @@ func (s *Postgres) sqlInsert(command *jdb.Command) string {
 	}
 
 	result := "INSERT INTO %s(%s)\nVALUES %s\nRETURNING\n%s;"
-	return strs.Format(result, table(from), strings.Join(columnNames, ", "), values, returns)
+	return strs.Format(result, tableName(from), strings.Join(columnNames, ", "), values, returns)
 }

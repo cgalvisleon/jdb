@@ -6,7 +6,7 @@ import (
 	"github.com/cgalvisleon/jdb/jdb"
 )
 
-func table(model *jdb.Model) string {
+func tableName(model *jdb.Model) string {
 	return strs.Format(`%s.%s`, model.Schema, model.Name)
 }
 
@@ -29,7 +29,7 @@ func (s *Postgres) LoadModel(model *jdb.Model) error {
 			console.Debug(sql)
 		}
 
-		_, err = s.query(sql)
+		_, err = jdb.Query(s.db, sql)
 		if err != nil {
 			return err
 		}
@@ -59,7 +59,7 @@ func (s *Postgres) LoadModel(model *jdb.Model) error {
 	AND a.attnum > 0
 	AND NOT a.attisdropped;`
 
-	items, err := s.query(sql, model.Schema, model.Name)
+	items, err := jdb.Query(s.db, sql, model.Schema, model.Name)
 	if err != nil {
 		return err
 	}
@@ -81,12 +81,12 @@ func (s *Postgres) LoadModel(model *jdb.Model) error {
 * @return error
 **/
 func (s *Postgres) DropModel(model *jdb.Model) error {
-	sql := s.ddlTableDrop(table(model))
+	sql := s.ddlTableDrop(tableName(model))
 	if model.IsDebug {
 		console.Debug(sql)
 	}
 
-	_, err := s.query(sql)
+	_, err := jdb.Query(s.db, sql)
 	if err != nil {
 		return err
 	}
@@ -100,17 +100,18 @@ func (s *Postgres) DropModel(model *jdb.Model) error {
 * @return error
 **/
 func (s *Postgres) MutateModel(model *jdb.Model) error {
-	backupTable := strs.Format(`%s_backup`, table(model))
+	backupTable := strs.Format(`%s_backup`, tableName(model))
 	sql := "\n"
-	sql = strs.Append(sql, s.ddlTableRename(table(model), backupTable), "\n")
+	sql = strs.Append(sql, s.ddlTableRename(tableName(model), backupTable), "\n")
 	sql = strs.Append(sql, s.ddlTable(model), "\n")
 	sql = strs.Append(sql, s.ddlTableInsertTo(model, backupTable), "\n\n")
 	sql = strs.Append(sql, s.ddlTableIndex(model), "\n\n")
+	sql = strs.Append(sql, s.ddlTableDrop(backupTable), "\n\n")
 	if model.IsDebug {
 		console.Debug(sql)
 	}
 
-	_, err := s.query(sql)
+	_, err := jdb.Query(s.db, sql)
 	if err != nil {
 		return err
 	}

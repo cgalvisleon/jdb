@@ -39,25 +39,17 @@ func (s *Command) ExecTx(tx *Tx) (et.Items, error) {
 
 	switch s.Command {
 	case Insert:
-		if len(s.Data) == 0 {
-			return et.Items{}, mistake.Newf(MSG_NOT_DATA, s.Command.Str(), s.From.Name)
-		}
-
 		err := s.inserted()
 		if err != nil {
 			return et.Items{}, err
 		}
 	case Update:
-		if len(s.Data) == 0 {
-			return et.Items{}, mistake.Newf(MSG_NOT_DATA, s.Command.Str(), s.From.Name)
-		}
-
-		err := s.updated()
+		err = s.updated()
 		if err != nil {
 			return et.Items{}, err
 		}
 	case Delete:
-		err := s.deleted()
+		err = s.deleted()
 		if err != nil {
 			return et.Items{}, err
 		}

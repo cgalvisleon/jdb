@@ -28,7 +28,7 @@ func (s *DB) defineRecords() error {
 	coreRecords.DefineColumn("schema_name", TypeDataText)
 	coreRecords.DefineColumn("table_name", TypeDataText)
 	coreRecords.DefineColumn("option", TypeDataShortText)
-	coreRecords.DefineColumn("sync", TypeDataBool)
+	coreRecords.DefineColumn("sync", TypeDataCheckbox)
 	coreRecords.DefineColumn(SYSID, SystemKeyField.TypeData())
 	coreRecords.DefineIndexField()
 	coreRecords.DefinePrimaryKey("schema_name", "table_name", SYSID)

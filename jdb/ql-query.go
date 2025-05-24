@@ -1,8 +1,6 @@
 package jdb
 
 import (
-	"slices"
-
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/mistake"
 )
@@ -25,22 +23,8 @@ func (s *Ql) FirstTx(tx *Tx, n int) (et.Items, error) {
 		return et.Items{}, err
 	}
 
-	for _, name := range s.Hiddens {
-		idx := slices.IndexFunc(s.Details, func(e *Field) bool { return e.Name == name })
-		if idx != -1 {
-			s.Details = append(s.Details[:idx], s.Details[idx+1:]...)
-		}
-	}
-
 	for _, data := range result.Result {
-		err := s.GetDetailsTx(tx, data)
-		if err != nil {
-			return result, err
-		}
-
-		for _, name := range s.Hiddens {
-			delete(data, name)
-		}
+		s.GetDetailsTx(tx, data)
 	}
 
 	return result, nil

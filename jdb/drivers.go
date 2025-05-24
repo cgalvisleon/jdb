@@ -1,7 +1,8 @@
 package jdb
 
 import (
-	"github.com/cgalvisleon/et/config"
+	"database/sql"
+
 	"github.com/cgalvisleon/et/et"
 )
 
@@ -14,9 +15,8 @@ const (
 
 type Driver interface {
 	Name() string
-	Connect(params et.Json) error
+	Connect(params et.Json) (*sql.DB, error)
 	Disconnect() error
-	SetMain(params et.Json) error
 	/* Database */
 	CreateDatabase(name string) error
 	DropDatabase(name string) error
@@ -39,9 +39,6 @@ type Driver interface {
 	/* Command */
 	Command(command *Command) (et.Items, error)
 	Sync(command string, data et.Json) error
-	/* Query */
-	QueryTx(tx *Tx, sql string, arg ...any) (et.Items, error)
-	Query(sql string, arg ...any) (et.Items, error)
 }
 
 /**
@@ -50,5 +47,4 @@ type Driver interface {
 **/
 func Register(name string, driver func() Driver) {
 	conn.Drivers[name] = driver
-	config.Set("DB_DRIVER", name)
 }

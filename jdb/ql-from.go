@@ -1,10 +1,71 @@
 package jdb
 
 import (
+	"fmt"
+
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/reg"
 	"github.com/cgalvisleon/et/strs"
 )
+
+func helpQl(model *Model) et.Json {
+	return et.Json{
+		"from": model.Name,
+		"data": []interface{}{
+			"name",
+			"status_id",
+			"kinds.name:status",
+			et.Json{
+				"folders": et.Json{
+					"select": []interface{}{
+						"name",
+					},
+					"page": 1,
+					"rows": 30,
+					"list": true,
+				},
+			},
+		},
+		"join": []et.Json{
+			{
+				"kinds": et.Json{
+					"status_id": et.Json{
+						"eq": "kinds.id",
+					},
+				},
+				"AND": []et.Json{},
+				"OR":  []et.Json{},
+			},
+		},
+		"where": et.Json{
+			"status_id": et.Json{
+				"eq": "kinds.id",
+			},
+			"AND": []et.Json{
+				{
+					"name": et.Json{
+						"eq": "v:name",
+					},
+				},
+			},
+			"OR": []et.Json{},
+		},
+		"group_by": []string{"name"},
+		"having": et.Json{
+			"name": et.Json{
+				"eq": "name",
+			},
+			"AND": []et.Json{},
+			"OR":  []et.Json{},
+		},
+		"order_by": et.Json{
+			"ASC":  []string{"name"},
+			"DESC": []string{"name"},
+		},
+		"page":  1,
+		"limit": 30,
+	}
+}
 
 type QlFrom struct {
 	*Model
@@ -16,7 +77,21 @@ type QlFroms struct {
 	index int
 }
 
-func From(model *Model) *Ql {
+/**
+* From
+* @param model *Model
+* @return *Ql
+**/
+func From(name interface{}) *Ql {
+	var model *Model
+	switch v := name.(type) {
+	case *Model:
+		model = v
+	default:
+		s := fmt.Sprintf("%v", v)
+		model = GetModel(s)
+	}
+
 	tpSelect := Select
 	if model.SourceField != nil {
 		tpSelect = Source
@@ -28,7 +103,6 @@ func From(model *Model) *Ql {
 		TypeSelect: tpSelect,
 		Froms:      &QlFroms{index: 65, Froms: make([]*QlFrom, 0)},
 		Joins:      make([]*QlJoin, 0),
-		QlWhere:    NewQlWhere(),
 		Selects:    make([]*Field, 0),
 		Hiddens:    make([]string, 0),
 		Details:    make([]*Field, 0),
@@ -37,74 +111,67 @@ func From(model *Model) *Ql {
 		Offset:     0,
 		Limit:      0,
 		Sheet:      0,
-		Help: et.Json{
-			"from": model.Name,
-			"data": []interface{}{
-				"name",
-				"status_id",
-				"kinds.name:status",
-				et.Json{
-					"folders": et.Json{
-						"select": []interface{}{
-							"name",
-						},
-						"page": 1,
-						"rows": 30,
-						"list": true,
-					},
-				},
-			},
-			"join": []et.Json{
-				{
-					"kinds": et.Json{
-						"status_id": et.Json{
-							"eq": "kinds.id",
-						},
-					},
-					"AND": []et.Json{},
-					"OR":  []et.Json{},
-				},
-			},
-			"where": et.Json{
-				"status_id": et.Json{
-					"eq": "kinds.id",
-				},
-				"AND": []et.Json{
-					{
-						"name": et.Json{
-							"eq": "v:name",
-						},
-					},
-				},
-				"OR": []et.Json{},
-			},
-			"group_by": []string{"name"},
-			"having": et.Json{
-				"name": et.Json{
-					"eq": "name",
-				},
-				"AND": []et.Json{},
-				"OR":  []et.Json{},
-			},
-			"order_by": et.Json{
-				"ASC":  []string{"name"},
-				"DESC": []string{"name"},
-			},
-			"page":  1,
-			"limit": 30,
-		},
+		Help:       helpQl(model),
 	}
-	result.Havings = &QlHaving{Ql: result, QlWhere: NewQlWhere()}
+	result.QlWhere = newQlWhere(result.validator)
+	result.Havings = NewQlHaving(result)
 	result.addFrom(model)
 
 	return result
 }
 
 /**
-* listForms
+* addFrom
+* @param m *Model
+* @return *QlFrom
+**/
+func (s *Ql) addFrom(m *Model) *QlFrom {
+	as := string(rune(s.Froms.index))
+	from := &QlFrom{
+		Model: m,
+		As:    as,
+	}
+
+	s.Froms.Froms = append(s.Froms.Froms, from)
+	s.Froms.index++
+
+	return from
+}
+
+/**
+* From
+* @param name string
+* @return *Ql
+**/
+func (s *Ql) From(name string) *Ql {
+	model := GetModel(name)
+	if model == nil {
+		return s
+	}
+
+	fm := s.addFrom(model)
+	for _, from := range s.Froms.Froms {
+		if from.As != fm.As {
+			for _, detail := range from.Details {
+				if detail.With.Id == fm.Id {
+					j := s.Join(fm.Model)
+					for fk, pk := range detail.Fk {
+						j.On(fk).Eq(from.As + "." + pk)
+					}
+					return s
+				}
+			}
+		}
+	}
+
+	return s
+}
+
+/**
+* getForms
 * @return []string
 **/
-func (s *Ql) listForms() []string {
+func (s *Ql) getForms() []string {
 	var result []string
 	for _, from := range s.Froms.Froms {
 		result = append(result, strs.Format(`%s.%s, %s`, from.Schema, from.Name, from.As))

@@ -5,17 +5,22 @@ import (
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
+/**
+* SqlDelete
+* @param command *jdb.Command
+* @return string
+**/
 func (s *Postgres) sqlDelete(command *jdb.Command) string {
 	from := command.From
 	where := whereConditions(command.QlWhere)
 	objects := s.sqlJsonObject(from.GetFrom())
-	returns := "jsonb_build_object(\n'before', (dr.old_data),\n'after', jsonb_build_object()) AS result"
+	returns := strs.Format("%s AS result", objects)
 	if len(command.Returns) > 0 {
 		returns = ""
 		for _, fld := range command.Returns {
 			returns = strs.Append(returns, fld.Name, ", ")
 		}
 	}
-	result := "WITH deleted_rows AS (\nSELECT\nctid,\n%s AS old_data\nFROM %s\nWHERE %s\n)\nDELETE FROM %s AS oc\nUSING deleted_rows dr\nWHERE oc.ctid = dr.ctid\nRETURNING\n%s;"
-	return strs.Format(result, objects, table(from), where, table(from), returns)
+	result := "DELETE FROM %s\nWHERE %s\nRETURNING\n%s;"
+	return strs.Format(result, tableName(from), where, returns)
 }

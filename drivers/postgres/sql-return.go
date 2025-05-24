@@ -6,6 +6,11 @@ import (
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
+/**
+* sqlJsonObject
+* @param from *jdb.QlFrom
+* @return string
+**/
 func (s *Postgres) sqlJsonObject(from *jdb.QlFrom) string {
 	var selects = []*jdb.Field{}
 	for _, col := range from.Columns {

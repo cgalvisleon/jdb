@@ -5,6 +5,11 @@ import (
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
+/**
+* sqlOrderBy
+* @param ql *jdb.Ql
+* @return string
+**/
 func (s *Postgres) sqlOrderBy(ql *jdb.Ql) string {
 	result := ""
 	for _, fld := range ql.Orders.Asc {

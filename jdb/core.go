@@ -26,12 +26,21 @@ func (s *DB) createCore() error {
 	}
 
 	s.isInit = true
-	s.Save()
-	coreSchema.Save()
-	coreRecords.Save()
-	coreModel.Save()
-	coreSeries.Save()
-	coreRecycling.Save()
+	if err := coreSchema.Save(); err != nil {
+		return err
+	}
+	if err := coreRecords.Save(); err != nil {
+		return err
+	}
+	if err := coreModel.Save(); err != nil {
+		return err
+	}
+	if err := coreSeries.Save(); err != nil {
+		return err
+	}
+	if err := coreRecycling.Save(); err != nil {
+		return err
+	}
 
 	return nil
 }

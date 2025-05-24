@@ -8,11 +8,15 @@ import (
 )
 
 func (s *Command) inserted() error {
+	if len(s.Data) == 0 {
+		return mistake.Newf(MSG_NOT_DATA, s.Command.Str(), s.From.Name)
+	}
+
 	if err := s.prepare(); err != nil {
 		return err
 	}
-	model := s.From
 
+	model := s.From
 	results, err := s.Db.Command(s)
 	if err != nil {
 		for _, event := range model.eventError {
@@ -32,6 +36,11 @@ func (s *Command) inserted() error {
 		return mistake.New(MSG_NOT_INSERT_DATA)
 	}
 
+	s.ResultMap, err = model.getMapResultByPk(s.Result.Result)
+	if err != nil {
+		return err
+	}
+
 	if !s.isSync && model.UseCore {
 		syncChannel := strs.Format("sync:%s", model.Db.Name)
 		event.Publish(syncChannel, et.Json{
@@ -44,12 +53,9 @@ func (s *Command) inserted() error {
 		})
 	}
 
-	for _, result := range s.Result.Result {
-		before := result.ValJson(et.Json{}, "result", "before")
-		after := result.ValJson(et.Json{}, "result", "after")
-
+	for _, after := range s.ResultMap {
 		for _, event := range model.eventsInsert {
-			err := event(s.tx, model, before, after)
+			err := event(s.tx, model, et.Json{}, after)
 			if err != nil {
 				return err
 			}

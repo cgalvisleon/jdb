@@ -34,7 +34,29 @@ func (s TypeColumn) Str() string {
 		return "rollup"
 	}
 
-	return "column"
+	return "attribute"
+}
+
+/**
+* StrsToTypeColumn
+* @param strs string
+* @return TypeColumn
+**/
+func StrsToTypeColumn(strs string) TypeColumn {
+	switch strs {
+	case "column":
+		return TpColumn
+	case "attribute":
+		return TpAtribute
+	case "calc":
+		return TpCalc
+	case "related_to":
+		return TpRelatedTo
+	case "rollup":
+		return TpRollup
+	}
+
+	return TpAtribute
 }
 
 type TypeData int
@@ -44,50 +66,51 @@ const (
 	TypeDataMemo
 	TypeDataShortText
 	TypeDataKey
-	TypeDataState
-	TypeDataInt
 	TypeDataNumber
-	TypeDataQuantity
+	TypeDataInt
 	TypeDataPrecision
-	TypeDataSerie
-	TypeDataIndex
-	TypeDataBool
+	TypeDataDate
 	TypeDataTime
+	TypeDataDateTime
+	TypeDataCheckbox
 	TypeDataBytes
-	/* Special */
+	/* Jsonb */
 	TypeDataObject
-	TypeDataArray
-	TypeDataGeometry
-	TypeDataFullText
 	TypeDataSelect
+	TypeDataMultiSelect
+	TypeDataGeometry
+	/* Fulltext */
+	TypeDataFullText
+	/* Objects */
+	TypeDataState
+	TypeDataUser
+	TypeDataFilesMedia
+	TypeDataUrl
+	TypeDataEmail
+	TypeDataPhone
+	TypeDataAddress
+	TypeDataRelation
+	TypeDataRollup
+	/* None */
 	TypeDataNone
 )
 
 func (s TypeData) DefaultValue() interface{} {
 	switch s {
-	case TypeDataArray:
-		return []interface{}{}
-	case TypeDataBool:
-		return false
-	case TypeDataInt:
-		return 0
-	case TypeDataState:
-		return utility.ACTIVE
 	case TypeDataNumber:
 		return 0.0
-	case TypeDataQuantity:
-		return et.Json{
-			"value": 0.00,
-			"unity": "und",
-		}
-	case TypeDataPrecision:
-		return 0.0
+	case TypeDataInt:
+		return 0
+	case TypeDataCheckbox:
+		return false
+	case TypeDataSelect:
+		return ""
+	case TypeDataMultiSelect:
+		return []string{}
+	case TypeDataMemo:
+		return ""
 	case TypeDataObject:
 		return et.Json{}
-	case TypeDataSerie:
-		return 0
-	case TypeDataIndex:
-		return 0
 	case TypeDataGeometry:
 		return et.Json{
 			"type":        "Point",
@@ -100,47 +123,151 @@ func (s TypeData) DefaultValue() interface{} {
 
 func (s TypeData) Str() string {
 	switch s {
-	case TypeDataArray:
-		return "array"
-	case TypeDataBool:
-		return "bool"
-	case TypeDataInt:
-		return "int"
-	case TypeDataKey:
-		return "key"
-	case TypeDataState:
-		return "state"
-	case TypeDataMemo:
-		return "memo"
-	case TypeDataNumber:
-		return "number"
-	case TypeDataQuantity:
-		return "quantity"
-	case TypeDataPrecision:
-		return "precision"
-	case TypeDataObject:
-		return "object"
-	case TypeDataSerie:
-		return "serie"
-	case TypeDataIndex:
-		return "index"
-	case TypeDataShortText:
-		return "short_text"
 	case TypeDataText:
 		return "text"
+	case TypeDataMemo:
+		return "memo"
+	case TypeDataShortText:
+		return "short-text"
+	case TypeDataKey:
+		return "key"
+	case TypeDataNumber:
+		return "number"
+	case TypeDataInt:
+		return "int"
+	case TypeDataPrecision:
+		return "precision"
+	case TypeDataDate:
+		return "date"
 	case TypeDataTime:
 		return "time"
+	case TypeDataDateTime:
+		return "date-time"
 	case TypeDataBytes:
 		return "bytes"
-	case TypeDataGeometry:
-		return "geometry"
+	case TypeDataObject:
+		return "object"
 	case TypeDataFullText:
-		return "full_text"
+		return "full-text"
 	case TypeDataSelect:
 		return "select"
+	case TypeDataMultiSelect:
+		return "multi-select"
+	case TypeDataGeometry:
+		return "location"
+	case TypeDataCheckbox:
+		return "checkbox"
+	case TypeDataState:
+		return "status"
+	case TypeDataUser:
+		return "person"
+	case TypeDataFilesMedia:
+		return "files-media"
+	case TypeDataUrl:
+		return "url"
+	case TypeDataEmail:
+		return "email"
+	case TypeDataPhone:
+		return "phone"
+	case TypeDataAddress:
+		return "address"
+	case TypeDataRelation:
+		return "relation"
+	case TypeDataRollup:
+		return "rollup"
 	default:
-		return "text"
+		return "none"
 	}
+}
+
+func StrsToTypeData(strs string) TypeData {
+	switch strs {
+	case "text":
+		return TypeDataText
+	case "memo":
+		return TypeDataMemo
+	case "number":
+		return TypeDataNumber
+	case "select":
+		return TypeDataSelect
+	case "multi-select":
+		return TypeDataMultiSelect
+	case "date":
+		return TypeDataDate
+	case "time":
+		return TypeDataTime
+	case "date-time":
+		return TypeDataDateTime
+	case "checkbox":
+		return TypeDataCheckbox
+	case "status":
+		return TypeDataState
+	case "person":
+		return TypeDataUser
+	case "files-media":
+		return TypeDataFilesMedia
+	case "url":
+		return TypeDataUrl
+	case "email":
+		return TypeDataEmail
+	case "phone":
+		return TypeDataPhone
+	case "address":
+		return TypeDataAddress
+	case "location":
+		return TypeDataGeometry
+	case "relation":
+		return TypeDataRelation
+	case "rollup":
+		return TypeDataRollup
+	}
+
+	return TypeDataText
+}
+
+func StrToKindType(strs string) (TypeColumn, TypeData) {
+	switch strs {
+	case "text":
+		return TpAtribute, TypeDataText
+	case "memo":
+		return TpAtribute, TypeDataMemo
+	case "number":
+		return TpAtribute, TypeDataNumber
+	case "select":
+		return TpAtribute, TypeDataSelect
+	case "multi-select":
+		return TpAtribute, TypeDataMultiSelect
+	case "date":
+		return TpAtribute, TypeDataDate
+	case "time":
+		return TpAtribute, TypeDataTime
+	case "date-time":
+		return TpAtribute, TypeDataDateTime
+	case "checkbox":
+		return TpAtribute, TypeDataCheckbox
+	case "status":
+		return TpColumn, TypeDataState
+	case "person":
+		return TpColumn, TypeDataUser
+	case "files-media":
+		return TpColumn, TypeDataFilesMedia
+	case "url":
+		return TpColumn, TypeDataUrl
+	case "email":
+		return TpColumn, TypeDataEmail
+	case "phone":
+		return TpColumn, TypeDataPhone
+	case "address":
+		return TpAtribute, TypeDataAddress
+	case "location":
+		return TpColumn, TypeDataGeometry
+	case "relation":
+		return TpRelatedTo, TypeDataRelation
+	case "rollup":
+		return TpRollup, TypeDataRollup
+	}
+
+	return TpAtribute, TypeDataText
 }
 
 type ColumnField string
@@ -149,7 +276,7 @@ const (
 	PRIMARYKEY    = "id"
 	PK            = PRIMARYKEY
 	KEY           = PRIMARYKEY
-	INDEX         = "index"
+	INDEX         = "idx"
 	PROJECT_ID    = "project_id"
 	CREATED_AT    = "created_at"
 	UPDATED_AT    = "updated_at"
@@ -181,15 +308,15 @@ var (
 func (s ColumnField) TypeData() TypeData {
 	switch s {
 	case IndexField:
-		return TypeDataIndex
+		return TypeDataInt
 	case SourceField:
 		return TypeDataObject
 	case ProjectField:
 		return TypeDataKey
 	case CreatedAtField:
-		return TypeDataTime
+		return TypeDataDateTime
 	case UpdatedAtField:
-		return TypeDataTime
+		return TypeDataDateTime
 	case StatusField:
 		return TypeDataState
 	case PrimaryKeyField:
@@ -197,9 +324,9 @@ func (s ColumnField) TypeData() TypeData {
 	case SystemKeyField:
 		return TypeDataKey
 	case CreatedToField:
-		return TypeDataTime
+		return TypeDataUser
 	case UpdatedToField:
-		return TypeDataTime
+		return TypeDataUser
 	case FullTextField:
 		return TypeDataFullText
 	}
@@ -229,6 +356,10 @@ func (s *Relation) GetWhere(from et.Json) et.Json {
 	result := et.Json{}
 	for fkn, pkn := range s.Fk {
 		fk := from.Get(fkn)
+		if fk == nil {
+			continue
+		}
+
 		result[pkn] = et.Json{
 			"eq": fk,
 		}

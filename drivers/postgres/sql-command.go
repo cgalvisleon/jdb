@@ -3,7 +3,6 @@ package postgres
 import (
 	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
-	"github.com/cgalvisleon/et/mistake"
 	"github.com/cgalvisleon/et/strs"
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
@@ -28,20 +27,10 @@ func (s *Postgres) Command(command *jdb.Command) (et.Items, error) {
 		console.Debug(command.Sql)
 	}
 
-	result, err := s.queryTx(command.Tx(), command.Sql)
+	result, err := jdb.QueryTx(command.Tx(), s.db, command.Sql)
 	if err != nil {
 		return et.Items{}, err
 	}
 
 	return result, nil
-}
-
-/**
-* Sync
-* @param command string
-* @param data et.Json
-* @return error
-**/
-func (s *Postgres) Sync(command string, data et.Json) error {
-	return mistake.New(MSG_FUNCION_NOT_FOUND)
 }

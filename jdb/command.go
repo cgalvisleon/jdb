@@ -39,7 +39,7 @@ func (s TypeCommand) Str() string {
 }
 
 type Function func() error
-type DataFunction func(data et.Json) error
+type DataFunction func(data et.Json)
 type DataFunctionTx func(tx *Tx, data et.Json) error
 
 type Command struct {
@@ -54,12 +54,13 @@ type Command struct {
 	Returns      []*Field            `json:"returns"`
 	Sql          string              `json:"sql"`
 	Result       et.Items            `json:"result"`
+	Current      et.Items            `json:"current"`
+	CurrentMap   map[string]et.Json  `json:"current_map"`
+	ResultMap    map[string]et.Json  `json:"result_map"`
 	beforeInsert []DataFunctionTx    `json:"-"`
 	beforeUpdate []DataFunctionTx    `json:"-"`
-	beforeDelete []Function          `json:"-"`
 	afterInsert  []DataFunctionTx    `json:"-"`
 	afterUpdate  []DataFunctionTx    `json:"-"`
-	afterDelete  []Function          `json:"-"`
 	isSync       bool                `json:"-"`
 }
 
@@ -74,18 +75,19 @@ func NewCommand(model *Model, data []et.Json, command TypeCommand) *Command {
 		Command:      command,
 		Db:           model.Db,
 		From:         model,
-		QlWhere:      NewQlWhere(),
 		Data:         data,
 		Values:       make([]map[string]*Field, 0),
 		beforeInsert: []DataFunctionTx{},
 		beforeUpdate: []DataFunctionTx{},
-		beforeDelete: []Function{},
 		afterInsert:  []DataFunctionTx{},
 		afterUpdate:  []DataFunctionTx{},
-		afterDelete:  []Function{},
 		Returns:      []*Field{},
 		Result:       et.Items{},
+		Current:      et.Items{},
+		CurrentMap:   make(map[string]et.Json),
+		ResultMap:    make(map[string]et.Json),
 	}
+	result.QlWhere = newQlWhere(result.validator)
 	result.beforeInsert = append(result.beforeInsert, result.beforeInsertDefault)
 	result.beforeUpdate = append(result.beforeUpdate, result.beforeUpdateDefault)
 
@@ -100,16 +102,6 @@ func NewCommand(model *Model, data []et.Json, command TypeCommand) *Command {
 func (s *Command) setTx(tx *Tx) *Command {
 	s.tx = tx
 
-	return s
-}
-
-/**
-* setSync
-* @param isSync bool
-* @return *Command
-**/
-func (s *Command) setSync() *Command {
-	s.isSync = true
 	return s
 }
 
@@ -131,7 +123,7 @@ func (s *Command) Describe() et.Json {
 	}
 
 	result["command"] = s.Command.Str()
-	result["wheres"] = s.listWheres()
+	result["wheres"] = s.getWheres()
 	result["values"] = values
 
 	return result
@@ -139,11 +131,11 @@ func (s *Command) Describe() et.Json {
 
 /**
 * getField
-* @param name string, isCreate bool
+* @param name string
 * @return *Field
 **/
-func (s *Command) getField(name string, isCreate bool) *Field {
-	return s.From.getField(name, isCreate)
+func (s *Command) getField(name string) *Field {
+	return s.From.getField(name, false)
 }
 
 /**
@@ -156,7 +148,7 @@ func (s *Command) validator(val interface{}) interface{} {
 	case string:
 		if strings.HasPrefix(v, ":") {
 			v = strings.TrimPrefix(v, ":")
-			field := s.getField(v, false)
+			field := s.getField(v)
 			if field != nil {
 				return field
 			}
@@ -172,11 +164,25 @@ func (s *Command) validator(val interface{}) interface{} {
 		v = strings.Replace(v, `\:`, `:`, 1)
 		v = strings.Replace(v, `\\$`, `\$`, 1)
 		v = strings.Replace(v, `\$`, `$`, 1)
-		field := s.getField(v, false)
+		field := s.getField(v)
 		if field != nil {
 			return field
 		}
 
+		return v
+	case *Field:
+		return v
+	case Field:
+		return v
+	case *Column:
+		return v.GetField()
+	case Column:
+		return v.GetField()
+	case []interface{}:
+		return v
+	case []string:
+		return v
+	case []et.Json:
 		return v
 	default:
 		if v == nil {
@@ -196,8 +202,7 @@ func (s *Command) setWheres(wheres et.Json) *Command {
 	and := func(vals []et.Json) {
 		for _, val := range vals {
 			for key := range val {
-				s.and(key)
-				s.setValue(val.Json(key), s.validator)
+				s.And(key).setValue(val.Json(key))
 			}
 		}
 	}
@@ -205,8 +210,7 @@ func (s *Command) setWheres(wheres et.Json) *Command {
 	or := func(vals []et.Json) {
 		for _, val := range vals {
 			for key := range val {
-				s.or(key)
-				s.setValue(val.Json(key), s.validator)
+				s.Or(key).setValue(val.Json(key))
 			}
 		}
 	}
@@ -216,7 +220,7 @@ func (s *Command) setWheres(wheres et.Json) *Command {
 			continue
 		}
 
-		s.Where(key).setValue(wheres.Json(key), s.validator)
+		s.Where(key).setValue(wheres.Json(key))
 	}
 
 	for key := range wheres {
@@ -231,12 +235,4 @@ func (s *Command) setWheres(wheres et.Json) *Command {
 	}
 
 	return s
-}
-
-/**
-* listWheres
-* @return et.Json
-**/
-func (s *Command) listWheres() et.Json {
-	return s.QlWhere.listWheres()
 }

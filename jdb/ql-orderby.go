@@ -16,7 +16,7 @@ type QlOrder struct {
 **/
 func (s *Ql) orderBy(asc bool, columns ...string) *Ql {
 	for _, col := range columns {
-		field := s.getField(col, false)
+		field := s.getField(col)
 		if field != nil {
 			if asc {
 				s.Orders.Asc = append(s.Orders.Asc, field)
@@ -81,10 +81,10 @@ func (s *Ql) setOrderBy(orders et.Json) *Ql {
 }
 
 /**
-* listOrders
+* getOrders
 * @return []string
 **/
-func (s *Ql) listOrders() et.Json {
+func (s *Ql) getOrders() et.Json {
 	asc := []string{}
 	desc := []string{}
 	for _, sel := range s.Orders.Asc {

@@ -22,15 +22,20 @@ func (s *SqlLite) connectTo(connStr string) (*sql.DB, error) {
 	return db, nil
 }
 
-func (s *SqlLite) connect(params et.Json) error {
+/**
+* Connect
+* @param params et.Json
+* @return error
+**/
+func (s *SqlLite) Connect(params et.Json) (*sql.DB, error) {
 	database := params.String("database")
 	if database == "" {
-		return mistake.New("database is required")
+		return nil, mistake.New("database is required")
 	}
 
 	db, err := s.connectTo(database)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	s.db = db
@@ -42,21 +47,7 @@ func (s *SqlLite) connect(params et.Json) error {
 
 	console.Logf(s.name, `Connected to %s:%s`, params.Str("host"), database)
 
-	return nil
-}
-
-/**
-* Connect
-* @param params et.Json
-* @return error
-**/
-func (s *SqlLite) Connect(params et.Json) error {
-	err := s.connect(params)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return s.db, nil
 }
 
 /**

@@ -12,14 +12,26 @@ type QlHaving struct {
 }
 
 /**
+* NewQlHaving
+* @param ql *Ql
+* @return *QlHaving
+**/
+func NewQlHaving(ql *Ql) *QlHaving {
+	return &QlHaving{
+		Ql:      ql,
+		QlWhere: newQlWhere(ql.validator),
+	}
+}
+
+/**
 * Having
 * @param val string
 * @return *QlHaving
 **/
 func (s *QlHaving) And(val string) *QlHaving {
-	field := s.Ql.getColumnField(val, true)
+	field := s.Ql.getColumnField(val)
 	if field != nil {
-		s.and(field)
+		s.setAnd(val)
 	}
 
 	return s
@@ -31,9 +43,9 @@ func (s *QlHaving) And(val string) *QlHaving {
 * @return *QlHaving
 **/
 func (s *QlHaving) Or(val string) *QlHaving {
-	field := s.Ql.getColumnField(val, true)
+	field := s.Ql.getColumnField(val)
 	if field != nil {
-		s.or(field)
+		s.setOr(val)
 	}
 
 	return s
@@ -63,9 +75,9 @@ func (s *QlHaving) Data(fields ...interface{}) *Ql {
 * @return *QlWhere
 **/
 func (s *Ql) Having(val string) *QlHaving {
-	field := s.getColumnField(val, true)
+	field := s.getColumnField(val)
 	if field != nil {
-		s.Havings.where(field)
+		s.Havings.Where(field)
 	}
 
 	return s.Havings
@@ -84,8 +96,8 @@ func (s *Ql) setHavings(havings et.Json) *Ql {
 	and := func(vals []et.Json) {
 		for _, val := range vals {
 			for key := range val {
-				s.Havings.and(key)
-				s.Havings.setValue(val.Json(key), s.validator)
+				s.Havings.setAnd(key)
+				s.Havings.setValue(val.Json(key))
 			}
 		}
 	}
@@ -93,8 +105,8 @@ func (s *Ql) setHavings(havings et.Json) *Ql {
 	or := func(vals []et.Json) {
 		for _, val := range vals {
 			for key := range val {
-				s.Havings.or(key)
-				s.Havings.setValue(val.Json(key), s.validator)
+				s.Havings.setOr(key)
+				s.Havings.setValue(val.Json(key))
 			}
 		}
 	}
@@ -104,7 +116,7 @@ func (s *Ql) setHavings(havings et.Json) *Ql {
 			continue
 		}
 
-		s.Having(key).setValue(havings.Json(key), s.validator)
+		s.Having(key).setValue(havings.Json(key))
 	}
 
 	for key := range havings {
@@ -122,9 +134,9 @@ func (s *Ql) setHavings(havings et.Json) *Ql {
 }
 
 /**
-* listHavings
+* getHavings
 * @return et.Json
 **/
-func (s *Ql) listHavings() et.Json {
-	return s.Havings.listWheres()
+func (s *Ql) getHavings() et.Json {
+	return s.Havings.getWheres()
 }

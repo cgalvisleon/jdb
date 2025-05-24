@@ -6,6 +6,11 @@ import (
 	"github.com/cgalvisleon/et/mistake"
 )
 
+/**
+* GrantPrivileges
+* @param username, database string
+* @return error
+**/
 func (s *Postgres) GrantPrivileges(username, database string) error {
 	/* Grant privileges */
 	grantDatabase := fmt.Sprintf("GRANT CONNECT ON DATABASE %s TO %s;", database, username)
@@ -65,6 +70,11 @@ func (s *Postgres) CreateUser(username, password, confirmation string) error {
 	return nil
 }
 
+/**
+* ChangePassword
+* @param username, password, confirmation string
+* @return error
+**/
 func (s *Postgres) ChangePassword(username, password, confirmation string) error {
 	if password != confirmation {
 		return mistake.New("password do not match!")
@@ -79,6 +89,11 @@ func (s *Postgres) ChangePassword(username, password, confirmation string) error
 	return nil
 }
 
+/**
+* DeleteUser
+* @param username string
+* @return error
+**/
 func (s *Postgres) DeleteUser(username string) error {
 	query := fmt.Sprintf("DROP ROLE IF EXISTS %s;", username)
 	_, err := s.db.Exec(query)

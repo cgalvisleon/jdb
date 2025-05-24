@@ -9,6 +9,12 @@ import (
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
+/**
+* existTable
+* @param schema string
+* @param name string
+* @return bool, error
+**/
 func (s *Postgres) existTable(schema, name string) (bool, error) {
 	sql := `
 	SELECT EXISTS(
@@ -17,7 +23,7 @@ func (s *Postgres) existTable(schema, name string) (bool, error) {
 		WHERE UPPER(table_schema) = UPPER($1)
 		AND UPPER(table_name) = UPPER($2));`
 
-	items, err := s.queryTx(nil, sql, schema, name)
+	items, err := jdb.QueryTx(nil, s.db, sql, schema, name)
 	if err != nil {
 		return false, err
 	}
@@ -29,56 +35,81 @@ func (s *Postgres) existTable(schema, name string) (bool, error) {
 	return items.Bool(0, "exists"), nil
 }
 
+/**
+* typeData
+* @param tp jdb.TypeData
+* @return interface{}
+**/
 func (s *Postgres) typeData(tp jdb.TypeData) interface{} {
 	switch tp {
-	case jdb.TypeDataArray:
-		return "JSONB"
-	case jdb.TypeDataBool:
-		return "BOOLEAN"
-	case jdb.TypeDataInt:
-		return "INTEGER"
-	case jdb.TypeDataKey:
-		return "VARCHAR(80)"
-	case jdb.TypeDataState:
-		return "VARCHAR(20)"
-	case jdb.TypeDataMemo:
-		return "TEXT"
-	case jdb.TypeDataNumber:
-		return "DECIMAL(18,2)"
-	case jdb.TypeDataQuantity:
-		return "JSONB"
-	case jdb.TypeDataPrecision:
-		return "DOUBLE PRECISION"
-	case jdb.TypeDataObject:
-		return "JSONB"
-	case jdb.TypeDataSerie:
-		return "BIGINT"
-	case jdb.TypeDataIndex:
-		return "BIGINT"
-	case jdb.TypeDataShortText:
-		return "VARCHAR(80)"
 	case jdb.TypeDataText:
 		return "VARCHAR(250)"
+	case jdb.TypeDataMemo:
+		return "TEXT"
+	case jdb.TypeDataShortText:
+		return "VARCHAR(80)"
+	case jdb.TypeDataKey:
+		return "VARCHAR(80)"
+	case jdb.TypeDataNumber:
+		return "DECIMAL(18,2)"
+	case jdb.TypeDataInt:
+		return "BIGINT"
+	case jdb.TypeDataPrecision:
+		return "DOUBLE PRECISION"
+	case jdb.TypeDataDate:
+		return "TIMESTAMP"
 	case jdb.TypeDataTime:
 		return "TIMESTAMP"
+	case jdb.TypeDataDateTime:
+		return "TIMESTAMP"
+	case jdb.TypeDataCheckbox:
+		return "BOOLEAN"
 	case jdb.TypeDataBytes:
 		return "BYTEA"
+	case jdb.TypeDataObject:
+		return "JSONB"
+	case jdb.TypeDataSelect:
+		return "VARCHAR(250)"
+	case jdb.TypeDataMultiSelect:
+		return "JSONB"
 	case jdb.TypeDataGeometry:
 		return "JSONB"
 	case jdb.TypeDataFullText:
 		return "TSVECTOR"
+	case jdb.TypeDataState:
+		return "VARCHAR(80)"
+	case jdb.TypeDataUser:
+		return "VARCHAR(250)"
+	case jdb.TypeDataFilesMedia:
+		return "TEXT"
+	case jdb.TypeDataUrl:
+		return "TEXT"
+	case jdb.TypeDataEmail:
+		return "VARCHAR(250)"
+	case jdb.TypeDataPhone:
+		return "VARCHAR(250)"
+	case jdb.TypeDataAddress:
+		return "TEXT"
+	case jdb.TypeDataRelation:
+		return "VARCHAR(80)"
+	case jdb.TypeDataRollup:
+		return "VARCHAR(80)"
 	default:
 		return "VARCHAR(250)"
 	}
 }
 
+/**
+* strToTypeData
+* @param tp string
+* @param lenght int
+* @return jdb.TypeData
+**/
 func (s *Postgres) strToTypeData(tp string, lenght int) jdb.TypeData {
 	tp = strs.Uppcase(tp)
 	switch tp {
-	case "ARRAY":
-		return jdb.TypeDataArray
 	case "BOOLEAN":
-		return jdb.TypeDataBool
+		return jdb.TypeDataCheckbox
 	case "INTEGER":
 		return jdb.TypeDataInt
 	case "INT4":
@@ -107,11 +138,11 @@ func (s *Postgres) strToTypeData(tp string, lenght int) jdb.TypeData {
 	case "JSONB":
 		return jdb.TypeDataObject
 	case "BIGINT":
-		return jdb.TypeDataIndex
+		return jdb.TypeDataInt
 	case "VARCHAR(250)":
 		return jdb.TypeDataText
 	case "TIMESTAMP":
-		return jdb.TypeDataTime
+		return jdb.TypeDataDateTime
 	case "BYTEA":
 		return jdb.TypeDataBytes
 	case "TSVECTOR":
@@ -121,51 +152,70 @@ func (s *Postgres) strToTypeData(tp string, lenght int) jdb.TypeData {
 	}
 }
 
+/**
+* defaultValue
+* @param tp jdb.TypeData
+* @return interface{}
+**/
 func (s *Postgres) defaultValue(tp jdb.TypeData) interface{} {
 	switch tp {
-	case jdb.TypeDataArray:
-		return utility.Quote([]string{})
-	case jdb.TypeDataBool:
-		return utility.Quote("FALSE")
-	case jdb.TypeDataInt:
-		return 0
-	case jdb.TypeDataKey:
-		return utility.Quote("-1")
-	case jdb.TypeDataState:
-		return utility.Quote(utility.ACTIVE)
-	case jdb.TypeDataMemo:
-		return utility.Quote("")
 	case jdb.TypeDataNumber:
 		return 0.0
-	case jdb.TypeDataQuantity:
-		return utility.Quote(et.Json{
-			"value": 0.00,
-			"unity": "und",
-		})
-	case jdb.TypeDataObject:
-		return utility.Quote(et.Json{})
-	case jdb.TypeDataSerie:
+	case jdb.TypeDataInt:
 		return 0
-	case jdb.TypeDataIndex:
-		return 0
-	case jdb.TypeDataShortText:
-		return utility.Quote("")
-	case jdb.TypeDataText:
-		return utility.Quote("")
+	case jdb.TypeDataPrecision:
+		return 0.0
+	case jdb.TypeDataDate:
+		return utility.Quote("NOW()")
 	case jdb.TypeDataTime:
 		return utility.Quote("NOW()")
+	case jdb.TypeDataDateTime:
+		return utility.Quote("NOW()")
+	case jdb.TypeDataCheckbox:
+		return utility.Quote(false)
 	case jdb.TypeDataBytes:
 		return utility.Quote("")
+	case jdb.TypeDataObject:
+		return utility.Quote(et.Json{})
+	case jdb.TypeDataSelect:
+		return utility.Quote("")
+	case jdb.TypeDataMultiSelect:
+		return utility.Quote([]et.Json{})
 	case jdb.TypeDataGeometry:
 		return utility.Quote(et.Json{
 			"type":        "Point",
 			"coordinates": []float64{0, 0},
 		})
+	case jdb.TypeDataFullText:
+		return utility.Quote("")
+	case jdb.TypeDataState:
+		return utility.Quote(utility.ACTIVE)
+	case jdb.TypeDataUser:
+		return utility.Quote("")
+	case jdb.TypeDataFilesMedia:
+		return utility.Quote("")
+	case jdb.TypeDataUrl:
+		return utility.Quote("")
+	case jdb.TypeDataEmail:
+		return utility.Quote("")
+	case jdb.TypeDataPhone:
+		return utility.Quote("")
+	case jdb.TypeDataAddress:
+		return utility.Quote("")
+	case jdb.TypeDataRelation:
+		return utility.Quote("")
+	case jdb.TypeDataRollup:
+		return utility.Quote("")
 	default:
 		return utility.Quote("")
 	}
 }
 
+/**
+* ddlTable
+* @param model *jdb.Model
+* @return string
+**/
 func (s *Postgres) ddlTable(model *jdb.Model) string {
 	var columnsDef string
 	for _, column := range model.Columns {
@@ -189,17 +239,29 @@ func (s *Postgres) ddlTable(model *jdb.Model) string {
 			columnsDef = strs.Append(columnsDef, def, ",")
 		}
 	}
-	result := strs.Format("\nCREATE TABLE IF NOT EXISTS %s (%s\n);", table(model), columnsDef)
+	result := strs.Format("\nCREATE TABLE IF NOT EXISTS %s (%s\n);", tableName(model), columnsDef)
 
 	return result
 }
 
+/**
+* ddlTableRename
+* @param oldName string
+* @param newName string
+* @return string
+**/
 func (s *Postgres) ddlTableRename(oldName, newName string) string {
 	result := strs.Format(`ALTER TABLE %s RENAME TO %s;`, oldName, newName)
 
 	return result
 }
 
+/**
+* ddlTableInsertTo
+* @param model *jdb.Model
+* @param tableOrigin string
+* @return string
+**/
 func (s *Postgres) ddlTableInsertTo(model *jdb.Model, tableOrigin string) string {
 	fields := ""
 	for _, column := range model.Columns {
@@ -207,11 +269,16 @@ func (s *Postgres) ddlTableInsertTo(model *jdb.Model, tableOrigin string) string
 			fields = strs.Append(fields, strs.Format("%s", column.Name), ", ")
 		}
 	}
-	result := strs.Format("INSERT INTO %s (%s)\nSELECT %s FROM %s;", table(model), fields, fields, tableOrigin)
+	result := strs.Format("INSERT INTO %s (%s)\nSELECT %s FROM %s;", tableName(model), fields, fields, tableOrigin)
 
 	return result
 }
 
+/**
+* ddlTableDrop
+* @param table string
+* @return string
+**/
 func (s *Postgres) ddlTableDrop(table string) string {
 	result := strs.Format("DROP TABLE IF EXISTS %s CASCADE;", table)
 

@@ -5,6 +5,11 @@ import (
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
+/**
+* sqlGroupBy
+* @param ql *jdb.Ql
+* @return string
+**/
 func (s *Postgres) sqlGroupBy(ql *jdb.Ql) string {
 	result := ""
 	columns := s.sqlColumns(ql.Groups)

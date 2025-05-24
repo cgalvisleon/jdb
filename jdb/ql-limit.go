@@ -7,16 +7,6 @@ import (
 )
 
 /**
-* Page
-* @param page int
-* @return *Ql
-**/
-func (s *Ql) Page(val int) *Ql {
-	s.Sheet = val
-	return s
-}
-
-/**
 * List
 * @param page, rows int
 * @return et.List, error
@@ -38,6 +28,16 @@ func (s *Ql) List(page, rows int) (et.List, error) {
 	}
 
 	return result.ToList(all, s.Sheet, s.Limit), nil
+}
+
+/**
+* Page
+* @param page int
+* @return *Ql
+**/
+func (s *Ql) Page(val int) *Ql {
+	s.Sheet = val
+	return s
 }
 
 /**
@@ -116,10 +116,10 @@ func (s *Ql) setLimitTx(tx *Tx, limit int) (et.Json, error) {
 }
 
 /**
-* listLimit
+* getLimit
 * @return interface{}
 **/
-func (s *Ql) listLimit() interface{} {
+func (s *Ql) getLimit() interface{} {
 	if s.Sheet > 0 {
 		return et.Json{
 			"limit": s.Limit,

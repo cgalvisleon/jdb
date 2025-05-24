@@ -22,7 +22,7 @@ func (s *Postgres) Count(ql *jdb.Ql) (int, error) {
 		console.Debug(ql.Sql)
 	}
 
-	result, err := s.query(ql.Sql)
+	result, err := jdb.Query(s.db, ql.Sql)
 	if err != nil {
 		return 0, err
 	}

@@ -1,9 +1,9 @@
 package jdb
 
 import (
+	"database/sql"
 	"encoding/json"
 	"slices"
-	"strings"
 	"time"
 
 	"github.com/cgalvisleon/et/console"
@@ -15,11 +15,6 @@ import (
 	"github.com/cgalvisleon/et/timezone"
 )
 
-func Name(name string) string {
-	name = strings.ToLower(name)
-	return strs.ReplaceAll(name, []string{" "}, "_")
-}
-
 type DB struct {
 	CreatedAt   time.Time `json:"created_at"`
 	UpdateAt    time.Time `json:"update_at"`
@@ -28,6 +23,7 @@ type DB struct {
 	Description string    `json:"description"`
 	UseCore     bool      `json:"use_core"`
 	driver      Driver    `json:"-"`
+	db          *sql.DB   `json:"-"`
 	schemas     []*Schema `json:"-"`
 	models      []*Model  `json:"-"`
 	isInit      bool      `json:"-"`
@@ -48,7 +44,6 @@ func NewDatabase(name, driver string) (*DB, error) {
 		return nil, mistake.Newf(MSG_DRIVER_NOT_FOUND, driver)
 	}
 
-	name = Name(name)
 	idx := slices.IndexFunc(conn.DBS, func(e *DB) bool { return e.Name == name })
 	if idx != -1 {
 		return conn.DBS[idx], nil
@@ -185,7 +180,18 @@ func (s *DB) Conected(params et.Json) error {
 		return mistake.New(MSG_DRIVER_NOT_DEFINED)
 	}
 
-	return s.driver.Connect(params)
+	if s.db != nil {
+		return nil
+	}
+
+	db, err := s.driver.Connect(params)
+	if err != nil {
+		return err
+	}
+
+	s.db = db
+
+	return nil
 }
 
 /**
@@ -224,7 +230,7 @@ func (s *DB) GetSchema(name string) *Schema {
 		return s.schemas[idx]
 	}
 
-	return nil
+	return NewSchema(s, name)
 }
 
 /**
@@ -236,6 +242,13 @@ func (s *DB) GetModel(name string) *Model {
 	idx := slices.IndexFunc(s.models, func(e *Model) bool { return e.Name == name })
 	if idx != -1 {
 		return s.models[idx]
+	}
+
+	list := strs.Split(name, ".")
+	if len(list) > 1 {
+		return NewModel(s.GetSchema(list[0]), list[1], 1)
+	} else if len(list) == 1 {
+		return NewModel(s.GetSchema("data"), name, 1)
 	}
 
 	return nil
@@ -268,19 +281,6 @@ func (s *DB) getTableModel(name string) (*Model, error) {
 	}
 
 	return model, nil
-}
-
-/**
-* SetMain
-* @param params et.Json
-* @return error
-**/
-func (s *DB) SetMain(params et.Json) error {
-	if s.driver == nil {
-		return mistake.New(MSG_DRIVER_NOT_DEFINED)
-	}
-
-	return s.driver.SetMain(params)
 }
 
 /**
@@ -393,6 +393,19 @@ func (s *DB) LoadModel(model *Model) error {
 }
 
 /**
+* MutateModel
+* @param model *Model
+* @return error
+**/
+func (s *DB) MutateModel(model *Model) error {
+	if s.driver == nil {
+		return mistake.New(MSG_DRIVER_NOT_DEFINED)
+	}
+
+	return s.driver.MutateModel(model)
+}
+
+/**
 * DropModel
 * @param model *Model
 **/
@@ -485,38 +498,6 @@ func (s *DB) Sync(command string, data et.Json) error {
 }
 
 /**
-* QueryTx
-* @param tx *Tx, sql string, arg ...any
-* @return et.Items, error
-**/
-func (s *DB) QueryTx(tx *Tx, sql string, arg ...any) (et.Items, error) {
-	return s.driver.QueryTx(tx, sql, arg...)
-}
-
-/**
-* Query
-* @param sql string, arg ...any
-* @return et.Items, error
-**/
-func (s *DB) Query(sql string, arg ...any) (et.Items, error) {
-	return s.driver.Query(sql, arg...)
-}
-
-/**
-* One
-* @param sql string, arg ...any
-* @return et.Item, error
-**/
-func (s *DB) One(sql string, arg ...any) (et.Item, error) {
-	result, err := s.Query(sql, arg...)
-	if err != nil {
-		return et.Item{}, err
-	}
-
-	return result.First(), nil
-}
-
-/**
 * From
 * @param name string
 * @return *Ql, error
@@ -558,4 +539,31 @@ func (s *DB) EventSync() {
 			s.Sync("delete", data)
 		}
 	})
+}
+
+/**
+* Query
+* @param sql string, arg ...any
+* @return et.Items, error
+**/
+func (s *DB) Query(sql string, arg ...any) (et.Items, error) {
+	if s.db == nil {
+		return et.Items{}, mistake.New(MSG_DATABASE_NOT_CONNECTED)
+	}
+
+	return Query(s.db, sql, arg...)
+}
+
+/**
+* One
+* @param sql string, arg ...any
+* @return et.Item, error
+**/
+func (s *DB) One(sql string, arg ...any) (et.Item, error) {
+	result, err := s.Query(sql, arg...)
+	if err != nil {
+		return et.Item{}, err
+	}
+
+	return result.First(), nil
 }

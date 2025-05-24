@@ -6,10 +6,7 @@ package jdb
 * @return *Command
 **/
 func (s *Command) Where(val string) *Command {
-	field := s.getField(val, false)
-	if field != nil {
-		s.where(field)
-	}
+	s.QlWhere.Where(val)
 
 	return s
 }
@@ -20,10 +17,7 @@ func (s *Command) Where(val string) *Command {
 * @return *Command
 **/
 func (s *Command) And(val string) *Command {
-	field := s.getField(val, false)
-	if field != nil {
-		s.and(field)
-	}
+	s.QlWhere.And(val)
 
 	return s
 }
@@ -34,10 +28,7 @@ func (s *Command) And(val string) *Command {
 * @return *Command
 **/
 func (s *Command) Or(val string) *Command {
-	field := s.getField(val, false)
-	if field != nil {
-		s.or(field)
-	}
+	s.QlWhere.Or(val)
 
 	return s
 }
@@ -48,10 +39,7 @@ func (s *Command) Or(val string) *Command {
 * @return *Command
 **/
 func (s *Command) Eq(val interface{}) *Command {
-	val = s.validator(val)
-	if val != nil {
-		s.QlWhere.Eq(val)
-	}
+	s.QlWhere.Eq(val)
 
 	return s
 }
@@ -62,10 +50,7 @@ func (s *Command) Eq(val interface{}) *Command {
 * @return *Command
 **/
 func (s *Command) Neg(val interface{}) *Command {
-	val = s.validator(val)
-	if val != nil {
-		s.QlWhere.Neg(val)
-	}
+	s.QlWhere.Neg(val)
 
 	return s
 }
@@ -87,10 +72,7 @@ func (s *Command) In(val ...any) *Command {
 * @return *Command
 **/
 func (s *Command) Like(val interface{}) *Command {
-	val = s.validator(val)
-	if val != nil {
-		s.QlWhere.Like(val)
-	}
+	s.QlWhere.Like(val)
 
 	return s
 }
@@ -101,10 +83,7 @@ func (s *Command) Like(val interface{}) *Command {
 * @return *Command
 **/
 func (s *Command) More(val interface{}) *Command {
-	val = s.validator(val)
-	if val != nil {
-		s.QlWhere.More(val)
-	}
+	s.QlWhere.More(val)
 
 	return s
 }
@@ -115,10 +94,7 @@ func (s *Command) More(val interface{}) *Command {
 * @return *Command
 **/
 func (s *Command) Less(val interface{}) *Command {
-	val = s.validator(val)
-	if val != nil {
-		s.QlWhere.Less(val)
-	}
+	s.QlWhere.Less(val)
 
 	return s
 }
@@ -129,10 +105,7 @@ func (s *Command) Less(val interface{}) *Command {
 * @return *Command
 **/
 func (s *Command) MoreEq(val interface{}) *Command {
-	val = s.validator(val)
-	if val != nil {
-		s.QlWhere.MoreEq(val)
-	}
+	s.QlWhere.MoreEq(val)
 
 	return s
 }
@@ -143,10 +116,7 @@ func (s *Command) MoreEq(val interface{}) *Command {
 * @return *Command
 **/
 func (s *Command) LessEq(val interface{}) *Command {
-	val = s.validator(val)
-	if val != nil {
-		s.QlWhere.LessEq(val)
-	}
+	s.QlWhere.LessEq(val)
 
 	return s
 }
@@ -158,10 +128,7 @@ func (s *Command) LessEq(val interface{}) *Command {
 * @return *Command
 **/
 func (s *Command) Between(vals interface{}) *Command {
-	vals = s.validator(vals)
-	if vals != nil {
-		s.QlWhere.Between(vals)
-	}
+	s.QlWhere.Between(vals)
 
 	return s
 }
@@ -198,23 +165,23 @@ func (s *Command) NotNull() *Command {
 }
 
 /**
-* History
-* @param v bool
-* @return *Command
-**/
-func (s *Command) History(v bool) *Command {
-	s.QlWhere.History(v)
-
-	return s
-}
-
-/**
 * Debug
 * @param v bool
 * @return *Command
 **/
 func (s *Command) Debug() *Command {
 	s.QlWhere.Debug()
+
+	return s
+}
+
+/**
+* setDebug
+* @param debug bool
+* @return *Command
+**/
+func (s *Command) setDebug(debug bool) *Command {
+	s.QlWhere.setDebug(debug)
 
 	return s
 }

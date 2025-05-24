@@ -18,7 +18,6 @@ func (s *Command) sync() error {
 	item, err := model.
 		Update(s.Data[0]).
 		Where(SYSID).Eq(id).
-		setSync().
 		OneTx(s.tx)
 	if err != nil {
 		return err
@@ -30,7 +29,6 @@ func (s *Command) sync() error {
 
 	_, err = model.
 		Insert(s.Data[0]).
-		setSync().
 		ExecTx(s.tx)
 	if err != nil {
 		return err

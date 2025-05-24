@@ -17,26 +17,19 @@ func (s *Ql) setSelect(field *Field) *Ql {
 	}
 
 	if slices.Contains([]TypeColumn{TpColumn, TpAtribute}, field.Column.TypeColumn) {
-		idx := slices.IndexFunc(s.Selects, func(e *Field) bool { return e.asField() == field.asField() })
+		idx := slices.IndexFunc(s.Selects, func(e *Field) bool { return e == field })
 		if idx == -1 {
 			s.Selects = append(s.Selects, field)
 		}
-	} else if slices.Contains([]TypeColumn{TpCalc}, field.Column.TypeColumn) {
-		idx := slices.IndexFunc(s.Details, func(e *Field) bool { return e.asField() == field.asField() })
-		if idx == -1 {
-			s.Details = append(s.Details, field)
+	} else {
+		if slices.Contains([]TypeColumn{TpRollup}, field.Column.TypeColumn) {
+			rollup := field.Column.Rollup
+			for _, name := range rollup.Fields {
+				field.Select = append(field.Select, name)
+			}
 		}
-	} else if slices.Contains([]TypeColumn{TpRelatedTo}, field.Column.TypeColumn) {
-		idx := slices.IndexFunc(s.Details, func(e *Field) bool { return e.asField() == field.asField() })
-		if idx == -1 {
-			s.Details = append(s.Details, field)
-		}
-	} else if slices.Contains([]TypeColumn{TpRollup}, field.Column.TypeColumn) {
-		rollup := field.Column.Rollup
-		for _, name := range rollup.Fields {
-			field.Select = append(field.Select, name)
-		}
-		idx := slices.IndexFunc(s.Details, func(e *Field) bool { return e.Column.Rollup == field.Column.Rollup })
+
+		idx := slices.IndexFunc(s.Details, func(e *Field) bool { return e == field })
 		if idx == -1 {
 			s.Details = append(s.Details, field)
 		}
@@ -53,7 +46,7 @@ func (s *Ql) setSelect(field *Field) *Ql {
 func (s *Ql) Select(fields ...interface{}) *Ql {
 	setRelationTo := func(v map[string]interface{}) {
 		for key := range v {
-			field := s.getField(key, true)
+			field := s.getField(key)
 			if field.Column.TypeColumn == TpRelatedTo {
 				s.setDetail(v)
 			}
@@ -63,7 +56,7 @@ func (s *Ql) Select(fields ...interface{}) *Ql {
 	for _, name := range fields {
 		switch v := name.(type) {
 		case string:
-			field := s.getField(v, true)
+			field := s.getField(v)
 			s.setSelect(field)
 		case et.Json:
 			setRelationTo(v)
@@ -125,10 +118,23 @@ func (s *Ql) setSelects(fields ...interface{}) *Ql {
 }
 
 /**
-* ListSelects
+* setHidden
+* @param columns ...*Column
+* @return *Ql
+**/
+func (s *Ql) setHidden(columns ...*Column) *Ql {
+	for _, column := range columns {
+		s.Hiddens = append(s.Hiddens, column.Name)
+	}
+
+	return s
+}
+
+/**
+* getSelects
 * @return []string
 **/
-func (s *Ql) listSelects() []string {
+func (s *Ql) getSelects() []string {
 	result := []string{}
 	for _, sel := range s.Selects {
 		result = append(result, sel.asField())

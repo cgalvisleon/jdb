@@ -83,9 +83,9 @@ func (s *QlJoin) Describe() et.Json {
 * @return *QlJoin
 **/
 func (s *QlJoin) On(val string) *QlJoin {
-	field := s.Ql.getField(val, false)
+	field := s.Ql.getField(val)
 	if field != nil {
-		s.where(field)
+		s.setWhere(field)
 	}
 
 	return s
@@ -99,7 +99,7 @@ func (s *QlJoin) On(val string) *QlJoin {
 func (s *QlJoin) And(val interface{}) *QlJoin {
 	val = s.Ql.validator(val)
 	if val != nil {
-		s.and(val)
+		s.setAnd(val)
 	}
 
 	return s
@@ -113,7 +113,7 @@ func (s *QlJoin) And(val interface{}) *QlJoin {
 func (s *QlJoin) Or(val interface{}) *QlJoin {
 	val = s.Ql.validator(val)
 	if val != nil {
-		s.or(val)
+		s.setOr(val)
 	}
 
 	return s
@@ -145,7 +145,7 @@ func (s *QlJoin) Data(fields ...interface{}) *Ql {
 func (s *Ql) Join(model *Model) *QlJoin {
 	with := s.addFrom(model)
 	result := &QlJoin{
-		QlWhere:  NewQlWhere(),
+		QlWhere:  newQlWhere(s.validator),
 		Ql:       s,
 		TypeJoin: InnerJoin,
 		With:     with,
@@ -205,8 +205,8 @@ func (s *QlJoin) setWheres(wheres et.Json) *QlJoin {
 	and := func(vals []et.Json) {
 		for _, val := range vals {
 			for key := range val {
-				s.and(key)
-				s.setValue(val.Json(key), s.Ql.validator)
+				s.setAnd(key)
+				s.setValue(val.Json(key))
 			}
 		}
 	}
@@ -214,8 +214,8 @@ func (s *QlJoin) setWheres(wheres et.Json) *QlJoin {
 	or := func(vals []et.Json) {
 		for _, val := range vals {
 			for key := range val {
-				s.or(key)
-				s.setValue(val.Json(key), s.Ql.validator)
+				s.setOr(key)
+				s.setValue(val.Json(key))
 			}
 		}
 	}
@@ -225,7 +225,7 @@ func (s *QlJoin) setWheres(wheres et.Json) *QlJoin {
 			continue
 		}
 
-		s.On(key).setValue(wheres.Json(key), s.Ql.validator)
+		s.On(key).setValue(wheres.Json(key))
 	}
 
 	for key := range wheres {
@@ -249,7 +249,7 @@ func (s *QlJoin) setWheres(wheres et.Json) *QlJoin {
 func (s *Ql) setJoins(joins []et.Json) *Ql {
 	for _, join := range joins {
 		for key := range join {
-			with := GetModel(key, false)
+			with := GetModel(key)
 			if with != nil {
 				val := join.Json(key)
 				s.Join(with).setWheres(val)
@@ -261,14 +261,14 @@ func (s *Ql) setJoins(joins []et.Json) *Ql {
 }
 
 /**
-* listJoins
+* getJoins
 * @return []et.Json
 **/
-func (s *Ql) listJoins() []et.Json {
+func (s *Ql) getJoins() []et.Json {
 	result := []et.Json{}
 	for _, join := range s.Joins {
 		item := et.Json{
-			join.With.Name: join.listWheres(),
+			join.With.Name: join.getWheres(),
 		}
 		result = append(result, item)
 	}

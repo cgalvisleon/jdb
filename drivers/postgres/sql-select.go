@@ -1,10 +1,17 @@
 package postgres
 
 import (
+	"github.com/cgalvisleon/et/console"
+	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/strs"
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
+/**
+* sqlSelect
+* @param ql *jdb.Ql
+* @return string
+**/
 func (s *Postgres) sqlSelect(ql *jdb.Ql) string {
 	if len(ql.Froms.Froms) == 0 {
 		return ""
@@ -22,6 +29,11 @@ func (s *Postgres) sqlSelect(ql *jdb.Ql) string {
 	return result
 }
 
+/**
+* asField
+* @param field jdb.Field
+* @return string
+**/
 func asField(field jdb.Field) string {
 	setAgregaction := func(val string) string {
 		switch field.Agregation {
@@ -55,6 +67,11 @@ func asField(field jdb.Field) string {
 	return result
 }
 
+/**
+* aliasAsField
+* @param field jdb.Field
+* @return string
+**/
 func aliasAsField(field jdb.Field) string {
 	result := asField(field)
 	if field.Name == field.Alias {
@@ -64,6 +81,11 @@ func aliasAsField(field jdb.Field) string {
 	return strs.Append(result, field.Alias, " AS ")
 }
 
+/**
+* jsonbBuildObject
+* @param result, obj string
+* @return string
+**/
 func jsonbBuildObject(result, obj string) string {
 	if len(obj) == 0 {
 		return result
@@ -72,6 +94,11 @@ func jsonbBuildObject(result, obj string) string {
 	return strs.Append(result, strs.Format("jsonb_build_object(\n%s)", obj), "||\n")
 }
 
+/**
+* sqlObject
+* @param selects []*jdb.Field
+* @return string
+**/
 func (s *Postgres) sqlObject(selects []*jdb.Field) string {
 	result := ""
 	l := 20
@@ -117,6 +144,11 @@ func (s *Postgres) sqlObject(selects []*jdb.Field) string {
 	return result
 }
 
+/**
+* sqlObjectOrders
+* @param selects []*jdb.Field, orders *jdb.QlOrder
+* @return string
+**/
 func (s *Postgres) sqlObjectOrders(selects []*jdb.Field, orders *jdb.QlOrder) string {
 	result := s.sqlObject(selects)
 	result = strs.Append(result, "result", " AS ")
@@ -132,6 +164,11 @@ func (s *Postgres) sqlObjectOrders(selects []*jdb.Field, orders *jdb.QlOrder) st
 	return result
 }
 
+/**
+* sqlColumns
+* @param selects []*jdb.Field
+* @return string
+**/
 func (s *Postgres) sqlColumns(selects []*jdb.Field) string {
 	result := ""
 	for _, fld := range selects {
@@ -143,4 +180,42 @@ func (s *Postgres) sqlColumns(selects []*jdb.Field) string {
 	}
 
 	return result
+}
+
+/**
+* Select
+* @param ql *jdb.Ql
+* @return et.Items, error
+**/
+func (s *Postgres) Select(ql *jdb.Ql) (et.Items, error) {
+	ql.Sql = ""
+	ql.Sql = strs.Append(ql.Sql, s.sqlSelect(ql), "\n")
+	ql.Sql = strs.Append(ql.Sql, s.sqlFrom(ql.Froms), "\n")
+	ql.Sql = strs.Append(ql.Sql, s.sqlJoin(ql.Joins), "\n")
+	ql.Sql = strs.Append(ql.Sql, s.sqlWhere(ql.QlWhere), "\n")
+	ql.Sql = strs.Append(ql.Sql, s.sqlGroupBy(ql), "\n")
+	ql.Sql = strs.Append(ql.Sql, s.sqlHaving(ql), "\n")
+	ql.Sql = strs.Append(ql.Sql, s.sqlOrderBy(ql), "\n")
+	ql.Sql = strs.Append(ql.Sql, s.sqlLimit(ql), "\n")
+	ql.Sql = strs.Format(`%s;`, ql.Sql)
+
+	if ql.IsDebug {
+		console.Debug(ql.Sql)
+	}
+
+	if ql.TypeSelect == jdb.Source {
+		result, err := jdb.DataTx(ql.Tx(), s.db, "result", ql.Sql)
+		if err != nil {
+			return et.Items{}, err
+		}
+
+		return result, nil
+	}
+
+	result, err := jdb.QueryTx(ql.Tx(), s.db, ql.Sql)
+	if err != nil {
+		return et.Items{}, err
+	}
+
+	return result, nil
 }

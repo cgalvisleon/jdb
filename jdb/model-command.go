@@ -24,11 +24,19 @@ func (s *Model) Update(data et.Json) *Command {
 
 /**
 * Delete
+* @return *Command
+**/
+func (s *Model) delete() *Command {
+	return NewCommand(s, []et.Json{}, Delete)
+}
+
+/**
+* Delete
 * @param val string
 * @return *Command
 **/
 func (s *Model) Delete(val string) *Command {
-	result := NewCommand(s, []et.Json{}, Delete)
+	result := s.delete()
 	result.Where(val)
 
 	return result

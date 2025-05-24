@@ -702,9 +702,9 @@ func (s *Model) defineRelation(name, relatedTo string, fks map[string]string, li
 /**
 * defineRollup
 * @param name, rollupFrom string, fks map[string]string, fields []string, showRollup ShowRollup
-* @return *Model
+* @return *Column
 **/
-func (s *Model) defineRollup(name, rollupFrom string, fks map[string]string, fields []string, showRollup ShowRollup) *Model {
+func (s *Model) defineRollup(name, rollupFrom string, fks map[string]string, fields []string, showRollup ShowRollup) *Column {
 	with := NewModel(s.schema, rollupFrom, 1)
 	result := &Rollup{
 		With:   with,
@@ -713,11 +713,25 @@ func (s *Model) defineRollup(name, rollupFrom string, fks map[string]string, fie
 		Show:   showRollup,
 	}
 
+	for fkn, pkn := range fks {
+		fk := s.getColumn(fkn)
+		if fk != nil {
+			continue
+		}
+
+		pk := with.getColumn(pkn)
+		if pk != nil {
+			fk = s.defineColumn(fkn, pk.TypeData)
+			s.defineIndex(true, []string{fkn})
+			s.addColumn(fk)
+		}
+	}
+
 	col := newColumn(s, name, "", TpRollup, TypeDataNone, TypeDataNone.DefaultValue())
 	col.Rollup = result
 	s.addColumn(col)
 
-	return result.With
+	return col
 }
 
 /**
@@ -742,7 +756,7 @@ func (s *Model) defineMultiSelect(name string, fks map[string]string) *Model {
 	relatedTo := s.Name + "_" + name
 	result := s.defineRelation(name, relatedTo, fks, 30)
 	result.With.definePrimaryKeyField()
-	result.With.defineColumn(CHECKED, TypeDataBool)
+	result.With.defineColumn(CHECKED, TypeDataCheckbox)
 	result.With.defineCreatedAtField()
 	result.With.defineSourceField()
 	result.With.defineSystemKeyField()
@@ -792,8 +806,13 @@ func (s *Model) defineProjectModel() *Model {
 	return s
 }
 
+/**
+* defineValues
+* @param name string, values interface{}
+* @return *Column
+**/
 func (s *Model) defineValues(name string, values interface{}) *Column {
-	col := s.defineAtribute(name, TypeDataNone)
+	col := s.defineAtribute(name, TypeDataObject)
 	col.Values = values
 
 	return col
@@ -1006,11 +1025,10 @@ func (s *Model) DefineRequired(colums ...string) *Model {
 * @param name, relatedTo string, fks map[string]string, limit int
 * @return *Model
 **/
-func (s *Model) DefineRelation(name, relatedTo string, fks map[string]string, limit int) *Model {
+func (s *Model) DefineRelation(name, relatedTo string, fks map[string]string, limit int) *Relation {
 	key := fmt.Sprintf("relation_%v", name)
 	s.setDefine(key, TypeDefinitionRelation, name, relatedTo, fks, limit)
-	s.defineRelation(name, relatedTo, fks, limit)
-	return s
+	return s.defineRelation(name, relatedTo, fks, limit)
 }
 
 /**
@@ -1018,11 +1036,10 @@ func (s *Model) DefineRelation(name, relatedTo string, fks map[string]string, li
 * @param name, rollupFrom string, fks map[string]string, field string
 * @return *Model
 **/
-func (s *Model) DefineRollup(name, rollupFrom string, fks map[string]string, field string) *Model {
+func (s *Model) DefineRollup(name, rollupFrom string, fks map[string]string, field string) *Column {
 	key := fmt.Sprintf("rollup_%v", name)
 	s.setDefine(key, TypeDefinitionRollup, name, rollupFrom, fks, field, ShowAtrib)
-	s.defineRollup(name, rollupFrom, fks, []string{field}, ShowAtrib)
-	return s
+	return s.defineRollup(name, rollupFrom, fks, []string{field}, ShowAtrib)
 }
 
 /**
@@ -1135,4 +1152,67 @@ func (s *Model) DefineValues(name string, values interface{}) *Column {
 	key := fmt.Sprintf("values_%v", name)
 	s.setDefine(key, TypeDefinitionValues, name, values)
 	return s.defineValues(name, values)
+}
+
+/**
+* defineField
+* @param fields et.Json
+**/
+func (s *Model) setFields(fields et.Json) {
+	for key := range fields {
+		definition := fields.Json(key)
+		var typeColumn TypeColumn
+		var typeData TypeData
+		if definition["kind"] == nil {
+			tipe := definition.ValStr("text", "type")
+			typeColumn, typeData = StrToKindType(tipe)
+		} else {
+			kind := definition.Str("kind")
+			typeColumn = StrsToTypeColumn(kind)
+			typeData = StrsToTypeData(definition.ValStr("text", "type"))
+		}
+		var field *Column
+		switch typeColumn {
+		case TpColumn:
+			field = s.DefineColumn(key, typeData)
+		case TpAtribute:
+			field = s.DefineAtribute(key, typeData)
+		case TpRelatedTo:
+			limit := definition.ValInt(30, "limit")
+			relatedTo := definition.Str("related_to")
+			fks := map[string]string{}
+			for key, value := range definition.Json("foreign_keys") {
+				fks[key] = fmt.Sprintf("%v", value)
+			}
+			relation := s.DefineRelation(key, relatedTo, fks, limit)
+			fields := definition.Json("fields")
+			relation.With.setFields(fields)
+		case TpRollup:
+			rollupFrom := definition.Str("rollup_from")
+			fieldName := definition.Str("field")
+			fks := map[string]string{}
+			for key, value := range definition.Json("foreign_keys") {
+				fks[key] = fmt.Sprintf("%v", value)
+			}
+			field = s.DefineRollup(key, rollupFrom, fks, fieldName)
+		}
+
+		if field != nil {
+			field.Description = definition.ValStr("", "description")
+			field.Default = definition["default"]
+			field.Max = definition.Num("max")
+			field.Min = definition.Num("min")
+			field.SetValue(definition["values"])
+			if definition.Bool("hidden") {
+				s.DefineHidden(key)
+			}
+			if definition.Bool("required") {
+				s.DefineRequired(key)
+			}
+			if definition.Bool("unique") {
+				s.DefineUnique(key)
+			}
+
+		}
+	}
 }

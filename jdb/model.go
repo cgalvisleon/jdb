@@ -61,6 +61,7 @@ type Model struct {
 	isLocked           bool                     `json:"-"`
 	isInit             bool                     `json:"-"`
 	isCore             bool                     `json:"-"`
+	needMutate         bool                     `json:"-"`
 }
 
 /**
@@ -69,7 +70,6 @@ type Model struct {
 * @return *Model
 **/
 func NewModel(schema *Schema, name string, version int) *Model {
-	name = Name(name)
 	idx := slices.IndexFunc(schema.Db.models, func(e *Model) bool { return e.Name == name })
 	if idx != -1 {
 		return schema.Db.models[idx]
@@ -133,6 +133,7 @@ func NewModel(schema *Schema, name string, version int) *Model {
 		result = newModel()
 	}
 
+	result.needMutate = version > result.Version
 	return result
 }
 
@@ -191,7 +192,6 @@ func loadModel(schema *Schema, model *Model) (*Model, error) {
 * @return *Model, error
 **/
 func LoadModel(db *DB, name string) (*Model, error) {
-	name = Name(name)
 	idx := slices.IndexFunc(db.models, func(e *Model) bool { return e.Name == name })
 	if idx != -1 {
 		return db.models[idx], nil
@@ -294,6 +294,24 @@ func (s *Model) Save() error {
 }
 
 /**
+* Drop
+**/
+func (s *Model) Drop() {
+	if s.Db == nil {
+		return
+	}
+
+	for _, detail := range s.Details {
+		model := detail.With
+		if model != nil {
+			model.Drop()
+		}
+	}
+
+	s.Db.DropModel(s)
+}
+
+/**
 * Init
 * @return error
 **/
@@ -329,35 +347,26 @@ func (s *Model) Init() error {
 		}
 	}
 
-	err := s.Db.LoadModel(s)
-	if err != nil {
-		return err
-	}
-
-	err = s.Save()
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-/**
-* Drop
-**/
-func (s *Model) Drop() {
-	if s.Db == nil {
-		return
-	}
-
-	for _, detail := range s.Details {
-		model := detail.With
-		if model != nil {
-			model.Drop()
+	if s.needMutate {
+		err := s.Db.MutateModel(s)
+		if err != nil {
+			return err
+		}
+	} else if !s.isInit {
+		err := s.Db.LoadModel(s)
+		if err != nil {
+			return err
 		}
 	}
 
-	s.Db.DropModel(s)
+	err := s.Save()
+	if err != nil {
+		return err
+	}
+
+	s.isInit = true
+
+	return nil
 }
 
 /**
@@ -403,27 +412,58 @@ func (s *Model) GetCode(tag, prefix string) (string, error) {
 }
 
 /**
-* GetWhereByPk
+* getKeyByPk
 * @param data et.Json
-* @return et.Json
+* @return string, error
 **/
-func (s *Model) GetWhereByPk(data et.Json) (et.Json, error) {
-	result := et.Json{}
+func (s *Model) getKeyByPk(data et.Json) (string, error) {
+	result := ""
 	for name := range s.PrimaryKeys {
 		val := data.Get(name)
 		if val == nil {
-			return et.Json{}, mistake.Newf(MSG_FIELD_REQUIRED_RELATION, name, s.Name)
+			return "", mistake.Newf(MSG_FIELD_REQUIRED_RELATION, name, s.Name)
 		}
 
-		col := s.getColumn(name)
-		if col != nil && col.IsKeyfield {
-			vs := fmt.Sprintf(`%v`, val)
-			val = s.GetId(vs)
+		result = strs.Append(result, fmt.Sprintf(`%v`, val), ":")
+	}
+
+	return result, nil
+}
+
+/**
+* getMapByPk
+* @param data []et.Json
+* @return map[string]et.Json, error
+**/
+func (s *Model) getMapByPk(data []et.Json) (map[string]et.Json, error) {
+	result := map[string]et.Json{}
+	for _, item := range data {
+		key, err := s.getKeyByPk(item)
+		if err != nil {
+			return nil, err
 		}
 
-		result[name] = et.Json{
-			"eq": val,
+		result[key] = item
+	}
+
+	return result, nil
+}
+
+/**
+* getMapResultByPk
+* @param data []et.Json
+* @return map[string]et.Json, error
+**/
+func (s *Model) getMapResultByPk(data []et.Json) (map[string]et.Json, error) {
+	result := map[string]et.Json{}
+	for _, item := range data {
+		item = item.Json("result")
+		key, err := s.getKeyByPk(item)
+		if err != nil {
+			return nil, err
 		}
+
+		result[key] = item
 	}
 
 	return result, nil
@@ -436,9 +476,10 @@ func (s *Model) GetWhereByPk(data et.Json) (et.Json, error) {
 **/
 func (s *Model) GetWhereByRequired(data et.Json) (et.Json, error) {
 	result := et.Json{}
+	and := []et.Json{}
+	n := 0
 	for name := range s.Required {
 		val := data.Get(name)
-
 		if val == nil {
 			return et.Json{}, mistake.Newf(MSG_FIELD_REQUIRED_RELATION, name, s.Name)
 		}
@@ -449,9 +490,62 @@ func (s *Model) GetWhereByRequired(data et.Json) (et.Json, error) {
 			val = s.GetId(vs)
 		}
 
-		result[name] = et.Json{
-			"eq": val,
+		if n == 0 {
+			result[name] = et.Json{
+				"eq": val,
+			}
+		} else {
+			and = append(and, et.Json{
+				name: et.Json{
+					"eq": val,
+				}})
 		}
+		n++
+	}
+
+	if len(and) > 0 {
+		result["AND"] = and
+	}
+
+	return result, nil
+}
+
+/**
+* GetWhereByPrimaryKeys
+* @param data et.Json
+* @return et.Json
+**/
+func (s *Model) GetWhereByPrimaryKeys(data et.Json) (et.Json, error) {
+	result := et.Json{}
+	and := []et.Json{}
+	n := 0
+	for name := range s.PrimaryKeys {
+		val := data.Get(name)
+		if val == nil {
+			return et.Json{}, mistake.Newf(MSG_FIELD_REQUIRED_RELATION, name, s.Name)
+		}
+
+		col := s.getColumn(name)
+		if col != nil && col.IsKeyfield {
+			vs := fmt.Sprintf(`%v`, val)
+			val = s.GetId(vs)
+		}
+
+		if n == 0 {
+			result[name] = et.Json{
+				"eq": val,
+			}
+		} else {
+			and = append(and, et.Json{
+				name: et.Json{
+					"eq": val,
+				}})
+		}
+		n++
+	}
+
+	if len(and) > 0 {
+		result["AND"] = and
 	}
 
 	return result, nil
@@ -543,6 +637,22 @@ func (s *Model) getColumns(names ...string) []*Column {
 	result := []*Column{}
 	for _, name := range names {
 		if col := s.getColumn(name); col != nil {
+			result = append(result, col)
+		}
+	}
+
+	return result
+}
+
+/**
+* getColumnsNotByType
+* @param tp TypeColumn
+* @return []*Column
+**/
+func (s *Model) getColumnsNotByType(tp TypeColumn) []*Column {
+	result := []*Column{}
+	for _, col := range s.Columns {
+		if col.TypeColumn != tp {
 			result = append(result, col)
 		}
 	}

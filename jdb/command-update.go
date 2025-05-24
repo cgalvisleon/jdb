@@ -8,11 +8,15 @@ import (
 )
 
 func (s *Command) updated() error {
+	if len(s.Data) == 0 {
+		return mistake.Newf(MSG_NOT_DATA, s.Command.Str(), s.From.Name)
+	}
+
 	if err := s.prepare(); err != nil {
 		return err
 	}
-	model := s.From
 
+	model := s.From
 	results, err := s.Db.Command(s)
 	if err != nil {
 		for _, event := range model.eventError {
@@ -20,7 +24,7 @@ func (s *Command) updated() error {
 				"command": "update",
 				"sql":     s.Sql,
 				"data":    s.Data,
-				"where":   s.listWheres(),
+				"where":   s.getWheres(),
 				"error":   err.Error(),
 			})
 		}
@@ -31,6 +35,11 @@ func (s *Command) updated() error {
 	s.Result = results
 	if !s.Result.Ok {
 		return mistake.New(MSG_NOT_UPDATE_DATA)
+	}
+
+	s.ResultMap, err = model.getMapResultByPk(s.Result.Result)
+	if err != nil {
+		return err
 	}
 
 	if !s.isSync && model.UseCore {
@@ -45,11 +54,13 @@ func (s *Command) updated() error {
 		})
 	}
 
-	for _, result := range s.Result.Result {
-		before := result.ValJson(et.Json{}, "result", "before")
-		after := result.ValJson(et.Json{}, "result", "after")
-		changed := before.IsChanged(after)
+	for key, after := range s.ResultMap {
+		before := s.CurrentMap[key]
+		if before == nil {
+			before = et.Json{}
+		}
 
+		changed := before.IsChanged(after)
 		if !changed {
 			continue
 		}

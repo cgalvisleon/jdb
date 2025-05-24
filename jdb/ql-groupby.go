@@ -7,7 +7,7 @@ package jdb
 **/
 func (s *Ql) GroupBy(fields ...string) *Ql {
 	for _, field := range fields {
-		field := s.getField(field, false)
+		field := s.getField(field)
 		if field != nil {
 			s.Groups = append(s.Groups, field)
 		}
@@ -30,10 +30,10 @@ func (s *Ql) setGroupBy(fields ...string) *Ql {
 }
 
 /**
-* listGroups
+* getGroupsBy
 * @return []string
 **/
-func (s *Ql) listGroups() []string {
+func (s *Ql) getGroupsBy() []string {
 	result := []string{}
 	for _, field := range s.Groups {
 		def := s.asField(field)

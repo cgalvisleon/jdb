@@ -41,14 +41,14 @@ type Ql struct {
 **/
 func (s *Ql) Describe() et.Json {
 	return et.Json{
-		"from":     s.listForms(),
-		"join":     s.listJoins(),
-		"where":    s.listWheres(),
-		"group_by": s.listGroups(),
-		"having":   s.listHavings(),
-		"order_by": s.listOrders(),
-		"select":   s.listSelects(),
-		"limit":    s.listLimit(),
+		"from":     s.getForms(),
+		"join":     s.getJoins(),
+		"where":    s.getWheres(),
+		"group_by": s.getGroupsBy(),
+		"having":   s.getHavings(),
+		"order_by": s.getOrders(),
+		"select":   s.getSelects(),
+		"limit":    s.getLimit(),
 		"help":     s.Help,
 	}
 }
@@ -73,24 +73,6 @@ func (s *Ql) Tx() *Tx {
 }
 
 /**
-* addFrom
-* @param m *Model
-* @return *QlFrom
-**/
-func (s *Ql) addFrom(m *Model) *QlFrom {
-	as := string(rune(s.Froms.index))
-	from := &QlFrom{
-		Model: m,
-		As:    as,
-	}
-
-	s.Froms.Froms = append(s.Froms.Froms, from)
-	s.Froms.index++
-
-	return from
-}
-
-/**
 * validator
 * validate this val is a field or basic type
 * @param val interface{}
@@ -101,7 +83,7 @@ func (s *Ql) validator(val interface{}) interface{} {
 	case string:
 		if strings.HasPrefix(v, ":") {
 			v = strings.TrimPrefix(v, ":")
-			field := s.getField(v, false)
+			field := s.getField(v)
 			if field != nil {
 				return field
 			}
@@ -117,7 +99,7 @@ func (s *Ql) validator(val interface{}) interface{} {
 		v = strings.Replace(v, `\:`, `:`, 1)
 		v = strings.Replace(v, `\\$`, `\$`, 1)
 		v = strings.Replace(v, `\$`, `$`, 1)
-		field := s.getField(v, false)
+		field := s.getField(v)
 		if field != nil {
 			return field
 		}
@@ -142,7 +124,12 @@ func (s *Ql) validator(val interface{}) interface{} {
 	}
 }
 
-func (s *Ql) getColumnField(name string, isCreated bool) *Field {
+/**
+* getColumnField
+* @param name string
+* @return *Field
+**/
+func (s *Ql) getColumnField(name string) *Field {
 	for _, from := range s.Froms.Froms {
 		column := from.getColumn(name)
 		if column != nil {
@@ -150,22 +137,18 @@ func (s *Ql) getColumnField(name string, isCreated bool) *Field {
 		}
 	}
 
-	if isCreated {
-		return newField(name)
-	}
-
-	return nil
+	return newField(name)
 }
 
 /**
 * getField
-* @param name string, isCreated bool
+* @param name string
 * @return *Field
 **/
-func (s *Ql) getField(name string, isCreated bool) *Field {
+func (s *Ql) getField(name string) *Field {
 	findField := func(name string) *Field {
 		for _, from := range s.Froms.Froms {
-			field := from.getField(name, isCreated)
+			field := from.getField(name, false)
 			if field != nil {
 				field.As = from.As
 				return field

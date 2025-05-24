@@ -14,6 +14,11 @@ import (
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
+/**
+* chain
+* @param params et.Json
+* @return string, error
+**/
 func (s *Postgres) chain(params et.Json) (string, error) {
 	username := params.Str("username")
 	password := params.Str("password")
@@ -52,6 +57,11 @@ func (s *Postgres) chain(params et.Json) (string, error) {
 	return result, nil
 }
 
+/**
+* connectTo
+* @param connStr string
+* @return *sql.DB, error
+**/
 func (s *Postgres) connectTo(connStr string) (*sql.DB, error) {
 	db, err := sql.Open(s.name, connStr)
 	if err != nil {
@@ -65,6 +75,11 @@ func (s *Postgres) connectTo(connStr string) (*sql.DB, error) {
 	return db, nil
 }
 
+/**
+* connect
+* @param params et.Json
+* @return error
+**/
 func (s *Postgres) connect(params et.Json) error {
 	connStr, err := s.chain(params)
 	if err != nil {
@@ -86,18 +101,28 @@ func (s *Postgres) connect(params et.Json) error {
 	return nil
 }
 
+/**
+* connectDefault
+* @param params et.Json
+* @return error
+**/
 func (s *Postgres) connectDefault(params et.Json) error {
 	params["database"] = "postgres"
 	return s.connect(params)
 }
 
+/**
+* existDatabase
+* @param name string
+* @return bool, error
+**/
 func (s *Postgres) existDatabase(name string) (bool, error) {
 	sql := `
 	SELECT EXISTS(
 	SELECT 1
 	FROM pg_database
 	WHERE UPPER(datname) = UPPER($1));`
-	items, err := s.query(sql, name)
+	items, err := jdb.Query(s.db, sql, name)
 	if err != nil {
 		return false, err
 	}
@@ -132,7 +157,7 @@ func (s *Postgres) CreateDatabase(name string) error {
 	CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 	CREATE EXTENSION IF NOT EXISTS pgcrypto;
 	CREATE DATABASE $1`, name)
-	_, err = s.query(sql, name)
+	_, err = jdb.Query(s.db, sql, name)
 	if err != nil {
 		return err
 	}
@@ -162,7 +187,7 @@ func (s *Postgres) DropDatabase(name string) error {
 	}
 
 	sql := jdb.SQLDDL(`DROP DATABASE $1`, name)
-	_, err = s.query(sql, name)
+	_, err = jdb.Query(s.db, sql, name)
 	if err != nil {
 		return err
 	}
@@ -177,27 +202,27 @@ func (s *Postgres) DropDatabase(name string) error {
 * @param params et.Json
 * @return error
 **/
-func (s *Postgres) Connect(params et.Json) error {
+func (s *Postgres) Connect(params et.Json) (*sql.DB, error) {
 	database := params.Str("database")
 	err := s.connectDefault(params)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	err = s.CreateDatabase(database)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	params["database"] = database
 	err = s.connect(params)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	console.Logf(s.name, `Connected to %s:%s`, params.Str("host"), database)
 
-	return nil
+	return s.db, nil
 }
 
 /**

@@ -267,10 +267,10 @@ func (s *Field) asField() string {
 **/
 func (s *Field) asName() string {
 	if s.As != "" {
-		return strs.Format("%s.%s", s.As, s.Name)
+		return strs.Format(`%s.%s`, s.As, s.Name)
 	}
 
-	return s.Name
+	return strs.Format(`%v`, s.Name)
 }
 
 /**

@@ -5,6 +5,11 @@ import (
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
+/**
+* sqlHaving
+* @param ql *jdb.Ql
+* @return string
+**/
 func (s *Postgres) sqlHaving(ql *jdb.Ql) string {
 	result := ""
 	havings := ql.Havings

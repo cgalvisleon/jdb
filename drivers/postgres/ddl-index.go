@@ -8,30 +8,47 @@ import (
 	"github.com/cgalvisleon/jdb/jdb"
 )
 
+/**
+* ddlIndex
+* @param name string
+* @param col *jdb.Column
+* @return string
+**/
 func ddlIndex(name string, col *jdb.Column) string {
 	result := ""
-	if slices.Contains([]jdb.TypeData{jdb.TypeDataObject, jdb.TypeDataArray}, col.TypeData) {
-		result = jdb.SQLDDL(`CREATE INDEX IF NOT EXISTS $1 ON $2 USING GIN($3 jsonb_path_ops);`, name, table(col.Model), col.Name)
+	if slices.Contains([]jdb.TypeData{jdb.TypeDataObject}, col.TypeData) {
+		result = jdb.SQLDDL(`CREATE INDEX IF NOT EXISTS $1 ON $2 USING GIN($3 jsonb_path_ops);`, name, tableName(col.Model), col.Name)
 	} else if slices.Contains([]jdb.TypeData{jdb.TypeDataFullText}, col.TypeData) {
-		result = jdb.SQLDDL(`CREATE INDEX IF NOT EXISTS $1 ON $2 USING GIN($3);`, name, table(col.Model), col.Name)
+		result = jdb.SQLDDL(`CREATE INDEX IF NOT EXISTS $1 ON $2 USING GIN($3);`, name, tableName(col.Model), col.Name)
 	} else if col.TypeColumn == jdb.TpAtribute && col.Model.SourceField != nil {
-		result = jdb.SQLDDL(`CREATE INDEX IF NOT EXISTS $1 ON $2 (($3->>'$4'));`, name, table(col.Model), col.Model.SourceField.Name, col.Name)
+		result = jdb.SQLDDL(`CREATE INDEX IF NOT EXISTS $1 ON $2 (($3->>'$4'));`, name, tableName(col.Model), col.Model.SourceField.Name, col.Name)
 	} else {
-		result = jdb.SQLDDL(`CREATE INDEX IF NOT EXISTS $1 ON $2($3);`, name, table(col.Model), col.Name)
+		result = jdb.SQLDDL(`CREATE INDEX IF NOT EXISTS $1 ON $2($3);`, name, tableName(col.Model), col.Name)
 	}
 
 	return result
 }
 
+/**
+* ddlUniqueIndex
+* @param name string
+* @param col *jdb.Column
+* @return string
+**/
 func ddlUniqueIndex(name string, col *jdb.Column) string {
 	result := ""
 	if col.TypeColumn == jdb.TpColumn {
-		result = jdb.SQLDDL(`CREATE UNIQUE INDEX IF NOT EXISTS $1 ON $2($3);`, name, table(col.Model), col.Name)
+		result = jdb.SQLDDL(`CREATE UNIQUE INDEX IF NOT EXISTS $1 ON $2($3);`, name, tableName(col.Model), col.Name)
 	}
 
 	return result
 }
 
+/**
+* ddlPrimaryKey
+* @param model *jdb.Model
+* @return string
+**/
 func (s *Postgres) ddlPrimaryKey(model *jdb.Model) string {
 	var result string
 	primaryKeys := func() []string {
@@ -44,12 +61,17 @@ func (s *Postgres) ddlPrimaryKey(model *jdb.Model) string {
 	}
 
 	if len(primaryKeys()) > 0 {
-		result = strs.Format("ALTER TABLE %s ADD CONSTRAINT %s_pk PRIMARY KEY (%s);", table(model), model.Name, strings.Join(primaryKeys(), ", "))
+		result = strs.Format("ALTER TABLE %s ADD CONSTRAINT %s_pk PRIMARY KEY (%s);", tableName(model), model.Name, strings.Join(primaryKeys(), ", "))
 	}
 
 	return result
 }
 
+/**
+* ddlForeignKeys
+* @param model *jdb.Model
+* @return string
+**/
 func (s *Postgres) ddlForeignKeys(model *jdb.Model) string {
 	var result string
 	for name, relation := range model.ForeignKeys {
@@ -64,7 +86,7 @@ func (s *Postgres) ddlForeignKeys(model *jdb.Model) string {
 			key = strs.Append(key, fkn, ", ")
 			referenceKey = strs.Append(referenceKey, pkn, ", ")
 		}
-		def := strs.Format(`ALTER TABLE IF EXISTS %s ADD CONSTRAINT %s FOREIGN KEY (%s) REFERENCES %s(%s)`, table(model), name, key, table(reference), referenceKey)
+		def := strs.Format(`ALTER TABLE IF EXISTS %s ADD CONSTRAINT %s FOREIGN KEY (%s) REFERENCES %s(%s)`, tableName(model), name, key, tableName(reference), referenceKey)
 		if relation.OnDeleteCascade {
 			def = def + " ON DELETE CASCADE"
 		}
@@ -78,6 +100,11 @@ func (s *Postgres) ddlForeignKeys(model *jdb.Model) string {
 	return result
 }
 
+/**
+* ddlIndex
+* @param model *jdb.Model
+* @return string
+**/
 func (s *Postgres) ddlIndex(model *jdb.Model) string {
 	var result string
 	for name, index := range model.Indices {
@@ -94,6 +121,11 @@ func (s *Postgres) ddlIndex(model *jdb.Model) string {
 	return result
 }
 
+/**
+* ddlUniqueIndex
+* @param model *jdb.Model
+* @return string
+**/
 func (s *Postgres) ddlUniqueIndex(model *jdb.Model) string {
 	var result string
 	for name, index := range model.Uniques {
@@ -108,6 +140,11 @@ func (s *Postgres) ddlUniqueIndex(model *jdb.Model) string {
 	return result
 }
 
+/**
+* ddlTableIndex
+* @param model *jdb.Model
+* @return string
+**/
 func (s *Postgres) ddlTableIndex(model *jdb.Model) string {
 	result := ""
 	result = strs.Append(result, s.ddlIndex(model), "\n")

@@ -8,6 +8,10 @@ import (
 )
 
 func (s *Command) deleted() error {
+	if err := s.prepare(); err != nil {
+		return err
+	}
+
 	model := s.From
 	results, err := s.Db.Command(s)
 	if err != nil {
@@ -15,7 +19,7 @@ func (s *Command) deleted() error {
 			event(model, et.Json{
 				"command": "delete",
 				"sql":     s.Sql,
-				"where":   s.listWheres(),
+				"where":   s.getWheres(),
 				"error":   err.Error(),
 			})
 		}
@@ -28,6 +32,11 @@ func (s *Command) deleted() error {
 		return mistake.New(MSG_NOT_DELETE_DATA)
 	}
 
+	s.ResultMap, err = model.getMapResultByPk(s.Result.Result)
+	if err != nil {
+		return err
+	}
+
 	if !s.isSync && model.UseCore {
 		syncChannel := strs.Format("sync:%s", model.Db.Name)
 		event.Publish(syncChannel, et.Json{
@@ -35,27 +44,17 @@ func (s *Command) deleted() error {
 			"command": "delete",
 			"model":   model.Name,
 			"sql":     s.Sql,
-			"where":   s.listWheres(),
+			"where":   s.getWheres(),
 			"result":  s.Result,
 		})
 	}
 
-	for _, result := range s.Result.Result {
-		before := result.ValJson(et.Json{}, "result", "before")
-		after := result.ValJson(et.Json{}, "result", "after")
-
+	for _, before := range s.ResultMap {
 		for _, event := range model.eventsDelete {
-			err := event(s.tx, model, before, after)
+			err := event(s.tx, model, before, et.Json{})
 			if err != nil {
 				return err
 			}
-		}
-	}
-
-	for _, fn := range s.afterDelete {
-		err := fn()
-		if err != nil {
-			return err
 		}
 	}
 

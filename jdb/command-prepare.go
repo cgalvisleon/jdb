@@ -5,7 +5,7 @@ import (
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/mistake"
 	"github.com/cgalvisleon/et/reg"
-	"github.com/cgalvisleon/et/timezone"
+	"github.com/cgalvisleon/et/utility"
 )
 
 /**
@@ -20,30 +20,21 @@ func (s *Command) beforeInsertDefault(tx *Tx, data et.Json) error {
 
 	model := s.From
 
-	if model.UseCore && model.IndexField != nil {
+	if model.IndexField != nil && data.Int(model.IndexField.Name) == 0 {
 		data[model.IndexField.Name] = reg.GenIndex()
 	}
 
-	if model.UseCore && model.SystemKeyField != nil {
+	if model.SystemKeyField != nil && data.Str(model.SystemKeyField.Name) == "" {
 		data[model.SystemKeyField.Name] = model.GenId()
 	}
 
-	now := timezone.Now()
-	if model.CreatedAtField != nil {
+	now := utility.Now()
+	if model.CreatedAtField != nil && data.Str(model.CreatedAtField.Name) == "" {
 		data[model.CreatedAtField.Name] = now
 	}
 
-	if model.UpdatedAtField != nil {
+	if model.UpdatedAtField != nil && data.Str(model.UpdatedAtField.Name) == "" {
 		data[model.UpdatedAtField.Name] = now
-	}
-
-	for _, col := range model.Columns {
-		if col.CalcFunction != nil {
-			err := col.CalcFunction(data)
-			if err != nil {
-				return err
-			}
-		}
 	}
 
 	return nil
@@ -59,23 +50,14 @@ func (s *Command) beforeUpdateDefault(tx *Tx, data et.Json) error {
 		return mistake.New(MSG_MODEL_REQUIRED)
 	}
 
+	now := utility.Now()
 	model := s.From
-
 	if model.CreatedAtField != nil {
 		delete(data, model.CreatedAtField.Name)
 	}
 
-	if model.UpdatedAtField != nil {
-		data[model.UpdatedAtField.Name] = timezone.Now()
-	}
-
-	for _, col := range model.Columns {
-		if col.CalcFunction != nil {
-			err := col.CalcFunction(data)
-			if err != nil {
-				return err
-			}
-		}
+	if model.UpdatedAtField != nil && data.Str(model.UpdatedAtField.Name) == "" {
+		data[model.UpdatedAtField.Name] = now
 	}
 
 	return nil
@@ -86,7 +68,7 @@ func (s *Command) beforeUpdateDefault(tx *Tx, data et.Json) error {
 * @return error
 **/
 func (s *Command) prepare() error {
-	from := s.From
+	model := s.From
 	s.Values = make([]map[string]*Field, 0)
 	for i, data := range s.Data {
 		value := make(map[string]*Field, 0)
@@ -109,27 +91,19 @@ func (s *Command) prepare() error {
 
 				s.Data[i] = data
 			}
-		case Delete:
-			for _, fn := range s.beforeDelete {
-				err := fn()
-				if err != nil {
-					return err
-				}
-			}
 		}
 
 		for k, v := range data {
-			field := from.getField(k, true)
+			field := model.getField(k, true)
 			if field == nil {
 				continue
 			}
 
-			if field.Column == from.SourceField || field.Column == from.FullTextField {
+			if field.Column == model.SourceField || field.Column == model.FullTextField {
 				continue
 			}
 
 			field.setValue(v)
-
 			if field.Column.TypeColumn != TpRelatedTo {
 				value[field.Name] = field
 			}

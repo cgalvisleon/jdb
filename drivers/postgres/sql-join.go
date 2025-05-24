@@ -5,6 +5,11 @@ import (
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
+/**
+* sqlJoin
+* @param joins []*jdb.QlJoin
+* @return string
+**/
 func (s *Postgres) sqlJoin(joins []*jdb.QlJoin) string {
 	result := ""
 	for _, join := range joins {

@@ -21,11 +21,12 @@ func (s *Command) BeforeUpdate(fn DataFunctionTx) *Command {
 }
 
 /**
-* BeforeDelete
-* @param fn Function
+* BeforeInsertOrUpdate
+* @param fn DataFunction
 **/
-func (s *Command) BeforeDelete(fn Function) *Command {
-	s.beforeDelete = append(s.beforeDelete, fn)
+func (s *Command) BeforeInsertOrUpdate(fn DataFunctionTx) *Command {
+	s.beforeInsert = append(s.beforeInsert, fn)
+	s.beforeUpdate = append(s.beforeUpdate, fn)
 
 	return s
 }
