@@ -2,9 +2,7 @@ package jdb
 
 import (
 	"github.com/cgalvisleon/et/et"
-	"github.com/cgalvisleon/et/event"
 	"github.com/cgalvisleon/et/mistake"
-	"github.com/cgalvisleon/et/strs"
 )
 
 func (s *Command) deleted() error {
@@ -38,20 +36,45 @@ func (s *Command) deleted() error {
 	}
 
 	if !s.isSync && model.UseCore {
-		syncChannel := strs.Format("sync:%s", model.Db.Name)
-		event.Publish(syncChannel, et.Json{
-			"fromId":  model.Db.Id,
+		model.Emit(EVENT_MODEL_SYNC, et.Json{
 			"command": "delete",
+			"db":      model.Db.Name,
+			"schema":  model.Schema,
 			"model":   model.Name,
 			"sql":     s.Sql,
 			"where":   s.getWheres(),
-			"result":  s.Result,
 		})
 	}
 
 	for _, before := range s.ResultMap {
 		for _, event := range model.eventsDelete {
 			err := event(s.tx, model, before, et.Json{})
+			if err != nil {
+				return err
+			}
+		}
+
+		for _, jsCode := range model.EventsDelete {
+			model.vm.Set("tx", s.tx)
+			model.vm.Set("before", before)
+			model.vm.Set("after", et.Json{})
+			_, err := model.vm.RunString(jsCode)
+			if err != nil {
+				return err
+			}
+		}
+
+		for _, fn := range s.afterDelete {
+			err := fn(s.tx, before)
+			if err != nil {
+				return err
+			}
+		}
+
+		for _, jsCode := range s.afterVmDelete {
+			s.vm.Set("tx", s.tx)
+			s.vm.Set("data", before)
+			_, err := s.vm.RunString(jsCode)
 			if err != nil {
 				return err
 			}

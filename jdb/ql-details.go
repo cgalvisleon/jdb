@@ -13,6 +13,9 @@ import (
 * @return error
 **/
 func (s *Ql) GetDetailsTx(tx *Tx, data et.Json) {
+	sort := []*Field{}
+	sort1 := []*Field{}
+	sort2 := []*Field{}
 	for _, field := range s.Details {
 		col := field.Column
 		if col == nil {
@@ -21,6 +24,31 @@ func (s *Ql) GetDetailsTx(tx *Tx, data et.Json) {
 
 		switch col.TypeColumn {
 		case TpCalc:
+			sort1 = append(sort1, field)
+		case TpRelatedTo:
+			sort1 = append(sort1, field)
+		case TpRollup:
+			sort1 = append(sort1, field)
+		default:
+			sort2 = append(sort2, field)
+		}
+	}
+
+	sort = append(sort, sort1...)
+	sort = append(sort, sort2...)
+
+	for _, field := range sort {
+		col := field.Column
+		switch col.TypeColumn {
+		case TpCalc:
+			if col.CalcFunction != nil {
+				col.CalcFunction(data)
+			}
+		case TpAtribute:
+			if col.CalcFunction != nil {
+				col.CalcFunction(data)
+			}
+		case TpColumn:
 			if col.CalcFunction != nil {
 				col.CalcFunction(data)
 			}

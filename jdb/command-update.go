@@ -2,9 +2,7 @@ package jdb
 
 import (
 	"github.com/cgalvisleon/et/et"
-	"github.com/cgalvisleon/et/event"
 	"github.com/cgalvisleon/et/mistake"
-	"github.com/cgalvisleon/et/strs"
 )
 
 func (s *Command) updated() error {
@@ -43,14 +41,14 @@ func (s *Command) updated() error {
 	}
 
 	if !s.isSync && model.UseCore {
-		syncChannel := strs.Format("sync:%s", model.Db.Name)
-		event.Publish(syncChannel, et.Json{
-			"fromId":  model.Db.Id,
+		model.Emit(EVENT_MODEL_SYNC, et.Json{
 			"command": "update",
+			"db":      model.Db.Name,
+			"schema":  model.Schema,
 			"model":   model.Name,
 			"sql":     s.Sql,
 			"values":  s.Values,
-			"result":  s.Result,
+			"where":   s.getWheres(),
 		})
 	}
 
@@ -71,11 +69,30 @@ func (s *Command) updated() error {
 				return err
 			}
 		}
+
+		for _, jsCode := range model.EventsUpdate {
+			model.vm.Set("tx", s.tx)
+			model.vm.Set("before", before)
+			model.vm.Set("after", after)
+			_, err := model.vm.RunString(jsCode)
+			if err != nil {
+				return err
+			}
+		}
 	}
 
 	for _, data := range s.Data {
 		for _, fn := range s.afterUpdate {
 			err := fn(s.tx, data)
+			if err != nil {
+				return err
+			}
+		}
+
+		for _, jsCode := range s.afterVmUpdate {
+			s.vm.Set("tx", s.tx)
+			s.vm.Set("data", data)
+			_, err := s.vm.RunString(jsCode)
 			if err != nil {
 				return err
 			}

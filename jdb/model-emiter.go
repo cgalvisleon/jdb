@@ -21,6 +21,7 @@ func (s *Model) eventEmiter(message event.Message) {
 	eventEmiter, ok := s.eventsEmiter[message.Channel]
 	if !ok {
 		console.Alert(mistake.Newf("Event not found (%s)", message.Channel))
+		return
 	}
 
 	eventEmiter(message)
@@ -51,6 +52,7 @@ func (s *Model) Emit(channel string, data et.Json) *Model {
 
 	message := event.Message{
 		CreatedAt: timezone.NowTime(),
+		FromId:    s.Db.Id,
 		Id:        utility.UUID(),
 		Channel:   channel,
 		Data:      data,

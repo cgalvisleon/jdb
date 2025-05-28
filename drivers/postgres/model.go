@@ -1,13 +1,41 @@
 package postgres
 
 import (
+	"fmt"
+
 	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/strs"
 	"github.com/cgalvisleon/jdb/jdb"
 )
 
 func tableName(model *jdb.Model) string {
-	return strs.Format(`%s.%s`, model.Schema, model.Name)
+	return fmt.Sprintf(`%s.%s`, model.Schema, model.Table)
+}
+
+/**
+* existTable
+* @param schema string
+* @param name string
+* @return bool, error
+**/
+func (s *Postgres) existTable(schema, name string) (bool, error) {
+	sql := `
+	SELECT EXISTS(
+		SELECT 1
+		FROM information_schema.tables
+		WHERE UPPER(table_schema) = UPPER($1)
+		AND UPPER(table_name) = UPPER($2));`
+
+	items, err := jdb.QueryTx(nil, s.db, sql, schema, name)
+	if err != nil {
+		return false, err
+	}
+
+	if items.Count == 0 {
+		return false, nil
+	}
+
+	return items.Bool(0, "exists"), nil
 }
 
 /**
@@ -16,12 +44,17 @@ func tableName(model *jdb.Model) string {
 * @return error
 **/
 func (s *Postgres) LoadModel(model *jdb.Model) error {
-	existTable, err := s.existTable(model.Schema, model.Name)
+	err := s.loadSchema(model.Schema)
 	if err != nil {
 		return err
 	}
 
-	if !existTable {
+	exist, err := s.existTable(model.Schema, model.Table)
+	if err != nil {
+		return err
+	}
+
+	if !exist {
 		sql := s.ddlTable(model)
 		sqlIndex := s.ddlTableIndex(model)
 		sql = strs.Append(sql, sqlIndex, "\n")
@@ -59,7 +92,7 @@ func (s *Postgres) LoadModel(model *jdb.Model) error {
 	AND a.attnum > 0
 	AND NOT a.attisdropped;`
 
-	items, err := jdb.Query(s.db, sql, model.Schema, model.Name)
+	items, err := jdb.Query(s.db, sql, model.Schema, model.Table)
 	if err != nil {
 		return err
 	}

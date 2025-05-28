@@ -7,8 +7,8 @@ import (
 
 	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
-	"github.com/cgalvisleon/et/reg"
 	"github.com/cgalvisleon/et/timezone"
+	"github.com/cgalvisleon/et/utility"
 )
 
 type Schema struct {
@@ -41,7 +41,7 @@ func NewSchema(db *DB, name string) *Schema {
 			Db:        db,
 			CreatedAt: now,
 			UpdateAt:  now,
-			Id:        reg.GenId("schema"),
+			Id:        utility.UUID(),
 			Name:      name,
 			UseCore:   db.UseCore,
 			models:    make([]*Model, 0),
@@ -210,12 +210,7 @@ func (s *Schema) init() error {
 		return nil
 	}
 
-	err := s.Db.LoadSchema(s.Name)
-	if err != nil {
-		return err
-	}
-
-	err = s.Save()
+	err := s.Save()
 	if err != nil {
 		return nil
 	}
@@ -242,5 +237,5 @@ func (s *Schema) GetModel(name string) *Model {
 		return s.models[idx]
 	}
 
-	return NewModel(s, name, 1)
+	return nil
 }

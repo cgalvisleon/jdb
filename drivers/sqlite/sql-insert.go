@@ -1,6 +1,7 @@
-package postgres
+package sqlite
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/cgalvisleon/et/et"
@@ -14,7 +15,7 @@ import (
 * @param command *jdb.Command
 * @return string
 **/
-func (s *Postgres) sqlInsert(command *jdb.Command) string {
+func (s *SqlLite) sqlInsert(command *jdb.Command) string {
 	from := command.From
 	columns := utility.NewList()
 	value := ""
@@ -36,7 +37,7 @@ func (s *Postgres) sqlInsert(command *jdb.Command) string {
 			column := from.SourceField.Name
 			columns.Add(column)
 
-			def := strs.Format(`'%v'::jsonb`, atribs.ToString())
+			def := fmt.Sprintf(`'%s'`, atribs.ToString())
 			value = strs.Append(value, def, ", ")
 		}
 

@@ -477,7 +477,7 @@ func (s *Model) definePrimaryKeyField() *Column {
 * @return *Relation
 **/
 func (s *Model) defineForeignKey(fks map[string]string, withName string, onDeleteCascade, onUpdateCascade bool) *Relation {
-	with := s.Db.GetModel(withName)
+	with := s.GetModel(withName)
 	if with == nil {
 		return nil
 	}
@@ -1128,6 +1128,24 @@ func (s *Model) DefineEvent(tp TypeEvent, event Event) *Model {
 		s.eventsUpdate = append(s.eventsUpdate, event)
 	case EventDelete:
 		s.eventsDelete = append(s.eventsDelete, event)
+	}
+
+	return s
+}
+
+/**
+* DefineEventVm
+* @param tp TypeEvent, event Event
+* @return Model
+**/
+func (s *Model) DefineEventJsCode(tp TypeEvent, jsCode string) *Model {
+	switch tp {
+	case EventInsert:
+		s.EventsInsert = append(s.EventsInsert, jsCode)
+	case EventUpdate:
+		s.EventsUpdate = append(s.EventsUpdate, jsCode)
+	case EventDelete:
+		s.EventsDelete = append(s.EventsDelete, jsCode)
 	}
 
 	return s

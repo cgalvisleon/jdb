@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/cgalvisleon/et/et"
-	"github.com/cgalvisleon/et/reg"
 	"github.com/cgalvisleon/et/strs"
+	"github.com/cgalvisleon/et/utility"
 )
 
 func helpQl(model *Model) et.Json {
@@ -89,7 +89,7 @@ func From(name interface{}) *Ql {
 		model = v
 	default:
 		s := fmt.Sprintf("%v", v)
-		model = GetModel(s)
+		model = getTable(s)
 	}
 
 	tpSelect := Select
@@ -98,7 +98,7 @@ func From(name interface{}) *Ql {
 	}
 
 	result := &Ql{
-		Id:         reg.GenId("ql"),
+		Id:         utility.UUID(),
 		Db:         model.Db,
 		TypeSelect: tpSelect,
 		Froms:      &QlFroms{index: 65, Froms: make([]*QlFrom, 0)},
@@ -114,6 +114,7 @@ func From(name interface{}) *Ql {
 		Help:       helpQl(model),
 	}
 	result.QlWhere = newQlWhere(result.validator)
+	result.IsDebug = model.IsDebug
 	result.Havings = NewQlHaving(result)
 	result.addFrom(model)
 

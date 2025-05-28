@@ -2,6 +2,7 @@ package sqlite
 
 import (
 	"database/sql"
+	"strings"
 
 	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
@@ -10,6 +11,10 @@ import (
 )
 
 func (s *SqlLite) connectTo(connStr string) (*sql.DB, error) {
+	if !strings.HasSuffix(connStr, ".db") {
+		connStr = connStr + ".db"
+	}
+
 	db, err := sql.Open(s.name, connStr)
 	if err != nil {
 		return nil, err
@@ -51,55 +56,17 @@ func (s *SqlLite) Connect(params et.Json) (*sql.DB, error) {
 }
 
 /**
-* CreateDatabase
-* @param name string
+* Disconnect
 * @return error
 **/
-func (s *SqlLite) CreateDatabase(name string) error {
-	return mistake.New(MSG_FUNCION_NOT_FOUND)
-}
+func (s *SqlLite) Disconnect() error {
+	if !s.connected {
+		return nil
+	}
 
-/**
-* DropDatabase
-* @param name string
-* @return error
-**/
-func (s *SqlLite) DropDatabase(name string) error {
-	return mistake.New(MSG_FUNCION_NOT_FOUND)
-}
+	if s.db != nil {
+		s.db.Close()
+	}
 
-/**
-* GrantPrivileges
-* @param username string, database string
-* @return error
-**/
-func (s *SqlLite) GrantPrivileges(username, database string) error {
-	return mistake.New(MSG_FUNCION_NOT_FOUND)
-}
-
-/**
-* CreateUser
-* @param username string, password string, confirmation string
-* @return error
-**/
-func (s *SqlLite) CreateUser(username, password, confirmation string) error {
-	return mistake.New(MSG_FUNCION_NOT_FOUND)
-}
-
-/**
-* ChangePassword
-* @param username string, password string, confirmation string
-* @return error
-**/
-func (s *SqlLite) ChangePassword(username, password, confirmation string) error {
-	return mistake.New(MSG_FUNCION_NOT_FOUND)
-}
-
-/**
-* DeleteUser
-* @param username string
-* @return error
-**/
-func (s *SqlLite) DeleteUser(username string) error {
-	return mistake.New(MSG_FUNCION_NOT_FOUND)
+	return nil
 }

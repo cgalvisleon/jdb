@@ -1,6 +1,8 @@
 package postgres
 
 import (
+	"slices"
+
 	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/strs"
@@ -82,11 +84,11 @@ func aliasAsField(field jdb.Field) string {
 }
 
 /**
-* jsonbBuildObject
+* jsonBuildObject
 * @param result, obj string
 * @return string
 **/
-func jsonbBuildObject(result, obj string) string {
+func jsonBuildObject(result, obj string) string {
 	if len(obj) == 0 {
 		return result
 	}
@@ -96,10 +98,34 @@ func jsonbBuildObject(result, obj string) string {
 
 /**
 * sqlObject
+* @param from *jdb.QlFrom
+* @return string
+**/
+func (s *Postgres) sqlObject(from *jdb.QlFrom) string {
+	var selects = []*jdb.Field{}
+	for _, col := range from.Columns {
+		field := col.GetField()
+		if field == nil {
+			continue
+		}
+		if field.Column == nil {
+			continue
+		}
+		if slices.Contains([]jdb.TypeColumn{jdb.TpColumn}, field.Column.TypeColumn) {
+			field.As = from.As
+			selects = append(selects, field)
+		}
+	}
+
+	return s.sqlBuildObject(selects)
+}
+
+/**
+* sqlBuildObject
 * @param selects []*jdb.Field
 * @return string
 **/
-func (s *Postgres) sqlObject(selects []*jdb.Field) string {
+func (s *Postgres) sqlBuildObject(selects []*jdb.Field) string {
 	result := ""
 	l := 20
 	if s.version >= 13 {
@@ -123,13 +149,13 @@ func (s *Postgres) sqlObject(selects []*jdb.Field) string {
 		obj = strs.Append(obj, def, ",\n")
 
 		if n == l {
-			result = jsonbBuildObject(result, obj)
+			result = jsonBuildObject(result, obj)
 			obj = ""
 			n = 0
 		}
 	}
 	if n > 0 {
-		result = jsonbBuildObject(result, obj)
+		result = jsonBuildObject(result, obj)
 	}
 	sources := ""
 	for i := 0; i < len(sourceField); i++ {
@@ -150,7 +176,7 @@ func (s *Postgres) sqlObject(selects []*jdb.Field) string {
 * @return string
 **/
 func (s *Postgres) sqlObjectOrders(selects []*jdb.Field, orders *jdb.QlOrder) string {
-	result := s.sqlObject(selects)
+	result := s.sqlBuildObject(selects)
 	result = strs.Append(result, "result", " AS ")
 	for _, ord := range orders.Asc {
 		def := aliasAsField(*ord)

@@ -8,11 +8,9 @@ import (
 
 	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
-	"github.com/cgalvisleon/et/event"
 	"github.com/cgalvisleon/et/mistake"
-	"github.com/cgalvisleon/et/reg"
-	"github.com/cgalvisleon/et/strs"
 	"github.com/cgalvisleon/et/timezone"
+	"github.com/cgalvisleon/et/utility"
 )
 
 type DB struct {
@@ -53,7 +51,7 @@ func NewDatabase(name, driver string) (*DB, error) {
 	result := &DB{
 		CreatedAt: now,
 		UpdateAt:  now,
-		Id:        reg.GenId("db"),
+		Id:        utility.UUID(),
 		Name:      name,
 		UseCore:   false,
 		driver:    conn.Drivers[driver](),
@@ -165,10 +163,18 @@ func (s *DB) Save() error {
 }
 
 /**
+* SetDebug
+* @param debug bool
+**/
+func (s *DB) SetDebug(debug bool) {
+	s.IsDebug = debug
+}
+
+/**
 * Debug
 **/
 func (s *DB) Debug() {
-	s.IsDebug = true
+	s.SetDebug(true)
 }
 
 /**
@@ -234,117 +240,6 @@ func (s *DB) GetSchema(name string) *Schema {
 }
 
 /**
-* GetModel
-* @param name string
-* @return *Model
-**/
-func (s *DB) GetModel(name string) *Model {
-	idx := slices.IndexFunc(s.models, func(e *Model) bool { return e.Name == name })
-	if idx != -1 {
-		return s.models[idx]
-	}
-
-	list := strs.Split(name, ".")
-	if len(list) > 1 {
-		return NewModel(s.GetSchema(list[0]), list[1], 1)
-	} else if len(list) == 1 {
-		return NewModel(s.GetSchema("data"), name, 1)
-	}
-
-	return nil
-}
-
-/**
-* getTableModel
-* @param name string
-* @return *Model, error
-**/
-func (s *DB) getTableModel(name string) (*Model, error) {
-	list := strs.Split(name, ".")
-	if len(list) != 2 {
-		return nil, mistake.Newf(MSG_MODEL_NOT_FOUND, name)
-	}
-
-	model := s.GetModel(list[1])
-	if model != nil {
-		return model, nil
-	}
-
-	schema := s.GetSchema(list[0])
-	if schema == nil {
-		schema = NewSchema(s, list[0])
-	}
-
-	model = NewModel(schema, list[1], 1)
-	if err := model.Init(); err != nil {
-		return nil, err
-	}
-
-	return model, nil
-}
-
-/**
-* GrantPrivileges
-* @return error
-**/
-func (s *DB) GrantPrivileges(username, database string) error {
-	if s.driver == nil {
-		return mistake.New(MSG_DRIVER_NOT_DEFINED)
-	}
-
-	return s.driver.GrantPrivileges(username, database)
-}
-
-/**
-* CreateUser
-* @return error
-**/
-func (s *DB) CreateUser(username, password, confirmation string) error {
-	if s.driver == nil {
-		return mistake.New(MSG_DRIVER_NOT_DEFINED)
-	}
-
-	return s.driver.CreateUser(username, password, confirmation)
-}
-
-/**
-* ChangePassword
-* @return error
-**/
-func (s *DB) ChangePassword(username, password, confirmation string) error {
-	if s.driver == nil {
-		return mistake.New(MSG_DRIVER_NOT_DEFINED)
-	}
-
-	return s.driver.ChangePassword(username, password, confirmation)
-}
-
-/**
-* DeleteUser
-* @return error
-**/
-func (s *DB) DeleteUser(username string) error {
-	if s.driver == nil {
-		return mistake.New(MSG_DRIVER_NOT_DEFINED)
-	}
-
-	return s.driver.DeleteUser(username)
-}
-
-/**
-* LoadSchema
-* @param name string
-* @return error
-**/
-func (s *DB) LoadSchema(name string) error {
-	if s.driver == nil {
-		return mistake.New(MSG_DRIVER_NOT_DEFINED)
-	}
-
-	return s.driver.LoadSchema(name)
-}
-
-/**
 * DropSchema
 * @param name string
 * @return error
@@ -366,12 +261,7 @@ func (s *DB) DropSchema(name string) error {
 		}
 	}
 
-	err := s.driver.DropSchema(name)
-	if err != nil {
-		return err
-	}
-
-	err = s.deleteModel("schema", name)
+	err := s.deleteModel("schema", name)
 	if err != nil {
 		return err
 	}
@@ -482,63 +372,6 @@ func (s *DB) Command(command *Command) (et.Items, error) {
 	}
 
 	return s.driver.Command(command)
-}
-
-/**
-* Sync
-* @param command string, data et.Json
-* @return error
-**/
-func (s *DB) Sync(command string, data et.Json) error {
-	if s.driver == nil {
-		return mistake.New(MSG_DRIVER_NOT_DEFINED)
-	}
-
-	return s.driver.Sync(command, data)
-}
-
-/**
-* From
-* @param name string
-* @return *Ql, error
-**/
-func (s *DB) From(name string) (*Ql, error) {
-	model, err := s.getTableModel(name)
-	if err != nil {
-		return nil, err
-	}
-
-	result := From(model)
-
-	return result, nil
-}
-
-/**
-* EventSync
-**/
-func (s *DB) EventSync() {
-	syncChannel := strs.Format("sync:%s", s.Name)
-	event.Subscribe(syncChannel, func(msg event.Message) {
-		data := msg.Data
-		fromId := data.ValStr("", "fromId")
-		if fromId == "" || fromId == s.Id {
-			return
-		}
-
-		command := data.ValStr("", "command")
-		if command == "" {
-			return
-		}
-
-		switch command {
-		case "insert":
-			s.Sync("insert", data)
-		case "update":
-			s.Sync("update", data)
-		case "delete":
-			s.Sync("delete", data)
-		}
-	})
 }
 
 /**

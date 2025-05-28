@@ -30,15 +30,6 @@ func (s *Ql) orderBy(asc bool, columns ...string) *Ql {
 }
 
 /**
-* OrderBy
-* @param columns ...any
-* @return *Ql
-**/
-func (s *Ql) OrderBy(columns ...string) *Ql {
-	return s.orderBy(true, columns...)
-}
-
-/**
 * OrderByAsc
 * @param columns ...any
 * @return *Ql
@@ -54,6 +45,15 @@ func (s *Ql) OrderByAsc(columns ...string) *Ql {
 **/
 func (s *Ql) OrderByDesc(columns ...string) *Ql {
 	return s.orderBy(false, columns...)
+}
+
+/**
+* OrderBy
+* @param columns ...any
+* @return *Ql
+**/
+func (s *Ql) OrderBy(columns ...string) *Ql {
+	return s.OrderByAsc(columns...)
 }
 
 /**

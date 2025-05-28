@@ -30,3 +30,58 @@ func (s *Command) BeforeInsertOrUpdate(fn DataFunctionTx) *Command {
 
 	return s
 }
+
+/**
+* BeforeVmInsert
+* @param jsCode string
+* @return *Command
+**/
+func (s *Command) BeforeVmInsert(jsCode string) *Command {
+	s.beforeVmInsert = append(s.beforeVmInsert, jsCode)
+
+	return s
+}
+
+/**
+* BeforeVmUpdate
+* @param jsCode string
+* @return *Command
+**/
+func (s *Command) BeforeVmUpdate(jsCode string) *Command {
+	s.beforeVmUpdate = append(s.beforeVmUpdate, jsCode)
+
+	return s
+}
+
+/**
+* AfterVmInsert
+* @param jsCode string
+* @return *Command
+**/
+func (s *Command) AfterVmInsert(jsCode string) *Command {
+	s.afterVmInsert = append(s.afterVmInsert, jsCode)
+
+	return s
+}
+
+/**
+* AfterVmUpdate
+* @param jsCode string
+* @return *Command
+**/
+func (s *Command) AfterVmUpdate(jsCode string) *Command {
+	s.afterVmUpdate = append(s.afterVmUpdate, jsCode)
+
+	return s
+}
+
+/**
+* AfterVmDelete
+* @param jsCode string
+* @return *Command
+**/
+func (s *Command) AfterVmDelete(jsCode string) *Command {
+	s.afterVmDelete = append(s.afterVmDelete, jsCode)
+
+	return s
+}

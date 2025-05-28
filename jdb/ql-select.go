@@ -21,6 +21,10 @@ func (s *Ql) setSelect(field *Field) *Ql {
 		if idx == -1 {
 			s.Selects = append(s.Selects, field)
 		}
+
+		if field.Column.CalcFunction != nil {
+			s.Details = append(s.Details, field)
+		}
 	} else {
 		if slices.Contains([]TypeColumn{TpRollup}, field.Column.TypeColumn) {
 			rollup := field.Column.Rollup

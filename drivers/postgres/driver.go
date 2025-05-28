@@ -18,7 +18,7 @@ type Postgres struct {
 	nodeId    int
 }
 
-func NewDriver() jdb.Driver {
+func newDriver() jdb.Driver {
 	return &Postgres{
 		name:      jdb.PostgresDriver,
 		params:    et.Json{},
@@ -31,5 +31,5 @@ func (s *Postgres) Name() string {
 }
 
 func init() {
-	jdb.Register(jdb.PostgresDriver, NewDriver)
+	jdb.Register(jdb.PostgresDriver, newDriver)
 }

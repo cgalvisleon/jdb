@@ -10,32 +10,6 @@ import (
 )
 
 /**
-* existTable
-* @param schema string
-* @param name string
-* @return bool, error
-**/
-func (s *Postgres) existTable(schema, name string) (bool, error) {
-	sql := `
-	SELECT EXISTS(
-		SELECT 1
-		FROM information_schema.tables
-		WHERE UPPER(table_schema) = UPPER($1)
-		AND UPPER(table_name) = UPPER($2));`
-
-	items, err := jdb.QueryTx(nil, s.db, sql, schema, name)
-	if err != nil {
-		return false, err
-	}
-
-	if items.Count == 0 {
-		return false, nil
-	}
-
-	return items.Bool(0, "exists"), nil
-}
-
-/**
 * typeData
 * @param tp jdb.TypeData
 * @return interface{}

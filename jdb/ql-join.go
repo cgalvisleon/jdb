@@ -3,6 +3,7 @@ package jdb
 import (
 	"encoding/json"
 	"slices"
+	"strings"
 
 	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
@@ -221,19 +222,21 @@ func (s *QlJoin) setWheres(wheres et.Json) *QlJoin {
 	}
 
 	for key := range wheres {
-		if slices.Contains([]string{"and", "AND", "or", "OR"}, key) {
+		key = strings.ToLower(key)
+		if slices.Contains([]string{"and", "or"}, key) {
 			continue
 		}
 
-		s.On(key).setValue(wheres.Json(key))
+		val := wheres.Json(key)
+		s.On(key).setValue(val)
 	}
 
 	for key := range wheres {
-		switch key {
-		case "and", "AND":
+		switch strings.ToLower(key) {
+		case "and":
 			vals := wheres.ArrayJson(key)
 			and(vals)
-		case "or", "OR":
+		case "or":
 			vals := wheres.ArrayJson(key)
 			or(vals)
 		}

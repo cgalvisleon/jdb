@@ -2,9 +2,7 @@ package jdb
 
 import (
 	"github.com/cgalvisleon/et/et"
-	"github.com/cgalvisleon/et/event"
 	"github.com/cgalvisleon/et/mistake"
-	"github.com/cgalvisleon/et/strs"
 )
 
 func (s *Command) inserted() error {
@@ -42,14 +40,13 @@ func (s *Command) inserted() error {
 	}
 
 	if !s.isSync && model.UseCore {
-		syncChannel := strs.Format("sync:%s", model.Db.Name)
-		event.Publish(syncChannel, et.Json{
-			"fromId":  model.Db.Id,
+		model.Emit(EVENT_MODEL_SYNC, et.Json{
 			"command": "insert",
+			"db":      model.Db.Name,
+			"schema":  model.Schema,
 			"model":   model.Name,
 			"sql":     s.Sql,
 			"values":  s.Values,
-			"result":  s.Result,
 		})
 	}
 
@@ -60,11 +57,30 @@ func (s *Command) inserted() error {
 				return err
 			}
 		}
+
+		for _, jsCode := range model.EventsInsert {
+			model.vm.Set("tx", s.tx)
+			model.vm.Set("before", et.Json{})
+			model.vm.Set("after", after)
+			_, err := model.vm.RunString(jsCode)
+			if err != nil {
+				return err
+			}
+		}
 	}
 
 	for _, data := range s.Data {
 		for _, fn := range s.afterInsert {
 			err := fn(s.tx, data)
+			if err != nil {
+				return err
+			}
+		}
+
+		for _, jsCode := range s.afterVmInsert {
+			s.vm.Set("tx", s.tx)
+			s.vm.Set("data", data)
+			_, err := s.vm.RunString(jsCode)
 			if err != nil {
 				return err
 			}

@@ -5,12 +5,14 @@ import (
 
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/event"
+	"github.com/cgalvisleon/et/strs"
 )
 
 const EVENT_MODEL_ERROR = "model:error"
 const EVENT_MODEL_INSERT = "model:insert"
 const EVENT_MODEL_UPDATE = "model:update"
 const EVENT_MODEL_DELETE = "model:delete"
+const EVENT_MODEL_SYNC = "model:sync"
 
 type TypeEvent int
 
@@ -150,4 +152,18 @@ func eventDeleteDefault(tx *Tx, model *Model, before et.Json, after et.Json) err
 	event.Publish(fmt.Sprintf("%s:%s", EVENT_MODEL_DELETE, model.Db.Name), data)
 
 	return nil
+}
+
+/**
+* eventSyncDefault
+* @param message event.Message
+**/
+func eventSyncDefault(message event.Message) {
+	data := message.Data
+	db := data.Str("db")
+	schema := data.Str("schema")
+	model := data.Str("model")
+	syncChannel := strs.Format("sync:%s.%s.%s", db, schema, model)
+	event.Publish(syncChannel, data)
+
 }

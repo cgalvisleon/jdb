@@ -1,11 +1,13 @@
 package jdb
 
 import (
+	"encoding/json"
 	"slices"
 	"strings"
 
 	"github.com/cgalvisleon/et/et"
-	"github.com/cgalvisleon/et/reg"
+	"github.com/cgalvisleon/et/utility"
+	"github.com/dop251/goja"
 )
 
 type TypeCommand int
@@ -44,24 +46,31 @@ type DataFunctionTx func(tx *Tx, data et.Json) error
 
 type Command struct {
 	*QlWhere
-	Id           string              `json:"id"`
-	tx           *Tx                 `json:"-"`
-	Command      TypeCommand         `json:"command"`
-	Db           *DB                 `json:"-"`
-	From         *Model              `json:"-"`
-	Data         []et.Json           `json:"data"`
-	Values       []map[string]*Field `json:"values"`
-	Returns      []*Field            `json:"returns"`
-	Sql          string              `json:"sql"`
-	Result       et.Items            `json:"result"`
-	Current      et.Items            `json:"current"`
-	CurrentMap   map[string]et.Json  `json:"current_map"`
-	ResultMap    map[string]et.Json  `json:"result_map"`
-	beforeInsert []DataFunctionTx    `json:"-"`
-	beforeUpdate []DataFunctionTx    `json:"-"`
-	afterInsert  []DataFunctionTx    `json:"-"`
-	afterUpdate  []DataFunctionTx    `json:"-"`
-	isSync       bool                `json:"-"`
+	Id             string              `json:"id"`
+	tx             *Tx                 `json:"-"`
+	Command        TypeCommand         `json:"command"`
+	Db             *DB                 `json:"-"`
+	From           *Model              `json:"-"`
+	Data           []et.Json           `json:"data"`
+	Values         []map[string]*Field `json:"values"`
+	Returns        []*Field            `json:"returns"`
+	Sql            string              `json:"sql"`
+	Result         et.Items            `json:"result"`
+	Current        et.Items            `json:"current"`
+	CurrentMap     map[string]et.Json  `json:"current_map"`
+	ResultMap      map[string]et.Json  `json:"result_map"`
+	beforeInsert   []DataFunctionTx    `json:"-"`
+	beforeUpdate   []DataFunctionTx    `json:"-"`
+	afterInsert    []DataFunctionTx    `json:"-"`
+	afterUpdate    []DataFunctionTx    `json:"-"`
+	afterDelete    []DataFunctionTx    `json:"-"`
+	isSync         bool                `json:"-"`
+	vm             *goja.Runtime       `json:"-"`
+	beforeVmInsert []string            `json:"-"`
+	beforeVmUpdate []string            `json:"-"`
+	afterVmInsert  []string            `json:"-"`
+	afterVmUpdate  []string            `json:"-"`
+	afterVmDelete  []string            `json:"-"`
 }
 
 /**
@@ -71,25 +80,35 @@ type Command struct {
 **/
 func NewCommand(model *Model, data []et.Json, command TypeCommand) *Command {
 	result := &Command{
-		Id:           reg.GenId("command"),
-		Command:      command,
-		Db:           model.Db,
-		From:         model,
-		Data:         data,
-		Values:       make([]map[string]*Field, 0),
-		beforeInsert: []DataFunctionTx{},
-		beforeUpdate: []DataFunctionTx{},
-		afterInsert:  []DataFunctionTx{},
-		afterUpdate:  []DataFunctionTx{},
-		Returns:      []*Field{},
-		Result:       et.Items{},
-		Current:      et.Items{},
-		CurrentMap:   make(map[string]et.Json),
-		ResultMap:    make(map[string]et.Json),
+		Id:             utility.UUID(),
+		Command:        command,
+		Db:             model.Db,
+		From:           model,
+		Data:           data,
+		Values:         make([]map[string]*Field, 0),
+		beforeInsert:   []DataFunctionTx{},
+		beforeUpdate:   []DataFunctionTx{},
+		afterInsert:    []DataFunctionTx{},
+		afterUpdate:    []DataFunctionTx{},
+		afterDelete:    []DataFunctionTx{},
+		Returns:        []*Field{},
+		Result:         et.Items{},
+		Current:        et.Items{},
+		CurrentMap:     make(map[string]et.Json),
+		ResultMap:      make(map[string]et.Json),
+		vm:             goja.New(),
+		beforeVmInsert: []string{},
+		beforeVmUpdate: []string{},
+		afterVmInsert:  []string{},
+		afterVmUpdate:  []string{},
+		afterVmDelete:  []string{},
 	}
 	result.QlWhere = newQlWhere(result.validator)
+	result.IsDebug = model.IsDebug
 	result.beforeInsert = append(result.beforeInsert, result.beforeInsertDefault)
 	result.beforeUpdate = append(result.beforeUpdate, result.beforeUpdateDefault)
+	result.vm.Set("tx", result.tx)
+	result.vm.Set("command", result)
 
 	return result
 }
@@ -106,11 +125,30 @@ func (s *Command) setTx(tx *Tx) *Command {
 }
 
 /**
+* serialize
+* @return []byte, error
+**/
+func (s *Command) serialize() ([]byte, error) {
+	result, err := json.Marshal(s)
+	if err != nil {
+		return []byte{}, err
+	}
+
+	return result, nil
+}
+
+/**
 * Describe
 * @return et.Json
 **/
 func (s *Command) Describe() et.Json {
-	result, err := et.Object(s)
+	definition, err := s.serialize()
+	if err != nil {
+		return et.Json{}
+	}
+
+	result := et.Json{}
+	err = json.Unmarshal(definition, &result)
 	if err != nil {
 		return et.Json{}
 	}
@@ -216,19 +254,21 @@ func (s *Command) setWheres(wheres et.Json) *Command {
 	}
 
 	for key := range wheres {
-		if slices.Contains([]string{"and", "AND", "or", "OR"}, key) {
+		key = strings.ToLower(key)
+		if slices.Contains([]string{"and", "or"}, key) {
 			continue
 		}
 
-		s.Where(key).setValue(wheres.Json(key))
+		val := wheres.Json(key)
+		s.Where(key).setValue(val)
 	}
 
 	for key := range wheres {
-		switch key {
-		case "and", "AND":
+		switch strings.ToLower(key) {
+		case "and":
 			vals := wheres.ArrayJson(key)
 			and(vals)
-		case "or", "OR":
+		case "or":
 			vals := wheres.ArrayJson(key)
 			or(vals)
 		}

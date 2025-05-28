@@ -96,7 +96,7 @@ func (s *Postgres) connect(params et.Json) error {
 	s.connStr = connStr
 	s.connected = s.db != nil
 	s.nodeId = params.Int("node_id")
-	s.Version()
+	s.getVersion()
 
 	return nil
 }
@@ -135,11 +135,11 @@ func (s *Postgres) existDatabase(name string) (bool, error) {
 }
 
 /**
-* CreateDatabase
+* createDatabase
 * @param name string
 * @return error
 **/
-func (s *Postgres) CreateDatabase(name string) error {
+func (s *Postgres) createDatabase(name string) error {
 	if s.db == nil {
 		return mistake.Newf(msg.NOT_DRIVER_DB)
 	}
@@ -168,11 +168,11 @@ func (s *Postgres) CreateDatabase(name string) error {
 }
 
 /**
-* DropDatabase
+* dropDatabase
 * @param name string
 * @return error
 **/
-func (s *Postgres) DropDatabase(name string) error {
+func (s *Postgres) dropDatabase(name string) error {
 	if s.db == nil {
 		return mistake.Newf(msg.NOT_DRIVER_DB)
 	}
@@ -198,6 +198,40 @@ func (s *Postgres) DropDatabase(name string) error {
 }
 
 /**
+* getVersion
+* @return int
+**/
+func (s *Postgres) getVersion() int {
+	if !s.connected {
+		return 0
+	}
+
+	if s.db == nil {
+		return 0
+	}
+
+	if s.version != 0 {
+		return s.version
+	}
+
+	var version string
+	err := s.db.QueryRow("SELECT version();").Scan(&version)
+	if err != nil {
+		return 0
+	}
+
+	split := strings.Split(version, ".")
+	v, err := strconv.Atoi(split[0])
+	if err != nil {
+		v = 13
+	}
+
+	s.version = v
+
+	return s.version
+}
+
+/**
 * Connect
 * @param params et.Json
 * @return error
@@ -209,7 +243,7 @@ func (s *Postgres) Connect(params et.Json) (*sql.DB, error) {
 		return nil, err
 	}
 
-	err = s.CreateDatabase(database)
+	err = s.createDatabase(database)
 	if err != nil {
 		return nil, err
 	}
@@ -239,38 +273,4 @@ func (s *Postgres) Disconnect() error {
 	}
 
 	return nil
-}
-
-/**
-* Version
-* @return int
-**/
-func (s *Postgres) Version() int {
-	if !s.connected {
-		return 0
-	}
-
-	if s.db == nil {
-		return 0
-	}
-
-	if s.version != 0 {
-		return s.version
-	}
-
-	var version string
-	err := s.db.QueryRow("SELECT version();").Scan(&version)
-	if err != nil {
-		return 0
-	}
-
-	split := strings.Split(version, ".")
-	v, err := strconv.Atoi(split[0])
-	if err != nil {
-		v = 13
-	}
-
-	s.version = v
-
-	return s.version
 }

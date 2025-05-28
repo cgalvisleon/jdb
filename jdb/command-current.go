@@ -11,13 +11,12 @@ func (s *Command) current(where et.Json) error {
 	}
 
 	model := s.From
-	columns := model.getColumnsNotByType(TpColumn)
+	columns := model.getColumnsByType(TpColumn)
 	mainWhere := s.getWheres()
-
 	ql := From(model)
 	ql.setWheres(where)
 	ql.setWheres(mainWhere)
-	ql.setHidden(columns...)
+	ql.setSelects(columns)
 	current, err := ql.
 		setDebug(s.IsDebug).
 		AllTx(s.tx)

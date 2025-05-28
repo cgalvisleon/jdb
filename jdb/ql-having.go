@@ -2,6 +2,7 @@ package jdb
 
 import (
 	"slices"
+	"strings"
 
 	"github.com/cgalvisleon/et/et"
 )
@@ -112,19 +113,21 @@ func (s *Ql) setHavings(havings et.Json) *Ql {
 	}
 
 	for key := range havings {
-		if slices.Contains([]string{"and", "AND", "or", "OR"}, key) {
+		key = strings.ToLower(key)
+		if slices.Contains([]string{"and", "or"}, key) {
 			continue
 		}
 
-		s.Having(key).setValue(havings.Json(key))
+		val := havings.Json(key)
+		s.Having(key).setValue(val)
 	}
 
 	for key := range havings {
-		switch key {
-		case "and", "AND":
+		switch strings.ToLower(key) {
+		case "and":
 			vals := havings.ArrayJson(key)
 			and(vals)
-		case "or", "OR":
+		case "or":
 			vals := havings.ArrayJson(key)
 			or(vals)
 		}

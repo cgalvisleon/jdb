@@ -1,4 +1,4 @@
-package postgres
+package sqlite
 
 import (
 	"github.com/cgalvisleon/et/strs"
@@ -10,7 +10,7 @@ import (
 * @param command *jdb.Command
 * @return string
 **/
-func (s *Postgres) sqlUpdate(command *jdb.Command) string {
+func (s *SqlLite) sqlUpdate(command *jdb.Command) string {
 	from := command.From
 	set := ""
 	atribs := ""
@@ -25,9 +25,9 @@ func (s *Postgres) sqlUpdate(command *jdb.Command) string {
 				val := jdb.JsonQuote(field.Value)
 				if len(atribs) == 0 {
 					atribs = from.SourceField.Name
-					atribs = strs.Format("jsonb_set(%s, '{%s}', %v::jsonb, true)", atribs, key, val)
+					atribs = strs.Format("json_set(%s, '$.%s', %v)", atribs, key, val)
 				} else {
-					atribs = strs.Format("jsonb_set(\n%s, \n'{%s}', %v::jsonb, true)", atribs, key, val)
+					atribs = strs.Format("json_set(\n%s, \n'$.%s', %v)", atribs, key, val)
 				}
 			}
 		}

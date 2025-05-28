@@ -4,7 +4,6 @@ import (
 	"database/sql"
 
 	"github.com/cgalvisleon/et/et"
-	"github.com/cgalvisleon/et/mistake"
 	"github.com/cgalvisleon/jdb/jdb"
 	_ "modernc.org/sqlite"
 )
@@ -14,13 +13,12 @@ type SqlLite struct {
 	params    et.Json
 	connStr   string
 	db        *sql.DB
-	master    *sql.DB
 	connected bool
 	version   int
 	nodeId    int
 }
 
-func NewDriver() jdb.Driver {
+func newDriver() jdb.Driver {
 	return &SqlLite{
 		name:      jdb.SqliteDriver,
 		params:    et.Json{},
@@ -33,9 +31,5 @@ func (s *SqlLite) Name() string {
 }
 
 func init() {
-	jdb.Register(jdb.SqliteDriver, NewDriver)
-}
-
-func (s *SqlLite) Disconnect() error {
-	return mistake.New(MSG_FUNCION_NOT_FOUND)
+	jdb.Register(jdb.SqliteDriver, newDriver)
 }

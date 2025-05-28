@@ -61,7 +61,7 @@ func (s *Postgres) ddlPrimaryKey(model *jdb.Model) string {
 	}
 
 	if len(primaryKeys()) > 0 {
-		result = strs.Format("ALTER TABLE %s ADD CONSTRAINT %s_pk PRIMARY KEY (%s);", tableName(model), model.Name, strings.Join(primaryKeys(), ", "))
+		result = strs.Format("ALTER TABLE %s ADD CONSTRAINT %s_pk PRIMARY KEY (%s);", tableName(model), model.Table, strings.Join(primaryKeys(), ", "))
 	}
 
 	return result

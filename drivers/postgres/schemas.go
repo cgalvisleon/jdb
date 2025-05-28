@@ -8,16 +8,16 @@ import (
 )
 
 /**
-* LoadSchema
+* loadSchema
 * @param name string
 * @return error
 **/
-func (s *Postgres) LoadSchema(name string) error {
+func (s *Postgres) loadSchema(name string) error {
 	if s.db == nil {
 		return mistake.Newf(msg.NOT_DRIVER_DB)
 	}
 
-	exist, err := s.ExistSchema(name)
+	exist, err := s.existSchema(name)
 	if err != nil {
 		return err
 	}
@@ -38,11 +38,11 @@ func (s *Postgres) LoadSchema(name string) error {
 }
 
 /**
-* DropSchema
+* dropSchema
 * @param name string
 * @return error
 **/
-func (s *Postgres) DropSchema(name string) error {
+func (s *Postgres) dropSchema(name string) error {
 	if s.db == nil {
 		return mistake.Newf(msg.NOT_DRIVER_DB)
 	}
@@ -59,11 +59,11 @@ func (s *Postgres) DropSchema(name string) error {
 }
 
 /**
-* ExistSchema
+* existSchema
 * @param name string
 * @return bool, error
 **/
-func (s *Postgres) ExistSchema(name string) (bool, error) {
+func (s *Postgres) existSchema(name string) (bool, error) {
 	if s.db == nil {
 		return false, mistake.Newf(msg.NOT_DRIVER_DB)
 	}

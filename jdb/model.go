@@ -14,6 +14,7 @@ import (
 	"github.com/cgalvisleon/et/reg"
 	"github.com/cgalvisleon/et/strs"
 	"github.com/cgalvisleon/et/timezone"
+	"github.com/dop251/goja"
 )
 
 var (
@@ -25,6 +26,7 @@ type Model struct {
 	Db                 *DB                      `json:"-"`
 	schema             *Schema                  `json:"-"`
 	Schema             string                   `json:"schema"`
+	Table              string                   `json:"table"`
 	CreatedAt          time.Time                `json:"created_at"`
 	UpdateAt           time.Time                `json:"updated_at"`
 	Id                 string                   `json:"id"`
@@ -62,6 +64,10 @@ type Model struct {
 	isInit             bool                     `json:"-"`
 	isCore             bool                     `json:"-"`
 	needMutate         bool                     `json:"-"`
+	vm                 *goja.Runtime            `json:"-"`
+	EventsInsert       []string                 `json:"events_insert"`
+	EventsUpdate       []string                 `json:"events_update"`
+	EventsDelete       []string                 `json:"events_delete"`
 }
 
 /**
@@ -85,6 +91,7 @@ func NewModel(schema *Schema, name string, version int) *Model {
 			Db:                 schema.Db,
 			schema:             schema,
 			Schema:             schema.Name,
+			Table:              name,
 			CreatedAt:          now,
 			UpdateAt:           now,
 			Id:                 reg.GenId("model"),
@@ -108,11 +115,20 @@ func NewModel(schema *Schema, name string, version int) *Model {
 			eventsDelete:       make([]Event, 0),
 			Version:            version,
 			isCore:             schema.isCore,
+			vm:                 goja.New(),
+			EventsInsert:       make([]string, 0),
+			EventsUpdate:       make([]string, 0),
+			EventsDelete:       make([]string, 0),
+			IsDebug:            schema.Db.IsDebug,
 		}
 		result.DefineEventError(eventErrorDefault)
 		result.DefineEvent(EventInsert, eventInsertDefault)
 		result.DefineEvent(EventUpdate, eventUpdateDefault)
 		result.DefineEvent(EventDelete, eventDeleteDefault)
+		result.On(EVENT_MODEL_SYNC, eventSyncDefault)
+		result.vm.Set("model", result)
+		result.vm.Set("schema", schema)
+		result.vm.Set("db", schema.Db)
 
 		schema.addModel(result)
 		return result
@@ -213,6 +229,20 @@ func LoadModel(db *DB, name string) (*Model, error) {
 	}
 
 	return result, nil
+}
+
+/**
+* GetModel
+* @param name string
+* @return *Model
+**/
+func (s *Model) GetModel(name string) *Model {
+	idx := slices.IndexFunc(s.Db.models, func(e *Model) bool { return e.Name == name })
+	if idx != -1 {
+		return s.Db.models[idx]
+	}
+
+	return NewModel(s.schema, name, 1)
 }
 
 /**
@@ -322,7 +352,7 @@ func (s *Model) Init() error {
 		}
 	}()
 
-	if !s.UseCore || s.isInit {
+	if s.isInit {
 		return nil
 	}
 
@@ -395,23 +425,6 @@ func (s *Model) GenId() string {
 }
 
 /**
-* GetSerie
-* @return int64, error
-**/
-func (s *Model) GetSerie() (int64, error) {
-	return s.Db.GetSerie(s.Name)
-}
-
-/**
-* GetCode
-* @param tag, prefix string
-* @return string, error
-**/
-func (s *Model) GetCode(tag, prefix string) (string, error) {
-	return s.Db.GetCode(tag, prefix)
-}
-
-/**
 * getKeyByPk
 * @param data et.Json
 * @return string, error
@@ -421,7 +434,7 @@ func (s *Model) getKeyByPk(data et.Json) (string, error) {
 	for name := range s.PrimaryKeys {
 		val := data.Get(name)
 		if val == nil {
-			return "", mistake.Newf(MSG_FIELD_REQUIRED_RELATION, name, s.Name)
+			return "", mistake.Newf(MSG_PRIMARY_KEY_REQUIRED, name, s.Name)
 		}
 
 		result = strs.Append(result, fmt.Sprintf(`%v`, val), ":")
@@ -481,7 +494,7 @@ func (s *Model) GetWhereByRequired(data et.Json) (et.Json, error) {
 	for name := range s.Required {
 		val := data.Get(name)
 		if val == nil {
-			return et.Json{}, mistake.Newf(MSG_FIELD_REQUIRED_RELATION, name, s.Name)
+			return et.Json{}, mistake.Newf(MSG_FIELD_REQUIRED, name, s.Name)
 		}
 
 		col := s.getColumn(name)
@@ -522,7 +535,7 @@ func (s *Model) GetWhereByPrimaryKeys(data et.Json) (et.Json, error) {
 	for name := range s.PrimaryKeys {
 		val := data.Get(name)
 		if val == nil {
-			return et.Json{}, mistake.Newf(MSG_FIELD_REQUIRED_RELATION, name, s.Name)
+			return et.Json{}, mistake.Newf(MSG_PRIMARY_KEY_REQUIRED, name, s.Name)
 		}
 
 		col := s.getColumn(name)
@@ -549,15 +562,6 @@ func (s *Model) GetWhereByPrimaryKeys(data et.Json) (et.Json, error) {
 	}
 
 	return result, nil
-}
-
-/**
-* SetSerie
-* @param tag string, val int64
-* @return int64, error
-**/
-func (s *Model) SetSerie(tag string, val int64) (int64, error) {
-	return s.Db.SetSerie(tag, val)
 }
 
 /**
@@ -645,11 +649,11 @@ func (s *Model) getColumns(names ...string) []*Column {
 }
 
 /**
-* getColumnsNotByType
+* getColumnsByType
 * @param tp TypeColumn
 * @return []*Column
 **/
-func (s *Model) getColumnsNotByType(tp TypeColumn) []*Column {
+func (s *Model) getColumnsByType(tp TypeColumn) []*Column {
 	result := []*Column{}
 	for _, col := range s.Columns {
 		if col.TypeColumn != tp {

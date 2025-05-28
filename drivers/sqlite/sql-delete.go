@@ -1,4 +1,4 @@
-package postgres
+package sqlite
 
 import (
 	"github.com/cgalvisleon/et/strs"
@@ -10,7 +10,7 @@ import (
 * @param command *jdb.Command
 * @return string
 **/
-func (s *Postgres) sqlDelete(command *jdb.Command) string {
+func (s *SqlLite) sqlDelete(command *jdb.Command) string {
 	from := command.From
 	where := whereConditions(command.QlWhere)
 	objects := s.sqlObject(from.GetFrom())

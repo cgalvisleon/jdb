@@ -7,11 +7,11 @@ import (
 )
 
 /**
-* GrantPrivileges
+* grantPrivileges
 * @param username, database string
 * @return error
 **/
-func (s *Postgres) GrantPrivileges(username, database string) error {
+func (s *Postgres) grantPrivileges(username, database string) error {
 	/* Grant privileges */
 	grantDatabase := fmt.Sprintf("GRANT CONNECT ON DATABASE %s TO %s;", database, username)
 	_, err := s.db.Exec(grantDatabase)
@@ -50,7 +50,12 @@ func (s *Postgres) GrantPrivileges(username, database string) error {
 	return nil
 }
 
-func (s *Postgres) CreateUser(username, password, confirmation string) error {
+/**
+* createUser
+* @param username, password, confirmation string
+* @return error
+**/
+func (s *Postgres) createUser(username, password, confirmation string) error {
 	if password != confirmation {
 		return mistake.New("password do not match!")
 	}
@@ -71,11 +76,11 @@ func (s *Postgres) CreateUser(username, password, confirmation string) error {
 }
 
 /**
-* ChangePassword
+* changePassword
 * @param username, password, confirmation string
 * @return error
 **/
-func (s *Postgres) ChangePassword(username, password, confirmation string) error {
+func (s *Postgres) changePassword(username, password, confirmation string) error {
 	if password != confirmation {
 		return mistake.New("password do not match!")
 	}
@@ -90,11 +95,11 @@ func (s *Postgres) ChangePassword(username, password, confirmation string) error
 }
 
 /**
-* DeleteUser
+* deleteUser
 * @param username string
 * @return error
 **/
-func (s *Postgres) DeleteUser(username string) error {
+func (s *Postgres) deleteUser(username string) error {
 	query := fmt.Sprintf("DROP ROLE IF EXISTS %s;", username)
 	_, err := s.db.Exec(query)
 	if err != nil {

@@ -3,9 +3,12 @@ package jdb
 import (
 	"encoding/json"
 	"net/http"
+	"runtime"
 	"slices"
 
 	"github.com/cgalvisleon/et/config"
+	"github.com/cgalvisleon/et/console"
+	"github.com/cgalvisleon/et/envar"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/mistake"
 	"github.com/cgalvisleon/et/response"
@@ -19,11 +22,13 @@ type JDB struct {
 }
 
 var (
+	os          = ""
 	conn        *JDB
 	defaultName = "jdb"
 )
 
 func init() {
+	os = runtime.GOOS
 	conn = &JDB{
 		Drivers: map[string]func() Driver{},
 		DBS:     make([]*DB, 0),
@@ -122,6 +127,9 @@ func ConnectTo(params ConnectParams) (*DB, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	debug := envar.Bool("DEBUG")
+	result.SetDebug(debug)
 
 	err = result.Conected(params.Params)
 	if err != nil {
@@ -243,7 +251,11 @@ func GetSchema(name string) *Schema {
 	if len(list) > 1 {
 		return GetDB(list[0]).GetSchema(list[1])
 	} else if len(list) == 1 {
-		return GetDB(defaultName).GetSchema(name)
+		if len(conn.DBS) == 0 {
+			return nil
+		}
+
+		return conn.DBS[0].GetSchema(name)
 	}
 
 	return nil
@@ -255,16 +267,126 @@ func GetSchema(name string) *Schema {
 * @return *Model
 **/
 func GetModel(name string) *Model {
+	var result *Model
 	list := strs.Split(name, ".")
 	if len(list) > 2 {
-		return GetDB(list[0]).GetSchema(list[1]).GetModel(list[2])
+		result = GetDB(list[0]).GetSchema(list[1]).GetModel(list[2])
+		if result != nil {
+			return result
+		}
+
+		schema := GetSchema(list[1])
+		if schema == nil {
+			return nil
+		}
+
+		result = NewModel(schema, list[2], 1)
 	} else if len(list) == 2 {
-		return GetSchema(list[0]).GetModel(list[1])
+		result = GetSchema(list[0]).GetModel(list[1])
+		if result != nil {
+			return result
+		}
+
+		schema := GetSchema(list[0])
+		if schema == nil {
+			return nil
+		}
+
+		result = NewModel(schema, list[1], 1)
 	} else if len(list) == 1 {
-		return GetSchema(defaultName).GetModel(name)
+		if len(conn.DBS) == 0 {
+			return nil
+		}
+
+		if len(conn.DBS[0].schemas) == 0 {
+			return nil
+		}
+
+		schema := conn.DBS[0].schemas[0]
+		if schema == nil {
+			return nil
+		}
+
+		result = NewModel(schema, name, 1)
 	}
 
-	return nil
+	if result == nil {
+		return nil
+	}
+
+	if err := result.Init(); err != nil {
+		console.Logf("jdb", `Error initializing model %s: %v`, name, err)
+		return nil
+	}
+
+	return result
+}
+
+/**
+* getTable
+* @param name string
+* @return *Model
+**/
+func getTable(table string) *Model {
+	var result *Model
+	var name string
+	list := strs.Split(table, ":")
+	if len(list) > 1 {
+		name = list[1]
+		table = list[0]
+	}
+
+	list = strs.Split(table, ".")
+	if len(list) == 1 {
+		return GetModel(list[0])
+	} else if len(list) > 2 {
+		if name == "" {
+			name = list[2]
+		}
+
+		result = GetDB(list[0]).GetSchema(list[1]).GetModel(name)
+		if result != nil {
+			return result
+		}
+
+		schema := GetSchema(list[1])
+		if schema == nil {
+			return nil
+		}
+
+		result = NewModel(schema, name, 1)
+		result.Table = list[2]
+		result.UseCore = false
+	} else if len(list) == 2 {
+		if name == "" {
+			name = list[1]
+		}
+
+		result = GetSchema(list[0]).GetModel(name)
+		if result != nil {
+			return result
+		}
+
+		schema := GetSchema(list[0])
+		if schema == nil {
+			return nil
+		}
+
+		result = NewModel(schema, name, 1)
+		result.Table = list[1]
+		result.UseCore = false
+	}
+
+	if result == nil {
+		return nil
+	}
+
+	if err := result.Init(); err != nil {
+		console.Logf("jdb", `Error initializing model %s: %v`, name, err)
+		return nil
+	}
+
+	return result
 }
 
 /**
