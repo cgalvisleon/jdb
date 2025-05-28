@@ -8,19 +8,6 @@ import (
 )
 
 /**
-* ddlIndex
-* @param name string
-* @param col *jdb.Column
-* @return string
-**/
-func ddlIndex(name string, col *jdb.Column) string {
-	result := ""
-	result = jdb.SQLDDL(`CREATE INDEX IF NOT EXISTS $1 ON $2($3);`, name, tableName(col.Model), col.Name)
-
-	return result
-}
-
-/**
 * ddlUniqueIndex
 * @param name string
 * @param col *jdb.Column

@@ -29,8 +29,6 @@ func (s *SqlLite) existTable(name string) (bool, error) {
 		return false, err
 	}
 
-	console.Debug("items:", items.ToString())
-
 	return items.Count > 0, nil
 }
 

@@ -161,9 +161,9 @@ func (s *SqlLite) sqlBuildObject(selects []*jdb.Field) string {
 	for i := 0; i < len(sourceField); i++ {
 		fld := sourceField[i]
 		def := aliasAsField(*fld)
-		sources = strs.Append(sources, def, "||\n")
+		sources = strs.Append(sources, def, ",\n")
 		if i == len(sourceField)-1 {
-			result = strs.Format(`%s||%s`, def, result)
+			result = strs.Format(`json_patch(%s, %s)`, result, sources)
 		}
 	}
 

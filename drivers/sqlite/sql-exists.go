@@ -18,7 +18,7 @@ func (s *SqlLite) Exists(ql *jdb.Ql) (bool, error) {
 	ql.Sql = strs.Append(ql.Sql, s.sqlWhere(ql.QlWhere), "\n")
 
 	if len(ql.Sql) > 0 {
-		ql.Sql = strs.Format("SELECT EXISTS (%s);", ql.Sql)
+		ql.Sql = strs.Format(`SELECT EXISTS (%s) AS "exists";`, ql.Sql)
 	}
 
 	if ql.IsDebug {
@@ -30,7 +30,7 @@ func (s *SqlLite) Exists(ql *jdb.Ql) (bool, error) {
 		return false, err
 	}
 
-	result := item.Bool(0, "exists")
+	result := item.Int(0, "exists") > 0
 
 	return result, nil
 }

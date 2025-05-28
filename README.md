@@ -21,7 +21,7 @@
 ## Library
 
 ```
-go get github.com/cgalvisleon/et/@v0.1.1
+go get github.com/cgalvisleon/et/@v0.1.2
 ```
 
 ## Run and build
@@ -42,7 +42,7 @@ ps aux | grep jdb | grep -v grep
 ## Version
 
 ```
-Version: v0.1.1
+Version: v0.1.2
 ```
 
 ## Go work
