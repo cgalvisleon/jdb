@@ -1,6 +1,7 @@
 package jdb
 
 import (
+	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/mistake"
 )
@@ -199,6 +200,7 @@ func (s *Ql) queryTx(tx *Tx, params et.Json) (et.Json, error) {
 	}
 
 	selects := params.Array("select")
+	console.Pong()
 	joins := params.ArrayJson("join")
 	where := params.Json("where")
 	groups := params.ArrayStr("group_by")

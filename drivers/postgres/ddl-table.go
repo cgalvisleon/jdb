@@ -30,10 +30,6 @@ func (s *Postgres) typeData(tp jdb.TypeData) interface{} {
 		return "BIGINT"
 	case jdb.TypeDataPrecision:
 		return "DOUBLE PRECISION"
-	case jdb.TypeDataDate:
-		return "TIMESTAMP"
-	case jdb.TypeDataTime:
-		return "TIMESTAMP"
 	case jdb.TypeDataDateTime:
 		return "TIMESTAMP"
 	case jdb.TypeDataCheckbox:
@@ -139,10 +135,6 @@ func (s *Postgres) defaultValue(tp jdb.TypeData) interface{} {
 		return 0
 	case jdb.TypeDataPrecision:
 		return 0.0
-	case jdb.TypeDataDate:
-		return utility.Quote("NOW()")
-	case jdb.TypeDataTime:
-		return utility.Quote("NOW()")
 	case jdb.TypeDataDateTime:
 		return utility.Quote("NOW()")
 	case jdb.TypeDataCheckbox:

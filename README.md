@@ -18,7 +18,7 @@
 
 - APP_NAME:
 
-## Library
+## Dependencis
 
 ```
 go get github.com/cgalvisleon/et/@v0.1.2

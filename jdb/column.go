@@ -69,8 +69,6 @@ const (
 	TypeDataNumber
 	TypeDataInt
 	TypeDataPrecision
-	TypeDataDate
-	TypeDataTime
 	TypeDataDateTime
 	TypeDataCheckbox
 	TypeDataBytes
@@ -137,10 +135,6 @@ func (s TypeData) Str() string {
 		return "int"
 	case TypeDataPrecision:
 		return "precision"
-	case TypeDataDate:
-		return "date"
-	case TypeDataTime:
-		return "time"
 	case TypeDataDateTime:
 		return "date-time"
 	case TypeDataBytes:
@@ -192,10 +186,6 @@ func StrsToTypeData(strs string) TypeData {
 		return TypeDataSelect
 	case "multi-select":
 		return TypeDataMultiSelect
-	case "date":
-		return TypeDataDate
-	case "time":
-		return TypeDataTime
 	case "date-time":
 		return TypeDataDateTime
 	case "checkbox":
@@ -237,10 +227,6 @@ func StrToKindType(strs string) (TypeColumn, TypeData) {
 		return TpAtribute, TypeDataSelect
 	case "multi-select":
 		return TpAtribute, TypeDataMultiSelect
-	case "date":
-		return TpAtribute, TypeDataDate
-	case "time":
-		return TpAtribute, TypeDataTime
 	case "date-time":
 		return TpAtribute, TypeDataDateTime
 	case "checkbox":
@@ -676,7 +662,7 @@ func (s *Column) SetMin(min float64) *Column {
 * @return interface{}
 **/
 func (s *Column) DefaultValue() interface{} {
-	if s.TypeData == TypeDataTime {
+	if s.TypeData == TypeDataDateTime {
 		return timezone.Now()
 	}
 

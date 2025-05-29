@@ -1,4 +1,4 @@
-package sqlite
+package mysql
 
 import (
 	"slices"
@@ -6,7 +6,7 @@ import (
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/strs"
 	"github.com/cgalvisleon/et/utility"
-	"github.com/cgalvisleon/jdb/jdb"
+	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
 /**
@@ -14,58 +14,58 @@ import (
 * @param tp jdb.TypeData
 * @return interface{}
 **/
-func (s *SqlLite) typeData(tp jdb.TypeData) interface{} {
+func (s *Mysql) typeData(tp jdb.TypeData) interface{} {
 	switch tp {
 	case jdb.TypeDataText:
-		return "TEXT"
+		return "VARCHAR(250)"
 	case jdb.TypeDataMemo:
 		return "TEXT"
 	case jdb.TypeDataShortText:
-		return "TEXT"
+		return "VARCHAR(80)"
 	case jdb.TypeDataKey:
-		return "TEXT"
+		return "VARCHAR(80)"
 	case jdb.TypeDataNumber:
-		return "REAL"
+		return "DECIMAL(18,2)"
 	case jdb.TypeDataInt:
-		return "INTEGER"
+		return "BIGINT"
 	case jdb.TypeDataPrecision:
-		return "REAL"
+		return "DOUBLE PRECISION"
 	case jdb.TypeDataDateTime:
-		return "TEXT"
+		return "TIMESTAMP"
 	case jdb.TypeDataCheckbox:
-		return "INTEGER"
+		return "BOOLEAN"
 	case jdb.TypeDataBytes:
-		return "BLOB"
+		return "BYTEA"
 	case jdb.TypeDataObject:
-		return "TEXT"
+		return "JSONB"
 	case jdb.TypeDataSelect:
-		return "TEXT"
+		return "VARCHAR(250)"
 	case jdb.TypeDataMultiSelect:
-		return "TEXT"
+		return "JSONB"
 	case jdb.TypeDataGeometry:
-		return "TEXT"
+		return "JSONB"
 	case jdb.TypeDataFullText:
-		return "TEXT"
+		return "TSVECTOR"
 	case jdb.TypeDataState:
-		return "TEXT"
+		return "VARCHAR(80)"
 	case jdb.TypeDataUser:
-		return "TEXT"
+		return "VARCHAR(250)"
 	case jdb.TypeDataFilesMedia:
 		return "TEXT"
 	case jdb.TypeDataUrl:
 		return "TEXT"
 	case jdb.TypeDataEmail:
-		return "TEXT"
+		return "VARCHAR(250)"
 	case jdb.TypeDataPhone:
-		return "TEXT"
+		return "VARCHAR(250)"
 	case jdb.TypeDataAddress:
 		return "TEXT"
 	case jdb.TypeDataRelation:
-		return "TEXT"
+		return "VARCHAR(80)"
 	case jdb.TypeDataRollup:
-		return "TEXT"
+		return "VARCHAR(80)"
 	default:
-		return "TEXT"
+		return "VARCHAR(250)"
 	}
 }
 
@@ -75,26 +75,48 @@ func (s *SqlLite) typeData(tp jdb.TypeData) interface{} {
 * @param lenght int
 * @return jdb.TypeData
 **/
-func (s *SqlLite) strToTypeData(tp string, lenght int) jdb.TypeData {
+func (s *Mysql) strToTypeData(tp string, lenght int) jdb.TypeData {
 	tp = strs.Uppcase(tp)
 	switch tp {
+	case "BOOLEAN":
+		return jdb.TypeDataCheckbox
 	case "INTEGER":
 		return jdb.TypeDataInt
-	case "REAL":
-		return jdb.TypeDataNumber
-	case "TEXT":
+	case "INT4":
+		return jdb.TypeDataInt
+	case "VARCHAR":
 		switch lenght {
 		case 80:
 			return jdb.TypeDataShortText
 		case 20:
-			return jdb.TypeDataState
+			return jdb.TypeDataShortText
 		default:
-			return jdb.TypeDataMemo
+			return jdb.TypeDataText
 		}
-	case "BLOB":
-		return jdb.TypeDataBytes
+	case "VARCHAR(80)":
+		return jdb.TypeDataKey
+	case "VARCHAR(20)":
+		return jdb.TypeDataState
+	case "TEXT":
+		return jdb.TypeDataMemo
+	case "DECIMAL(18,2)":
+		return jdb.TypeDataNumber
+	case "DOUBLE PRECISION":
+		return jdb.TypeDataPrecision
 	case "NUMERIC":
 		return jdb.TypeDataNumber
+	case "JSONB":
+		return jdb.TypeDataObject
+	case "BIGINT":
+		return jdb.TypeDataInt
+	case "VARCHAR(250)":
+		return jdb.TypeDataText
+	case "TIMESTAMP":
+		return jdb.TypeDataDateTime
+	case "BYTEA":
+		return jdb.TypeDataBytes
+	case "TSVECTOR":
+		return jdb.TypeDataFullText
 	default:
 		return jdb.TypeDataText
 	}
@@ -105,7 +127,7 @@ func (s *SqlLite) strToTypeData(tp string, lenght int) jdb.TypeData {
 * @param tp jdb.TypeData
 * @return interface{}
 **/
-func (s *SqlLite) defaultValue(tp jdb.TypeData) interface{} {
+func (s *Mysql) defaultValue(tp jdb.TypeData) interface{} {
 	switch tp {
 	case jdb.TypeDataNumber:
 		return 0.0
@@ -114,9 +136,9 @@ func (s *SqlLite) defaultValue(tp jdb.TypeData) interface{} {
 	case jdb.TypeDataPrecision:
 		return 0.0
 	case jdb.TypeDataDateTime:
-		return "(datetime('now'))"
+		return utility.Quote("NOW()")
 	case jdb.TypeDataCheckbox:
-		return 0
+		return utility.Quote(false)
 	case jdb.TypeDataBytes:
 		return utility.Quote("")
 	case jdb.TypeDataObject:
@@ -160,25 +182,29 @@ func (s *SqlLite) defaultValue(tp jdb.TypeData) interface{} {
 * @param model *jdb.Model
 * @return string
 **/
-func (s *SqlLite) ddlTable(model *jdb.Model) string {
+func (s *Mysql) ddlTable(model *jdb.Model) string {
 	var columnsDef string
 	for _, column := range model.Columns {
 		if slices.Contains([]*jdb.Column{model.SystemKeyField}, column) {
-			def := strs.Format("\n\t%s %s DEFAULT %v", column.Name, s.typeData(column.TypeData), s.defaultValue(column.TypeData))
-			columnsDef = strs.Append(columnsDef, def, ",")
+			if s.version >= 15 {
+				def := strs.Format("\n\t%s %s DEFAULT %v INVISIBLE", column.Name, s.typeData(column.TypeData), s.defaultValue(column.TypeData))
+				columnsDef = strs.Append(columnsDef, def, ",")
+			} else {
+				def := strs.Format("\n\t%s %s DEFAULT %v", column.Name, s.typeData(column.TypeData), s.defaultValue(column.TypeData))
+				columnsDef = strs.Append(columnsDef, def, ",")
+			}
 		} else if slices.Contains([]*jdb.Column{model.FullTextField}, column) && column.FullText != nil {
-			def := strs.Format("\n\t%s TEXT", column.Name)
+			columns := ""
+			for _, col := range column.FullText.Columns {
+				columns = strs.Append(columns, strs.Format("COALESCE(%s, '')", col), " || ' ' || ")
+			}
+			def := strs.Format("\n\t%s TSVECTOR GENERATED ALWAYS AS (to_tsvector('%s', %s)) STORED", column.Name, column.FullText.Language, columns)
 			columnsDef = strs.Append(columnsDef, def, ",")
 		} else if column.TypeColumn == jdb.TpColumn {
 			def := strs.Format("\n\t%s %s DEFAULT %v", column.Name, s.typeData(column.TypeData), s.defaultValue(column.TypeData))
 			columnsDef = strs.Append(columnsDef, def, ",")
 		}
 	}
-
-	ddlPrimaryKey := s.ddlPrimaryKey(model)
-	columnsDef = strs.Append(columnsDef, ddlPrimaryKey, ",\n\t")
-	ddlForeignKeys := s.ddlForeignKeys(model)
-	columnsDef = strs.Append(columnsDef, ddlForeignKeys, ",\n\t")
 	result := strs.Format("\nCREATE TABLE IF NOT EXISTS %s (%s\n);", tableName(model), columnsDef)
 
 	return result
@@ -190,8 +216,9 @@ func (s *SqlLite) ddlTable(model *jdb.Model) string {
 * @param newName string
 * @return string
 **/
-func (s *SqlLite) ddlTableRename(oldName, newName string) string {
+func (s *Mysql) ddlTableRename(oldName, newName string) string {
 	result := strs.Format(`ALTER TABLE %s RENAME TO %s;`, oldName, newName)
+
 	return result
 }
 
@@ -201,14 +228,15 @@ func (s *SqlLite) ddlTableRename(oldName, newName string) string {
 * @param tableOrigin string
 * @return string
 **/
-func (s *SqlLite) ddlTableInsertTo(model *jdb.Model, tableOrigin string) string {
+func (s *Mysql) ddlTableInsertTo(model *jdb.Model, tableOrigin string) string {
 	fields := ""
 	for _, column := range model.Columns {
 		if column.TypeColumn == jdb.TpColumn {
 			fields = strs.Append(fields, strs.Format("%s", column.Name), ", ")
 		}
 	}
-	result := strs.Format("INSERT INTO %s (%s) SELECT %s FROM %s;", tableName(model), fields, fields, tableOrigin)
+	result := strs.Format("INSERT INTO %s (%s)\nSELECT %s FROM %s;", tableName(model), fields, fields, tableOrigin)
+
 	return result
 }
 
@@ -217,7 +245,8 @@ func (s *SqlLite) ddlTableInsertTo(model *jdb.Model, tableOrigin string) string 
 * @param table string
 * @return string
 **/
-func (s *SqlLite) ddlTableDrop(table string) string {
-	result := strs.Format("DROP TABLE IF EXISTS %s;", table)
+func (s *Mysql) ddlTableDrop(table string) string {
+	result := strs.Format("DROP TABLE IF EXISTS %s CASCADE;", table)
+
 	return result
 }

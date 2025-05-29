@@ -1,4 +1,4 @@
-package sqlite
+package mysql
 
 import (
 	"slices"
@@ -14,7 +14,7 @@ import (
 * @param ql *jdb.Ql
 * @return string
 **/
-func (s *SqlLite) sqlSelect(ql *jdb.Ql) string {
+func (s *Mysql) sqlSelect(ql *jdb.Ql) string {
 	if len(ql.Froms.Froms) == 0 {
 		return ""
 	}
@@ -61,7 +61,7 @@ func asField(field jdb.Field) string {
 		result = setAgregaction(result)
 	case jdb.TpAtribute:
 		result = strs.Append(result, field.Source, ".")
-		result = strs.Format(`json_extract(%s, '$.%s')`, result, field.Name)
+		result = strs.Format(`%s#>>'{%s}'`, result, field.Name)
 		result = strs.Format(`COALESCE(%s, %v)`, result, field.Column.DefaultQuote())
 		result = setAgregaction(result)
 	}
@@ -93,7 +93,7 @@ func jsonBuildObject(result, obj string) string {
 		return result
 	}
 
-	return strs.Append(result, strs.Format("json_object(\n%s)", obj), ",\n")
+	return strs.Append(result, strs.Format("jsonb_build_object(\n%s)", obj), "||\n")
 }
 
 /**
@@ -101,7 +101,7 @@ func jsonBuildObject(result, obj string) string {
 * @param from *jdb.QlFrom
 * @return string
 **/
-func (s *SqlLite) sqlObject(from *jdb.QlFrom) string {
+func (s *Mysql) sqlObject(from *jdb.QlFrom) string {
 	var selects = []*jdb.Field{}
 	for _, col := range from.Columns {
 		field := col.GetField()
@@ -125,10 +125,10 @@ func (s *SqlLite) sqlObject(from *jdb.QlFrom) string {
 * @param selects []*jdb.Field
 * @return string
 **/
-func (s *SqlLite) sqlBuildObject(selects []*jdb.Field) string {
+func (s *Mysql) sqlBuildObject(selects []*jdb.Field) string {
 	result := ""
 	l := 20
-	if s.version >= 3 {
+	if s.version >= 13 {
 		l = 100
 	}
 	n := 0
@@ -161,9 +161,9 @@ func (s *SqlLite) sqlBuildObject(selects []*jdb.Field) string {
 	for i := 0; i < len(sourceField); i++ {
 		fld := sourceField[i]
 		def := aliasAsField(*fld)
-		sources = strs.Append(sources, def, ",\n")
+		sources = strs.Append(sources, def, "||\n")
 		if i == len(sourceField)-1 {
-			result = strs.Format(`json_patch(%s, %s)`, result, sources)
+			result = strs.Format(`%s||%s`, def, result)
 		}
 	}
 
@@ -175,7 +175,7 @@ func (s *SqlLite) sqlBuildObject(selects []*jdb.Field) string {
 * @param selects []*jdb.Field, orders *jdb.QlOrder
 * @return string
 **/
-func (s *SqlLite) sqlObjectOrders(selects []*jdb.Field, orders *jdb.QlOrder) string {
+func (s *Mysql) sqlObjectOrders(selects []*jdb.Field, orders *jdb.QlOrder) string {
 	result := s.sqlBuildObject(selects)
 	result = strs.Append(result, "result", " AS ")
 	for _, ord := range orders.Asc {
@@ -195,7 +195,7 @@ func (s *SqlLite) sqlObjectOrders(selects []*jdb.Field, orders *jdb.QlOrder) str
 * @param selects []*jdb.Field
 * @return string
 **/
-func (s *SqlLite) sqlColumns(selects []*jdb.Field) string {
+func (s *Mysql) sqlColumns(selects []*jdb.Field) string {
 	result := ""
 	for _, fld := range selects {
 		if fld.Hidden {
@@ -213,7 +213,7 @@ func (s *SqlLite) sqlColumns(selects []*jdb.Field) string {
 * @param ql *jdb.Ql
 * @return et.Items, error
 **/
-func (s *SqlLite) Select(ql *jdb.Ql) (et.Items, error) {
+func (s *Mysql) Select(ql *jdb.Ql) (et.Items, error) {
 	ql.Sql = ""
 	ql.Sql = strs.Append(ql.Sql, s.sqlSelect(ql), "\n")
 	ql.Sql = strs.Append(ql.Sql, s.sqlFrom(ql.Froms), "\n")

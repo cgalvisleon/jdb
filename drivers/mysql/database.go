@@ -1,4 +1,4 @@
-package postgres
+package mysql
 
 import (
 	"database/sql"
@@ -20,13 +20,12 @@ import (
 * @param params et.Json
 * @return string, error
 **/
-func (s *Postgres) chain(params et.Json) (string, error) {
+func (s *Mysql) chain(params et.Json) (string, error) {
 	username := params.Str("username")
 	password := params.Str("password")
 	host := params.Str("host")
 	port := params.Int("port")
 	database := params.Str("database")
-	app := params.Str("app")
 
 	if !utility.ValidStr(username, 0, []string{""}) {
 		return "", mistake.Newf(jdb.MSS_PARAM_REQUIRED, "username")
@@ -48,12 +47,7 @@ func (s *Postgres) chain(params et.Json) (string, error) {
 		return "", mistake.Newf(jdb.MSS_PARAM_REQUIRED, "database")
 	}
 
-	if !utility.ValidStr(app, 0, []string{""}) {
-		return "", mistake.Newf(jdb.MSS_PARAM_REQUIRED, "app")
-	}
-
-	driver := s.name
-	result := strs.Format(`%s://%s:%s@%s:%d/%s?sslmode=disable&application_name=%s`, driver, username, password, host, port, database, app)
+	result := strs.Format(`%s:%s@tcp(%s:%d)/%s?parseTime=true`, username, password, host, port, database)
 
 	return result, nil
 }
@@ -63,7 +57,7 @@ func (s *Postgres) chain(params et.Json) (string, error) {
 * @param connStr string
 * @return *sql.DB, error
 **/
-func (s *Postgres) connectTo(connStr string) (*sql.DB, error) {
+func (s *Mysql) connectTo(connStr string) (*sql.DB, error) {
 	db, err := sql.Open(s.name, connStr)
 	if err != nil {
 		return nil, err
@@ -81,7 +75,7 @@ func (s *Postgres) connectTo(connStr string) (*sql.DB, error) {
 * @param params et.Json
 * @return error
 **/
-func (s *Postgres) connect(params et.Json) error {
+func (s *Mysql) connect(params et.Json) error {
 	connStr, err := s.chain(params)
 	if err != nil {
 		return err
@@ -107,8 +101,8 @@ func (s *Postgres) connect(params et.Json) error {
 * @param params et.Json
 * @return error
 **/
-func (s *Postgres) connectDefault(params et.Json) error {
-	params["database"] = "postgres"
+func (s *Mysql) connectDefault(params et.Json) error {
+	params["database"] = "Mysql"
 	return s.connect(params)
 }
 
@@ -117,7 +111,7 @@ func (s *Postgres) connectDefault(params et.Json) error {
 * @param name string
 * @return bool, error
 **/
-func (s *Postgres) existDatabase(name string) (bool, error) {
+func (s *Mysql) existDatabase(name string) (bool, error) {
 	sql := `
 	SELECT EXISTS(
 	SELECT 1
@@ -140,7 +134,7 @@ func (s *Postgres) existDatabase(name string) (bool, error) {
 * @param name string
 * @return error
 **/
-func (s *Postgres) createDatabase(name string) error {
+func (s *Mysql) createDatabase(name string) error {
 	if s.db == nil {
 		return mistake.Newf(msg.NOT_DRIVER_DB)
 	}
@@ -173,7 +167,7 @@ func (s *Postgres) createDatabase(name string) error {
 * @param name string
 * @return error
 **/
-func (s *Postgres) dropDatabase(name string) error {
+func (s *Mysql) dropDatabase(name string) error {
 	if s.db == nil {
 		return mistake.Newf(msg.NOT_DRIVER_DB)
 	}
@@ -202,7 +196,7 @@ func (s *Postgres) dropDatabase(name string) error {
 * getVersion
 * @return int
 **/
-func (s *Postgres) getVersion() int {
+func (s *Mysql) getVersion() int {
 	if !s.connected {
 		return 0
 	}
@@ -227,7 +221,7 @@ func (s *Postgres) getVersion() int {
 		v = 0
 	}
 
-	if v < 13 {
+	if v < 8 {
 		console.Alert(fmt.Errorf(MSG_VERSION_NOT_SUPPORTED, version))
 	}
 
@@ -241,7 +235,7 @@ func (s *Postgres) getVersion() int {
 * @param params et.Json
 * @return error
 **/
-func (s *Postgres) Connect(params et.Json) (*sql.DB, error) {
+func (s *Mysql) Connect(params et.Json) (*sql.DB, error) {
 	database := params.Str("database")
 	err := s.connectDefault(params)
 	if err != nil {
@@ -268,7 +262,7 @@ func (s *Postgres) Connect(params et.Json) (*sql.DB, error) {
 * Disconnect
 * @return error
 **/
-func (s *Postgres) Disconnect() error {
+func (s *Mysql) Disconnect() error {
 	if !s.connected {
 		return nil
 	}

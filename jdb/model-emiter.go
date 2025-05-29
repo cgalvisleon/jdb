@@ -1,6 +1,8 @@
 package jdb
 
 import (
+	"fmt"
+
 	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/event"
@@ -20,7 +22,7 @@ func (s *Model) eventEmiter(message event.Message) {
 
 	eventEmiter, ok := s.eventsEmiter[message.Channel]
 	if !ok {
-		console.Alert(mistake.Newf("Event not found (%s)", message.Channel))
+		console.Alert(fmt.Errorf(MSG_EVENT_NOT_FOUND, message.Channel, s.Name))
 		return
 	}
 

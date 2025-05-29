@@ -43,4 +43,5 @@ const (
 	MSG_ROLLBACK_ERROR           = "Rollback error: (%s)"
 	MSG_COMMIT_ERROR             = "Commit error: (%s)"
 	MSG_DATABASE_NOT_CONNECTED   = "Database not connected"
+	MSG_EVENT_NOT_FOUND          = "Event not found (%s) in model %s"
 )

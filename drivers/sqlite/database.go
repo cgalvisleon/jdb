@@ -2,6 +2,8 @@ package sqlite
 
 import (
 	"database/sql"
+	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/cgalvisleon/et/console"
@@ -48,7 +50,7 @@ func (s *SqlLite) Connect(params et.Json) (*sql.DB, error) {
 	s.connStr = database
 	s.connected = s.db != nil
 	s.nodeId = params.Int("node_id")
-	s.version = 3
+	s.getVersion()
 
 	console.Logf(s.name, `Connected to %s:%s`, params.Str("host"), database)
 
@@ -69,4 +71,42 @@ func (s *SqlLite) Disconnect() error {
 	}
 
 	return nil
+}
+
+/**
+* getVersion
+* @return int
+**/
+func (s *SqlLite) getVersion() int {
+	if !s.connected {
+		return 0
+	}
+
+	if s.db == nil {
+		return 0
+	}
+
+	if s.version != 0 {
+		return s.version
+	}
+
+	var version string
+	err := s.db.QueryRow("SELECT sqlite_version();").Scan(&version)
+	if err != nil {
+		return 0
+	}
+
+	split := strings.Split(version, ".")
+	v, err := strconv.Atoi(split[0])
+	if err != nil {
+		v = 0
+	}
+
+	if v < 3 {
+		console.Alert(fmt.Errorf(MSG_VERSION_NOT_SUPPORTED, version))
+	}
+
+	s.version = v
+
+	return s.version
 }
