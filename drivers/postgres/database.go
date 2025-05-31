@@ -158,7 +158,7 @@ func (s *Postgres) createDatabase(name string) error {
 	CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 	CREATE EXTENSION IF NOT EXISTS pgcrypto;
 	CREATE DATABASE $1`, name)
-	_, err = jdb.Query(s.db, sql, name)
+	_, err = jdb.Exec(s.db, sql, name)
 	if err != nil {
 		return err
 	}
@@ -188,7 +188,7 @@ func (s *Postgres) dropDatabase(name string) error {
 	}
 
 	sql := jdb.SQLDDL(`DROP DATABASE $1`, name)
-	_, err = jdb.Query(s.db, sql, name)
+	_, err = jdb.Exec(s.db, sql, name)
 	if err != nil {
 		return err
 	}
@@ -216,7 +216,7 @@ func (s *Postgres) getVersion() int {
 	}
 
 	var version string
-	err := s.db.QueryRow("SELECT version();").Scan(&version)
+	err := s.db.QueryRow("SHOW server_version").Scan(&version)
 	if err != nil {
 		return 0
 	}

@@ -3,6 +3,7 @@ package jdb
 import (
 	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
+	"github.com/cgalvisleon/et/mistake"
 	"github.com/cgalvisleon/et/timezone"
 )
 
@@ -45,6 +46,10 @@ func (s *DB) defineModel() error {
 * @return et.Item, error
 **/
 func (s *DB) getModel(kind, name string) (et.Item, error) {
+	if coreModel == nil || !coreModel.isInit {
+		return et.Item{}, mistake.New(MSG_DATABASE_NOT_CONCURRENT)
+	}
+
 	return coreModel.
 		Where("kind").Eq(kind).
 		And("name").Eq(name).
@@ -57,6 +62,10 @@ func (s *DB) getModel(kind, name string) (et.Item, error) {
 * @return error
 **/
 func (s *DB) upsertModel(kind, name string, version int, definition []byte) error {
+	if coreModel == nil || !coreModel.isInit {
+		return nil
+	}
+
 	now := timezone.Now()
 	_, err := coreModel.
 		Upsert(et.Json{
@@ -81,6 +90,10 @@ func (s *DB) upsertModel(kind, name string, version int, definition []byte) erro
 * @return error
 **/
 func (s *DB) deleteModel(kind, name string) error {
+	if coreModel == nil || !coreModel.isInit {
+		return nil
+	}
+
 	_, err := coreModel.
 		Delete("kind").Eq(kind).
 		And("name").Eq(name).
@@ -98,6 +111,10 @@ func (s *DB) deleteModel(kind, name string) error {
 * @return interface{}, error
 **/
 func (s *DB) QueryModel(search et.Json) (interface{}, error) {
+	if coreModel == nil || !coreModel.isInit {
+		return nil, mistake.New(MSG_DATABASE_NOT_CONCURRENT)
+	}
+
 	result, err := coreModel.
 		Query(search)
 	if err != nil {

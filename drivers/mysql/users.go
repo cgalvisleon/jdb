@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/cgalvisleon/et/mistake"
+	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
 /**
@@ -14,35 +15,35 @@ import (
 func (s *Mysql) grantPrivileges(username, database string) error {
 	/* Grant privileges */
 	grantDatabase := fmt.Sprintf("GRANT CONNECT ON DATABASE %s TO %s;", database, username)
-	_, err := s.db.Exec(grantDatabase)
+	_, err := jdb.Exec(s.db, grantDatabase)
 	if err != nil {
 		return err
 	}
 
 	/* Grant schema */
 	grantSchema := fmt.Sprintf("GRANT USAGE ON SCHEMA public TO %s;", username)
-	_, err = s.db.Exec(grantSchema)
+	_, err = jdb.Exec(s.db, grantSchema)
 	if err != nil {
 		return err
 	}
 
 	/* Grant tables */
 	grantTables := fmt.Sprintf("GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO %s;", username)
-	_, err = s.db.Exec(grantTables)
+	_, err = jdb.Exec(s.db, grantTables)
 	if err != nil {
 		return err
 	}
 
 	/* Revoke drop */
 	revokeDrop := fmt.Sprintf("ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE ALL ON TABLES FROM %s;", username)
-	_, err = s.db.Exec(revokeDrop)
+	_, err = jdb.Exec(s.db, revokeDrop)
 	if err != nil {
 		return err
 	}
 
 	/* Grant future tables */
 	grantFutureTables := fmt.Sprintf("ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO %s;", username)
-	_, err = s.db.Exec(grantFutureTables)
+	_, err = jdb.Exec(s.db, grantFutureTables)
 	if err != nil {
 		return err
 	}
@@ -61,13 +62,13 @@ func (s *Mysql) createUser(username, password, confirmation string) error {
 	}
 
 	query := fmt.Sprintf("CREATE ROLE %s WITH LOGIN PASSWORD '%s';", username, password)
-	_, err := s.db.Exec(query)
+	_, err := jdb.Exec(s.db, query)
 	if err != nil {
 		return err
 	}
 
 	grantPrivilegesQuery := fmt.Sprintf(`GRANT ALL PRIVILEGES ON DATABASE %s;`, username)
-	_, err = s.db.Exec(grantPrivilegesQuery)
+	_, err = jdb.Exec(s.db, grantPrivilegesQuery)
 	if err != nil {
 		return err
 	}
@@ -86,7 +87,7 @@ func (s *Mysql) changePassword(username, password, confirmation string) error {
 	}
 
 	query := fmt.Sprintf("ALTER ROLE %s WITH PASSWORD '%s';", username, password)
-	_, err := s.db.Exec(query)
+	_, err := jdb.Exec(s.db, query)
 	if err != nil {
 		return err
 	}
@@ -101,7 +102,7 @@ func (s *Mysql) changePassword(username, password, confirmation string) error {
 **/
 func (s *Mysql) deleteUser(username string) error {
 	query := fmt.Sprintf("DROP ROLE IF EXISTS %s;", username)
-	_, err := s.db.Exec(query)
+	_, err := jdb.Exec(s.db, query)
 	if err != nil {
 		return err
 	}

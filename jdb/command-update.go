@@ -52,6 +52,10 @@ func (s *Command) updated() error {
 		})
 	}
 
+	if !model.isAudit {
+		audit("update", s.Sql)
+	}
+
 	for key, after := range s.ResultMap {
 		before := s.CurrentMap[key]
 		if before == nil {

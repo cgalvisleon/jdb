@@ -186,13 +186,8 @@ func (s *Postgres) ddlTable(model *jdb.Model) string {
 	var columnsDef string
 	for _, column := range model.Columns {
 		if slices.Contains([]*jdb.Column{model.SystemKeyField}, column) {
-			if s.version >= 15 {
-				def := strs.Format("\n\t%s %s DEFAULT %v INVISIBLE", column.Name, s.typeData(column.TypeData), s.defaultValue(column.TypeData))
-				columnsDef = strs.Append(columnsDef, def, ",")
-			} else {
-				def := strs.Format("\n\t%s %s DEFAULT %v", column.Name, s.typeData(column.TypeData), s.defaultValue(column.TypeData))
-				columnsDef = strs.Append(columnsDef, def, ",")
-			}
+			def := strs.Format("\n\t%s %s DEFAULT %v", column.Name, s.typeData(column.TypeData), s.defaultValue(column.TypeData))
+			columnsDef = strs.Append(columnsDef, def, ",")
 		} else if slices.Contains([]*jdb.Column{model.FullTextField}, column) && column.FullText != nil {
 			columns := ""
 			for _, col := range column.FullText.Columns {

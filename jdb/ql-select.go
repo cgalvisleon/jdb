@@ -91,9 +91,7 @@ func (s *Ql) Data(fields ...interface{}) *Ql {
 * @return *Ql
 **/
 func (s *Ql) Hidden(fields ...string) *Ql {
-	s.Hiddens = append(s.Hiddens, fields...)
-
-	return s
+	return s.setHidden(fields...)
 }
 
 /**
@@ -126,10 +124,8 @@ func (s *Ql) setSelects(fields ...interface{}) *Ql {
 * @param columns ...*Column
 * @return *Ql
 **/
-func (s *Ql) setHidden(columns ...*Column) *Ql {
-	for _, column := range columns {
-		s.Hiddens = append(s.Hiddens, column.Name)
-	}
+func (s *Ql) setHidden(columns ...string) *Ql {
+	s.Hiddens = append(s.Hiddens, columns...)
 
 	return s
 }

@@ -62,7 +62,7 @@ func (s *Postgres) LoadModel(model *jdb.Model) error {
 			console.Debug(sql)
 		}
 
-		_, err = jdb.Query(s.db, sql)
+		_, err = jdb.Exec(s.db, sql)
 		if err != nil {
 			return err
 		}

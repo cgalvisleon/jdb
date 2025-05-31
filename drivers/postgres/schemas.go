@@ -27,7 +27,7 @@ func (s *Postgres) loadSchema(name string) error {
 	}
 
 	sql := jdb.SQLDDL(`CREATE SCHEMA IF NOT EXISTS $1`, name)
-	_, err = jdb.Query(s.db, sql)
+	_, err = jdb.Exec(s.db, sql)
 	if err != nil {
 		return err
 	}

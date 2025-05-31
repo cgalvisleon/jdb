@@ -44,4 +44,5 @@ const (
 	MSG_COMMIT_ERROR             = "Commit error: (%s)"
 	MSG_DATABASE_NOT_CONNECTED   = "Database not connected"
 	MSG_EVENT_NOT_FOUND          = "Event not found (%s) in model %s"
+	MSG_DATABASE_NOT_CONCURRENT  = "Database not concurrent"
 )

@@ -46,8 +46,8 @@ func (s *DB) defineRecords() error {
 }
 
 func (s *DB) upsertRecord(tx *Tx, schema, name, sysid, option string) error {
-	if sysid == "" {
-		return mistake.New(MSG_SYSID_REQUIRED)
+	if coreRecords == nil || !coreRecords.isInit || sysid == "" {
+		return nil
 	}
 
 	now := timezone.Now()
@@ -76,6 +76,10 @@ func (s *DB) upsertRecord(tx *Tx, schema, name, sysid, option string) error {
 * @return interface{}, error
 **/
 func (s *DB) QueryRecords(query et.Json) (interface{}, error) {
+	if coreRecords == nil || !coreRecords.isInit {
+		return nil, mistake.New(MSG_DATABASE_NOT_CONCURRENT)
+	}
+
 	result, err := coreRecords.
 		Query(query)
 	if err != nil {

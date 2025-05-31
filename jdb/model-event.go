@@ -86,7 +86,7 @@ func eventInsertDefault(tx *Tx, model *Model, before et.Json, after et.Json) err
 * @return error
 **/
 func eventUpdateDefault(tx *Tx, model *Model, before et.Json, after et.Json) error {
-	if model.UseCore && model.SystemKeyField != nil {
+	if model.UseCore && model.SystemKeyField != nil && !model.isAudit {
 		sysid := after.Str(model.SystemKeyField.Name)
 		err := model.Db.upsertRecord(tx, model.Schema, model.Name, sysid, "update")
 		if err != nil {
@@ -125,7 +125,7 @@ func eventUpdateDefault(tx *Tx, model *Model, before et.Json, after et.Json) err
 * @return error
 **/
 func eventDeleteDefault(tx *Tx, model *Model, before et.Json, after et.Json) error {
-	if model.UseCore && model.SystemKeyField != nil {
+	if model.UseCore && model.SystemKeyField != nil && !model.isAudit {
 		sysid := after.Str(model.SystemKeyField.Name)
 		err := model.Db.upsertRecord(tx, model.Schema, model.Name, sysid, "delete")
 		if err != nil {
@@ -165,5 +165,4 @@ func eventSyncDefault(message event.Message) {
 	model := data.Str("model")
 	syncChannel := strs.Format("sync:%s.%s.%s", db, schema, model)
 	event.Publish(syncChannel, data)
-
 }

@@ -50,6 +50,10 @@ func (s *Command) inserted() error {
 		})
 	}
 
+	if !model.isAudit {
+		audit("insert", s.Sql)
+	}
+
 	for _, after := range s.ResultMap {
 		for _, event := range model.eventsInsert {
 			err := event(s.tx, model, et.Json{}, after)

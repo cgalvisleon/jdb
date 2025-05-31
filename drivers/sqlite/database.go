@@ -9,7 +9,6 @@ import (
 	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/mistake"
-	_ "modernc.org/sqlite"
 )
 
 func (s *SqlLite) connectTo(connStr string) (*sql.DB, error) {

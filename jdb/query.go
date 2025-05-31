@@ -22,6 +22,7 @@ func QueryTx(tx *Tx, db *sql.DB, sql string, arg ...any) (et.Items, error) {
 
 		rows, err := tx.Tx.Query(sql, arg...)
 		if err != nil {
+			sql = SQLParse(sql, arg...)
 			errRollback := tx.Rollback()
 			if errRollback != nil {
 				err = fmt.Errorf("error on rollback: %w: %s", errRollback, err)
@@ -55,6 +56,23 @@ func QueryTx(tx *Tx, db *sql.DB, sql string, arg ...any) (et.Items, error) {
 **/
 func Query(db *sql.DB, sql string, arg ...any) (et.Items, error) {
 	return QueryTx(nil, db, sql, arg...)
+}
+
+/**
+* Exec
+* @param db *sql.DB, sql string, arg ...any
+* @return et.Items, error
+**/
+func Exec(db *sql.DB, sql string, arg ...any) (et.Items, error) {
+	result, err := Query(db, sql, arg...)
+	if err != nil {
+		return et.Items{}, err
+	}
+
+	sql = SQLParse(sql, arg...)
+	audit("exec", sql)
+
+	return result, nil
 }
 
 /**

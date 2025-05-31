@@ -21,7 +21,7 @@
 ## Dependencis
 
 ```
-go get github.com/cgalvisleon/et/@v0.1.2
+go get github.com/cgalvisleon/et/@v0.1.3
 ```
 
 ## Run and build
@@ -42,11 +42,21 @@ ps aux | grep jdb | grep -v grep
 ## Version
 
 ```
-Version: v0.1.2
+Version: v0.1.3
 ```
 
 ## Go work
 
 ```
 go work init ../et
+```
+
+## Kube
+
+```
+k -n prd describe pod apigateway
+k -n prd get deployments
+k -n prd rollout history deployment apigateway
+k -n prd get configmap
+kubectl describe node
 ```

@@ -9,16 +9,15 @@ import (
 )
 
 func tableName(model *jdb.Model) string {
-	return fmt.Sprintf(`%s.%s`, model.Schema, model.Table)
+	return fmt.Sprintf(`%s_%s`, model.Schema, model.Table)
 }
 
 /**
 * existTable
-* @param schema string
-* @param name string
+* @param db, name string
 * @return bool, error
 **/
-func (s *Mysql) existTable(schema, name string) (bool, error) {
+func (s *Mysql) existTable(db, name string) (bool, error) {
 	sql := `
 	SELECT EXISTS(
 		SELECT 1
@@ -26,7 +25,7 @@ func (s *Mysql) existTable(schema, name string) (bool, error) {
 		WHERE UPPER(table_schema) = UPPER($1)
 		AND UPPER(table_name) = UPPER($2));`
 
-	items, err := jdb.QueryTx(nil, s.db, sql, schema, name)
+	items, err := jdb.QueryTx(nil, s.db, sql, db, name)
 	if err != nil {
 		return false, err
 	}
@@ -44,12 +43,8 @@ func (s *Mysql) existTable(schema, name string) (bool, error) {
 * @return error
 **/
 func (s *Mysql) LoadModel(model *jdb.Model) error {
-	err := s.loadSchema(model.Schema)
-	if err != nil {
-		return err
-	}
-
-	exist, err := s.existTable(model.Schema, model.Table)
+	table := tableName(model)
+	exist, err := s.existTable(model.Db.Name, table)
 	if err != nil {
 		return err
 	}
@@ -62,7 +57,7 @@ func (s *Mysql) LoadModel(model *jdb.Model) error {
 			console.Debug(sql)
 		}
 
-		_, err = jdb.Query(s.db, sql)
+		_, err = jdb.Exec(s.db, sql)
 		if err != nil {
 			return err
 		}

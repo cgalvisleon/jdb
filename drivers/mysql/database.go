@@ -152,7 +152,7 @@ func (s *Mysql) createDatabase(name string) error {
 	CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 	CREATE EXTENSION IF NOT EXISTS pgcrypto;
 	CREATE DATABASE $1`, name)
-	_, err = jdb.Query(s.db, sql, name)
+	_, err = jdb.Exec(s.db, sql, name)
 	if err != nil {
 		return err
 	}
@@ -182,7 +182,7 @@ func (s *Mysql) dropDatabase(name string) error {
 	}
 
 	sql := jdb.SQLDDL(`DROP DATABASE $1`, name)
-	_, err = jdb.Query(s.db, sql, name)
+	_, err = jdb.Exec(s.db, sql, name)
 	if err != nil {
 		return err
 	}

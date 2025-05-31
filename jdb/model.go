@@ -63,6 +63,7 @@ type Model struct {
 	isLocked           bool                     `json:"-"`
 	isInit             bool                     `json:"-"`
 	isCore             bool                     `json:"-"`
+	isAudit            bool                     `json:"-"`
 	needMutate         bool                     `json:"-"`
 	vm                 *goja.Runtime            `json:"-"`
 	EventsInsert       []string                 `json:"events_insert"`
@@ -187,10 +188,20 @@ func loadModel(schema *Schema, model *Model) (*Model, error) {
 	model.eventsInsert = make([]Event, 0)
 	model.eventsUpdate = make([]Event, 0)
 	model.eventsDelete = make([]Event, 0)
+	model.isCore = schema.isCore
+	model.vm = goja.New()
+	model.EventsInsert = make([]string, 0)
+	model.EventsUpdate = make([]string, 0)
+	model.EventsDelete = make([]string, 0)
+	model.IsDebug = schema.Db.IsDebug
 	model.DefineEventError(eventErrorDefault)
 	model.DefineEvent(EventInsert, eventInsertDefault)
 	model.DefineEvent(EventUpdate, eventUpdateDefault)
 	model.DefineEvent(EventDelete, eventDeleteDefault)
+	model.On(EVENT_MODEL_SYNC, eventSyncDefault)
+	model.vm.Set("model", model)
+	model.vm.Set("schema", schema)
+	model.vm.Set("db", schema.Db)
 	/* Define columns */
 	for name := range model.Definitions {
 		definition := model.Definitions.Json(name)
@@ -220,7 +231,7 @@ func LoadModel(db *DB, name string) (*Model, error) {
 	}
 
 	if result != nil {
-		schema, err := LoadSchema(db, result.Schema)
+		schema, err := loadSchema(db, result.Schema)
 		if err != nil {
 			return nil, err
 		}
@@ -304,7 +315,7 @@ func (s *Model) Describe() et.Json {
 * @return error
 **/
 func (s *Model) Save() error {
-	if !s.UseCore || !s.Db.isInit {
+	if s == nil || !s.UseCore || !s.Db.isInit {
 		return nil
 	}
 
@@ -774,14 +785,22 @@ func (s *Model) Where(val string) *Ql {
 * Counted
 * @return int, error
 **/
-func (s *Model) Counted() (int, error) {
+func (s *Model) CountedTx(tx *Tx) (int, error) {
 	all, err := From(s).
-		Counted()
+		CountedTx(tx)
 	if err != nil {
 		return 0, err
 	}
 
 	return all, nil
+}
+
+/**
+* Counted
+* @return int, error
+**/
+func (s *Model) Counted() (int, error) {
+	return s.CountedTx(nil)
 }
 
 /**

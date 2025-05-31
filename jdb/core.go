@@ -12,6 +12,9 @@ func (s *DB) createCore() error {
 	if s.driver == nil {
 		return mistake.New(MSG_DRIVER_NOT_DEFINED)
 	}
+	if err := s.defineAudit(); err != nil {
+		return err
+	}
 	if err := s.defineRecords(); err != nil {
 		return err
 	}

@@ -77,11 +77,11 @@ func NewSchema(db *DB, name string) *Schema {
 }
 
 /**
-* LoadSchema
+* loadSchema
 * @param db *DB, name string
 * @return *Schema, error
 **/
-func LoadSchema(db *DB, name string) (*Schema, error) {
+func loadSchema(db *DB, name string) (*Schema, error) {
 	idx := slices.IndexFunc(db.schemas, func(e *Schema) bool { return e.Name == name })
 	if idx != -1 {
 		return db.schemas[idx], nil

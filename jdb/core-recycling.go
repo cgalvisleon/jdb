@@ -14,6 +14,10 @@ import (
 var coreRecycling *Model
 
 func (s *DB) defineRecycling() error {
+	if s.driver.Name() == SqliteDriver {
+		return nil
+	}
+
 	if err := s.defineSchema(); err != nil {
 		return err
 	}
@@ -46,6 +50,10 @@ func (s *DB) defineRecycling() error {
 * @return error
 **/
 func (s *DB) upsertRecycling(tx *Tx, schema, name, sysId, statusId string) error {
+	if coreRecycling == nil || !coreRecycling.isInit {
+		return nil
+	}
+
 	if statusId != utility.FOR_DELETE {
 		_, err := coreRecycling.
 			Delete("schema_name").Eq(schema).
@@ -82,6 +90,10 @@ func (s *DB) upsertRecycling(tx *Tx, schema, name, sysId, statusId string) error
 * @return et.Item, error
 **/
 func (s *DB) GetRecycling(schema, name, sysId string) (et.Item, error) {
+	if coreRecycling == nil || !coreRecycling.isInit {
+		return et.Item{}, mistake.New(MSG_DATABASE_NOT_CONCURRENT)
+	}
+
 	if !utility.ValidName(schema) {
 		return et.Item{}, mistake.Newf(MSG_ATTRIBUTE_REQUIRED, "schema_name")
 	}
@@ -112,6 +124,10 @@ func (s *DB) GetRecycling(schema, name, sysId string) (et.Item, error) {
 * @return error
 **/
 func (s *DB) deleteRecycling(tx *Tx, schema, name, sysId string) error {
+	if coreRecycling == nil || !coreRecycling.isInit {
+		return nil
+	}
+
 	if !utility.ValidName(schema) {
 		return mistake.Newf(MSG_ATTRIBUTE_REQUIRED, "schema_name")
 	}
@@ -142,6 +158,10 @@ func (s *DB) deleteRecycling(tx *Tx, schema, name, sysId string) error {
 * @return interface{}, error
 **/
 func (s *DB) QueryRecycling(search et.Json) (interface{}, error) {
+	if coreRecycling == nil || !coreRecycling.isInit {
+		return et.Item{}, mistake.New(MSG_DATABASE_NOT_CONCURRENT)
+	}
+
 	result, err := coreRecycling.
 		Query(search)
 	if err != nil {

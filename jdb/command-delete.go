@@ -36,6 +36,7 @@ func (s *Command) deleted() error {
 	}
 
 	if !s.isSync && model.UseCore {
+		audit("delete", s.Sql)
 		model.Emit(EVENT_MODEL_SYNC, et.Json{
 			"command": "delete",
 			"db":      model.Db.Name,
@@ -44,6 +45,10 @@ func (s *Command) deleted() error {
 			"sql":     s.Sql,
 			"where":   s.getWheres(),
 		})
+	}
+
+	if !model.isAudit {
+		audit("delete", s.Sql)
 	}
 
 	for _, before := range s.ResultMap {
