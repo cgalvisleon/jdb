@@ -59,7 +59,7 @@ func (s *Command) deleted() error {
 			}
 		}
 
-		for _, jsCode := range model.EventsDelete {
+		for _, jsCode := range model.FuncDelete {
 			model.vm.Set("tx", s.tx)
 			model.vm.Set("before", before)
 			model.vm.Set("after", et.Json{})
@@ -76,7 +76,7 @@ func (s *Command) deleted() error {
 			}
 		}
 
-		for _, jsCode := range s.afterVmDelete {
+		for _, jsCode := range s.afterFuncDelete {
 			s.vm.Set("tx", s.tx)
 			s.vm.Set("data", before)
 			_, err := s.vm.RunString(jsCode)

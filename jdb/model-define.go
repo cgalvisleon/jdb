@@ -490,6 +490,14 @@ func (s *Model) defineForeignKey(fks map[string]string, withName string, onDelet
 		OnUpdateCascade: onUpdateCascade,
 	}
 
+	from := &Relation{
+		With:            s,
+		Fk:              make(map[string]string),
+		Limit:           0,
+		OnDeleteCascade: onDeleteCascade,
+		OnUpdateCascade: onUpdateCascade,
+	}
+
 	name := strs.Format("%s_%s_fk", s.Name, with.Name)
 	for fkn, pkn := range fks {
 		pk := with.getColumn(pkn)
@@ -498,11 +506,14 @@ func (s *Model) defineForeignKey(fks map[string]string, withName string, onDelet
 		}
 
 		result.Fk[fkn] = pk.Name
+		from.Fk[pk.Name] = fkn
 		fk := s.defineColumn(fkn, pk.TypeData)
 		fk.Detail = result
 		s.Required[fkn] = true
+		s.defineIndex(true, []string{fkn})
 	}
 	s.ForeignKeys[name] = result
+	with.RelationsFrom[s.Name] = from
 
 	return result
 }
@@ -693,7 +704,7 @@ func (s *Model) defineRelation(name, relatedTo string, fks map[string]string, li
 		Fk:    fks,
 		Limit: limit,
 	}
-	s.RelationsTo[with.Name] = col.Detail
+	s.RelationsTo[name] = col.Detail
 	s.addColumn(col)
 
 	return col.Detail
@@ -742,7 +753,6 @@ func (s *Model) defineRollup(name, rollupFrom string, fks map[string]string, fie
 func (s *Model) defineDetail(name string, fks map[string]string, limit int) *Model {
 	relatedTo := s.Name + "_" + name
 	result := s.defineRelation(name, relatedTo, fks, limit)
-	s.Details[name] = result
 
 	return result.With
 }
@@ -768,7 +778,6 @@ func (s *Model) defineMultiSelect(name string, fks map[string]string) *Model {
 	primaryKeys = append(primaryKeys, KEY)
 	result.With.definePrimaryKey(primaryKeys)
 	result.IsMultiSelect = true
-	s.Details[name] = result
 
 	return result.With
 }
@@ -1134,18 +1143,18 @@ func (s *Model) DefineEvent(tp TypeEvent, event Event) *Model {
 }
 
 /**
-* DefineEventVm
-* @param tp TypeEvent, event Event
+* DefineFunc
+* @param tp TypeEvent, jsCode string
 * @return Model
 **/
-func (s *Model) DefineEventJsCode(tp TypeEvent, jsCode string) *Model {
+func (s *Model) DefineFunc(tp TypeEvent, jsCode string) *Model {
 	switch tp {
 	case EventInsert:
-		s.EventsInsert = append(s.EventsInsert, jsCode)
+		s.FuncInsert = append(s.FuncInsert, jsCode)
 	case EventUpdate:
-		s.EventsUpdate = append(s.EventsUpdate, jsCode)
+		s.FuncUpdate = append(s.FuncUpdate, jsCode)
 	case EventDelete:
-		s.EventsDelete = append(s.EventsDelete, jsCode)
+		s.FuncDelete = append(s.FuncDelete, jsCode)
 	}
 
 	return s

@@ -150,12 +150,12 @@ func (s *Ql) From(name string) *Ql {
 		return s
 	}
 
-	fm := s.addFrom(model)
+	main := s.addFrom(model)
 	for _, from := range s.Froms.Froms {
-		if from.As != fm.As {
-			for _, detail := range from.Details {
-				if detail.With.Id == fm.Id {
-					j := s.Join(fm.Model)
+		if from.As != main.As {
+			for _, detail := range from.RelationsTo {
+				if detail.With.Id == main.Id {
+					j := s.Join(main.Model)
 					for fk, pk := range detail.Fk {
 						j.On(fk).Eq(from.As + "." + pk)
 					}

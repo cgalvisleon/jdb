@@ -74,7 +74,7 @@ func (s *Command) updated() error {
 			}
 		}
 
-		for _, jsCode := range model.EventsUpdate {
+		for _, jsCode := range model.FuncUpdate {
 			model.vm.Set("tx", s.tx)
 			model.vm.Set("before", before)
 			model.vm.Set("after", after)
@@ -93,7 +93,7 @@ func (s *Command) updated() error {
 			}
 		}
 
-		for _, jsCode := range s.afterVmUpdate {
+		for _, jsCode := range s.afterFuncUpdate {
 			s.vm.Set("tx", s.tx)
 			s.vm.Set("data", data)
 			_, err := s.vm.RunString(jsCode)

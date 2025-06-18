@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"runtime"
-	"slices"
 
 	"github.com/cgalvisleon/et/config"
 	"github.com/cgalvisleon/et/console"
@@ -16,9 +15,10 @@ import (
 )
 
 type JDB struct {
-	Drivers map[string]func() Driver `json:"-"`
-	DBS     []*DB                    `json:"-"`
-	Version string                   `json:"version"`
+	Drivers   map[string]func() Driver `json:"-"`
+	DBS       map[string]*DB           `json:"-"`
+	DefaultDB *DB                      `json:"-"`
+	Version   string                   `json:"version"`
 }
 
 var (
@@ -31,7 +31,7 @@ func init() {
 	os = runtime.GOOS
 	conn = &JDB{
 		Drivers: map[string]func() Driver{},
-		DBS:     make([]*DB, 0),
+		DBS:     make(map[string]*DB),
 		Version: "0.0.1",
 	}
 }
@@ -228,17 +228,15 @@ func Jdb() *JDB {
 * @return *DB
 **/
 func GetDB(name string) *DB {
-	idx := slices.IndexFunc(conn.DBS, func(e *DB) bool { return e.Name == name })
-	if idx != -1 {
-		return conn.DBS[idx]
+	if _, ok := conn.DBS[name]; ok {
+		return conn.DBS[name]
 	}
 
-	result, err := NewDatabase(name, "sqlite")
-	if err != nil {
-		return nil
+	if conn.DefaultDB != nil {
+		return conn.DefaultDB
 	}
 
-	return result
+	return nil
 }
 
 /**
@@ -249,13 +247,12 @@ func GetDB(name string) *DB {
 func GetSchema(name string) *Schema {
 	list := strs.Split(name, ".")
 	if len(list) > 1 {
-		return GetDB(list[0]).GetSchema(list[1])
-	} else if len(list) == 1 {
-		if len(conn.DBS) == 0 {
+		db := GetDB(list[0])
+		if db == nil {
 			return nil
 		}
 
-		return conn.DBS[0].GetSchema(name)
+		return db.GetSchema(list[1])
 	}
 
 	return nil
@@ -270,48 +267,36 @@ func GetModel(name string) *Model {
 	var result *Model
 	list := strs.Split(name, ".")
 	if len(list) > 2 {
-		result = GetDB(list[0]).GetSchema(list[1]).GetModel(list[2])
-		if result != nil {
-			return result
+		db := GetDB(list[0])
+		if db == nil {
+			result = nil
 		}
 
-		schema := GetSchema(list[1])
+		schema := db.GetSchema(list[1])
 		if schema == nil {
-			return nil
+			result = nil
 		}
 
-		result = NewModel(schema, list[2], 1)
+		result = schema.GetModel(list[2])
 	} else if len(list) == 2 {
-		result = GetSchema(list[0]).GetModel(list[1])
-		if result != nil {
-			return result
+		db := conn.DefaultDB
+		if db == nil {
+			result = nil
 		}
 
-		schema := GetSchema(list[0])
+		schema := db.GetSchema(list[1])
 		if schema == nil {
-			return nil
+			result = nil
 		}
 
-		result = NewModel(schema, list[1], 1)
+		result = schema.GetModel(list[2])
 	} else if len(list) == 1 {
-		if len(conn.DBS) == 0 {
-			return nil
+		db := conn.DefaultDB
+		if db == nil {
+			result = nil
 		}
 
-		if len(conn.DBS[0].schemas) == 0 {
-			return nil
-		}
-
-		schema := conn.DBS[0].schemas[0]
-		if schema == nil {
-			return nil
-		}
-
-		result = NewModel(schema, name, 1)
-	}
-
-	if result == nil {
-		return nil
+		result = db.GetModel(list[1])
 	}
 
 	if err := result.Init(); err != nil {

@@ -62,7 +62,7 @@ func (s *Command) inserted() error {
 			}
 		}
 
-		for _, jsCode := range model.EventsInsert {
+		for _, jsCode := range model.FuncInsert {
 			model.vm.Set("tx", s.tx)
 			model.vm.Set("before", et.Json{})
 			model.vm.Set("after", after)
@@ -81,7 +81,7 @@ func (s *Command) inserted() error {
 			}
 		}
 
-		for _, jsCode := range s.afterVmInsert {
+		for _, jsCode := range s.afterFuncInsert {
 			s.vm.Set("tx", s.tx)
 			s.vm.Set("data", data)
 			_, err := s.vm.RunString(jsCode)

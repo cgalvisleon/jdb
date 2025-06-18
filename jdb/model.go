@@ -41,7 +41,7 @@ type Model struct {
 	Indices            map[string]*Index        `json:"-"`
 	Uniques            map[string]*Index        `json:"-"`
 	RelationsTo        map[string]*Relation     `json:"-"`
-	Details            map[string]*Relation     `json:"-"`
+	RelationsFrom      map[string]*Relation     `json:"-"`
 	Joins              map[string]*Join         `json:"-"`
 	Required           map[string]bool          `json:"-"`
 	CreatedAtField     *Column                  `json:"-"`
@@ -66,9 +66,9 @@ type Model struct {
 	isAudit            bool                     `json:"-"`
 	needMutate         bool                     `json:"-"`
 	vm                 *goja.Runtime            `json:"-"`
-	EventsInsert       []string                 `json:"events_insert"`
-	EventsUpdate       []string                 `json:"events_update"`
-	EventsDelete       []string                 `json:"events_delete"`
+	FuncInsert         []string                 `json:"func_insert"`
+	FuncUpdate         []string                 `json:"func_update"`
+	FuncDelete         []string                 `json:"func_delete"`
 }
 
 /**
@@ -105,7 +105,7 @@ func NewModel(schema *Schema, name string, version int) *Model {
 			Indices:            make(map[string]*Index),
 			Uniques:            make(map[string]*Index),
 			RelationsTo:        make(map[string]*Relation),
-			Details:            make(map[string]*Relation),
+			RelationsFrom:      make(map[string]*Relation),
 			Joins:              make(map[string]*Join),
 			Required:           make(map[string]bool),
 			eventEmiterChannel: make(chan event.Message),
@@ -117,9 +117,9 @@ func NewModel(schema *Schema, name string, version int) *Model {
 			Version:            version,
 			isCore:             schema.isCore,
 			vm:                 goja.New(),
-			EventsInsert:       make([]string, 0),
-			EventsUpdate:       make([]string, 0),
-			EventsDelete:       make([]string, 0),
+			FuncInsert:         make([]string, 0),
+			FuncUpdate:         make([]string, 0),
+			FuncDelete:         make([]string, 0),
 			IsDebug:            schema.Db.IsDebug,
 		}
 		result.DefineEventError(eventErrorDefault)
@@ -179,7 +179,7 @@ func loadModel(schema *Schema, model *Model) (*Model, error) {
 	model.Indices = make(map[string]*Index)
 	model.Uniques = make(map[string]*Index)
 	model.RelationsTo = make(map[string]*Relation)
-	model.Details = make(map[string]*Relation)
+	model.RelationsFrom = make(map[string]*Relation)
 	model.Required = make(map[string]bool)
 	/* Event */
 	model.eventEmiterChannel = make(chan event.Message)
@@ -190,9 +190,9 @@ func loadModel(schema *Schema, model *Model) (*Model, error) {
 	model.eventsDelete = make([]Event, 0)
 	model.isCore = schema.isCore
 	model.vm = goja.New()
-	model.EventsInsert = make([]string, 0)
-	model.EventsUpdate = make([]string, 0)
-	model.EventsDelete = make([]string, 0)
+	model.FuncInsert = make([]string, 0)
+	model.FuncUpdate = make([]string, 0)
+	model.FuncDelete = make([]string, 0)
 	model.IsDebug = schema.Db.IsDebug
 	model.DefineEventError(eventErrorDefault)
 	model.DefineEvent(EventInsert, eventInsertDefault)
@@ -298,7 +298,7 @@ func (s *Model) Describe() et.Json {
 	result["indices"] = s.Indices
 	result["uniques"] = s.Uniques
 	result["relations_to"] = s.RelationsTo
-	result["details"] = s.Details
+	result["relations_from"] = s.RelationsFrom
 	result["required"] = s.Required
 	result["system_key_field"] = s.SystemKeyField
 	result["status_field"] = s.StatusField
@@ -342,9 +342,9 @@ func (s *Model) Drop() {
 		return
 	}
 
-	for _, detail := range s.Details {
+	for _, detail := range s.RelationsTo {
 		model := detail.With
-		if model != nil {
+		if model != nil && model.Name != s.Name {
 			model.Drop()
 		}
 	}

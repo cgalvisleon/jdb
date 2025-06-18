@@ -268,7 +268,7 @@ const (
 	UPDATED_AT    = "updated_at"
 	STATUS_ID     = "status_id"
 	PERMISSION_ID = "permission_id"
-	SYSID         = "jdbid"
+	SYSID         = "jdb_id"
 	CREATED_TO    = "created_to"
 	UPDATED_TO    = "updated_to"
 	FULLTEXT      = "fulltext"
