@@ -43,8 +43,9 @@ func NewDatabase(name, driver string) (*DB, error) {
 		return nil, mistake.Newf(MSG_DRIVER_NOT_FOUND, driver)
 	}
 
-	if _, ok := conn.DBS[name]; ok {
-		return conn.DBS[name], nil
+	idx := slices.IndexFunc(conn.DBS, func(e *DB) bool { return e.Name == name })
+	if idx != -1 {
+		return conn.DBS[idx], nil
 	}
 
 	now := timezone.NowTime()
@@ -57,10 +58,7 @@ func NewDatabase(name, driver string) (*DB, error) {
 		schemas:   make([]*Schema, 0),
 		models:    make([]*Model, 0),
 	}
-	conn.DBS[name] = result
-	if conn.DefaultDB == nil {
-		conn.DefaultDB = result
-	}
+	conn.DBS = append(conn.DBS, result)
 
 	return result, nil
 }

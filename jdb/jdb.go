@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"runtime"
+	"slices"
 
 	"github.com/cgalvisleon/et/config"
 	"github.com/cgalvisleon/et/console"
@@ -14,11 +15,10 @@ import (
 )
 
 type JDB struct {
-	Drivers   map[string]func() Driver `json:"-"`
-	Params    map[string]ConnectParams `json:"-"`
-	DBS       map[string]*DB           `json:"-"`
-	DefaultDB *DB                      `json:"-"`
-	Version   string                   `json:"version"`
+	Drivers map[string]func() Driver `json:"-"`
+	Params  map[string]ConnectParams `json:"-"`
+	DBS     []*DB                    `json:"-"`
+	Version string                   `json:"version"`
 }
 
 var (
@@ -31,7 +31,7 @@ func init() {
 	conn = &JDB{
 		Drivers: map[string]func() Driver{},
 		Params:  map[string]ConnectParams{},
-		DBS:     make(map[string]*DB),
+		DBS:     make([]*DB, 0),
 		Version: "0.0.1",
 	}
 }
@@ -194,12 +194,9 @@ func Jdb() *JDB {
 * @return *DB
 **/
 func GetDB(name string) *DB {
-	if _, ok := conn.DBS[name]; ok {
-		return conn.DBS[name]
-	}
-
-	if conn.DefaultDB != nil {
-		return conn.DefaultDB
+	idx := slices.IndexFunc(conn.DBS, func(e *DB) bool { return e.Name == name })
+	if idx != -1 {
+		return conn.DBS[idx]
 	}
 
 	return nil
@@ -245,7 +242,7 @@ func GetModel(name string) *Model {
 
 		result = schema.GetModel(list[2])
 	} else if len(list) == 2 {
-		db := conn.DefaultDB
+		db := conn.DBS[0]
 		if db == nil {
 			result = nil
 		}
@@ -257,17 +254,12 @@ func GetModel(name string) *Model {
 
 		result = schema.GetModel(list[2])
 	} else if len(list) == 1 {
-		db := conn.DefaultDB
+		db := conn.DBS[0]
 		if db == nil {
 			result = nil
 		}
 
 		result = db.GetModel(list[1])
-	}
-
-	if err := result.Init(); err != nil {
-		console.Logf("jdb", `Error initializing model %s: %v`, name, err)
-		return nil
 	}
 
 	return result
