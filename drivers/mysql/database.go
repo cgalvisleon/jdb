@@ -90,7 +90,6 @@ func (s *Mysql) connect(params et.Json) error {
 	s.params = params
 	s.connStr = connStr
 	s.connected = s.db != nil
-	s.nodeId = params.Int("node_id")
 	s.getVersion()
 
 	return nil

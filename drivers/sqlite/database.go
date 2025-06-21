@@ -48,7 +48,6 @@ func (s *SqlLite) Connect(params et.Json) (*sql.DB, error) {
 	s.params = params
 	s.connStr = database
 	s.connected = s.db != nil
-	s.nodeId = params.Int("node_id")
 	s.getVersion()
 
 	console.Logf(s.name, `Connected to %s:%s`, params.Str("host"), database)

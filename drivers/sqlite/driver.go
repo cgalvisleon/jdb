@@ -3,6 +3,8 @@ package sqlite
 import (
 	"database/sql"
 
+	"github.com/cgalvisleon/et/config"
+	"github.com/cgalvisleon/et/envar"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/jdb/jdb"
 	_ "modernc.org/sqlite"
@@ -15,7 +17,6 @@ type SqlLite struct {
 	db        *sql.DB
 	connected bool
 	version   int
-	nodeId    int
 }
 
 func newDriver() jdb.Driver {
@@ -31,5 +32,16 @@ func (s *SqlLite) Name() string {
 }
 
 func init() {
-	jdb.Register(jdb.SqliteDriver, newDriver)
+	jdb.Register(jdb.SqliteDriver, newDriver, jdb.ConnectParams{
+		Driver:   jdb.SqliteDriver,
+		Name:     config.String("DB_NAME", "jdb"),
+		UserCore: true,
+		Debug:    envar.Bool("DEBUG"),
+		Params: et.Json{
+			"database": config.String("DB_NAME", "jdb"),
+		},
+		Validate: []string{
+			"DB_NAME",
+		},
+	})
 }

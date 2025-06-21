@@ -20,6 +20,7 @@ type DB struct {
 	Name        string    `json:"name"`
 	Description string    `json:"description"`
 	UseCore     bool      `json:"use_core"`
+	NodeId      int       `json:"node_id"`
 	driver      Driver    `json:"-"`
 	db          *sql.DB   `json:"-"`
 	schemas     []*Schema `json:"-"`
@@ -52,7 +53,6 @@ func NewDatabase(name, driver string) (*DB, error) {
 		UpdateAt:  now,
 		Id:        utility.UUID(),
 		Name:      name,
-		UseCore:   false,
 		driver:    conn.Drivers[driver](),
 		schemas:   make([]*Schema, 0),
 		models:    make([]*Model, 0),
@@ -181,6 +181,7 @@ func (s *DB) Debug() {
 
 /**
 * Conected
+* @param params et.Json
 * @return bool
 **/
 func (s *DB) Conected(params et.Json) error {

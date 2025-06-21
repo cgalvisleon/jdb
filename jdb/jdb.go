@@ -7,7 +7,6 @@ import (
 
 	"github.com/cgalvisleon/et/config"
 	"github.com/cgalvisleon/et/console"
-	"github.com/cgalvisleon/et/envar"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/mistake"
 	"github.com/cgalvisleon/et/response"
@@ -16,31 +15,35 @@ import (
 
 type JDB struct {
 	Drivers   map[string]func() Driver `json:"-"`
+	Params    map[string]ConnectParams `json:"-"`
 	DBS       map[string]*DB           `json:"-"`
 	DefaultDB *DB                      `json:"-"`
 	Version   string                   `json:"version"`
 }
 
 var (
-	os          = ""
-	conn        *JDB
-	defaultName = "jdb"
+	os   = ""
+	conn *JDB
 )
 
 func init() {
 	os = runtime.GOOS
 	conn = &JDB{
 		Drivers: map[string]func() Driver{},
+		Params:  map[string]ConnectParams{},
 		DBS:     make(map[string]*DB),
 		Version: "0.0.1",
 	}
 }
 
 type ConnectParams struct {
-	Driver   string  `json:"driver"`
-	Name     string  `json:"name"`
-	Params   et.Json `json:"params"`
-	UserCore bool    `json:"user_core"`
+	Driver   string   `json:"driver"`
+	Name     string   `json:"name"`
+	UserCore bool     `json:"user_core"`
+	NodeId   int      `json:"node_id"`
+	Debug    bool     `json:"debug"`
+	Validate []string `json:"validate"`
+	Params   et.Json  `json:"params"`
 }
 
 /**
@@ -128,15 +131,14 @@ func ConnectTo(params ConnectParams) (*DB, error) {
 		return nil, err
 	}
 
-	debug := envar.Bool("DEBUG")
-	result.SetDebug(debug)
-
+	result.IsDebug = params.Debug
+	result.UseCore = params.UserCore
+	result.NodeId = params.NodeId
 	err = result.Conected(params.Params)
 	if err != nil {
 		return nil, err
 	}
 
-	result.UseCore = params.UserCore
 	if result.UseCore {
 		err := result.createCore()
 		if err != nil {
@@ -164,49 +166,13 @@ func ConnectTo(params ConnectParams) (*DB, error) {
 * @return *DB, error
 **/
 func Load() (*DB, error) {
-	driver := config.String("DB_DRIVER", "sqlite")
+	driver := config.String("DB_DRIVER", SqliteDriver)
 	if driver == "" {
 		return nil, mistake.New(MSG_DRIVER_NOT_DEFINED)
 	}
 
-	var params = ConnectParams{
-		Driver: "sqlite",
-		Name:   config.String("DB_NAME", defaultName),
-		Params: et.Json{
-			"database": config.String("DB_NAME", defaultName),
-		},
-		UserCore: true,
-	}
-	var validate = []string{
-		"DB_DRIVER",
-		"DB_NAME",
-	}
-
-	if driver == "postgres" {
-		params = ConnectParams{
-			Driver: config.String("DB_DRIVER", "postgres"),
-			Name:   config.String("DB_NAME", defaultName),
-			Params: et.Json{
-				"database": config.String("DB_NAME", defaultName),
-				"host":     config.String("DB_HOST", "localhost"),
-				"port":     config.Int("DB_PORT", 5432),
-				"username": config.String("DB_USER", "admin"),
-				"password": config.String("DB_PASSWORD", "admin"),
-				"app":      config.App.Name,
-			},
-			UserCore: true,
-		}
-		validate = []string{
-			"DB_DRIVER",
-			"DB_NAME",
-			"DB_HOST",
-			"DB_PORT",
-			"DB_USER",
-			"DB_PASSWORD",
-		}
-	}
-
-	err := config.Validate(validate)
+	params := conn.Params[driver]
+	err := config.Validate(params.Validate)
 	if err != nil {
 		return nil, err
 	}
@@ -400,7 +366,7 @@ func define(params et.Json) (et.Json, error) {
 			return et.Json{}, mistake.New(help.ToString())
 		}
 
-		schemaName := param.ValStr(defaultName, "schema")
+		schemaName := param.ValStr("jdb", "schema")
 		schema := GetSchema(schemaName)
 		if schema == nil {
 			return et.Json{}, mistake.Newf(MSG_SCHEMA_NOT_FOUND, schemaName)

@@ -3,6 +3,7 @@ package oracle
 import (
 	"database/sql"
 
+	"github.com/cgalvisleon/et/config"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/jdb/jdb"
 	_ "github.com/lib/pq"
@@ -15,12 +16,11 @@ type Oracle struct {
 	db        *sql.DB
 	connected bool
 	version   int
-	nodeId    int
 }
 
 func newDriver() jdb.Driver {
 	return &Oracle{
-		name:      jdb.PostgresDriver,
+		name:      jdb.OracleDriver,
 		params:    et.Json{},
 		connected: false,
 	}
@@ -31,5 +31,32 @@ func (s *Oracle) Name() string {
 }
 
 func init() {
-	jdb.Register(jdb.PostgresDriver, newDriver)
+	jdb.Register(jdb.OracleDriver, newDriver, jdb.ConnectParams{
+		Driver: jdb.OracleDriver,
+		Name:   config.String("DB_NAME", "jdb"),
+		Params: et.Json{
+			"database":     config.String("DB_NAME", "jdb"),
+			"host":         config.String("DB_HOST", "localhost"),
+			"port":         config.Int("DB_PORT", 5432),
+			"username":     config.String("DB_USER", "admin"),
+			"password":     config.String("DB_PASSWORD", "admin"),
+			"app":          config.App.Name,
+			"service_name": config.String("ORA_DB_SERVICE_NAME_ORACLE", "jdb"),
+			"ssl":          config.Bool("ORA_DB_SSL_ORACLE", false),
+			"ssl_verify":   config.Bool("ORA_DB_SSL_VERIFY_ORACLE", false),
+			"version":      config.Int("ORA_DB_VERSION_ORACLE", 19),
+		},
+		UserCore: true,
+		Validate: []string{
+			"DB_NAME",
+			"DB_HOST",
+			"DB_PORT",
+			"DB_USER",
+			"DB_PASSWORD",
+			"ORA_DB_SERVICE_NAME_ORACLE",
+			"ORA_DB_SSL_ORACLE",
+			"ORA_DB_SSL_VERIFY_ORACLE",
+			"ORA_DB_VERSION_ORACLE",
+		},
+	})
 }

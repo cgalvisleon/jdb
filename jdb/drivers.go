@@ -31,8 +31,9 @@ type Driver interface {
 
 /**
 * Register
-* @param name string, driver func() Driver
+* @param name string, driver func() Driver, params ConnectParams
 **/
-func Register(name string, driver func() Driver) {
+func Register(name string, driver func() Driver, params ConnectParams) {
 	conn.Drivers[name] = driver
+	conn.Params[name] = params
 }
