@@ -3,7 +3,7 @@ module github.com/cgalvisleon/jdb
 go 1.23.0
 
 require (
-	github.com/cgalvisleon/et v0.1.4
+	github.com/cgalvisleon/et v0.1.6
 	github.com/dop251/goja v0.0.0-20250309171923-bcd7cc6bf64c
 	github.com/go-chi/chi/v5 v5.2.1
 	github.com/go-sql-driver/mysql v1.9.2
