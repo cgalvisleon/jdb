@@ -36,6 +36,14 @@ func (s *Command) beforeInsertDefault(tx *Tx, data et.Json) error {
 		data[model.UpdatedAtField.Name] = now
 	}
 
+	for name, required := range model.Required {
+		if required {
+			if data[name] == nil {
+				return mistake.Newf(MSG_REQUIRED_FIELD_REQUIRED, name)
+			}
+		}
+	}
+
 	for name, relation := range model.ForeignKeys {
 		with := relation.With
 		if with == nil {
@@ -168,6 +176,17 @@ func (s *Command) BeforeFuncInsert(jsCode string) *Command {
 **/
 func (s *Command) BeforeFuncUpdate(jsCode string) *Command {
 	s.beforeFuncUpdate = append(s.beforeFuncUpdate, jsCode)
+
+	return s
+}
+
+/**
+* BeforeFuncDelete
+* @param jsCode string
+* @return *Command
+**/
+func (s *Command) BeforeFuncDelete(jsCode string) *Command {
+	s.beforeFuncDelete = append(s.beforeFuncDelete, jsCode)
 
 	return s
 }

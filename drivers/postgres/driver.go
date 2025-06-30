@@ -33,6 +33,7 @@ func (s *Postgres) Name() string {
 
 func init() {
 	jdb.Register(jdb.PostgresDriver, newDriver, jdb.ConnectParams{
+		Id:       config.String("DB_ID", "jdb"),
 		Driver:   jdb.PostgresDriver,
 		Name:     config.String("DB_NAME", "jdb"),
 		UserCore: true,

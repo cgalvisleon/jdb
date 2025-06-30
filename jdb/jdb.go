@@ -7,7 +7,6 @@ import (
 	"slices"
 
 	"github.com/cgalvisleon/et/config"
-	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/mistake"
 	"github.com/cgalvisleon/et/response"
@@ -37,6 +36,7 @@ func init() {
 }
 
 type ConnectParams struct {
+	Id       string   `json:"id"`
 	Driver   string   `json:"driver"`
 	Name     string   `json:"name"`
 	UserCore bool     `json:"user_core"`
@@ -44,6 +44,23 @@ type ConnectParams struct {
 	Debug    bool     `json:"debug"`
 	Validate []string `json:"validate"`
 	Params   et.Json  `json:"params"`
+}
+
+/**
+* Json
+* @return et.Json
+**/
+func (s *ConnectParams) Json() et.Json {
+	return et.Json{
+		"id":        s.Id,
+		"driver":    s.Driver,
+		"name":      s.Name,
+		"user_core": s.UserCore,
+		"node_id":   s.NodeId,
+		"debug":     s.Debug,
+		"validate":  s.Validate,
+		"params":    s.Params,
+	}
 }
 
 /**
@@ -68,6 +85,24 @@ func (s *ConnectParams) validate() error {
 	}
 
 	return nil
+}
+
+/**
+* ToConnectParams
+* @param params et.Json
+* @return *ConnectParams
+**/
+func ToConnectParams(params et.Json) *ConnectParams {
+	return &ConnectParams{
+		Id:       params.Str("id"),
+		Driver:   params.Str("driver"),
+		Name:     params.Str("name"),
+		UserCore: params.Bool("user_core"),
+		NodeId:   params.Int("node_id"),
+		Debug:    params.Bool("debug"),
+		Validate: params.ArrayStr("validate"),
+		Params:   params.Json("params"),
+	}
 }
 
 /**
@@ -126,7 +161,7 @@ func ConnectTo(params ConnectParams) (*DB, error) {
 		return nil, err
 	}
 
-	result, err := NewDatabase(params.Name, params.Driver)
+	result, err := NewDatabase(params.Id, params.Name, params.Driver)
 	if err != nil {
 		return nil, err
 	}
@@ -143,18 +178,6 @@ func ConnectTo(params ConnectParams) (*DB, error) {
 		err := result.createCore()
 		if err != nil {
 			return nil, err
-		}
-
-		item, err := result.getModel("db", result.Name)
-		if err != nil {
-			return nil, err
-		}
-
-		if item.Ok {
-			id := item.Str(SYSID)
-			if id != "" {
-				result.Id = id
-			}
 		}
 	}
 
@@ -190,11 +213,11 @@ func Jdb() *JDB {
 
 /**
 * GetDB
-* @param name string
+* @param id string
 * @return *DB
 **/
-func GetDB(name string) *DB {
-	idx := slices.IndexFunc(conn.DBS, func(e *DB) bool { return e.Name == name })
+func GetDB(id string) *DB {
+	idx := slices.IndexFunc(conn.DBS, func(e *DB) bool { return e.Id == id })
 	if idx != -1 {
 		return conn.DBS[idx]
 	}
@@ -260,73 +283,6 @@ func GetModel(name string) *Model {
 		}
 
 		result = db.GetModel(list[1])
-	}
-
-	return result
-}
-
-/**
-* getTable
-* @param name string
-* @return *Model
-**/
-func getTable(table string) *Model {
-	var result *Model
-	var name string
-	list := strs.Split(table, ":")
-	if len(list) > 1 {
-		name = list[1]
-		table = list[0]
-	}
-
-	list = strs.Split(table, ".")
-	if len(list) == 1 {
-		return GetModel(list[0])
-	} else if len(list) > 2 {
-		if name == "" {
-			name = list[2]
-		}
-
-		result = GetDB(list[0]).GetSchema(list[1]).GetModel(name)
-		if result != nil {
-			return result
-		}
-
-		schema := GetSchema(list[1])
-		if schema == nil {
-			return nil
-		}
-
-		result = NewModel(schema, name, 1)
-		result.Table = list[2]
-		result.UseCore = false
-	} else if len(list) == 2 {
-		if name == "" {
-			name = list[1]
-		}
-
-		result = GetSchema(list[0]).GetModel(name)
-		if result != nil {
-			return result
-		}
-
-		schema := GetSchema(list[0])
-		if schema == nil {
-			return nil
-		}
-
-		result = NewModel(schema, name, 1)
-		result.Table = list[1]
-		result.UseCore = false
-	}
-
-	if result == nil {
-		return nil
-	}
-
-	if err := result.Init(); err != nil {
-		console.Logf("jdb", `Error initializing model %s: %v`, name, err)
-		return nil
 	}
 
 	return result

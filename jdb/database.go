@@ -10,7 +10,6 @@ import (
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/mistake"
 	"github.com/cgalvisleon/et/timezone"
-	"github.com/cgalvisleon/et/utility"
 )
 
 type DB struct {
@@ -30,11 +29,16 @@ type DB struct {
 }
 
 /**
-* NewDatabase
-* @param name, driver string
-* @return *DB
+* NewDatabaseById
+* @param id, name, driver string
+* @return *DB, error
 **/
-func NewDatabase(name, driver string) (*DB, error) {
+func NewDatabase(id, name, driver string) (*DB, error) {
+	idx := slices.IndexFunc(conn.DBS, func(e *DB) bool { return e.Id == id })
+	if idx != -1 {
+		return conn.DBS[idx], nil
+	}
+
 	if driver == "" {
 		return nil, mistake.New(MSG_DRIVER_NOT_DEFINED)
 	}
@@ -43,16 +47,11 @@ func NewDatabase(name, driver string) (*DB, error) {
 		return nil, mistake.Newf(MSG_DRIVER_NOT_FOUND, driver)
 	}
 
-	idx := slices.IndexFunc(conn.DBS, func(e *DB) bool { return e.Name == name })
-	if idx != -1 {
-		return conn.DBS[idx], nil
-	}
-
 	now := timezone.NowTime()
 	result := &DB{
 		CreatedAt: now,
 		UpdateAt:  now,
-		Id:        utility.UUID(),
+		Id:        id,
 		Name:      name,
 		driver:    conn.Drivers[driver](),
 		schemas:   make([]*Schema, 0),

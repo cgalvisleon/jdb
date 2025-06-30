@@ -69,6 +69,7 @@ type Command struct {
 	vm               *goja.Runtime       `json:"-"`
 	beforeFuncInsert []string            `json:"-"`
 	beforeFuncUpdate []string            `json:"-"`
+	beforeFuncDelete []string            `json:"-"`
 	afterFuncInsert  []string            `json:"-"`
 	afterFuncUpdate  []string            `json:"-"`
 	afterFuncDelete  []string            `json:"-"`
@@ -101,6 +102,7 @@ func NewCommand(model *Model, data []et.Json, command TypeCommand) *Command {
 		vm:               goja.New(),
 		beforeFuncInsert: []string{},
 		beforeFuncUpdate: []string{},
+		beforeFuncDelete: []string{},
 		afterFuncInsert:  []string{},
 		afterFuncUpdate:  []string{},
 		afterFuncDelete:  []string{},

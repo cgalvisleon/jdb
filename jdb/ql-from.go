@@ -88,8 +88,8 @@ func From(name interface{}) *Ql {
 	case *Model:
 		model = v
 	default:
-		s := fmt.Sprintf("%v", v)
-		model = getTable(s)
+		str := fmt.Sprintf("%v", v)
+		model = GetModel(str)
 	}
 
 	tpSelect := Select
@@ -145,7 +145,7 @@ func (s *Ql) addFrom(m *Model) *QlFrom {
 * @return *Ql
 **/
 func (s *Ql) From(name string) *Ql {
-	model := GetModel(name)
+	model := s.Db.GetModel(name)
 	if model == nil {
 		return s
 	}

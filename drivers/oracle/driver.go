@@ -32,6 +32,7 @@ func (s *Oracle) Name() string {
 
 func init() {
 	jdb.Register(jdb.OracleDriver, newDriver, jdb.ConnectParams{
+		Id:     config.String("DB_ID", "jdb"),
 		Driver: jdb.OracleDriver,
 		Name:   config.String("DB_NAME", "jdb"),
 		Params: et.Json{

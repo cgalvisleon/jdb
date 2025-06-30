@@ -15,6 +15,7 @@ import (
 	"github.com/cgalvisleon/et/strs"
 	"github.com/cgalvisleon/et/timezone"
 	"github.com/dop251/goja"
+	"github.com/google/uuid"
 )
 
 var (
@@ -44,6 +45,7 @@ type Model struct {
 	RelationsFrom      map[string]*Relation     `json:"-"`
 	Joins              map[string]*Join         `json:"-"`
 	Required           map[string]bool          `json:"-"`
+	TpId               string                   `json:"tp_id"`
 	CreatedAtField     *Column                  `json:"-"`
 	UpdatedAtField     *Column                  `json:"-"`
 	SystemKeyField     *Column                  `json:"-"`
@@ -95,7 +97,6 @@ func NewModel(schema *Schema, name string, version int) *Model {
 			Table:              name,
 			CreatedAt:          now,
 			UpdateAt:           now,
-			Id:                 reg.GenId("model"),
 			Name:               name,
 			UseCore:            schema.UseCore,
 			Definitions:        et.Json{},
@@ -108,6 +109,7 @@ func NewModel(schema *Schema, name string, version int) *Model {
 			RelationsFrom:      make(map[string]*Relation),
 			Joins:              make(map[string]*Join),
 			Required:           make(map[string]bool),
+			TpId:               "UUID",
 			eventEmiterChannel: make(chan event.Message),
 			eventsEmiter:       make(map[string]event.Handler),
 			eventError:         make([]EventError, 0),
@@ -122,6 +124,7 @@ func NewModel(schema *Schema, name string, version int) *Model {
 			FuncDelete:         make([]string, 0),
 			IsDebug:            schema.Db.IsDebug,
 		}
+		result.Id = result.GetId("new")
 		result.DefineEventError(eventErrorDefault)
 		result.DefineEvent(EventInsert, eventInsertDefault)
 		result.DefineEvent(EventUpdate, eventUpdateDefault)
@@ -424,7 +427,19 @@ func (s *Model) GetFrom() *QlFrom {
 * @return string
 **/
 func (s *Model) GetId(id string) string {
-	return reg.GetId(s.Name, id)
+	if !map[string]bool{"": true, "*": true, "new": true}[id] {
+		return id
+	}
+
+	if s.TpId == "ULID" {
+		return strs.Format(`%s:%s`, s.Name, reg.ULID())
+	}
+
+	if s.TpId == "XID" {
+		return strs.Format(`%s:%s`, s.Name, reg.XID())
+	}
+
+	return strs.Format(`%s:%s`, s.Name, uuid.NewString())
 }
 
 /**
@@ -432,7 +447,7 @@ func (s *Model) GetId(id string) string {
 * @return string
 **/
 func (s *Model) GenId() string {
-	return reg.GenId(s.Name)
+	return s.GetId("new")
 }
 
 /**
@@ -779,6 +794,15 @@ func (s *Model) Where(val string) *Ql {
 	}
 
 	return result.Where(val)
+}
+
+/**
+* Join
+* @param name string
+* @return *Model
+**/
+func (s *Model) Join(name string) *QlJoin {
+	return From(s).Join(name)
 }
 
 /**

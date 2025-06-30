@@ -33,6 +33,7 @@ func (s *SqlLite) Name() string {
 
 func init() {
 	jdb.Register(jdb.SqliteDriver, newDriver, jdb.ConnectParams{
+		Id:       config.String("DB_ID", "jdb"),
 		Driver:   jdb.SqliteDriver,
 		Name:     config.String("DB_NAME", "jdb"),
 		UserCore: true,

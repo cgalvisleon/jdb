@@ -2,6 +2,7 @@ package jdb
 
 import (
 	"encoding/json"
+	"fmt"
 	"slices"
 	"strings"
 
@@ -143,7 +144,16 @@ func (s *QlJoin) Data(fields ...interface{}) *Ql {
 * @param name interface{}
 * @return *Ql
 **/
-func (s *Ql) Join(model *Model) *QlJoin {
+func (s *Ql) Join(name interface{}) *QlJoin {
+	var model *Model
+	switch v := name.(type) {
+	case *Model:
+		model = v
+	default:
+		str := fmt.Sprintf("%v", v)
+		model = s.Db.GetModel(str)
+	}
+
 	with := s.addFrom(model)
 	result := &QlJoin{
 		QlWhere:  newQlWhere(s.validator),
@@ -252,7 +262,7 @@ func (s *QlJoin) setWheres(wheres et.Json) *QlJoin {
 func (s *Ql) setJoins(joins []et.Json) *Ql {
 	for _, join := range joins {
 		for key := range join {
-			with := GetModel(key)
+			with := s.Db.GetModel(key)
 			if with != nil {
 				val := join.Json(key)
 				s.Join(with).setWheres(val)
