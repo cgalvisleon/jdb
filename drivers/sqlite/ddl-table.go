@@ -177,6 +177,8 @@ func (s *SqlLite) ddlTable(model *jdb.Model) string {
 
 	ddlPrimaryKey := s.ddlPrimaryKey(model)
 	columnsDef = strs.Append(columnsDef, ddlPrimaryKey, ",\n\t")
+	ddlForeignKeys := s.ddlForeignKeys(model)
+	columnsDef = strs.Append(columnsDef, ddlForeignKeys, ",\n\t")
 	result := strs.Format("\nCREATE TABLE IF NOT EXISTS %s (%s\n);", tableName(model), columnsDef)
 
 	return result

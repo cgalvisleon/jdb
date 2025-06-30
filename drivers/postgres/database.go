@@ -172,7 +172,7 @@ func (s *Postgres) createDatabase(name string) error {
 * @param name string
 * @return error
 **/
-func (s *Postgres) dropDatabase(name string) error {
+func (s *Postgres) DropDatabase(name string) error {
 	if s.db == nil {
 		return mistake.Newf(msg.NOT_DRIVER_DB)
 	}

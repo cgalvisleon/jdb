@@ -38,11 +38,11 @@ func (s *Postgres) loadSchema(name string) error {
 }
 
 /**
-* dropSchema
+* DropSchema
 * @param name string
 * @return error
 **/
-func (s *Postgres) dropSchema(name string) error {
+func (s *Postgres) DropSchema(name string) error {
 	if s.db == nil {
 		return mistake.Newf(msg.NOT_DRIVER_DB)
 	}

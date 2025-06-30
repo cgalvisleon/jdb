@@ -111,11 +111,10 @@ func (s *Mysql) connectDefault(params et.Json) error {
 * @return bool, error
 **/
 func (s *Mysql) existDatabase(name string) (bool, error) {
-	sql := `
-	SELECT EXISTS(
-	SELECT 1
-	FROM pg_database
-	WHERE UPPER(datname) = UPPER($1));`
+	sql := jdb.SQLDDL(`
+	SELECT SCHEMA_NAME 
+	FROM INFORMATION_SCHEMA.SCHEMATA 
+	WHERE SCHEMA_NAME = $1`, name)
 	items, err := jdb.Query(s.db, sql, name)
 	if err != nil {
 		return false, err
@@ -162,11 +161,11 @@ func (s *Mysql) createDatabase(name string) error {
 }
 
 /**
-* dropDatabase
+* DropDatabase
 * @param name string
 * @return error
 **/
-func (s *Mysql) dropDatabase(name string) error {
+func (s *Mysql) DropDatabase(name string) error {
 	if s.db == nil {
 		return mistake.Newf(msg.NOT_DRIVER_DB)
 	}
