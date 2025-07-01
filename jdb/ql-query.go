@@ -210,7 +210,8 @@ func (s *Ql) queryTx(tx *Tx, params et.Json) (et.Json, error) {
 	limit := params.ValInt(30, "limit")
 	debug := params.Bool("debug")
 
-	result, err := s.setJoins(joins).
+	result, err := s.
+		setJoins(joins).
 		setWheres(where).
 		setGroupBy(groups...).
 		setHavings(havings).
