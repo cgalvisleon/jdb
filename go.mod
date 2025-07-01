@@ -11,6 +11,11 @@ require (
 )
 
 require (
+	github.com/oklog/ulid v1.3.1 // indirect
+	github.com/rs/xid v1.6.0 // indirect
+)
+
+require (
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/bwmarrin/snowflake v0.3.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
