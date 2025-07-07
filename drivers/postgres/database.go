@@ -154,10 +154,8 @@ func (s *Postgres) createDatabase(name string) error {
 	}
 
 	sql := jdb.SQLDDL(`
-	CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-	CREATE EXTENSION IF NOT EXISTS pgcrypto;
-	CREATE DATABASE $1`, name)
-	_, err = jdb.Exec(s.db, sql, name)
+	CREATE DATABASE $1;`, name)
+	_, err = jdb.Exec(s.db, sql)
 	if err != nil {
 		return err
 	}
@@ -168,7 +166,7 @@ func (s *Postgres) createDatabase(name string) error {
 }
 
 /**
-* dropDatabase
+* DropDatabase
 * @param name string
 * @return error
 **/

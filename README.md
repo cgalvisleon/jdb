@@ -564,6 +564,16 @@ gofmt -w . && go run --race ./cmd/jdb -port 3600 -rpc 4600
 
 ## 📚 API Reference
 
+### Version
+
+```bash
+git add .
+git commit -m 'Set new version'
+git push -u origin
+git tag v0.1.11
+git push origin --tags
+```
+
 ### Tipos de Datos Soportados
 
 - `TypeDataText` - VARCHAR(250)
