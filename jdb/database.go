@@ -24,6 +24,7 @@ type DB struct {
 	db          *sql.DB   `json:"-"`
 	schemas     []*Schema `json:"-"`
 	models      []*Model  `json:"-"`
+	tables      []*Model  `json:"-"`
 	isInit      bool      `json:"-"`
 	IsDebug     bool      `json:"-"`
 }
@@ -334,6 +335,16 @@ func (s *DB) DropModel(model *Model) error {
 	}
 
 	return nil
+}
+
+/**
+* From
+* @param table string
+* @return *Ql
+**/
+func (s *DB) From(table string) *Ql {
+	model := NewTable(s, table)
+	return From(model)
 }
 
 /**

@@ -18,6 +18,28 @@ import (
 	"github.com/google/uuid"
 )
 
+type TypeId int
+
+const (
+	TpNodeId TypeId = iota
+	TpUUId
+	TpULId
+	TpXId
+)
+
+func (s TypeId) Str() string {
+	switch s {
+	case TpUUId:
+		return "uuid"
+	case TpULId:
+		return "ulid"
+	case TpXId:
+		return "xid"
+	default:
+		return "id"
+	}
+}
+
 var (
 	ErrNotInserted = errors.New("not inserted")
 	ErrNotUpdated  = errors.New("not updated")
@@ -45,7 +67,7 @@ type Model struct {
 	RelationsFrom      map[string]*Relation     `json:"-"`
 	Joins              map[string]*Join         `json:"-"`
 	Required           map[string]bool          `json:"-"`
-	TpId               string                   `json:"tp_id"`
+	TpId               TypeId                   `json:"tp_id"`
 	CreatedAtField     *Column                  `json:"-"`
 	UpdatedAtField     *Column                  `json:"-"`
 	SystemKeyField     *Column                  `json:"-"`
@@ -74,6 +96,74 @@ type Model struct {
 }
 
 /**
+* NewTable
+* @param db *DB, table string
+* @return *Model
+**/
+func NewTable(db *DB, table string) *Model {
+	idx := slices.IndexFunc(db.tables, func(e *Model) bool { return e.Name == table })
+	if idx != -1 {
+		return db.tables[idx]
+	}
+
+	list := strs.Split(table, ".")
+	if len(list) < 2 {
+		return nil
+	}
+	tableName := list[1]
+	schemaName := list[0]
+
+	schema := NewSchema(db, schemaName)
+	now := timezone.NowTime()
+	result := &Model{
+		Db:                 db,
+		schema:             schema,
+		Schema:             schema.Name,
+		Table:              tableName,
+		CreatedAt:          now,
+		UpdateAt:           now,
+		Id:                 reg.GenUlId("table"),
+		Name:               table,
+		UseCore:            false,
+		Definitions:        et.Json{},
+		Columns:            make([]*Column, 0),
+		PrimaryKeys:        make(map[string]*Column),
+		ForeignKeys:        make(map[string]*Relation),
+		Indices:            make(map[string]*Index),
+		Uniques:            make(map[string]*Index),
+		RelationsTo:        make(map[string]*Relation),
+		RelationsFrom:      make(map[string]*Relation),
+		Joins:              make(map[string]*Join),
+		Required:           make(map[string]bool),
+		TpId:               TpULId,
+		eventEmiterChannel: make(chan event.Message),
+		eventsEmiter:       make(map[string]event.Handler),
+		eventError:         make([]EventError, 0),
+		eventsInsert:       make([]Event, 0),
+		eventsUpdate:       make([]Event, 0),
+		eventsDelete:       make([]Event, 0),
+		Version:            1,
+		isCore:             false,
+		vm:                 goja.New(),
+		FuncInsert:         make([]string, 0),
+		FuncUpdate:         make([]string, 0),
+		FuncDelete:         make([]string, 0),
+		IsDebug:            db.IsDebug,
+	}
+	result.DefineEventError(eventErrorDefault)
+	result.DefineEvent(EventInsert, eventInsertDefault)
+	result.DefineEvent(EventUpdate, eventUpdateDefault)
+	result.DefineEvent(EventDelete, eventDeleteDefault)
+	result.On(EVENT_MODEL_SYNC, eventSyncDefault)
+	result.vm.Set("model", result)
+	result.vm.Set("db", db)
+	result.isInit = true
+	db.tables = append(db.tables, result)
+
+	return result
+}
+
+/**
 * NewModel
 * @param schema *Schema, name string, version int
 * @return *Model
@@ -97,6 +187,7 @@ func NewModel(schema *Schema, name string, version int) *Model {
 			Table:              name,
 			CreatedAt:          now,
 			UpdateAt:           now,
+			Id:                 reg.GenUlId("model"),
 			Name:               name,
 			UseCore:            schema.UseCore,
 			Definitions:        et.Json{},
@@ -109,7 +200,7 @@ func NewModel(schema *Schema, name string, version int) *Model {
 			RelationsFrom:      make(map[string]*Relation),
 			Joins:              make(map[string]*Join),
 			Required:           make(map[string]bool),
-			TpId:               "UUID",
+			TpId:               TpUUId,
 			eventEmiterChannel: make(chan event.Message),
 			eventsEmiter:       make(map[string]event.Handler),
 			eventError:         make([]EventError, 0),
@@ -124,7 +215,6 @@ func NewModel(schema *Schema, name string, version int) *Model {
 			FuncDelete:         make([]string, 0),
 			IsDebug:            schema.Db.IsDebug,
 		}
-		result.Id = result.GetId("new")
 		result.DefineEventError(eventErrorDefault)
 		result.DefineEvent(EventInsert, eventInsertDefault)
 		result.DefineEvent(EventUpdate, eventUpdateDefault)
@@ -431,15 +521,14 @@ func (s *Model) GetId(id string) string {
 		return id
 	}
 
-	if s.TpId == "ULID" {
-		return strs.Format(`%s:%s`, s.Name, reg.ULID())
-	}
-
-	if s.TpId == "XID" {
+	switch s.TpId {
+	case TpXId:
 		return strs.Format(`%s:%s`, s.Name, reg.XID())
+	case TpULId:
+		return strs.Format(`%s:%s`, s.Name, reg.ULID())
+	default:
+		return strs.Format(`%s:%s`, s.Name, uuid.NewString())
 	}
-
-	return strs.Format(`%s:%s`, s.Name, uuid.NewString())
 }
 
 /**

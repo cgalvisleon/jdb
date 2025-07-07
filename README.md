@@ -2,7 +2,7 @@
 
 [![Go Version](https://img.shields.io/badge/Go-1.23+-blue.svg)](https://golang.org)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/Version-v0.1.10-orange.svg)](version.sh)
+[![Version](https://img.shields.io/badge/Version-v0.1.12-orange.svg)](version.sh)
 
 JDB es una librería de Go que proporciona una interfaz unificada y simplificada para trabajar con múltiples bases de datos. Ofrece soporte para PostgreSQL, MySQL, SQLite y Oracle con una API consistente y fácil de usar.
 
@@ -17,6 +17,12 @@ JDB es una librería de Go que proporciona una interfaz unificada y simplificada
 - **CQRS**: Soporte para Command Query Responsibility Segregation
 - **Core System**: Sistema de metadatos y gestión de modelos
 - **Debug Mode**: Modo de depuración para desarrollo
+- **Sistema de Daemon**: Gestión de servicios como daemon
+- **Gestión de Usuarios**: Creación y gestión de usuarios de base de datos
+- **JavaScript VM**: Integración con Goja para scripts dinámicos
+- **Sistema de Eventos Avanzado**: Emisión y manejo de eventos personalizados
+- **Gestión de PID**: Control de procesos con archivos PID
+- **Configuración Dinámica**: Configuración en tiempo de ejecución
 
 ## 📦 Instalación
 
@@ -27,7 +33,7 @@ go get github.com/cgalvisleon/jdb
 ### Dependencias
 
 ```bash
-go get github.com/cgalvisleon/et@v0.1.9
+go get github.com/cgalvisleon/et@v0.1.12
 ```
 
 ## 🔧 Configuración
@@ -48,6 +54,12 @@ APP_NAME=myapp
 # Configuración adicional
 DB_SSL_MODE=disable
 DB_TIMEZONE=UTC
+
+# Configuración Oracle específica
+ORA_DB_SERVICE_NAME_ORACLE=jdb
+ORA_DB_SSL_ORACLE=false
+ORA_DB_SSL_VERIFY_ORACLE=false
+ORA_DB_VERSION_ORACLE=19
 ```
 
 ## 📖 Uso Básico
@@ -103,6 +115,15 @@ user.DefineColumn("email", jdb.TypeDataText, jdb.Unique)
 user.DefineColumn("age", jdb.TypeDataInt)
 user.DefineColumn("active", jdb.TypeDataBool, jdb.Default(true))
 user.DefineColumn("created_at", jdb.TypeDataTime, jdb.Default("NOW()"))
+
+// Campos especiales del sistema
+user.DefineCreatedAtField()    // Campo de fecha de creación
+user.DefineUpdatedAtField()    // Campo de fecha de actualización
+user.DefineStatusField()       // Campo de estado
+user.DefineSystemKeyField()    // Campo de clave del sistema
+user.DefineIndexField()        // Campo de índice
+user.DefineSourceField()       // Campo de origen
+user.DefineProjectField()      // Campo de proyecto
 
 // Crear el modelo en la base de datos
 err := db.LoadModel(user)
@@ -204,6 +225,146 @@ if err != nil {
 }
 ```
 
+## 🛠️ Sistema de Daemon
+
+JDB incluye un sistema de daemon para gestionar servicios:
+
+### Gestión del Servicio
+
+```bash
+# Mostrar ayuda
+./jdb help
+
+# Mostrar versión
+./jdb version
+
+# Mostrar estado del servicio
+./jdb status
+
+# Configurar el servicio
+./jdb conf '{"port": 3500, "debug": true}'
+
+# Iniciar el servicio
+./jdb start
+
+# Detener el servicio
+./jdb stop
+
+# Reiniciar el servicio
+./jdb restart
+```
+
+### Configuración del Daemon
+
+```go
+// Configuración del daemon
+config := et.Json{
+    "port":  3500,
+    "debug": true,
+    "host":  "localhost",
+}
+
+// Aplicar configuración
+daemon.SetConfig(config.ToString())
+```
+
+## 👥 Gestión de Usuarios
+
+JDB proporciona funcionalidades para gestionar usuarios de base de datos:
+
+### PostgreSQL
+
+```go
+// Crear usuario
+err := db.CreateUser("nuevo_usuario", "password123", "password123")
+
+// Cambiar contraseña
+err := db.ChangePassword("nuevo_usuario", "nueva_password", "nueva_password")
+
+// Otorgar privilegios
+err := db.GrantPrivileges("nuevo_usuario", "myapp")
+
+// Eliminar usuario
+err := db.DeleteUser("nuevo_usuario")
+```
+
+### MySQL
+
+```go
+// Crear usuario
+err := db.CreateUser("nuevo_usuario", "password123", "password123")
+
+// Cambiar contraseña
+err := db.ChangePassword("nuevo_usuario", "nueva_password", "nueva_password")
+
+// Otorgar privilegios
+err := db.GrantPrivileges("nuevo_usuario", "myapp")
+
+// Eliminar usuario
+err := db.DeleteUser("nuevo_usuario")
+```
+
+## 🎯 Nuevas Funcionalidades
+
+### JavaScript VM Integration
+
+```go
+// Ejecutar scripts JavaScript en el modelo
+user.vm.Set("customFunction", func(data et.Json) et.Json {
+    // Lógica personalizada
+    return data
+})
+
+// Ejecutar script
+result, err := user.vm.RunString(`
+    var data = {name: "Juan", age: 30};
+    customFunction(data);
+`)
+```
+
+### Sistema de Eventos Avanzado
+
+```go
+// Definir eventos personalizados
+user.On("custom_event", func(message event.Message) {
+    console.Log("Evento personalizado:", message)
+})
+
+// Emitir eventos
+user.Emit("custom_event", event.Message{
+    Type: "user_created",
+    Data: et.Json{"user_id": "123"},
+})
+```
+
+### Generación de Datos de Prueba
+
+```go
+// Generar datos de prueba para el modelo
+testData := user.New("name", "email", "age")
+// Resultado: {"name": "", "email": "", "age": 0}
+
+// Generar datos con valores por defecto
+testData := user.New()
+// Resultado: {"id": "users:ulid", "name": "", "email": "", "age": 0, "active": true, "created_at": "2024-01-01T00:00:00Z"}
+```
+
+### Consultas Avanzadas
+
+```go
+// Consulta con campos ocultos
+items, err := db.Select(&jdb.Ql{
+    From: user.GetFrom(),
+    Hidden: []string{"password", "secret_key"},
+})
+
+// Consulta con datos de origen
+items, err := db.Select(&jdb.Ql{
+    From: user.GetFrom(),
+    TypeSelect: jdb.Source,
+})
+```
+
 ## 🏗️ Estructura del Proyecto
 
 ```
@@ -213,14 +374,28 @@ jdb/
 │   ├── model.go         # Definición de modelos
 │   ├── command.go       # Comandos CRUD
 │   ├── ql.go           # Query Language
+│   ├── model-new.go     # Generación de datos
+│   ├── model-define.go  # Definición de campos especiales
 │   └── ...
 ├── drivers/            # Drivers de base de datos
 │   ├── postgres/       # Driver PostgreSQL
+│   │   ├── users.go    # Gestión de usuarios
+│   │   └── ...
 │   ├── mysql/          # Driver MySQL
+│   │   ├── users.go    # Gestión de usuarios
+│   │   └── ...
 │   ├── sqlite/         # Driver SQLite
-│   └── oracle/         # Driver Oracle
+│   ├── oracle/         # Driver Oracle
+│   │   ├── users.go    # Gestión de usuarios
+│   │   └── ...
 ├── cqrs/              # Patrón CQRS
 └── cmd/               # Aplicación de ejemplo
+    ├── jdb/           # Comando principal
+    │   ├── main.go     # Punto de entrada
+    │   ├── systemd.go  # Sistema de daemon
+    │   ├── pid.go      # Gestión de PID
+    │   └── msg.go      # Mensajes del sistema
+    └── main.go         # Ejemplo de uso
 ```
 
 ## 🔌 Drivers Soportados
@@ -263,6 +438,23 @@ params := jdb.ConnectParams{
     Driver: "sqlite",
     Params: jdb.Json{
         "file": "./data.db",
+    },
+}
+```
+
+### Oracle
+
+```go
+params := jdb.ConnectParams{
+    Driver: "oracle",
+    Params: jdb.Json{
+        "host":         "localhost",
+        "port":         1521,
+        "username":     "system",
+        "password":     "password",
+        "service_name": "XE",
+        "ssl":          false,
+        "version":      19,
     },
 }
 ```
@@ -315,6 +507,28 @@ user.EventsUpdate = append(user.EventsUpdate, func(model *jdb.Model, before, aft
 })
 ```
 
+### Campos Especiales
+
+```go
+// Definir campo de texto completo
+user.DefineFullText("spanish", []string{"name", "description"})
+
+// Definir relación
+user.DefineRelation("profile", "profiles", map[string]string{
+    "user_id": "id",
+}, 1)
+
+// Definir rollup
+user.DefineRollup("total_orders", "orders", map[string]string{
+    "user_id": "id",
+}, "amount")
+
+// Definir objeto
+user.DefineObject("address", "addresses", map[string]string{
+    "user_id": "id",
+}, []string{"street", "city", "country"})
+```
+
 ## 🚀 Compilación y Ejecución
 
 ### Ejecutar en modo desarrollo
@@ -333,6 +547,19 @@ gofmt -w . && go build --race -a -o ./jdb ./cmd/jdb
 
 ```bash
 gofmt -w . && go run --race ./cmd/jdb -port 3600 -rpc 4600
+```
+
+### Gestión de Versiones
+
+```bash
+# Incrementar versión de revisión
+./version.sh --v
+
+# Incrementar versión menor
+./version.sh --n
+
+# Incrementar versión mayor
+./version.sh --m
 ```
 
 ## 📚 API Reference
@@ -356,6 +583,13 @@ gofmt -w . && go run --race ./cmd/jdb -port 3600 -rpc 4600
 - `TypeDataGeometry` - JSONB
 - `TypeDataFullText` - TSVECTOR
 
+### Tipos de ID Soportados
+
+- `TpNodeId` - ID de nodo
+- `TpUUId` - UUID
+- `TpULId` - ULID
+- `TpXId` - XID
+
 ### Operadores de Consulta
 
 - `Eq` - Igual
@@ -370,6 +604,15 @@ gofmt -w . && go run --race ./cmd/jdb -port 3600 -rpc 4600
 - `NotIn` - No en
 - `IsNull` - Es nulo
 - `IsNotNull` - No es nulo
+
+### Comandos del Sistema
+
+- `Insert` - Insertar
+- `Update` - Actualizar
+- `Delete` - Eliminar
+- `Bulk` - Inserción masiva
+- `Upsert` - Insertar o actualizar
+- `Delsert` - Eliminar e insertar
 
 ## 🤝 Contribuir
 
