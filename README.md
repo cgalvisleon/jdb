@@ -570,7 +570,7 @@ gofmt -w . && go run --race ./cmd/jdb -port 3600 -rpc 4600
 git add .
 git commit -m 'Set new version'
 git push -u origin
-git tag v0.1.11
+git tag v0.1.12
 git push origin --tags
 ```
 
