@@ -256,72 +256,106 @@ func StrToKindType(strs string) (TypeColumn, TypeData) {
 	return TpAtribute, TypeDataText
 }
 
-type ColumnField string
-
-const (
-	PRIMARYKEY    = "id"
-	PK            = PRIMARYKEY
-	KEY           = PRIMARYKEY
-	INDEX         = "idx"
-	PROJECT_ID    = "project_id"
-	CREATED_AT    = "created_at"
-	UPDATED_AT    = "updated_at"
-	STATUS_ID     = "status_id"
-	PERMISSION_ID = "permission_id"
-	SYSID         = "jdb_id"
-	CREATED_TO    = "created_to"
-	UPDATED_TO    = "updated_to"
-	FULLTEXT      = "fulltext"
-	HISTORYCAL    = "historical"
-	CHECKED       = "checked"
-	ASC           = true
-)
-
-var (
-	IndexField      ColumnField = INDEX
-	SourceField     ColumnField = "source"
-	ProjectField    ColumnField = PROJECT_ID
-	CreatedAtField  ColumnField = CREATED_AT
-	UpdatedAtField  ColumnField = UPDATED_AT
-	StatusField     ColumnField = STATUS_ID
-	PrimaryKeyField ColumnField = PRIMARYKEY
-	SystemKeyField  ColumnField = SYSID
-	CreatedToField  ColumnField = CREATED_TO
-	UpdatedToField  ColumnField = UPDATED_TO
-	FullTextField   ColumnField = FULLTEXT
-)
-
-func (s ColumnField) TypeData() TypeData {
-	switch s {
-	case IndexField:
-		return TypeDataInt
-	case SourceField:
-		return TypeDataObject
-	case ProjectField:
-		return TypeDataKey
-	case CreatedAtField:
-		return TypeDataDateTime
-	case UpdatedAtField:
-		return TypeDataDateTime
-	case StatusField:
-		return TypeDataState
-	case PrimaryKeyField:
-		return TypeDataKey
-	case SystemKeyField:
-		return TypeDataKey
-	case CreatedToField:
-		return TypeDataUser
-	case UpdatedToField:
-		return TypeDataUser
-	case FullTextField:
-		return TypeDataFullText
-	}
-
-	return TypeDataText
+type ColumnFields struct {
+	Key          string
+	Index        string
+	Source       string
+	ProjectId    string
+	CreatedAt    string
+	UpdatedAt    string
+	StatusId     string
+	PermissionId string
+	SystemId     string
+	CreatedTo    string
+	UpdatedTo    string
+	Fulltext     string
+	Historical   string
+	Checked      string
 }
 
-func (s ColumnField) Str() string {
-	return string(s)
+/**
+* Json
+* @return et.Json
+**/
+func (s *ColumnFields) Json() et.Json {
+	return et.Json{
+		"key":           s.Key,
+		"index":         s.Index,
+		"source":        s.Source,
+		"project_id":    s.ProjectId,
+		"created_at":    s.CreatedAt,
+		"updated_at":    s.UpdatedAt,
+		"status_id":     s.StatusId,
+		"permission_id": s.PermissionId,
+		"system_id":     s.SystemId,
+		"created_to":    s.CreatedTo,
+		"updated_to":    s.UpdatedTo,
+		"fulltext":      s.Fulltext,
+		"historical":    s.Historical,
+		"checked":       s.Checked,
+	}
+}
+
+var cf *ColumnFields
+
+func init() {
+	cf = &ColumnFields{
+		Key:          "id",
+		Index:        "idx",
+		Source:       "source",
+		ProjectId:    "project_id",
+		CreatedAt:    "created_at",
+		UpdatedAt:    "updated_at",
+		StatusId:     "status_id",
+		PermissionId: "permission_id",
+		SystemId:     "jdb_id",
+		CreatedTo:    "created_to",
+		UpdatedTo:    "updated_to",
+		Fulltext:     "fulltext",
+		Historical:   "historical",
+		Checked:      "checked",
+	}
+}
+
+var (
+	KEY           = cf.Key
+	PRIMARYKEY    = cf.Key
+	INDEX         = cf.Index
+	SOURCE        = cf.Source
+	PROJECT_ID    = cf.ProjectId
+	CREATED_AT    = cf.CreatedAt
+	UPDATED_AT    = cf.UpdatedAt
+	STATUS_ID     = cf.StatusId
+	PERMISSION_ID = cf.PermissionId
+	SYSID         = cf.SystemId
+	CREATED_TO    = cf.CreatedTo
+	UPDATED_TO    = cf.UpdatedTo
+	FULLTEXT      = cf.Fulltext
+	HISTORYCAL    = cf.Historical
+	CHECKED       = cf.Checked
+)
+
+/**
+* SetColumnFields
+* @param fields *ColumnFields
+**/
+func SetColumnFields(fields *ColumnFields) {
+	cf = fields
+	KEY = cf.Key
+	PRIMARYKEY = cf.Key
+	INDEX = cf.Index
+	SOURCE = cf.Source
+	PROJECT_ID = cf.ProjectId
+	CREATED_AT = cf.CreatedAt
+	UPDATED_AT = cf.UpdatedAt
+	STATUS_ID = cf.StatusId
+	PERMISSION_ID = cf.PermissionId
+	SYSID = cf.SystemId
+	CREATED_TO = cf.CreatedTo
+	UPDATED_TO = cf.UpdatedTo
+	FULLTEXT = cf.Fulltext
+	HISTORYCAL = cf.Historical
+	CHECKED = cf.Checked
 }
 
 type Relation struct {

@@ -23,13 +23,13 @@ func (s *DB) defineAudit() error {
 	}
 
 	coreAudit = NewModel(coreSchema, "audit", 1)
-	coreAudit.DefineColumn(CREATED_AT, CreatedAtField.TypeData())
+	coreAudit.DefineColumn(cf.CreatedAt, TypeDataDateTime)
 	coreAudit.DefineColumn("command", TypeDataText)
 	coreAudit.DefineColumn("query", TypeDataMemo)
 	coreAudit.definePrimaryKeyField()
 	coreAudit.DefineIndexField()
 	coreAudit.DefineIndex(true,
-		CREATED_AT,
+		cf.CreatedAt,
 		"command",
 	)
 	coreAudit.isAudit = true
@@ -51,10 +51,10 @@ func audit(command string, query string) {
 
 	result := utility.ToBase64(query)
 	_, err := coreAudit.Insert(et.Json{
-		CREATED_AT: utility.Now(),
-		KEY:        coreAudit.GenId(),
-		"command":  command,
-		"query":    result,
+		cf.CreatedAt: utility.Now(),
+		cf.Key:       coreAudit.GenId(),
+		"command":    command,
+		"query":      result,
 	}).
 		AfterInsert(func(tx *Tx, data et.Json) error {
 			count, err := coreAudit.
@@ -67,15 +67,15 @@ func audit(command string, query string) {
 			if count > limit {
 				item, err := coreAudit.
 					Where("command").Neg("exec").
-					OrderBy(INDEX).
+					OrderBy(cf.Index).
 					First(1)
 				if err != nil {
 					return err
 				}
 
-				id := item.Str(0, KEY)
+				id := item.Str(0, cf.Key)
 				_, err = coreAudit.
-					Delete(KEY).Eq(id).
+					Delete(cf.Key).Eq(id).
 					ExecTx(tx)
 				if err != nil {
 					return err

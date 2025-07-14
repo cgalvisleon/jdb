@@ -27,15 +27,15 @@ func (s *DB) defineRecycling() error {
 	}
 
 	coreRecycling = NewModel(coreSchema, "recycling", 1)
-	coreRecycling.DefineColumn(CREATED_AT, CreatedAtField.TypeData())
-	coreRecycling.DefineColumn(UPDATED_AT, UpdatedAtField.TypeData())
+	coreRecycling.DefineColumn(cf.CreatedAt, TypeDataDateTime)
+	coreRecycling.DefineColumn(cf.UpdatedAt, TypeDataDateTime)
 	coreRecycling.DefineColumn("schema_name", TypeDataText)
 	coreRecycling.DefineColumn("table_name", TypeDataText)
-	coreRecycling.DefineColumn(SYSID, SystemKeyField.TypeData())
+	coreRecycling.DefineColumn(cf.SystemId, TypeDataKey)
 	coreRecycling.DefineIndexField()
-	coreRecycling.DefinePrimaryKey("schema_name", "table_name", SYSID)
+	coreRecycling.DefinePrimaryKey("schema_name", "table_name", cf.SystemId)
 	coreRecycling.DefineIndex(true,
-		INDEX,
+		cf.Index,
 	)
 	if err := coreRecycling.Init(); err != nil {
 		return console.Panic(err)
@@ -58,7 +58,7 @@ func (s *DB) upsertRecycling(tx *Tx, schema, name, sysId, statusId string) error
 		_, err := coreRecycling.
 			Delete("schema_name").Eq(schema).
 			And("table_name").Eq(name).
-			And(SYSID).Eq(sysId).
+			And(cf.SystemId).Eq(sysId).
 			ExecTx(tx)
 		if err != nil {
 			return err
@@ -70,11 +70,11 @@ func (s *DB) upsertRecycling(tx *Tx, schema, name, sysId, statusId string) error
 	now := timezone.Now()
 	_, err := coreRecycling.
 		Upsert(et.Json{
-			CREATED_AT:    now,
-			UPDATED_AT:    now,
+			cf.CreatedAt:  now,
+			cf.UpdatedAt:  now,
 			"schema_name": schema,
 			"table_name":  name,
-			SYSID:         sysId,
+			cf.SystemId:   sysId,
 		}).
 		ExecTx(tx)
 	if err != nil {
@@ -103,13 +103,13 @@ func (s *DB) GetRecycling(schema, name, sysId string) (et.Item, error) {
 	}
 
 	if !utility.ValidId(sysId) {
-		return et.Item{}, mistake.Newf(MSG_ATTRIBUTE_REQUIRED, SYSID)
+		return et.Item{}, mistake.Newf(MSG_ATTRIBUTE_REQUIRED, cf.SystemId)
 	}
 
 	item, err := coreRecycling.
 		Where("schema_name").Eq(schema).
 		And("table_name").Eq(name).
-		And(SYSID).Eq(sysId).
+		And(cf.SystemId).Eq(sysId).
 		One()
 	if err != nil {
 		return et.Item{}, err
@@ -139,7 +139,7 @@ func (s *DB) deleteRecycling(tx *Tx, schema, name, sysId string) error {
 	item, err := coreRecycling.
 		Delete("schema_name").Eq(schema).
 		And("table_name").Eq(name).
-		And(SYSID).Eq(sysId).
+		And(cf.SystemId).Eq(sysId).
 		ExecTx(tx)
 	if err != nil {
 		return err

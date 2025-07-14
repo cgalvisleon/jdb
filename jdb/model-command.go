@@ -77,7 +77,7 @@ func (s *Model) Bulk(data []et.Json) *Command {
 **/
 func (s *Model) Sync(data et.Json, sysId string) *Command {
 	result := NewCommand(s, []et.Json{data}, Sync)
-	result.Where(SYSID).Eq(sysId)
+	result.Where(cf.SystemId).Eq(sysId)
 	result.isSync = true
 
 	return result

@@ -23,20 +23,20 @@ func (s *DB) defineRecords() error {
 	}
 
 	coreRecords = NewModel(coreSchema, "records", 1)
-	coreRecords.DefineColumn(CREATED_AT, CreatedAtField.TypeData())
-	coreRecords.DefineColumn(UPDATED_AT, UpdatedAtField.TypeData())
+	coreRecords.DefineColumn(cf.CreatedAt, TypeDataDateTime)
+	coreRecords.DefineColumn(cf.UpdatedAt, TypeDataDateTime)
 	coreRecords.DefineColumn("schema_name", TypeDataText)
 	coreRecords.DefineColumn("table_name", TypeDataText)
 	coreRecords.DefineColumn("option", TypeDataShortText)
 	coreRecords.DefineColumn("sync", TypeDataCheckbox)
-	coreRecords.DefineColumn(SYSID, SystemKeyField.TypeData())
+	coreRecords.DefineColumn(cf.SystemId, TypeDataKey)
 	coreRecords.DefineIndexField()
-	coreRecords.DefinePrimaryKey("schema_name", "table_name", SYSID)
+	coreRecords.DefinePrimaryKey("schema_name", "table_name", cf.SystemId)
 	coreRecords.DefineIndex(true,
 		"option",
 		"sync",
-		SYSID,
-		INDEX,
+		cf.SystemId,
+		cf.Index,
 	)
 	if err := coreRecords.Init(); err != nil {
 		return console.Panic(err)
@@ -53,14 +53,14 @@ func (s *DB) upsertRecord(tx *Tx, schema, name, sysid, option string) error {
 	now := timezone.Now()
 	_, err := coreRecords.
 		Upsert(et.Json{
-			CREATED_AT:    now,
-			UPDATED_AT:    now,
+			cf.CreatedAt:  now,
+			cf.UpdatedAt:  now,
 			"schema_name": schema,
 			"table_name":  name,
 			"option":      option,
 			"sync":        false,
-			SYSID:         sysid,
-			INDEX:         reg.GenIndex(),
+			cf.SystemId:   sysid,
+			cf.Index:      reg.GenIndex(),
 		}).
 		ExecTx(tx)
 	if err != nil {

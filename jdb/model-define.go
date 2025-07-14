@@ -464,9 +464,9 @@ func (s *Model) definePrimaryKey(primaryKeys []string) *Model {
 * @return *Column
 **/
 func (s *Model) definePrimaryKeyField() *Column {
-	result := s.defineColumn(PRIMARYKEY, PrimaryKeyField.TypeData())
+	result := s.defineColumn(cf.Key, TypeDataKey)
 	result.IsKeyfield = true
-	s.definePrimaryKey([]string{PRIMARYKEY})
+	s.definePrimaryKey([]string{cf.Key})
 
 	return result
 }
@@ -524,7 +524,7 @@ func (s *Model) defineForeignKey(fks map[string]string, withName string, onDelet
 * @return *Column
 **/
 func (s *Model) defineSource(name string) *Column {
-	result := s.defineColumn(name, SourceField.TypeData())
+	result := s.defineColumn(name, TypeDataObject)
 	s.defineIndex(true, []string{name})
 	s.SourceField = result
 
@@ -540,7 +540,7 @@ func (s *Model) defineSourceField() *Column {
 		return s.SourceField
 	}
 
-	return s.defineSource(SourceField.Str())
+	return s.defineSource(cf.Source)
 }
 
 /**
@@ -561,8 +561,8 @@ func (s *Model) defineAtribute(name string, typeData TypeData) *Column {
 * @return *Column
 **/
 func (s *Model) defineCreatedAtField() *Column {
-	result := s.defineColumn(string(CreatedAtField), CreatedAtField.TypeData())
-	s.defineIndex(true, []string{CreatedAtField.Str()})
+	result := s.defineColumn(cf.CreatedAt, TypeDataDateTime)
+	s.defineIndex(true, []string{cf.CreatedAt})
 	s.CreatedAtField = result
 
 	return result
@@ -573,8 +573,8 @@ func (s *Model) defineCreatedAtField() *Column {
 * @return *Column
 **/
 func (s *Model) defineUpdatedAtField() *Column {
-	result := s.defineColumn(string(UpdatedAtField), UpdatedAtField.TypeData())
-	s.defineIndex(true, []string{UpdatedAtField.Str()})
+	result := s.defineColumn(cf.UpdatedAt, TypeDataDateTime)
+	s.defineIndex(true, []string{cf.UpdatedAt})
 	s.UpdatedAtField = result
 
 	return result
@@ -585,8 +585,8 @@ func (s *Model) defineUpdatedAtField() *Column {
 * @return *Column
 **/
 func (s *Model) defineStatusField() *Column {
-	result := s.defineColumn(string(StatusField), StatusField.TypeData())
-	s.defineIndex(true, []string{StatusField.Str()})
+	result := s.defineColumn(cf.StatusId, TypeDataState)
+	s.defineIndex(true, []string{cf.StatusId})
 	s.StatusField = result
 
 	return result
@@ -597,8 +597,8 @@ func (s *Model) defineStatusField() *Column {
 * @return *Column
 **/
 func (s *Model) defineSystemKeyField() *Column {
-	result := s.defineColumn(string(SystemKeyField), SystemKeyField.TypeData())
-	s.defineIndex(true, []string{SystemKeyField.Str()})
+	result := s.defineColumn(cf.SystemId, TypeDataKey)
+	s.defineIndex(true, []string{cf.SystemId})
 	s.SystemKeyField = result
 
 	return result
@@ -609,8 +609,8 @@ func (s *Model) defineSystemKeyField() *Column {
 * @return *Column
 **/
 func (s *Model) defineIndexField() *Column {
-	result := s.defineColumn(string(IndexField), IndexField.TypeData())
-	s.defineIndex(true, []string{IndexField.Str()})
+	result := s.defineColumn(cf.Index, TypeDataInt)
+	s.defineIndex(true, []string{cf.Index})
 	s.IndexField = result
 
 	return result
@@ -624,12 +624,12 @@ func (s *Model) defineIndexField() *Column {
 **/
 func (s *Model) defineFullText(language string, fields []string) *Column {
 	cols := s.getColumnsArray(fields...)
-	result := s.defineColumn(string(FullTextField), FullTextField.TypeData())
+	result := s.defineColumn(cf.Fulltext, TypeDataFullText)
 	result.FullText = &FullText{
 		Language: language,
 		Columns:  cols,
 	}
-	s.defineIndex(true, []string{FullTextField.Str()})
+	s.defineIndex(true, []string{cf.Fulltext})
 	s.FullTextField = result
 
 	return result
@@ -650,8 +650,8 @@ func (s *Model) defineProjectField() *Column {
 		}
 	}
 
-	result := s.defineColumnIdx(string(ProjectField), ProjectField.TypeData(), idx)
-	s.defineIndex(true, []string{ProjectField.Str()})
+	result := s.defineColumnIdx(cf.ProjectId, TypeDataKey, idx)
+	s.defineIndex(true, []string{cf.ProjectId})
 	s.ProjectField = result
 
 	return result
@@ -766,7 +766,7 @@ func (s *Model) defineMultiSelect(name string, fks map[string]string) *Model {
 	relatedTo := s.Name + "_" + name
 	result := s.defineRelation(name, relatedTo, fks, 30)
 	result.With.definePrimaryKeyField()
-	result.With.defineColumn(CHECKED, TypeDataCheckbox)
+	result.With.defineColumn(cf.Checked, TypeDataCheckbox)
 	result.With.defineCreatedAtField()
 	result.With.defineSourceField()
 	result.With.defineSystemKeyField()
@@ -775,7 +775,7 @@ func (s *Model) defineMultiSelect(name string, fks map[string]string) *Model {
 	for fkn := range fks {
 		primaryKeys = append(primaryKeys, fkn)
 	}
-	primaryKeys = append(primaryKeys, KEY)
+	primaryKeys = append(primaryKeys, cf.Key)
 	result.With.definePrimaryKey(primaryKeys)
 	result.IsMultiSelect = true
 

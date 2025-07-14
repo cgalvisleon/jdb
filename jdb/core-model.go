@@ -19,8 +19,8 @@ func (s *DB) defineModel() error {
 	}
 
 	coreModel = NewModel(coreSchema, "models", 1)
-	coreModel.DefineColumn(CREATED_AT, CreatedAtField.TypeData())
-	coreModel.DefineColumn(UPDATED_AT, UpdatedAtField.TypeData())
+	coreModel.DefineColumn(cf.CreatedAt, TypeDataDateTime)
+	coreModel.DefineColumn(cf.UpdatedAt, TypeDataDateTime)
 	coreModel.DefineColumn("kind", TypeDataText)
 	coreModel.DefineColumn("name", TypeDataText)
 	coreModel.DefineColumn("version", TypeDataInt)
@@ -30,8 +30,8 @@ func (s *DB) defineModel() error {
 	coreModel.DefinePrimaryKey("kind", "name")
 	coreModel.DefineIndex(true,
 		"version",
-		SYSID,
-		INDEX,
+		cf.SystemId,
+		cf.Index,
 	)
 	if err := coreModel.Init(); err != nil {
 		return console.Panic(err)
@@ -69,8 +69,8 @@ func (s *DB) upsertModel(kind, name string, version int, definition []byte) erro
 	now := timezone.Now()
 	_, err := coreModel.
 		Upsert(et.Json{
-			CREATED_AT:   now,
-			UPDATED_AT:   now,
+			cf.CreatedAt: now,
+			cf.UpdatedAt: now,
 			"kind":       kind,
 			"name":       name,
 			"version":    version,

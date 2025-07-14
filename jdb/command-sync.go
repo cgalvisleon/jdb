@@ -10,14 +10,14 @@ func (s *Command) sync() error {
 		return nil
 	}
 
-	id := s.Data[0].Str(SYSID)
+	id := s.Data[0].Str(cf.SystemId)
 	if id == "" {
 		return nil
 	}
 
 	item, err := model.
 		Update(s.Data[0]).
-		Where(SYSID).Eq(id).
+		Where(cf.SystemId).Eq(id).
 		OneTx(s.tx)
 	if err != nil {
 		return err
