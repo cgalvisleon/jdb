@@ -5,7 +5,7 @@ import (
 	"github.com/cgalvisleon/et/mistake"
 )
 
-func (s *Command) exist(model *Model, where et.Json) (bool, error) {
+func (s *Command) exists(model *Model, where et.Json) (bool, error) {
 	if model == nil {
 		return false, mistake.New(MSG_MODEL_REQUIRED)
 	}

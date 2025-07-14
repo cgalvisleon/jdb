@@ -92,3 +92,117 @@ func (s *Ql) Max(field string) *Ql {
 
 	return s
 }
+
+/**
+* Extract
+* @param field string
+* @return *Ql
+**/
+func (s *Ql) ExtractYear(field string) *Ql {
+	if !utility.ValidWord(field) {
+		return s
+	}
+
+	agr := s.getField(field)
+	if agr != nil {
+		agr.setAgregation(ExtractYear)
+		s.setSelect(agr)
+	}
+
+	return s
+}
+
+/**
+* ExtractMonth
+* @param field string
+* @return *Ql
+**/
+func (s *Ql) ExtractMonth(field string) *Ql {
+	if !utility.ValidWord(field) {
+		return s
+	}
+
+	agr := s.getField(field)
+	if agr != nil {
+		agr.setAgregation(ExtractMonth)
+		s.setSelect(agr)
+	}
+
+	return s
+}
+
+/**
+* ExtractDay
+* @param field string
+* @return *Ql
+**/
+func (s *Ql) ExtractDay(field string) *Ql {
+	if !utility.ValidWord(field) {
+		return s
+	}
+
+	agr := s.getField(field)
+	if agr != nil {
+		agr.setAgregation(ExtractDay)
+		s.setSelect(agr)
+	}
+
+	return s
+}
+
+/**
+* ExtractHour
+* @param field string
+* @return *Ql
+**/
+func (s *Ql) ExtractHour(field string) *Ql {
+	if !utility.ValidWord(field) {
+		return s
+	}
+
+	agr := s.getField(field)
+	if agr != nil {
+		agr.setAgregation(ExtractHour)
+		s.setSelect(agr)
+	}
+
+	return s
+}
+
+/**
+* ExtractMinute
+* @param field string
+* @return *Ql
+**/
+func (s *Ql) ExtractMinute(field string) *Ql {
+	if !utility.ValidWord(field) {
+		return s
+	}
+
+	agr := s.getField(field)
+	if agr != nil {
+		agr.setAgregation(ExtractMinute)
+		s.setSelect(agr)
+	}
+
+	return s
+}
+
+/**
+* ExtractSecond
+* @param field string
+* @return *Ql
+**/
+func (s *Ql) ExtractSecond(field string) *Ql {
+	if !utility.ValidWord(field) {
+		return s
+	}
+
+	agr := s.getField(field)
+	if agr != nil {
+		agr.setAgregation(ExtractSecond)
+		s.setSelect(agr)
+	}
+
+	return s
+}

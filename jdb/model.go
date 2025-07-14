@@ -200,7 +200,7 @@ func NewModel(schema *Schema, name string, version int) *Model {
 			RelationsFrom:      make(map[string]*Relation),
 			Joins:              make(map[string]*Join),
 			Required:           make(map[string]bool),
-			TpId:               TpUUId,
+			TpId:               TpULId,
 			eventEmiterChannel: make(chan event.Message),
 			eventsEmiter:       make(map[string]event.Handler),
 			eventError:         make([]EventError, 0),
@@ -499,6 +499,53 @@ func (s *Model) Init() error {
 	}
 
 	s.isInit = true
+
+	return nil
+}
+
+/**
+* CheckRequired
+* @param data et.Json
+* @return error
+**/
+func (s *Model) CheckRequired(data et.Json) error {
+	for name, required := range s.Required {
+		if required {
+			if data[name] == nil {
+				return mistake.Newf(MSG_REQUIRED_FIELD_REQUIRED, name)
+			}
+		}
+	}
+
+	return nil
+}
+
+/**
+* CheckForeignKeys
+* @param data et.Json
+* @return error
+**/
+func (s *Model) CheckForeignKeys(data et.Json) error {
+	for name, relation := range s.ForeignKeys {
+		with := relation.With
+		if with == nil {
+			return mistake.Newf(MSG_RELATION_WITH_REQUIRED, name)
+		}
+
+		where := relation.GetWhere(data)
+		ql := From(with)
+		ql.setWheres(where)
+		exist, err := ql.
+			setDebug(s.IsDebug).
+			ItExists()
+		if err != nil {
+			return err
+		}
+
+		if !exist {
+			return mistake.Newf(MSG_FOREIGN_KEY_NOT_EXIST, name, where.ToString())
+		}
+	}
 
 	return nil
 }

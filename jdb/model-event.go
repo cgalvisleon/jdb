@@ -6,6 +6,7 @@ import (
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/event"
 	"github.com/cgalvisleon/et/strs"
+	"github.com/cgalvisleon/et/utility"
 )
 
 const EVENT_MODEL_ERROR = "model:error"
@@ -95,8 +96,8 @@ func eventUpdateDefault(tx *Tx, model *Model, before et.Json, after et.Json) err
 	}
 
 	if model.UseCore && model.SystemKeyField != nil && model.StatusField != nil {
-		oldStatus := before.Str(model.StatusField.Name)
-		newStatus := after.Str(model.StatusField.Name)
+		oldStatus := before.ValStr(utility.ACTIVE, model.StatusField.Name)
+		newStatus := after.ValStr(oldStatus, model.StatusField.Name)
 		if oldStatus != newStatus {
 			sysId := before.Str(model.SystemKeyField.Name)
 			err := model.Db.upsertRecycling(tx, model.Schema, model.Name, sysId, newStatus)

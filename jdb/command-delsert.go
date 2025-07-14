@@ -17,7 +17,7 @@ func (s *Command) delsert() error {
 	s.current(where)
 	if s.Current.Ok {
 		s.setWheres(where)
-		s.Command = Update
+		s.Command = Delete
 		return s.deleted()
 	}
 

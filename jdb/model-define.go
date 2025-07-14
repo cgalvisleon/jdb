@@ -1182,10 +1182,10 @@ func (s *Model) DefineValues(name string, values interface{}) *Column {
 }
 
 /**
-* defineField
+* defineFields
 * @param fields et.Json
 **/
-func (s *Model) setFields(fields et.Json) {
+func (s *Model) defineFields(fields et.Json) {
 	for key := range fields {
 		definition := fields.Json(key)
 		var typeColumn TypeColumn

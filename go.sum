@@ -14,6 +14,8 @@ github.com/cgalvisleon/et v0.1.13 h1:NFeiMjAmrU0kl8sfXx+JCt3122U/Sbg+pWGFLS5ep9w
 github.com/cgalvisleon/et v0.1.13/go.mod h1:bTcBlg6mr+aFU14pwQlEQiN/5c/jZYwBoJ+bF2+Z8IU=
 github.com/cgalvisleon/et v0.1.14 h1:C9a+1lNrrCXRIrJWGoLvCoyU5zy+ygJ31YwQuqZqwRo=
 github.com/cgalvisleon/et v0.1.14/go.mod h1:bTcBlg6mr+aFU14pwQlEQiN/5c/jZYwBoJ+bF2+Z8IU=
+github.com/cgalvisleon/et v0.1.15 h1:t0n9l9OVbGNZrvOgilhMq0c/rUusgTe1tWlM5upJ0fw=
+github.com/cgalvisleon/et v0.1.15/go.mod h1:bTcBlg6mr+aFU14pwQlEQiN/5c/jZYwBoJ+bF2+Z8IU=
 github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f h1:lO4WD4F/rVNCu3HqELle0jiPLLBs70cWOduZpkS1E78=
 github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f/go.mod h1:cuUVRXasLTGF7a8hSLbxyZXjz+1KgoB3wDUb6vlszIc=
 github.com/dlclark/regexp2 v1.11.4 h1:rPYF9/LECdNymJufQKmri9gV604RvvABwgOA8un7yAo=

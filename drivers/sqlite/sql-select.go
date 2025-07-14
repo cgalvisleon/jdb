@@ -49,6 +49,18 @@ func asField(field jdb.Field) string {
 			val = strs.Format(`MIN(%s)`, val)
 		case jdb.AgregationMax:
 			val = strs.Format(`MAX(%s)`, val)
+		case jdb.ExtractYear:
+			val = strs.Format(`strftime('%%Y', %s)`, val)
+		case jdb.ExtractMonth:
+			val = strs.Format(`strftime('%%m', %s)`, val)
+		case jdb.ExtractDay:
+			val = strs.Format(`strftime('%%d', %s)`, val)
+		case jdb.ExtractHour:
+			val = strs.Format(`strftime('%%H', %s)`, val)
+		case jdb.ExtractMinute:
+			val = strs.Format(`strftime('%%M', %s)`, val)
+		case jdb.ExtractSecond:
+			val = strs.Format(`strftime('%%S', %s)`, val)
 		}
 
 		return val

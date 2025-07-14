@@ -36,31 +36,6 @@ func (s *Command) beforeInsertDefault(tx *Tx, data et.Json) error {
 		data[model.UpdatedAtField.Name] = now
 	}
 
-	for name, required := range model.Required {
-		if required {
-			if data[name] == nil {
-				return mistake.Newf(MSG_REQUIRED_FIELD_REQUIRED, name)
-			}
-		}
-	}
-
-	for name, relation := range model.ForeignKeys {
-		with := relation.With
-		if with == nil {
-			return mistake.Newf(MSG_RELATION_WITH_REQUIRED, name)
-		}
-
-		where := relation.GetWhere(data)
-		exist, err := s.exist(with, where)
-		if err != nil {
-			return err
-		}
-
-		if !exist {
-			return mistake.Newf(MSG_FOREIGN_KEY_NOT_EXIST, name, where.ToString())
-		}
-	}
-
 	return nil
 }
 
@@ -82,23 +57,6 @@ func (s *Command) beforeUpdateDefault(tx *Tx, data et.Json) error {
 
 	if model.UpdatedAtField != nil && data.Str(model.UpdatedAtField.Name) == "" {
 		data[model.UpdatedAtField.Name] = now
-	}
-
-	for name, relation := range model.ForeignKeys {
-		with := relation.With
-		if with == nil {
-			return mistake.Newf(MSG_RELATION_WITH_REQUIRED, name)
-		}
-
-		where := relation.GetWhere(data)
-		exist, err := s.exist(with, where)
-		if err != nil {
-			return err
-		}
-
-		if !exist {
-			return mistake.Newf(MSG_FOREIGN_KEY_NOT_EXIST, name, where.ToString())
-		}
 	}
 
 	return nil

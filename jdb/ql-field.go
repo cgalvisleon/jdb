@@ -18,6 +18,12 @@ const (
 	AgregationAvg
 	AgregationMin
 	AgregationMax
+	ExtractYear
+	ExtractMonth
+	ExtractDay
+	ExtractHour
+	ExtractMinute
+	ExtractSecond
 )
 
 func (s TypeAgregation) Str() string {
@@ -32,6 +38,18 @@ func (s TypeAgregation) Str() string {
 		return "MIN"
 	case AgregationMax:
 		return "MAX"
+	case ExtractYear:
+		return "YEAR"
+	case ExtractMonth:
+		return "MONTH"
+	case ExtractDay:
+		return "DAY"
+	case ExtractHour:
+		return "HOUR"
+	case ExtractMinute:
+		return "MINUTE"
+	case ExtractSecond:
+		return "SECOND"
 	}
 
 	return ""
