@@ -245,3 +245,14 @@ func (s *Oracle) ddlTableDrop(table string) string {
 
 	return result
 }
+
+/**
+* ddlTableEmpty
+* @param table string
+* @return string
+**/
+func (s *Oracle) ddlTableEmpty(table string) string {
+	result := strs.Format("TRUNCATE TABLE %s CASCADE;", table)
+
+	return result
+}

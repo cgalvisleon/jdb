@@ -2,6 +2,7 @@ package jdb
 
 import (
 	"strings"
+	"sync"
 
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/strs"
@@ -16,23 +17,25 @@ const (
 
 type Ql struct {
 	*QlWhere
-	Id         string     `json:"id"`
-	Db         *DB        `json:"-"`
-	TypeSelect TypeSelect `json:"type_select"`
-	Froms      *QlFroms   `json:"froms"`
-	Joins      []*QlJoin  `json:"joins"`
-	Selects    []*Field   `json:"selects"`
-	Hiddens    []string   `json:"hiddens"`
-	Details    []*Field   `json:"details"`
-	Groups     []*Field   `json:"group_bys"`
-	Havings    *QlHaving  `json:"havings"`
-	Orders     *QlOrder   `json:"orders"`
-	Sheet      int        `json:"sheet"`
-	Offset     int        `json:"offset"`
-	Limit      int        `json:"limit"`
-	Sql        string     `json:"sql"`
-	Help       et.Json    `json:"help"`
-	tx         *Tx        `json:"-"`
+	Id         string          `json:"id"`
+	Db         *DB             `json:"-"`
+	TypeSelect TypeSelect      `json:"type_select"`
+	Froms      *QlFroms        `json:"froms"`
+	Joins      []*QlJoin       `json:"joins"`
+	Selects    []*Field        `json:"selects"`
+	Hiddens    []string        `json:"hiddens"`
+	Details    []*Field        `json:"details"`
+	Groups     []*Field        `json:"group_bys"`
+	Havings    *QlHaving       `json:"havings"`
+	Orders     *QlOrder        `json:"orders"`
+	Concurrent []*Field        `json:"concurrent"`
+	Sheet      int             `json:"sheet"`
+	Offset     int             `json:"offset"`
+	Limit      int             `json:"limit"`
+	Sql        string          `json:"sql"`
+	Help       et.Json         `json:"help"`
+	tx         *Tx             `json:"-"`
+	wg         *sync.WaitGroup `json:"-"`
 }
 
 /**
@@ -49,6 +52,7 @@ func (s *Ql) Describe() et.Json {
 		"order_by": s.getOrders(),
 		"select":   s.getSelects(),
 		"limit":    s.getLimit(),
+		"sql":      s.Sql,
 		"help":     s.Help,
 	}
 }

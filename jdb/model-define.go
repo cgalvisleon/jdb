@@ -1106,6 +1106,17 @@ func (s *Model) DefineProjectModel() *Model {
 }
 
 /**
+* DefineValues
+* @param name string, values interface{}
+* @return *Column
+**/
+func (s *Model) DefineValues(name string, values interface{}) *Column {
+	key := fmt.Sprintf("values_%v", name)
+	s.setDefine(key, TypeDefinitionValues, name, values)
+	return s.defineValues(name, values)
+}
+
+/**
 * DefineCalc
 * @param name string, fn DataFunction
 * @return Model
@@ -1118,6 +1129,25 @@ func (s *Model) DefineCalc(name string, fn DataFunction) *Model {
 	}
 
 	result = newColumn(s, name, "", TpCalc, TypeDataNone, TypeDataNone.DefaultValue())
+	result.CalcFunction = fn
+	s.addColumn(result)
+
+	return s
+}
+
+/**
+* DefineConcurrent
+* @param name string, fn DataFunction
+* @return Model
+**/
+func (s *Model) DefineConcurrent(name string, fn DataFunction) *Model {
+	result := s.getColumn(name)
+	if result != nil {
+		result.CalcFunction = fn
+		return s
+	}
+
+	result = newColumn(s, name, "", TpConcurrent, TypeDataNone, TypeDataNone.DefaultValue())
 	result.CalcFunction = fn
 	s.addColumn(result)
 
@@ -1168,17 +1198,6 @@ func (s *Model) DefineFunc(tp TypeEvent, jsCode string) *Model {
 func (s *Model) DefineEventError(event EventError) *Model {
 	s.eventError = append(s.eventError, event)
 	return s
-}
-
-/**
-* DefineValues
-* @param name string, values interface{}
-* @return *Column
-**/
-func (s *Model) DefineValues(name string, values interface{}) *Column {
-	key := fmt.Sprintf("values_%v", name)
-	s.setDefine(key, TypeDefinitionValues, name, values)
-	return s.defineValues(name, values)
 }
 
 /**

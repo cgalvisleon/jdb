@@ -18,6 +18,7 @@ const (
 	TpCalc
 	TpRelatedTo
 	TpRollup
+	TpConcurrent
 )
 
 func (s TypeColumn) Str() string {
@@ -32,6 +33,8 @@ func (s TypeColumn) Str() string {
 		return "related_to"
 	case TpRollup:
 		return "rollup"
+	case TpConcurrent:
+		return "concurrent"
 	}
 
 	return "attribute"
@@ -54,6 +57,8 @@ func StrsToTypeColumn(strs string) TypeColumn {
 		return TpRelatedTo
 	case "rollup":
 		return TpRollup
+	case "concurrent":
+		return TpConcurrent
 	}
 
 	return TpAtribute
@@ -296,7 +301,24 @@ func (s *ColumnFields) Json() et.Json {
 	}
 }
 
-var cf *ColumnFields
+var (
+	cf            *ColumnFields
+	KEY           string
+	PRIMARYKEY    string
+	INDEX         string
+	SOURCE        string
+	PROJECT_ID    string
+	CREATED_AT    string
+	UPDATED_AT    string
+	STATUS_ID     string
+	PERMISSION_ID string
+	SYSID         string
+	CREATED_TO    string
+	UPDATED_TO    string
+	FULLTEXT      string
+	HISTORYCAL    string
+	CHECKED       string
+)
 
 func init() {
 	cf = &ColumnFields{
@@ -315,25 +337,9 @@ func init() {
 		Historical:   "historical",
 		Checked:      "checked",
 	}
-}
 
-var (
-	KEY           = cf.Key
-	PRIMARYKEY    = cf.Key
-	INDEX         = cf.Index
-	SOURCE        = cf.Source
-	PROJECT_ID    = cf.ProjectId
-	CREATED_AT    = cf.CreatedAt
-	UPDATED_AT    = cf.UpdatedAt
-	STATUS_ID     = cf.StatusId
-	PERMISSION_ID = cf.PermissionId
-	SYSID         = cf.SystemId
-	CREATED_TO    = cf.CreatedTo
-	UPDATED_TO    = cf.UpdatedTo
-	FULLTEXT      = cf.Fulltext
-	HISTORYCAL    = cf.Historical
-	CHECKED       = cf.Checked
-)
+	SetColumnFields(cf)
+}
 
 /**
 * SetColumnFields

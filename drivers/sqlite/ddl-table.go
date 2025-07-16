@@ -221,3 +221,13 @@ func (s *SqlLite) ddlTableDrop(table string) string {
 	result := strs.Format("DROP TABLE IF EXISTS %s;", table)
 	return result
 }
+
+/**
+* ddlTableEmpty
+* @param table string
+* @return string
+**/
+func (s *SqlLite) ddlTableEmpty(table string) string {
+	result := strs.Format("DELETE FROM %s;", table)
+	return result
+}

@@ -16,6 +16,7 @@ func (s *Ql) GetDetailsTx(tx *Tx, data et.Json) {
 	sort := []*Field{}
 	sort1 := []*Field{}
 	sort2 := []*Field{}
+	sort3 := []*Field{}
 	for _, field := range s.Details {
 		col := field.Column
 		if col == nil {
@@ -29,6 +30,8 @@ func (s *Ql) GetDetailsTx(tx *Tx, data et.Json) {
 			sort1 = append(sort1, field)
 		case TpRollup:
 			sort1 = append(sort1, field)
+		case TpConcurrent:
+			sort3 = append(sort3, field)
 		default:
 			sort2 = append(sort2, field)
 		}
@@ -183,6 +186,25 @@ func (s *Ql) GetDetailsTx(tx *Tx, data et.Json) {
 			}
 		}
 	}
+
+	for _, field := range sort3 {
+		col := field.Column
+		if col == nil {
+			continue
+		}
+
+		if col.CalcFunction == nil {
+			continue
+		}
+
+		s.wg.Add(1)
+		go func(data et.Json) {
+			defer s.wg.Done()
+			col.CalcFunction(data)
+		}(data)
+	}
+
+	s.wg.Wait()
 }
 
 /**

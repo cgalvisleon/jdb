@@ -446,6 +446,24 @@ func (s *Model) Drop() {
 }
 
 /**
+* Empty
+**/
+func (s *Model) Empty() {
+	if s.Db == nil {
+		return
+	}
+
+	for _, detail := range s.RelationsTo {
+		model := detail.With
+		if model != nil && model.Name != s.Name {
+			model.Empty()
+		}
+	}
+
+	s.Db.EmptyModel(s)
+}
+
+/**
 * Init
 * @return error
 **/
@@ -548,14 +566,6 @@ func (s *Model) CheckForeignKeys(data et.Json) error {
 	}
 
 	return nil
-}
-
-/**
-* GetFrom
-* @return *QlFrom
-**/
-func (s *Model) GetFrom() *QlFrom {
-	return &QlFrom{Model: s}
 }
 
 /**
@@ -916,29 +926,6 @@ func (s *Model) getField(name string, isCreate bool) *Field {
 	default:
 		return nil
 	}
-}
-
-/**
-* Where
-* @param val string
-* @return *Ql
-**/
-func (s *Model) Where(val string) *Ql {
-	result := From(s)
-	if s.SourceField != nil {
-		result.TypeSelect = Source
-	}
-
-	return result.Where(val)
-}
-
-/**
-* Join
-* @param name string
-* @return *Model
-**/
-func (s *Model) Join(name string) *QlJoin {
-	return From(s).Join(name)
 }
 
 /**

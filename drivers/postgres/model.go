@@ -128,6 +128,22 @@ func (s *Postgres) DropModel(model *jdb.Model) error {
 }
 
 /**
+* EmptyModel
+* @param model *jdb.Model
+* @return error
+**/
+func (s *Postgres) EmptyModel(model *jdb.Model) error {
+	sql := s.ddlTableEmpty(tableName(model))
+	if model.IsDebug {
+		console.Debug(sql)
+	}
+
+	_, err := jdb.Query(s.db, sql)
+
+	return err
+}
+
+/**
 * MutateModel
 * @param model *jdb.Model
 * @return error

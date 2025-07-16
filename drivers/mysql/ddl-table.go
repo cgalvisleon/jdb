@@ -245,3 +245,14 @@ func (s *Mysql) ddlTableDrop(table string) string {
 
 	return result
 }
+
+/**
+* ddlTableEmpty
+* @param table string
+* @return string
+**/
+func (s *Mysql) ddlTableEmpty(table string) string {
+	result := strs.Format("TRUNCATE TABLE %s CASCADE;", table)
+
+	return result
+}

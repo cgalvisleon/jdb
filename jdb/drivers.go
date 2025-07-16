@@ -20,6 +20,7 @@ type Driver interface {
 	/* Model */
 	LoadModel(model *Model) error
 	DropModel(model *Model) error
+	EmptyModel(model *Model) error
 	MutateModel(model *Model) error
 	/* Ql */
 	Select(ql *Ql) (et.Items, error)

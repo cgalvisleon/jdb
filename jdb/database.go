@@ -338,6 +338,19 @@ func (s *DB) DropModel(model *Model) error {
 }
 
 /**
+* EmptyModel
+* @param model *Model
+* @return error
+**/
+func (s *DB) EmptyModel(model *Model) error {
+	if s.driver == nil {
+		return mistake.New(MSG_DRIVER_NOT_DEFINED)
+	}
+
+	return s.driver.EmptyModel(model)
+}
+
+/**
 * From
 * @param table string
 * @return *Ql

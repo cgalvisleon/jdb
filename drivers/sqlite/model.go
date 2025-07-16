@@ -32,6 +32,11 @@ func (s *SqlLite) existTable(name string) (bool, error) {
 	return items.Count > 0, nil
 }
 
+/**
+* LoadModel
+* @param model *jdb.Model
+* @return error
+**/
 func (s *SqlLite) LoadModel(model *jdb.Model) error {
 	table := tableName(model)
 	exist, err := s.existTable(table)
@@ -82,6 +87,11 @@ func (s *SqlLite) LoadModel(model *jdb.Model) error {
 	return nil
 }
 
+/**
+* DropModel
+* @param model *jdb.Model
+* @return error
+**/
 func (s *SqlLite) DropModel(model *jdb.Model) error {
 	sql := s.ddlTableDrop(tableName(model))
 	if model.IsDebug {
@@ -96,6 +106,30 @@ func (s *SqlLite) DropModel(model *jdb.Model) error {
 	return nil
 }
 
+/**
+* EmptyModel
+* @param model *jdb.Model
+* @return error
+**/
+func (s *SqlLite) EmptyModel(model *jdb.Model) error {
+	sql := s.ddlTableEmpty(tableName(model))
+	if model.IsDebug {
+		console.Debug(sql)
+	}
+
+	_, err := jdb.Query(s.db, sql)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+/**
+* MutateModel
+* @param model *jdb.Model
+* @return error
+**/
 func (s *SqlLite) MutateModel(model *jdb.Model) error {
 	backupTable := strs.Format(`%s_backup`, tableName(model))
 	sql := "\n"

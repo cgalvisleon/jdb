@@ -2,6 +2,7 @@ package jdb
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/strs"
@@ -112,6 +113,7 @@ func From(name interface{}) *Ql {
 		Limit:      0,
 		Sheet:      0,
 		Help:       helpQl(model),
+		wg:         &sync.WaitGroup{},
 	}
 	result.QlWhere = newQlWhere(result.validator)
 	result.IsDebug = model.IsDebug
