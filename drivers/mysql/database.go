@@ -146,9 +146,7 @@ func (s *Mysql) createDatabase(name string) error {
 		return nil
 	}
 
-	sql := jdb.SQLDDL(`
-	CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-	CREATE EXTENSION IF NOT EXISTS pgcrypto;
+	sql := jdb.SQLDDL(`	
 	CREATE DATABASE $1`, name)
 	_, err = jdb.Exec(s.db, sql, name)
 	if err != nil {

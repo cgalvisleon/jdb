@@ -44,11 +44,6 @@ func (s *Oracle) existTable(schema, name string) (bool, error) {
 * @return error
 **/
 func (s *Oracle) LoadModel(model *jdb.Model) error {
-	err := s.loadSchema(model.Schema)
-	if err != nil {
-		return err
-	}
-
 	exist, err := s.existTable(model.Schema, model.Table)
 	if err != nil {
 		return err
