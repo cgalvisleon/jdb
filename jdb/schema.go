@@ -182,7 +182,7 @@ func (s *Schema) Describe() et.Json {
 * @return error
 **/
 func (s *Schema) Save() error {
-	if !s.UseCore || !s.Db.isInit {
+	if !s.Db.UseCore || !s.Db.isInit {
 		return nil
 	}
 

@@ -17,16 +17,7 @@ func (s *Command) updated() error {
 	model := s.From
 	results, err := s.Db.Command(s)
 	if err != nil {
-		for _, event := range model.eventError {
-			event(model, et.Json{
-				"command": "update",
-				"sql":     s.Sql,
-				"data":    s.Data,
-				"where":   s.getWheres(),
-				"error":   err.Error(),
-			})
-		}
-
+		publishError(model, s.Sql, err)
 		return err
 	}
 
@@ -41,19 +32,7 @@ func (s *Command) updated() error {
 	}
 
 	if !s.isSync && model.UseCore {
-		model.Emit(EVENT_MODEL_SYNC, et.Json{
-			"command": "update",
-			"db":      model.Db.Name,
-			"schema":  model.Schema,
-			"model":   model.Name,
-			"sql":     s.Sql,
-			"values":  s.Values,
-			"where":   s.getWheres(),
-		})
-	}
-
-	if !model.isAudit {
-		audit("update", s.Sql)
+		publishUpdate(model, s.Sql)
 	}
 
 	for key, after := range s.ResultMap {

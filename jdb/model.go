@@ -49,7 +49,6 @@ type Model struct {
 	Db                 *DB                      `json:"-"`
 	schema             *Schema                  `json:"-"`
 	Schema             string                   `json:"schema"`
-	Table              string                   `json:"table"`
 	CreatedAt          time.Time                `json:"created_at"`
 	UpdateAt           time.Time                `json:"updated_at"`
 	Id                 string                   `json:"id"`
@@ -77,7 +76,6 @@ type Model struct {
 	FullTextField      *Column                  `json:"-"`
 	ProjectField       *Column                  `json:"-"`
 	Version            int                      `json:"version"`
-	eventError         []EventError             `json:"-"`
 	eventsInsert       []Event                  `json:"-"`
 	eventsUpdate       []Event                  `json:"-"`
 	eventsDelete       []Event                  `json:"-"`
@@ -87,80 +85,11 @@ type Model struct {
 	isLocked           bool                     `json:"-"`
 	isInit             bool                     `json:"-"`
 	isCore             bool                     `json:"-"`
-	isAudit            bool                     `json:"-"`
 	needMutate         bool                     `json:"-"`
 	vm                 *goja.Runtime            `json:"-"`
 	FuncInsert         []string                 `json:"func_insert"`
 	FuncUpdate         []string                 `json:"func_update"`
 	FuncDelete         []string                 `json:"func_delete"`
-}
-
-/**
-* NewTable
-* @param db *DB, table string
-* @return *Model
-**/
-func NewTable(db *DB, table string) *Model {
-	idx := slices.IndexFunc(db.tables, func(e *Model) bool { return e.Name == table })
-	if idx != -1 {
-		return db.tables[idx]
-	}
-
-	list := strs.Split(table, ".")
-	if len(list) < 2 {
-		return nil
-	}
-	tableName := list[1]
-	schemaName := list[0]
-
-	schema := NewSchema(db, schemaName)
-	now := timezone.NowTime()
-	result := &Model{
-		Db:                 db,
-		schema:             schema,
-		Schema:             schema.Name,
-		Table:              tableName,
-		CreatedAt:          now,
-		UpdateAt:           now,
-		Id:                 reg.GenUlId("table"),
-		Name:               table,
-		UseCore:            false,
-		Definitions:        et.Json{},
-		Columns:            make([]*Column, 0),
-		PrimaryKeys:        make(map[string]*Column),
-		ForeignKeys:        make(map[string]*Relation),
-		Indices:            make(map[string]*Index),
-		Uniques:            make(map[string]*Index),
-		RelationsTo:        make(map[string]*Relation),
-		RelationsFrom:      make(map[string]*Relation),
-		Joins:              make(map[string]*Join),
-		Required:           make(map[string]bool),
-		TpId:               TpULId,
-		eventEmiterChannel: make(chan event.Message),
-		eventsEmiter:       make(map[string]event.Handler),
-		eventError:         make([]EventError, 0),
-		eventsInsert:       make([]Event, 0),
-		eventsUpdate:       make([]Event, 0),
-		eventsDelete:       make([]Event, 0),
-		Version:            1,
-		isCore:             false,
-		vm:                 goja.New(),
-		FuncInsert:         make([]string, 0),
-		FuncUpdate:         make([]string, 0),
-		FuncDelete:         make([]string, 0),
-		IsDebug:            db.IsDebug,
-	}
-	result.DefineEventError(eventErrorDefault)
-	result.DefineEvent(EventInsert, eventInsertDefault)
-	result.DefineEvent(EventUpdate, eventUpdateDefault)
-	result.DefineEvent(EventDelete, eventDeleteDefault)
-	result.On(EVENT_MODEL_SYNC, eventSyncDefault)
-	result.vm.Set("model", result)
-	result.vm.Set("db", db)
-	result.isInit = true
-	db.tables = append(db.tables, result)
-
-	return result
 }
 
 /**
@@ -184,7 +113,6 @@ func NewModel(schema *Schema, name string, version int) *Model {
 			Db:                 schema.Db,
 			schema:             schema,
 			Schema:             schema.Name,
-			Table:              name,
 			CreatedAt:          now,
 			UpdateAt:           now,
 			Id:                 reg.GenUlId("model"),
@@ -203,7 +131,6 @@ func NewModel(schema *Schema, name string, version int) *Model {
 			TpId:               TpULId,
 			eventEmiterChannel: make(chan event.Message),
 			eventsEmiter:       make(map[string]event.Handler),
-			eventError:         make([]EventError, 0),
 			eventsInsert:       make([]Event, 0),
 			eventsUpdate:       make([]Event, 0),
 			eventsDelete:       make([]Event, 0),
@@ -215,11 +142,9 @@ func NewModel(schema *Schema, name string, version int) *Model {
 			FuncDelete:         make([]string, 0),
 			IsDebug:            schema.Db.IsDebug,
 		}
-		result.DefineEventError(eventErrorDefault)
 		result.DefineEvent(EventInsert, eventInsertDefault)
 		result.DefineEvent(EventUpdate, eventUpdateDefault)
 		result.DefineEvent(EventDelete, eventDeleteDefault)
-		result.On(EVENT_MODEL_SYNC, eventSyncDefault)
 		result.vm.Set("model", result)
 		result.vm.Set("schema", schema)
 		result.vm.Set("db", schema.Db)
@@ -264,8 +189,8 @@ func loadModel(schema *Schema, model *Model) (*Model, error) {
 
 	schema.addModel(model)
 	model.schema = schema
-	model.Db = schema.Db
 	model.Schema = schema.Name
+	model.Db = schema.Db
 	model.Columns = make([]*Column, 0)
 	model.PrimaryKeys = make(map[string]*Column)
 	model.ForeignKeys = make(map[string]*Relation)
@@ -277,7 +202,6 @@ func loadModel(schema *Schema, model *Model) (*Model, error) {
 	/* Event */
 	model.eventEmiterChannel = make(chan event.Message)
 	model.eventsEmiter = make(map[string]event.Handler)
-	model.eventError = make([]EventError, 0)
 	model.eventsInsert = make([]Event, 0)
 	model.eventsUpdate = make([]Event, 0)
 	model.eventsDelete = make([]Event, 0)
@@ -287,11 +211,9 @@ func loadModel(schema *Schema, model *Model) (*Model, error) {
 	model.FuncUpdate = make([]string, 0)
 	model.FuncDelete = make([]string, 0)
 	model.IsDebug = schema.Db.IsDebug
-	model.DefineEventError(eventErrorDefault)
 	model.DefineEvent(EventInsert, eventInsertDefault)
 	model.DefineEvent(EventUpdate, eventUpdateDefault)
 	model.DefineEvent(EventDelete, eventDeleteDefault)
-	model.On(EVENT_MODEL_SYNC, eventSyncDefault)
 	model.vm.Set("model", model)
 	model.vm.Set("schema", schema)
 	model.vm.Set("db", schema.Db)

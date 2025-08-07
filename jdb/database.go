@@ -21,11 +21,10 @@ type DB struct {
 	UseCore     bool      `json:"use_core"`
 	NodeId      int       `json:"node_id"`
 	driver      Driver    `json:"-"`
-	db          *sql.DB   `json:"-"`
 	schemas     []*Schema `json:"-"`
 	models      []*Model  `json:"-"`
-	tables      []*Model  `json:"-"`
 	isInit      bool      `json:"-"`
+	db          *sql.DB   `json:"-"`
 	IsDebug     bool      `json:"-"`
 }
 
@@ -35,7 +34,7 @@ type DB struct {
 * @return *DB, error
 **/
 func NewDatabase(id, name, driver string) (*DB, error) {
-	idx := slices.IndexFunc(conn.DBS, func(e *DB) bool { return e.Id == id })
+	idx := slices.IndexFunc(conn.DBS, func(e *DB) bool { return e.Name == name })
 	if idx != -1 {
 		return conn.DBS[idx], nil
 	}
@@ -179,10 +178,10 @@ func (s *DB) Debug() {
 
 /**
 * Conected
-* @param params et.Json
+* @param params *ConnectParams
 * @return bool
 **/
-func (s *DB) Conected(params et.Json) error {
+func (s *DB) Conected(params ConnectParams) error {
 	if s.driver == nil {
 		return mistake.New(MSG_DRIVER_NOT_DEFINED)
 	}
@@ -237,7 +236,7 @@ func (s *DB) GetSchema(name string) *Schema {
 		return s.schemas[idx]
 	}
 
-	return NewSchema(s, name)
+	return nil
 }
 
 /**
@@ -324,7 +323,7 @@ func (s *DB) DropModel(model *Model) error {
 		return err
 	}
 
-	schema := s.GetSchema(model.Schema)
+	schema := model.schema
 	if schema != nil {
 		schema.dropModel(model)
 	}
@@ -352,11 +351,15 @@ func (s *DB) EmptyModel(model *Model) error {
 
 /**
 * From
-* @param table string
+* @param name string
 * @return *Ql
 **/
-func (s *DB) From(table string) *Ql {
-	model := NewTable(s, table)
+func (s *DB) From(name string) *Ql {
+	model := s.GetModel(name)
+	if model == nil {
+		return nil
+	}
+
 	return From(model)
 }
 

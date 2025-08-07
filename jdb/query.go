@@ -70,7 +70,6 @@ func Exec(db *sql.DB, sql string, arg ...any) (et.Items, error) {
 	}
 
 	sql = SQLParse(sql, arg...)
-	audit("exec", sql)
 
 	return result, nil
 }

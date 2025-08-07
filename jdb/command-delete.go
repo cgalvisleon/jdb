@@ -13,15 +13,7 @@ func (s *Command) deleted() error {
 	model := s.From
 	results, err := s.Db.Command(s)
 	if err != nil {
-		for _, event := range model.eventError {
-			event(model, et.Json{
-				"command": "delete",
-				"sql":     s.Sql,
-				"where":   s.getWheres(),
-				"error":   err.Error(),
-			})
-		}
-
+		publishError(model, s.Sql, err)
 		return err
 	}
 
@@ -36,19 +28,7 @@ func (s *Command) deleted() error {
 	}
 
 	if !s.isSync && model.UseCore {
-		audit("delete", s.Sql)
-		model.Emit(EVENT_MODEL_SYNC, et.Json{
-			"command": "delete",
-			"db":      model.Db.Name,
-			"schema":  model.Schema,
-			"model":   model.Name,
-			"sql":     s.Sql,
-			"where":   s.getWheres(),
-		})
-	}
-
-	if !model.isAudit {
-		audit("delete", s.Sql)
+		publishDelete(model, s.Sql)
 	}
 
 	for _, before := range s.ResultMap {

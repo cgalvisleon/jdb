@@ -15,7 +15,7 @@ const (
 
 type Driver interface {
 	Name() string
-	Connect(params et.Json) (*sql.DB, error)
+	Connect(connection ConnectParams) (*sql.DB, error)
 	Disconnect() error
 	/* Model */
 	LoadModel(model *Model) error

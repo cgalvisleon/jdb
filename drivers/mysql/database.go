@@ -2,63 +2,20 @@ package mysql
 
 import (
 	"database/sql"
-	"fmt"
-	"strconv"
-	"strings"
 
 	"github.com/cgalvisleon/et/console"
-	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/mistake"
 	"github.com/cgalvisleon/et/msg"
-	"github.com/cgalvisleon/et/strs"
-	"github.com/cgalvisleon/et/utility"
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
-
-/**
-* chain
-* @param params et.Json
-* @return string, error
-**/
-func (s *Mysql) chain(params et.Json) (string, error) {
-	username := params.Str("username")
-	password := params.Str("password")
-	host := params.Str("host")
-	port := params.Int("port")
-	database := params.Str("database")
-
-	if !utility.ValidStr(username, 0, []string{""}) {
-		return "", mistake.Newf(jdb.MSS_PARAM_REQUIRED, "username")
-	}
-
-	if !utility.ValidStr(password, 0, []string{""}) {
-		return "", mistake.Newf(jdb.MSS_PARAM_REQUIRED, "password")
-	}
-
-	if !utility.ValidStr(host, 0, []string{""}) {
-		return "", mistake.Newf(jdb.MSS_PARAM_REQUIRED, "host")
-	}
-
-	if port == 0 {
-		return "", mistake.Newf(jdb.MSS_PARAM_REQUIRED, "port")
-	}
-
-	if !utility.ValidStr(database, 0, []string{""}) {
-		return "", mistake.Newf(jdb.MSS_PARAM_REQUIRED, "database")
-	}
-
-	result := strs.Format(`%s:%s@tcp(%s:%d)/%s?parseTime=true`, username, password, host, port, database)
-
-	return result, nil
-}
 
 /**
 * connectTo
 * @param connStr string
 * @return *sql.DB, error
 **/
-func (s *Mysql) connectTo(connStr string) (*sql.DB, error) {
-	db, err := sql.Open(s.name, connStr)
+func (s *Mysql) connectTo(chain string) (*sql.DB, error) {
+	db, err := sql.Open(s.name, chain)
 	if err != nil {
 		return nil, err
 	}
@@ -71,46 +28,11 @@ func (s *Mysql) connectTo(connStr string) (*sql.DB, error) {
 }
 
 /**
-* connect
-* @param params et.Json
-* @return error
-**/
-func (s *Mysql) connect(params et.Json) error {
-	connStr, err := s.chain(params)
-	if err != nil {
-		return err
-	}
-
-	db, err := s.connectTo(connStr)
-	if err != nil {
-		return err
-	}
-
-	s.db = db
-	s.params = params
-	s.connStr = connStr
-	s.connected = s.db != nil
-	s.getVersion()
-
-	return nil
-}
-
-/**
-* connectDefault
-* @param params et.Json
-* @return error
-**/
-func (s *Mysql) connectDefault(params et.Json) error {
-	params["database"] = "Mysql"
-	return s.connect(params)
-}
-
-/**
-* existDatabase
+* exeistDatabase
 * @param name string
 * @return bool, error
 **/
-func (s *Mysql) existDatabase(name string) (bool, error) {
+func (s *Mysql) ExistDatabase(name string) (bool, error) {
 	sql := jdb.SQLDDL(`
 	SELECT SCHEMA_NAME 
 	FROM INFORMATION_SCHEMA.SCHEMATA 
@@ -128,16 +50,16 @@ func (s *Mysql) existDatabase(name string) (bool, error) {
 }
 
 /**
-* createDatabase
+* CreateDatabase
 * @param name string
 * @return error
 **/
-func (s *Mysql) createDatabase(name string) error {
+func (s *Mysql) CreateDatabase(name string) error {
 	if s.db == nil {
 		return mistake.Newf(msg.NOT_DRIVER_DB)
 	}
 
-	exist, err := s.existDatabase(name)
+	exist, err := s.ExistDatabase(name)
 	if err != nil {
 		return err
 	}
@@ -168,7 +90,7 @@ func (s *Mysql) DropDatabase(name string) error {
 		return mistake.Newf(msg.NOT_DRIVER_DB)
 	}
 
-	exist, err := s.existDatabase(name)
+	exist, err := s.ExistDatabase(name)
 	if err != nil {
 		return err
 	}
@@ -189,67 +111,34 @@ func (s *Mysql) DropDatabase(name string) error {
 }
 
 /**
-* getVersion
-* @return int
-**/
-func (s *Mysql) getVersion() int {
-	if !s.connected {
-		return 0
-	}
-
-	if s.db == nil {
-		return 0
-	}
-
-	if s.version != 0 {
-		return s.version
-	}
-
-	var version string
-	err := s.db.QueryRow("SELECT version();").Scan(&version)
-	if err != nil {
-		return 0
-	}
-
-	split := strings.Split(version, ".")
-	v, err := strconv.Atoi(split[0])
-	if err != nil {
-		v = 0
-	}
-
-	if v < 8 {
-		console.Alert(fmt.Errorf(MSG_VERSION_NOT_SUPPORTED, version))
-	}
-
-	s.version = v
-
-	return s.version
-}
-
-/**
 * Connect
-* @param params et.Json
+* @param connection jdb.ConnectParams
 * @return error
 **/
-func (s *Mysql) Connect(params et.Json) (*sql.DB, error) {
-	database := params.Str("database")
-	err := s.connectDefault(params)
+func (s *Mysql) Connect(connection jdb.ConnectParams) (*sql.DB, error) {
+	chain, err := s.connection.defaultChain()
 	if err != nil {
 		return nil, err
 	}
 
-	err = s.createDatabase(database)
+	s.db, err = s.connectTo(chain)
 	if err != nil {
 		return nil, err
 	}
 
-	params["database"] = database
-	err = s.connect(params)
+	params := connection.Params.(*Connection)
+	err = s.CreateDatabase(params.Database)
 	if err != nil {
 		return nil, err
 	}
 
-	console.Logf(s.name, `Connected to %s:%s`, params.Str("host"), database)
+	s.db, err = s.connectTo(chain)
+	if err != nil {
+		return nil, err
+	}
+
+	s.connected = s.db != nil
+	console.Logf(s.name, `Connected to %s:%s`, params.Host, params.Database)
 
 	return s.db, nil
 }

@@ -9,7 +9,7 @@ import (
 )
 
 func tableName(model *jdb.Model) string {
-	return fmt.Sprintf(`%s_%s`, model.Schema, model.Table)
+	return fmt.Sprintf(`%s_%s`, model.Schema, model.Name)
 }
 
 /**
@@ -87,7 +87,7 @@ func (s *Mysql) LoadModel(model *jdb.Model) error {
 	AND a.attnum > 0
 	AND NOT a.attisdropped;`
 
-	items, err := jdb.Query(s.db, sql, model.Schema, model.Table)
+	items, err := jdb.Query(s.db, sql, model.Schema, model.Name)
 	if err != nil {
 		return err
 	}

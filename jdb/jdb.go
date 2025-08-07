@@ -3,10 +3,12 @@ package jdb
 import (
 	"encoding/json"
 	"net/http"
+	"os"
 	"runtime"
 	"slices"
 
 	"github.com/cgalvisleon/et/config"
+	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/mistake"
 	"github.com/cgalvisleon/et/response"
@@ -14,94 +16,27 @@ import (
 )
 
 type JDB struct {
-	Drivers map[string]func() Driver `json:"-"`
-	Params  map[string]ConnectParams `json:"-"`
-	DBS     []*DB                    `json:"-"`
-	Version string                   `json:"version"`
+	Os       string                   `json:"os"`
+	HostName string                   `json:"host_name"`
+	Drivers  map[string]func() Driver `json:"-"`
+	Params   map[string]ConnectParams `json:"-"`
+	DBS      []*DB                    `json:"-"`
 }
 
-var (
-	os   = ""
-	conn *JDB
-)
+var conn *JDB
 
 func init() {
-	os = runtime.GOOS
+	hostName, err := os.Hostname()
+	if err != nil {
+		hostName = "unknown"
+	}
+
 	conn = &JDB{
-		Drivers: map[string]func() Driver{},
-		Params:  map[string]ConnectParams{},
-		DBS:     make([]*DB, 0),
-		Version: "0.0.1",
-	}
-}
-
-type ConnectParams struct {
-	Id       string   `json:"id"`
-	Driver   string   `json:"driver"`
-	Name     string   `json:"name"`
-	UserCore bool     `json:"user_core"`
-	NodeId   int      `json:"node_id"`
-	Debug    bool     `json:"debug"`
-	Validate []string `json:"validate"`
-	Params   et.Json  `json:"params"`
-}
-
-/**
-* Json
-* @return et.Json
-**/
-func (s *ConnectParams) Json() et.Json {
-	return et.Json{
-		"id":        s.Id,
-		"driver":    s.Driver,
-		"name":      s.Name,
-		"user_core": s.UserCore,
-		"node_id":   s.NodeId,
-		"debug":     s.Debug,
-		"validate":  s.Validate,
-		"params":    s.Params,
-	}
-}
-
-/**
-* Validate
-* @return error
-**/
-func (s *ConnectParams) validate() error {
-	if conn == nil {
-		return mistake.New(MSG_JDB_NOT_DEFINED)
-	}
-
-	if s.Driver == "" {
-		return mistake.New(MSG_DRIVER_NOT_DEFINED)
-	}
-
-	if s.Name == "" {
-		return mistake.New(MSG_DATABASE_NOT_DEFINED)
-	}
-
-	if _, ok := conn.Drivers[s.Driver]; !ok {
-		return mistake.New(MSG_DRIVER_NOT_DEFINED)
-	}
-
-	return nil
-}
-
-/**
-* ToConnectParams
-* @param params et.Json
-* @return *ConnectParams
-**/
-func ToConnectParams(params et.Json) *ConnectParams {
-	return &ConnectParams{
-		Id:       params.Str("id"),
-		Driver:   params.Str("driver"),
-		Name:     params.Str("name"),
-		UserCore: params.Bool("user_core"),
-		NodeId:   params.Int("node_id"),
-		Debug:    params.Bool("debug"),
-		Validate: params.ArrayStr("validate"),
-		Params:   params.Json("params"),
+		Os:       runtime.GOOS,
+		HostName: hostName,
+		Drivers:  map[string]func() Driver{},
+		Params:   map[string]ConnectParams{},
+		DBS:      make([]*DB, 0),
 	}
 }
 
@@ -152,24 +87,24 @@ func (s *JDB) Describe() et.Json {
 
 /**
 * ConnectTo
-* @param params et.Json
+* @param connection *ConnectParams
 * @return *DB, error
 **/
-func ConnectTo(params ConnectParams) (*DB, error) {
-	err := params.validate()
+func ConnectTo(connection ConnectParams) (*DB, error) {
+	err := connection.Params.Validate()
 	if err != nil {
 		return nil, err
 	}
 
-	result, err := NewDatabase(params.Id, params.Name, params.Driver)
+	result, err := NewDatabase(connection.Id, connection.Name, connection.Driver)
 	if err != nil {
 		return nil, err
 	}
 
-	result.IsDebug = params.Debug
-	result.UseCore = params.UserCore
-	result.NodeId = params.NodeId
-	err = result.Conected(params.Params)
+	result.IsDebug = connection.Debug
+	result.UseCore = connection.UserCore
+	result.NodeId = connection.NodeId
+	err = result.Conected(connection)
 	if err != nil {
 		return nil, err
 	}
@@ -189,17 +124,12 @@ func ConnectTo(params ConnectParams) (*DB, error) {
 * @return *DB, error
 **/
 func Load() (*DB, error) {
-	driver := config.String("DB_DRIVER", SqliteDriver)
-	if driver == "" {
+	driverName := config.String("DB_DRIVER", SqliteDriver)
+	if driverName == "" {
 		return nil, mistake.New(MSG_DRIVER_NOT_DEFINED)
 	}
 
-	params := conn.Params[driver]
-	err := config.Validate(params.Validate)
-	if err != nil {
-		return nil, err
-	}
-
+	params := conn.Params[driverName]
 	return ConnectTo(params)
 }
 
@@ -213,11 +143,11 @@ func Jdb() *JDB {
 
 /**
 * GetDB
-* @param id string
+* @param name string
 * @return *DB
 **/
-func GetDB(id string) *DB {
-	idx := slices.IndexFunc(conn.DBS, func(e *DB) bool { return e.Id == id })
+func GetDB(name string) *DB {
+	idx := slices.IndexFunc(conn.DBS, func(e *DB) bool { return e.Name == name })
 	if idx != -1 {
 		return conn.DBS[idx]
 	}
@@ -231,17 +161,21 @@ func GetDB(id string) *DB {
 * @return *Schema
 **/
 func GetSchema(name string) *Schema {
-	list := strs.Split(name, ".")
-	if len(list) > 1 {
-		db := GetDB(list[0])
-		if db == nil {
-			return nil
-		}
-
-		return db.GetSchema(list[1])
+	if len(conn.DBS) == 0 {
+		return nil
 	}
 
-	return nil
+	db := conn.DBS[0]
+	list := strs.Split(name, ".")
+	if len(list) > 1 {
+		db = GetDB(list[0])
+	}
+
+	if db == nil {
+		return nil
+	}
+
+	return db.GetSchema(list[1])
 }
 
 /**
@@ -250,42 +184,45 @@ func GetSchema(name string) *Schema {
 * @return *Model
 **/
 func GetModel(name string) *Model {
-	var result *Model
-	list := strs.Split(name, ".")
-	if len(list) > 2 {
-		db := GetDB(list[0])
-		if db == nil {
-			result = nil
-		}
-
-		schema := db.GetSchema(list[1])
-		if schema == nil {
-			result = nil
-		}
-
-		result = schema.GetModel(list[2])
-	} else if len(list) == 2 {
-		db := conn.DBS[0]
-		if db == nil {
-			result = nil
-		}
-
-		schema := db.GetSchema(list[1])
-		if schema == nil {
-			result = nil
-		}
-
-		result = schema.GetModel(list[2])
-	} else if len(list) == 1 {
-		db := conn.DBS[0]
-		if db == nil {
-			result = nil
-		}
-
-		result = db.GetModel(list[1])
+	if len(conn.DBS) == 0 {
+		return nil
 	}
 
-	return result
+	db := conn.DBS[0]
+	list := strs.Split(name, ".")
+	if len(list) == 1 {
+		result := db.GetModel(name)
+		if result == nil {
+			return nil
+		}
+
+		return result
+	}
+
+	if len(list) == 2 {
+		schema := db.GetSchema(list[1])
+		if schema == nil {
+			return nil
+		}
+
+		return schema.GetModel(list[2])
+	}
+
+	if len(list) == 3 {
+		db = GetDB(list[0])
+		if db == nil {
+			return nil
+		}
+
+		schema := db.GetSchema(list[1])
+		if schema == nil {
+			return nil
+		}
+
+		return schema.GetModel(list[2])
+	}
+
+	return nil
 }
 
 /**
@@ -308,6 +245,7 @@ func define(params et.Json) (et.Json, error) {
 		},
 	}
 
+	console.Debug(params.ToString())
 	for name := range params {
 		param := params.Json(name)
 		if param.IsEmpty() {
@@ -540,7 +478,12 @@ func commandsTx(tx *Tx, params et.Json) (et.Items, error) {
 * @param r *http.Request
 **/
 func ModelDefine(w http.ResponseWriter, r *http.Request) {
-	body, _ := response.GetBody(r)
+	body, err := response.GetBody(r)
+	if err != nil {
+		response.HTTPError(w, r, http.StatusBadRequest, err.Error())
+		return
+	}
+
 	params := body.Json("params")
 	result, err := define(params)
 	if err != nil {

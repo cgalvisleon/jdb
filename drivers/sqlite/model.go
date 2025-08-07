@@ -9,7 +9,7 @@ import (
 )
 
 func tableName(model *jdb.Model) string {
-	return fmt.Sprintf(`%s_%s`, model.Schema, model.Table)
+	return fmt.Sprintf(`%s_%s`, model.Schema, model.Name)
 }
 
 /**

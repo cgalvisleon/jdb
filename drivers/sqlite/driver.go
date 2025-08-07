@@ -2,6 +2,7 @@ package sqlite
 
 import (
 	"database/sql"
+	"errors"
 
 	"github.com/cgalvisleon/et/config"
 	"github.com/cgalvisleon/et/envar"
@@ -10,20 +11,64 @@ import (
 	_ "modernc.org/sqlite"
 )
 
+type Connection struct {
+	Database string `json:"database"`
+	Version  int    `json:"version"`
+}
+
+/**
+* Chain
+* @return string, error
+**/
+func (s *Connection) Chain() (string, error) {
+	err := s.Validate()
+	if err != nil {
+		return "", err
+	}
+
+	result := s.Database
+
+	return result, nil
+}
+
+/**
+* ToJson
+* @return et.Json
+**/
+func (s *Connection) ToJson() et.Json {
+	return et.Json{
+		"database": s.Database,
+		"version":  s.Version,
+	}
+}
+
+/**
+* Validate
+* @return error
+**/
+func (s *Connection) Validate() error {
+	if s.Database == "" {
+		return errors.New("database is required")
+	}
+
+	return nil
+}
+
 type SqlLite struct {
-	name      string
-	params    et.Json
-	connStr   string
-	db        *sql.DB
-	connected bool
-	version   int
+	db         *sql.DB
+	name       string
+	version    int
+	connected  bool
+	connection Connection
 }
 
 func newDriver() jdb.Driver {
 	return &SqlLite{
 		name:      jdb.SqliteDriver,
-		params:    et.Json{},
 		connected: false,
+		connection: Connection{
+			Database: config.String("DB_NAME", "jdb"),
+		},
 	}
 }
 
@@ -37,12 +82,10 @@ func init() {
 		Driver:   jdb.SqliteDriver,
 		Name:     config.String("DB_NAME", "jdb"),
 		UserCore: true,
+		NodeId:   config.Int("NODE_ID", 1),
 		Debug:    envar.Bool("DEBUG"),
-		Params: et.Json{
-			"database": config.String("DB_NAME", "jdb"),
-		},
-		Validate: []string{
-			"DB_NAME",
+		Params: &Connection{
+			Database: config.String("DB_NAME", "jdb"),
 		},
 	})
 }
