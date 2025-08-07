@@ -7,7 +7,6 @@ import (
 
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/utility"
-	"github.com/dop251/goja"
 )
 
 type TypeCommand int
@@ -46,33 +45,26 @@ type DataFunctionTx func(tx *Tx, data et.Json) error
 
 type Command struct {
 	*QlWhere
-	Id               string              `json:"id"`
-	tx               *Tx                 `json:"-"`
-	Command          TypeCommand         `json:"command"`
-	Db               *DB                 `json:"-"`
-	From             *Model              `json:"-"`
-	Data             []et.Json           `json:"data"`
-	Values           []map[string]*Field `json:"values"`
-	Returns          []*Field            `json:"returns"`
-	Sql              string              `json:"sql"`
-	Result           et.Items            `json:"result"`
-	Current          et.Items            `json:"current"`
-	CurrentMap       map[string]et.Json  `json:"current_map"`
-	ResultMap        map[string]et.Json  `json:"result_map"`
-	beforeInsert     []DataFunctionTx    `json:"-"`
-	beforeUpdate     []DataFunctionTx    `json:"-"`
-	beforeDelete     []DataFunctionTx    `json:"-"`
-	afterInsert      []DataFunctionTx    `json:"-"`
-	afterUpdate      []DataFunctionTx    `json:"-"`
-	afterDelete      []DataFunctionTx    `json:"-"`
-	isSync           bool                `json:"-"`
-	vm               *goja.Runtime       `json:"-"`
-	beforeFuncInsert []string            `json:"-"`
-	beforeFuncUpdate []string            `json:"-"`
-	beforeFuncDelete []string            `json:"-"`
-	afterFuncInsert  []string            `json:"-"`
-	afterFuncUpdate  []string            `json:"-"`
-	afterFuncDelete  []string            `json:"-"`
+	Id           string              `json:"id"`
+	tx           *Tx                 `json:"-"`
+	Command      TypeCommand         `json:"command"`
+	Db           *DB                 `json:"-"`
+	From         *Model              `json:"-"`
+	Data         []et.Json           `json:"data"`
+	Values       []map[string]*Field `json:"values"`
+	Returns      []*Field            `json:"returns"`
+	Sql          string              `json:"sql"`
+	Result       et.Items            `json:"result"`
+	Current      et.Items            `json:"current"`
+	CurrentMap   map[string]et.Json  `json:"current_map"`
+	ResultMap    map[string]et.Json  `json:"result_map"`
+	beforeInsert []DataFunctionTx    `json:"-"`
+	beforeUpdate []DataFunctionTx    `json:"-"`
+	beforeDelete []DataFunctionTx    `json:"-"`
+	afterInsert  []DataFunctionTx    `json:"-"`
+	afterUpdate  []DataFunctionTx    `json:"-"`
+	afterDelete  []DataFunctionTx    `json:"-"`
+	isSync       bool                `json:"-"`
 }
 
 /**
@@ -82,38 +74,29 @@ type Command struct {
 **/
 func NewCommand(model *Model, data []et.Json, command TypeCommand) *Command {
 	result := &Command{
-		Id:               utility.UUID(),
-		Command:          command,
-		Db:               model.Db,
-		From:             model,
-		Data:             data,
-		Values:           make([]map[string]*Field, 0),
-		beforeInsert:     []DataFunctionTx{},
-		beforeUpdate:     []DataFunctionTx{},
-		beforeDelete:     []DataFunctionTx{},
-		afterInsert:      []DataFunctionTx{},
-		afterUpdate:      []DataFunctionTx{},
-		afterDelete:      []DataFunctionTx{},
-		Returns:          []*Field{},
-		Result:           et.Items{},
-		Current:          et.Items{},
-		CurrentMap:       make(map[string]et.Json),
-		ResultMap:        make(map[string]et.Json),
-		vm:               goja.New(),
-		beforeFuncInsert: []string{},
-		beforeFuncUpdate: []string{},
-		beforeFuncDelete: []string{},
-		afterFuncInsert:  []string{},
-		afterFuncUpdate:  []string{},
-		afterFuncDelete:  []string{},
+		Id:           utility.UUID(),
+		Command:      command,
+		Db:           model.Db,
+		From:         model,
+		Data:         data,
+		Values:       make([]map[string]*Field, 0),
+		beforeInsert: []DataFunctionTx{},
+		beforeUpdate: []DataFunctionTx{},
+		beforeDelete: []DataFunctionTx{},
+		afterInsert:  []DataFunctionTx{},
+		afterUpdate:  []DataFunctionTx{},
+		afterDelete:  []DataFunctionTx{},
+		Returns:      []*Field{},
+		Result:       et.Items{},
+		Current:      et.Items{},
+		CurrentMap:   make(map[string]et.Json),
+		ResultMap:    make(map[string]et.Json),
 	}
 	result.QlWhere = newQlWhere(result.validator)
 	result.IsDebug = model.IsDebug
 	result.beforeInsert = append(result.beforeInsert, result.beforeInsertDefault)
 	result.beforeUpdate = append(result.beforeUpdate, result.beforeUpdateDefault)
 	result.beforeDelete = append(result.beforeDelete, result.beforeDeleteDefault)
-	result.vm.Set("tx", result.tx)
-	result.vm.Set("command", result)
 
 	return result
 }

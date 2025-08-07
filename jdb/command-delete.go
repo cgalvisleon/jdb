@@ -46,14 +46,6 @@ func (s *Command) deleted() error {
 			}
 		}
 
-		for _, jsCode := range s.afterFuncDelete {
-			s.vm.Set("tx", s.tx)
-			s.vm.Set("data", before)
-			_, err := s.vm.RunString(jsCode)
-			if err != nil {
-				return err
-			}
-		}
 	}
 
 	return nil

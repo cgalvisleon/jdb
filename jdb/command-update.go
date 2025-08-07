@@ -63,14 +63,6 @@ func (s *Command) updated() error {
 			}
 		}
 
-		for _, jsCode := range s.afterFuncUpdate {
-			s.vm.Set("tx", s.tx)
-			s.vm.Set("data", data)
-			_, err := s.vm.RunString(jsCode)
-			if err != nil {
-				return err
-			}
-		}
 	}
 
 	return nil
