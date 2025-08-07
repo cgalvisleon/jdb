@@ -10,7 +10,6 @@ const EVENT_MODEL_ERROR = "model:error"
 const EVENT_MODEL_INSERT = "model:insert"
 const EVENT_MODEL_UPDATE = "model:update"
 const EVENT_MODEL_DELETE = "model:delete"
-const EVENT_DDL = "model:ddl"
 
 /**
 * publishError
@@ -65,19 +64,6 @@ func publishDelete(model *Model, sql string) {
 		"model":   model.Name,
 		"sql":     sql,
 		"command": "delete",
-	})
-}
-
-/**
-* publishDDL
-* @param model *Model, sql string
-**/
-func publishDDL(model *Model, sql string) {
-	event.Publish(EVENT_DDL, et.Json{
-		"db":     model.Db.Name,
-		"schema": model.Schema,
-		"model":  model.Name,
-		"sql":    sql,
 	})
 }
 

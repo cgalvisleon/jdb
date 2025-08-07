@@ -1173,24 +1173,6 @@ func (s *Model) DefineEvent(tp TypeEvent, event Event) *Model {
 }
 
 /**
-* DefineFunc
-* @param tp TypeEvent, jsCode string
-* @return Model
-**/
-func (s *Model) DefineFunc(tp TypeEvent, jsCode string) *Model {
-	switch tp {
-	case EventInsert:
-		s.FuncInsert = append(s.FuncInsert, jsCode)
-	case EventUpdate:
-		s.FuncUpdate = append(s.FuncUpdate, jsCode)
-	case EventDelete:
-		s.FuncDelete = append(s.FuncDelete, jsCode)
-	}
-
-	return s
-}
-
-/**
 * defineFields
 * @param fields et.Json
 **/

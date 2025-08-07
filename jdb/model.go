@@ -14,7 +14,6 @@ import (
 	"github.com/cgalvisleon/et/reg"
 	"github.com/cgalvisleon/et/strs"
 	"github.com/cgalvisleon/et/timezone"
-	"github.com/dop251/goja"
 	"github.com/google/uuid"
 )
 
@@ -86,10 +85,6 @@ type Model struct {
 	isInit             bool                     `json:"-"`
 	isCore             bool                     `json:"-"`
 	needMutate         bool                     `json:"-"`
-	vm                 *goja.Runtime            `json:"-"`
-	FuncInsert         []string                 `json:"func_insert"`
-	FuncUpdate         []string                 `json:"func_update"`
-	FuncDelete         []string                 `json:"func_delete"`
 }
 
 /**
@@ -136,18 +131,11 @@ func NewModel(schema *Schema, name string, version int) *Model {
 			eventsDelete:       make([]Event, 0),
 			Version:            version,
 			isCore:             schema.isCore,
-			vm:                 goja.New(),
-			FuncInsert:         make([]string, 0),
-			FuncUpdate:         make([]string, 0),
-			FuncDelete:         make([]string, 0),
 			IsDebug:            schema.Db.IsDebug,
 		}
 		result.DefineEvent(EventInsert, eventInsertDefault)
 		result.DefineEvent(EventUpdate, eventUpdateDefault)
 		result.DefineEvent(EventDelete, eventDeleteDefault)
-		result.vm.Set("model", result)
-		result.vm.Set("schema", schema)
-		result.vm.Set("db", schema.Db)
 
 		schema.addModel(result)
 		return result
@@ -206,17 +194,10 @@ func loadModel(schema *Schema, model *Model) (*Model, error) {
 	model.eventsUpdate = make([]Event, 0)
 	model.eventsDelete = make([]Event, 0)
 	model.isCore = schema.isCore
-	model.vm = goja.New()
-	model.FuncInsert = make([]string, 0)
-	model.FuncUpdate = make([]string, 0)
-	model.FuncDelete = make([]string, 0)
 	model.IsDebug = schema.Db.IsDebug
 	model.DefineEvent(EventInsert, eventInsertDefault)
 	model.DefineEvent(EventUpdate, eventUpdateDefault)
 	model.DefineEvent(EventDelete, eventDeleteDefault)
-	model.vm.Set("model", model)
-	model.vm.Set("schema", schema)
-	model.vm.Set("db", schema.Db)
 	/* Define columns */
 	for name := range model.Definitions {
 		definition := model.Definitions.Json(name)

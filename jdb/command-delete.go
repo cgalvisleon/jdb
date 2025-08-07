@@ -39,16 +39,6 @@ func (s *Command) deleted() error {
 			}
 		}
 
-		for _, jsCode := range model.FuncDelete {
-			model.vm.Set("tx", s.tx)
-			model.vm.Set("before", before)
-			model.vm.Set("after", et.Json{})
-			_, err := model.vm.RunString(jsCode)
-			if err != nil {
-				return err
-			}
-		}
-
 		for _, fn := range s.afterDelete {
 			err := fn(s.tx, before)
 			if err != nil {

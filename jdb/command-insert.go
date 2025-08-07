@@ -43,15 +43,6 @@ func (s *Command) inserted() error {
 			}
 		}
 
-		for _, jsCode := range model.FuncInsert {
-			model.vm.Set("tx", s.tx)
-			model.vm.Set("before", et.Json{})
-			model.vm.Set("after", after)
-			_, err := model.vm.RunString(jsCode)
-			if err != nil {
-				return err
-			}
-		}
 	}
 
 	for _, data := range s.Data {

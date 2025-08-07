@@ -124,7 +124,7 @@ func ConnectTo(connection ConnectParams) (*DB, error) {
 * @return *DB, error
 **/
 func Load() (*DB, error) {
-	driverName := config.String("DB_DRIVER", SqliteDriver)
+	driverName := config.String("DB_DRIVER", PostgresDriver)
 	if driverName == "" {
 		return nil, mistake.New(MSG_DRIVER_NOT_DEFINED)
 	}
