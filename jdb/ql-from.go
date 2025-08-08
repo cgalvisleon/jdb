@@ -2,16 +2,14 @@ package jdb
 
 import (
 	"fmt"
-	"sync"
 
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/strs"
-	"github.com/cgalvisleon/et/utility"
 )
 
-func helpQl(model *Model) et.Json {
+func helpQl() et.Json {
 	return et.Json{
-		"from": model.Name,
+		"from": "model",
 		"data": []interface{}{
 			"name",
 			"status_id",
@@ -98,26 +96,9 @@ func From(name interface{}) *Ql {
 		tpSelect = Source
 	}
 
-	result := &Ql{
-		Id:         utility.UUID(),
-		Db:         model.Db,
-		TypeSelect: tpSelect,
-		Froms:      &QlFroms{index: 65, Froms: make([]*QlFrom, 0)},
-		Joins:      make([]*QlJoin, 0),
-		Selects:    make([]*Field, 0),
-		Hiddens:    make([]string, 0),
-		Details:    make([]*Field, 0),
-		Groups:     make([]*Field, 0),
-		Orders:     &QlOrder{Asc: make([]*Field, 0), Desc: make([]*Field, 0)},
-		Offset:     0,
-		Limit:      0,
-		Sheet:      0,
-		Help:       helpQl(model),
-		wg:         &sync.WaitGroup{},
-	}
-	result.QlWhere = newQlWhere(result.validator)
+	result := NewQl(model.Db)
+	result.TypeSelect = tpSelect
 	result.IsDebug = model.IsDebug
-	result.Havings = NewQlHaving(result)
 	result.addFrom(model)
 
 	return result

@@ -76,14 +76,14 @@ func (s *Ql) GetDetailsTx(tx *Tx, data et.Json) {
 			}
 
 			ql := From(with).
-				setJoins(field.Joins).
-				setWheres(where).
-				setWheres(field.Where).
-				setSelects(field.Select).
-				setGroupBy(field.GroupBy...).
-				setHavings(field.Havings).
-				setOrderBy(field.OrderBy).
-				setDebug(s.IsDebug).
+				SetJoins(field.Joins).
+				SetWheres(where).
+				SetWheres(field.Where).
+				SetSelects(field.Select).
+				SetGroupBy(field.GroupBy...).
+				SetHavings(field.Havings).
+				SetOrderBy(field.OrderBy).
+				SetDebug(s.IsDebug).
 				prepare()
 
 			idx := slices.IndexFunc(ql.Details, func(e *Field) bool { return e.Column == field.Column })
@@ -143,14 +143,14 @@ func (s *Ql) GetDetailsTx(tx *Tx, data et.Json) {
 			}
 
 			ql := From(with).
-				setJoins(field.Joins).
-				setWheres(where).
-				setWheres(field.Where).
-				setSelects(field.Select...).
-				setGroupBy(field.GroupBy...).
-				setHavings(field.Havings).
-				setOrderBy(field.OrderBy).
-				setDebug(s.IsDebug).
+				SetJoins(field.Joins).
+				SetWheres(where).
+				SetWheres(field.Where).
+				SetSelects(field.Select...).
+				SetGroupBy(field.GroupBy...).
+				SetHavings(field.Havings).
+				SetOrderBy(field.OrderBy).
+				SetDebug(s.IsDebug).
 				prepare()
 
 			idx := slices.IndexFunc(ql.Details, func(e *Field) bool { return e.Column == field.Column })

@@ -29,7 +29,6 @@ func (s *ConnectParams) ToJson() et.Json {
 		"name":      s.Name,
 		"user_core": s.UserCore,
 		"node_id":   s.NodeId,
-		"debug":     s.Debug,
 		"params":    s.Params.ToJson(),
 	}
 }

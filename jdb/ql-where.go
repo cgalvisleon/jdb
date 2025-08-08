@@ -187,18 +187,18 @@ func (s *Ql) Debug() *Ql {
 * @param debug bool
 * @return *Ql
 **/
-func (s *Ql) setDebug(debug bool) *Ql {
+func (s *Ql) SetDebug(debug bool) *Ql {
 	s.QlWhere.setDebug(debug)
 
 	return s
 }
 
 /**
-* setWheres
+* SetWheres
 * @param wheres et.Json
 * @return *Ql
 **/
-func (s *Ql) setWheres(wheres et.Json) *Ql {
+func (s *Ql) SetWheres(wheres et.Json) *Ql {
 	and := func(vals []et.Json) {
 		for _, val := range vals {
 			for key := range val {

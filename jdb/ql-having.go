@@ -85,11 +85,11 @@ func (s *Ql) Having(val string) *QlHaving {
 }
 
 /**
-* setHavings
+* SetHavings
 * @param havings et.Json
 * @return *Ql
 **/
-func (s *Ql) setHavings(havings et.Json) *Ql {
+func (s *Ql) SetHavings(havings et.Json) *Ql {
 	if len(havings) == 0 {
 		return s
 	}

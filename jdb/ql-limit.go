@@ -63,7 +63,7 @@ func (s *Ql) calcOffset() *Ql {
 * @param page int
 * @return *Ql
 **/
-func (s *Ql) setPage(page int) *Ql {
+func (s *Ql) SetPage(page int) *Ql {
 	s.Page(page)
 
 	return s
@@ -74,7 +74,7 @@ func (s *Ql) setPage(page int) *Ql {
 * @param tx *Tx, limit int
 * @return et.Json, error
 **/
-func (s *Ql) setLimitTx(tx *Tx, limit int) (et.Json, error) {
+func (s *Ql) SetLimitTx(tx *Tx, limit int) (et.Json, error) {
 	s.Limit = limit
 	if s.Limit <= 0 {
 		result, err := s.AllTx(tx)

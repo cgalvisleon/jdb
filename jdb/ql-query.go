@@ -211,15 +211,15 @@ func (s *Ql) queryTx(tx *Tx, params et.Json) (et.Json, error) {
 	debug := params.Bool("debug")
 
 	result, err := s.
-		setJoins(joins).
-		setWheres(where).
-		setGroupBy(groups...).
-		setHavings(havings).
-		setOrderBy(orderBy).
-		setSelects(selects...).
-		setDebug(debug).
-		setPage(page).
-		setLimitTx(tx, limit)
+		SetJoins(joins).
+		SetWheres(where).
+		SetGroupBy(groups...).
+		SetHavings(havings).
+		SetOrderBy(orderBy).
+		SetSelects(selects...).
+		SetDebug(debug).
+		SetPage(page).
+		SetLimitTx(tx, limit)
 	if err != nil {
 		return et.Json{}, err
 	}

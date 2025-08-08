@@ -99,7 +99,7 @@ func (s *Ql) Hidden(fields ...string) *Ql {
 * @param fields ...interface{}
 * @return *Ql
 **/
-func (s *Ql) setSelects(fields ...interface{}) *Ql {
+func (s *Ql) SetSelects(fields ...interface{}) *Ql {
 	froms := s.Froms.Froms
 	if len(froms) == 0 {
 		return s

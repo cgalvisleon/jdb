@@ -57,11 +57,11 @@ func (s *Ql) OrderBy(columns ...string) *Ql {
 }
 
 /**
-* setOrderBy
+* SetOrderBy
 * @param orders et.Json
 * @return *Ql
 **/
-func (s *Ql) setOrderBy(orders et.Json) *Ql {
+func (s *Ql) SetOrderBy(orders et.Json) *Ql {
 	if len(orders) == 0 {
 		return s
 	}

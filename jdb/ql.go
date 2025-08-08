@@ -6,6 +6,7 @@ import (
 
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/strs"
+	"github.com/cgalvisleon/et/utility"
 )
 
 type TypeSelect int
@@ -36,6 +37,35 @@ type Ql struct {
 	Help       et.Json         `json:"help"`
 	tx         *Tx             `json:"-"`
 	wg         *sync.WaitGroup `json:"-"`
+}
+
+/**
+* NewQl
+* @param db *DB
+* @return *Ql
+**/
+func NewQl(db *DB) *Ql {
+	result := &Ql{
+		Id:         utility.UUID(),
+		Db:         db,
+		TypeSelect: Source,
+		Froms:      &QlFroms{index: 65, Froms: make([]*QlFrom, 0)},
+		Joins:      make([]*QlJoin, 0),
+		Selects:    make([]*Field, 0),
+		Hiddens:    make([]string, 0),
+		Details:    make([]*Field, 0),
+		Groups:     make([]*Field, 0),
+		Orders:     &QlOrder{Asc: make([]*Field, 0), Desc: make([]*Field, 0)},
+		Offset:     0,
+		Limit:      0,
+		Sheet:      0,
+		Help:       helpQl(),
+		wg:         &sync.WaitGroup{},
+	}
+	result.QlWhere = newQlWhere(result.validator)
+	result.Havings = NewQlHaving(result)
+
+	return result
 }
 
 /**

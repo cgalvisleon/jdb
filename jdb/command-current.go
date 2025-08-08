@@ -14,11 +14,11 @@ func (s *Command) current(where et.Json) error {
 	columns := model.getColumnsByType(TpColumn)
 	mainWhere := s.getWheres()
 	ql := From(model)
-	ql.setWheres(where)
-	ql.setWheres(mainWhere)
-	ql.setSelects(columns)
+	ql.SetWheres(where)
+	ql.SetWheres(mainWhere)
+	ql.SetSelects(columns)
 	current, err := ql.
-		setDebug(s.IsDebug).
+		SetDebug(s.IsDebug).
 		AllTx(s.tx)
 	if err != nil {
 		return err

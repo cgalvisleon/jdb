@@ -65,6 +65,7 @@ type Model struct {
 	RelationsFrom      map[string]*Relation     `json:"-"`
 	Joins              map[string]*Join         `json:"-"`
 	Required           map[string]bool          `json:"-"`
+	Types              et.Json                  `json:"types"`
 	TpId               TypeId                   `json:"tp_id"`
 	CreatedAtField     *Column                  `json:"-"`
 	UpdatedAtField     *Column                  `json:"-"`
@@ -123,6 +124,7 @@ func NewModel(schema *Schema, name string, version int) *Model {
 			RelationsFrom:      make(map[string]*Relation),
 			Joins:              make(map[string]*Join),
 			Required:           make(map[string]bool),
+			Types:              et.Json{},
 			TpId:               TpULId,
 			eventEmiterChannel: make(chan event.Message),
 			eventsEmiter:       make(map[string]event.Handler),
@@ -302,6 +304,7 @@ func (s *Model) Describe() et.Json {
 	result["source_field"] = s.SourceField
 	result["full_text_field"] = s.FullTextField
 	result["project_field"] = s.ProjectField
+	result["types"] = s.Types
 
 	return result
 }
@@ -455,9 +458,9 @@ func (s *Model) CheckForeignKeys(data et.Json) error {
 
 		where := relation.GetWhere(data)
 		ql := From(with)
-		ql.setWheres(where)
+		ql.SetWheres(where)
 		exist, err := ql.
-			setDebug(s.IsDebug).
+			SetDebug(s.IsDebug).
 			ItExists()
 		if err != nil {
 			return err

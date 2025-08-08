@@ -264,3 +264,27 @@ func (s *Command) setWheres(wheres et.Json) *Command {
 
 	return s
 }
+
+/**
+* setReturns
+* @param returns et.Json
+* @return *Command
+**/
+func (s *Command) setReturns(returns et.Json) *Command {
+	for key := range returns {
+		s.Returns = append(s.Returns, s.From.getField(key, false))
+	}
+
+	return s
+}
+
+/**
+* setIsDebug
+* @param isDebug bool
+* @return *Command
+**/
+func (s *Command) setIsDebug(isDebug bool) *Command {
+	s.IsDebug = isDebug
+
+	return s
+}

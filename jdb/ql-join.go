@@ -259,10 +259,15 @@ func (s *QlJoin) setWheres(wheres et.Json) *QlJoin {
 * SetJoins
 * @param joins []et.Json
 **/
-func (s *Ql) setJoins(joins []et.Json) *Ql {
+func (s *Ql) SetJoins(joins []et.Json) *Ql {
 	for _, join := range joins {
 		for key := range join {
-			with := s.Db.GetModel(key)
+			with, err := LoadModel(s.Db, key)
+			if err != nil {
+				console.Errorf("Ql error: %s", err.Error())
+				continue
+			}
+
 			if with != nil {
 				val := join.Json(key)
 				s.Join(with).setWheres(val)

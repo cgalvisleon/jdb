@@ -17,11 +17,11 @@ func (s *Ql) GroupBy(fields ...string) *Ql {
 }
 
 /**
-* setGroupBy
+* SetGroupBy
 * @param fields ...string
 * @return *Ql
 **/
-func (s *Ql) setGroupBy(fields ...string) *Ql {
+func (s *Ql) SetGroupBy(fields ...string) *Ql {
 	if len(fields) == 0 {
 		return s
 	}

@@ -262,20 +262,19 @@ func StrToKindType(strs string) (TypeColumn, TypeData) {
 }
 
 type ColumnFields struct {
-	Key          string
-	Index        string
-	Source       string
-	ProjectId    string
-	CreatedAt    string
-	UpdatedAt    string
-	StatusId     string
-	PermissionId string
-	SystemId     string
-	CreatedTo    string
-	UpdatedTo    string
-	Fulltext     string
-	Historical   string
-	Checked      string
+	Key        string
+	Index      string
+	Source     string
+	ProjectId  string
+	CreatedAt  string
+	UpdatedAt  string
+	StatusId   string
+	SystemId   string
+	CreatedTo  string
+	UpdatedTo  string
+	Fulltext   string
+	Historical string
+	Checked    string
 }
 
 /**
@@ -284,58 +283,55 @@ type ColumnFields struct {
 **/
 func (s *ColumnFields) Json() et.Json {
 	return et.Json{
-		"key":           s.Key,
-		"index":         s.Index,
-		"source":        s.Source,
-		"project_id":    s.ProjectId,
-		"created_at":    s.CreatedAt,
-		"updated_at":    s.UpdatedAt,
-		"status_id":     s.StatusId,
-		"permission_id": s.PermissionId,
-		"system_id":     s.SystemId,
-		"created_to":    s.CreatedTo,
-		"updated_to":    s.UpdatedTo,
-		"fulltext":      s.Fulltext,
-		"historical":    s.Historical,
-		"checked":       s.Checked,
+		"key":        s.Key,
+		"index":      s.Index,
+		"source":     s.Source,
+		"project_id": s.ProjectId,
+		"created_at": s.CreatedAt,
+		"updated_at": s.UpdatedAt,
+		"status_id":  s.StatusId,
+		"system_id":  s.SystemId,
+		"created_to": s.CreatedTo,
+		"updated_to": s.UpdatedTo,
+		"fulltext":   s.Fulltext,
+		"historical": s.Historical,
+		"checked":    s.Checked,
 	}
 }
 
 var (
-	cf            *ColumnFields
-	KEY           string
-	PRIMARYKEY    string
-	INDEX         string
-	SOURCE        string
-	PROJECT_ID    string
-	CREATED_AT    string
-	UPDATED_AT    string
-	STATUS_ID     string
-	PERMISSION_ID string
-	SYSID         string
-	CREATED_TO    string
-	UPDATED_TO    string
-	FULLTEXT      string
-	HISTORYCAL    string
-	CHECKED       string
+	cf         *ColumnFields
+	KEY        string
+	PRIMARYKEY string
+	INDEX      string
+	SOURCE     string
+	PROJECT_ID string
+	CREATED_AT string
+	UPDATED_AT string
+	STATUS_ID  string
+	SYSID      string
+	CREATED_TO string
+	UPDATED_TO string
+	FULLTEXT   string
+	HISTORYCAL string
+	CHECKED    string
 )
 
 func init() {
 	cf = &ColumnFields{
-		Key:          "id",
-		Index:        "idx",
-		Source:       "source",
-		ProjectId:    "project_id",
-		CreatedAt:    "created_at",
-		UpdatedAt:    "updated_at",
-		StatusId:     "status_id",
-		PermissionId: "permission_id",
-		SystemId:     "jdb_id",
-		CreatedTo:    "created_to",
-		UpdatedTo:    "updated_to",
-		Fulltext:     "fulltext",
-		Historical:   "historical",
-		Checked:      "checked",
+		Key:        "id",
+		Index:      "idx",
+		Source:     "source",
+		ProjectId:  "project_id",
+		CreatedAt:  "created_at",
+		UpdatedAt:  "updated_at",
+		StatusId:   "status_id",
+		SystemId:   "jdb_id",
+		CreatedTo:  "created_to",
+		UpdatedTo:  "updated_to",
+		Fulltext:   "fulltext",
+		Historical: "historical",
+		Checked:    "checked",
 	}
 
 	SetColumnFields(cf)
@@ -355,7 +351,6 @@ func SetColumnFields(fields *ColumnFields) {
 	CREATED_AT = cf.CreatedAt
 	UPDATED_AT = cf.UpdatedAt
 	STATUS_ID = cf.StatusId
-	PERMISSION_ID = cf.PermissionId
 	SYSID = cf.SystemId
 	CREATED_TO = cf.CreatedTo
 	UPDATED_TO = cf.UpdatedTo
