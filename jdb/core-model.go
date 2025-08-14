@@ -3,7 +3,6 @@ package jdb
 import (
 	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
-	"github.com/cgalvisleon/et/mistake"
 	"github.com/cgalvisleon/et/timezone"
 )
 
@@ -25,7 +24,6 @@ func (s *DB) defineModel() error {
 	coreModel.DefineColumn("name", TypeDataText)
 	coreModel.DefineColumn("version", TypeDataInt)
 	coreModel.DefineColumn("definition", TypeDataBytes)
-	coreModel.DefineSystemKeyField()
 	coreModel.DefineIndexField()
 	coreModel.DefinePrimaryKey("kind", "name")
 	coreModel.DefineIndex(true,
@@ -47,7 +45,7 @@ func (s *DB) defineModel() error {
 **/
 func (s *DB) getModel(kind, name string) (et.Item, error) {
 	if coreModel == nil || !coreModel.isInit {
-		return et.Item{}, mistake.New(MSG_DATABASE_NOT_CONCURRENT)
+		return et.Item{}, nil
 	}
 
 	return coreModel.
@@ -112,7 +110,7 @@ func (s *DB) deleteModel(kind, name string) error {
 **/
 func (s *DB) QueryModel(search et.Json) (interface{}, error) {
 	if coreModel == nil || !coreModel.isInit {
-		return nil, mistake.New(MSG_DATABASE_NOT_CONCURRENT)
+		return nil, nil
 	}
 
 	result, err := coreModel.

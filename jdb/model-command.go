@@ -68,17 +68,3 @@ func (s *Model) Delsert(data et.Json) *Command {
 func (s *Model) Bulk(data []et.Json) *Command {
 	return NewCommand(s, data, Insert)
 }
-
-/**
-* Sync
-* @param data et.Json
-* @param sysId string
-* @return *Command
-**/
-func (s *Model) Sync(data et.Json, sysId string) *Command {
-	result := NewCommand(s, []et.Json{data}, Sync)
-	result.Where(cf.SystemId).Eq(sysId)
-	result.isSync = true
-
-	return result
-}

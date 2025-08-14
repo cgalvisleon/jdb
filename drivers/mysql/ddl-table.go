@@ -136,44 +136,44 @@ func (s *Mysql) defaultValue(tp jdb.TypeData) interface{} {
 	case jdb.TypeDataPrecision:
 		return 0.0
 	case jdb.TypeDataDateTime:
-		return utility.Quote("NOW()")
+		return jdb.Quote("NOW()")
 	case jdb.TypeDataCheckbox:
-		return utility.Quote(false)
+		return jdb.Quote(false)
 	case jdb.TypeDataBytes:
-		return utility.Quote("")
+		return jdb.Quote("")
 	case jdb.TypeDataObject:
-		return utility.Quote(et.Json{})
+		return jdb.Quote(et.Json{})
 	case jdb.TypeDataSelect:
-		return utility.Quote("")
+		return jdb.Quote("")
 	case jdb.TypeDataMultiSelect:
-		return utility.Quote([]et.Json{})
+		return jdb.Quote([]et.Json{})
 	case jdb.TypeDataGeometry:
-		return utility.Quote(et.Json{
+		return jdb.Quote(et.Json{
 			"type":        "Point",
 			"coordinates": []float64{0, 0},
 		})
 	case jdb.TypeDataFullText:
-		return utility.Quote("")
+		return jdb.Quote("")
 	case jdb.TypeDataState:
-		return utility.Quote(utility.ACTIVE)
+		return jdb.Quote(utility.ACTIVE)
 	case jdb.TypeDataUser:
-		return utility.Quote("")
+		return jdb.Quote("")
 	case jdb.TypeDataFilesMedia:
-		return utility.Quote("")
+		return jdb.Quote("")
 	case jdb.TypeDataUrl:
-		return utility.Quote("")
+		return jdb.Quote("")
 	case jdb.TypeDataEmail:
-		return utility.Quote("")
+		return jdb.Quote("")
 	case jdb.TypeDataPhone:
-		return utility.Quote("")
+		return jdb.Quote("")
 	case jdb.TypeDataAddress:
-		return utility.Quote("")
+		return jdb.Quote("")
 	case jdb.TypeDataRelation:
-		return utility.Quote("")
+		return jdb.Quote("")
 	case jdb.TypeDataRollup:
-		return utility.Quote("")
+		return jdb.Quote("")
 	default:
-		return utility.Quote("")
+		return jdb.Quote("")
 	}
 }
 

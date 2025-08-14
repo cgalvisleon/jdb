@@ -7,11 +7,11 @@ import (
 )
 
 /**
-* List
-* @param page, rows int
+* ListTx
+* @param tx *Tx, page, rows int
 * @return et.List, error
 **/
-func (s *Ql) List(page, rows int) (et.List, error) {
+func (s *Ql) ListTx(tx *Tx, page, rows int) (et.List, error) {
 	if s.Db == nil {
 		return et.List{}, mistake.New(MSG_DATABASE_NOT_FOUND)
 	}
@@ -22,12 +22,21 @@ func (s *Ql) List(page, rows int) (et.List, error) {
 	}
 
 	s.Page(page)
-	result, err := s.RowsTx(s.tx, rows)
+	result, err := s.RowsTx(tx, rows)
 	if err != nil {
 		return et.List{}, err
 	}
 
 	return result.ToList(all, s.Sheet, s.Limit), nil
+}
+
+/**
+* List
+* @param page, rows int
+* @return et.List, error
+**/
+func (s *Ql) List(page, rows int) (et.List, error) {
+	return s.ListTx(s.tx, page, rows)
 }
 
 /**

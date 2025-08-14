@@ -9,7 +9,6 @@ import (
 	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/strs"
-	"github.com/cgalvisleon/et/utility"
 )
 
 /**
@@ -59,7 +58,7 @@ func SQLParse(sql string, args ...any) string {
 
 	for i, arg := range args {
 		old := strs.Format(`{$%d}`, i+1)
-		new := strs.Format(`%v`, utility.Quote(arg))
+		new := strs.Format(`%v`, Quote(arg))
 		sql = strings.ReplaceAll(sql, old, new)
 	}
 
@@ -190,12 +189,28 @@ func JsonQuote(val interface{}) interface{} {
 		}
 		r = strs.Format(`[%s]`, r)
 		return strs.Format(fmt, r)
+	case []et.Json:
+		var r string
+		for _, _v := range v {
+			q := JsonQuote(_v)
+			r = strs.Append(r, strs.Format(`%v`, q), ", ")
+		}
+		r = strs.Format(`[%s]`, r)
+		return strs.Format(fmt, r)
+	case []map[string]interface{}:
+		var r string
+		for _, _v := range v {
+			q := JsonQuote(_v)
+			r = strs.Append(r, strs.Format(`%v`, q), ", ")
+		}
+		r = strs.Format(`[%s]`, r)
+		return strs.Format(fmt, r)
 	case []uint8:
 		return strs.Format(fmt, string(v))
 	case nil:
 		return strs.Format(`%s`, "NULL")
 	default:
-		console.Errorf("Not quoted type:%v value:%v", reflect.TypeOf(v), v)
+		console.Errorf("JsonQuote type:%v value:%v", reflect.TypeOf(v), v)
 		return val
 	}
 }

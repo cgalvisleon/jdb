@@ -69,8 +69,6 @@ func Exec(db *sql.DB, sql string, arg ...any) (et.Items, error) {
 		return et.Items{}, err
 	}
 
-	sql = SQLParse(sql, arg...)
-
 	return result, nil
 }
 

@@ -20,5 +20,9 @@ func (s *Model) GetType(name string) interface{} {
 **/
 func (s *Model) SetType(name string, tp interface{}) error {
 	s.Types[name] = tp
-	return s.Save()
+	if s.isInit {
+		return s.Save()
+	}
+
+	return nil
 }

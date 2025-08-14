@@ -117,18 +117,30 @@ func (s *Postgres) DropDatabase(name string) error {
 * @return error
 **/
 func (s *Postgres) Connect(connection jdb.ConnectParams) (*sql.DB, error) {
-	chain, err := s.connection.defaultChain()
+	defaultChain, err := s.connection.defaultChain()
 	if err != nil {
 		return nil, err
 	}
 
-	s.db, err = s.connectTo(chain)
+	s.db, err = s.connectTo(defaultChain)
 	if err != nil {
 		return nil, err
 	}
 
 	params := connection.Params.(*Connection)
 	err = s.CreateDatabase(params.Database)
+	if err != nil {
+		return nil, err
+	}
+
+	if s.db != nil {
+		err := s.db.Close()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	chain, err := s.connection.Chain()
 	if err != nil {
 		return nil, err
 	}

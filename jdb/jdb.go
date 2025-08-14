@@ -8,7 +8,6 @@ import (
 	"slices"
 
 	"github.com/cgalvisleon/et/config"
-	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/mistake"
 	"github.com/cgalvisleon/et/response"
@@ -109,11 +108,14 @@ func ConnectTo(connection ConnectParams) (*DB, error) {
 		return nil, err
 	}
 
-	if result.UseCore {
-		err := result.createCore()
-		if err != nil {
-			return nil, err
-		}
+	if !result.UseCore {
+		result.isInit = true
+		return result, nil
+	}
+
+	err = result.createCore()
+	if err != nil {
+		return nil, err
 	}
 
 	return result, nil
@@ -233,50 +235,49 @@ func GetModel(name string) *Model {
 func define(params et.Json) (et.Json, error) {
 	result := et.Json{}
 	help := et.Json{
-		"message": MSG_INVALID_MODEL_PARAM,
-		"help":    "It is required this params.",
-		"params": et.Json{
-			"name_model": et.Json{
-				"schema":    "schema_name",
-				"version":   1,
-				"integrity": false,
-				"fields":    et.Json{},
-			},
+		"help": "It is required this params in the body of the request.",
+		"body": et.Json{
+			"type": "model",
+			"name": "model_name",
 		},
 	}
 
-	console.Debug(params.ToString())
-	for name := range params {
-		param := params.Json(name)
-		if param.IsEmpty() {
-			return et.Json{}, mistake.New(help.ToString())
-		}
+	if params.IsEmpty() {
+		return help, nil
+	}
 
-		schemaName := param.ValStr("jdb", "schema")
-		schema := GetSchema(schemaName)
-		if schema == nil {
-			return et.Json{}, mistake.Newf(MSG_SCHEMA_NOT_FOUND, schemaName)
-		}
+	kind := params.Str("type")
+	if kind == "" {
+		return help, nil
+	}
 
-		version := param.ValInt(1, "version")
-		model := NewModel(schema, name, version)
+	name := params.Str("name")
+	if name == "" {
+		return help, nil
+	}
+
+	switch kind {
+	case "model":
+		model := GetModel(name)
 		if model == nil {
 			return et.Json{}, mistake.Newf(MSG_MODEL_NOT_FOUND, name)
 		}
 
-		integrity := param.ValBool(false, "integrity")
-		if integrity {
-			model.DefineIntegrity()
+		return model.Describe(), nil
+	case "schema":
+		schema := GetSchema(name)
+		if schema == nil {
+			return et.Json{}, mistake.Newf(MSG_SCHEMA_NOT_FOUND, name)
 		}
 
-		fields := param.Json("fields")
-		model.setFields(fields)
-
-		if err := model.Init(); err != nil {
-			return et.Json{}, err
+		return schema.Describe(), nil
+	case "db":
+		db := GetDB(name)
+		if db == nil {
+			return et.Json{}, mistake.Newf(MSG_DATABASE_NOT_FOUND, name)
 		}
 
-		result[name] = model.Describe()
+		return db.Describe(), nil
 	}
 
 	return result, nil
@@ -416,7 +417,7 @@ func commandsTx(tx *Tx, params et.Json) (et.Items, error) {
 			where := param.Json("where")
 			items, err := model.
 				Update(data).
-				setWheres(where).
+				SetWheres(where).
 				setDebug(debug).
 				ExecTx(tx)
 			if err != nil {
@@ -430,7 +431,7 @@ func commandsTx(tx *Tx, params et.Json) (et.Items, error) {
 			where := param.Json("where")
 			items, err := model.
 				delete().
-				setWheres(where).
+				SetWheres(where).
 				setDebug(debug).
 				ExecTx(tx)
 			if err != nil {
@@ -458,7 +459,7 @@ func commandsTx(tx *Tx, params et.Json) (et.Items, error) {
 			data := param.Json("upsert")
 			items, err := model.
 				Upsert(data).
-				setWheres(where).
+				SetWheres(where).
 				setDebug(debug).
 				ExecTx(tx)
 			if err != nil {

@@ -18,7 +18,7 @@ func (s *Command) upsert() error {
 
 	s.current(where)
 	if s.Current.Ok {
-		s.setWheres(where)
+		s.SetWheres(where)
 		s.Command = Update
 		return s.updated()
 	}

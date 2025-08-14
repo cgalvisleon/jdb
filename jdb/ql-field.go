@@ -6,7 +6,6 @@ import (
 
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/strs"
-	"github.com/cgalvisleon/et/utility"
 )
 
 type TypeAgregation int
@@ -219,14 +218,21 @@ func (s *Field) setValue(value interface{}) {
 		}
 	}
 
-	switch value.(type) {
+	switch v := value.(type) {
 	case string:
-		result, ok := regexpMust(`(?i)^CALC\((.*)\)$`, value)
+		result, ok := regexpMust(`(?i)^CALC\((.*)\)$`, v)
 		if ok {
 			s.Value = result
 			s.Unquoted = true
 		} else {
-			s.Value = value
+			re := regexp.MustCompile(`^:(.*)`)
+			matches := re.FindStringSubmatch(v)
+			if len(matches) > 1 {
+				s.Value = matches[1]
+				s.Unquoted = true
+			} else {
+				s.Value = v
+			}
 		}
 	default:
 		s.Value = value
@@ -262,7 +268,7 @@ func (s *Field) ValueQuoted() any {
 		return strs.Format(`%v`, s.Value)
 	}
 
-	return utility.Quote(s.Value)
+	return Quote(s.Value)
 }
 
 /**

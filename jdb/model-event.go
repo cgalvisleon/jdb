@@ -95,11 +95,15 @@ type Event func(tx *Tx, model *Model, before et.Json, after et.Json) error
 * @return error
 **/
 func eventInsertDefault(tx *Tx, model *Model, before et.Json, after et.Json) error {
-	if model.UseCore && model.SystemKeyField != nil {
-		sysid := after.Str(model.SystemKeyField.Name)
-		err := model.Db.upsertRecord(tx, model.Schema, model.Name, sysid, "insert")
-		if err != nil {
-			return err
+	if model.UseCore {
+		model.Db.upsertTable(tx, model.Schema, model.Name, 1)
+
+		if model.SystemKeyField != nil {
+			sysId := after.Str(model.SystemKeyField.Name)
+			err := model.Db.upsertRecord(tx, model.Schema, model.Name, sysId, "insert")
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -113,21 +117,20 @@ func eventInsertDefault(tx *Tx, model *Model, before et.Json, after et.Json) err
 **/
 func eventUpdateDefault(tx *Tx, model *Model, before et.Json, after et.Json) error {
 	if model.UseCore && model.SystemKeyField != nil {
-		sysid := after.Str(model.SystemKeyField.Name)
-		err := model.Db.upsertRecord(tx, model.Schema, model.Name, sysid, "update")
+		sysId := after.Str(model.SystemKeyField.Name)
+		err := model.Db.upsertRecord(tx, model.Schema, model.Name, sysId, "update")
 		if err != nil {
 			return err
 		}
-	}
 
-	if model.UseCore && model.SystemKeyField != nil && model.StatusField != nil {
-		oldStatus := before.ValStr(utility.ACTIVE, model.StatusField.Name)
-		newStatus := after.ValStr(oldStatus, model.StatusField.Name)
-		if oldStatus != newStatus {
-			sysId := before.Str(model.SystemKeyField.Name)
-			err := model.Db.upsertRecycling(tx, model.Schema, model.Name, sysId, newStatus)
-			if err != nil {
-				return err
+		if model.StatusField != nil {
+			oldStatus := before.ValStr(utility.ACTIVE, model.StatusField.Name)
+			newStatus := after.ValStr(oldStatus, model.StatusField.Name)
+			if oldStatus != newStatus && newStatus == utility.FOR_DELETE {
+				err := model.Db.upsertRecycling(tx, model.Schema, model.Name, sysId)
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}
@@ -141,19 +144,22 @@ func eventUpdateDefault(tx *Tx, model *Model, before et.Json, after et.Json) err
 * @return error
 **/
 func eventDeleteDefault(tx *Tx, model *Model, before et.Json, after et.Json) error {
-	if model.UseCore && model.SystemKeyField != nil {
-		sysid := after.Str(model.SystemKeyField.Name)
-		err := model.Db.upsertRecord(tx, model.Schema, model.Name, sysid, "delete")
-		if err != nil {
-			return err
-		}
-	}
+	if model.UseCore {
+		model.Db.upsertTable(tx, model.Schema, model.Name, -1)
 
-	if model.UseCore && model.SystemKeyField != nil && model.StatusField != nil {
-		sysId := before.Str(model.SystemKeyField.Name)
-		err := model.Db.deleteRecycling(tx, model.Schema, model.Name, sysId)
-		if err != nil {
-			return err
+		if model.SystemKeyField != nil {
+			sysId := before.Str(model.SystemKeyField.Name)
+			err := model.Db.upsertRecord(tx, model.Schema, model.Name, sysId, "delete")
+			if err != nil {
+				return err
+			}
+
+			if model.StatusField != nil {
+				err := model.Db.deleteRecycling(tx, model.Schema, model.Name, sysId)
+				if err != nil {
+					return err
+				}
+			}
 		}
 	}
 

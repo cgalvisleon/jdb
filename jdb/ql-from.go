@@ -9,60 +9,63 @@ import (
 
 func helpQl() et.Json {
 	return et.Json{
-		"from": "model",
-		"data": []interface{}{
-			"name",
-			"status_id",
-			"kinds.name:status",
-			et.Json{
-				"folders": et.Json{
-					"select": []interface{}{
-						"name",
+		"help": "Las consultas en jdb, se realizan siguiendo el siguiente formato:",
+		"params": et.Json{
+			"from": "model",
+			"data": []interface{}{
+				"name",
+				"status_id",
+				"kinds.name:status",
+				et.Json{
+					"folders": et.Json{
+						"select": []interface{}{
+							"name",
+						},
+						"page": 1,
+						"rows": 30,
+						"list": true,
 					},
-					"page": 1,
-					"rows": 30,
-					"list": true,
 				},
 			},
-		},
-		"join": []et.Json{
-			{
-				"kinds": et.Json{
-					"status_id": et.Json{
-						"eq": "kinds.id",
+			"join": []et.Json{
+				{
+					"kinds": et.Json{
+						"status_id": et.Json{
+							"eq": "kinds.id",
+						},
 					},
+					"AND": []et.Json{},
+					"OR":  []et.Json{},
+				},
+			},
+			"where": et.Json{
+				"status_id": et.Json{
+					"eq": "kinds.id",
+				},
+				"AND": []et.Json{
+					{
+						"name": et.Json{
+							"eq": "v:name",
+						},
+					},
+				},
+				"OR": []et.Json{},
+			},
+			"group_by": []string{"name"},
+			"having": et.Json{
+				"name": et.Json{
+					"eq": "name",
 				},
 				"AND": []et.Json{},
 				"OR":  []et.Json{},
 			},
-		},
-		"where": et.Json{
-			"status_id": et.Json{
-				"eq": "kinds.id",
+			"order_by": et.Json{
+				"ASC":  []string{"name"},
+				"DESC": []string{"name"},
 			},
-			"AND": []et.Json{
-				{
-					"name": et.Json{
-						"eq": "v:name",
-					},
-				},
-			},
-			"OR": []et.Json{},
+			"page":  1,
+			"limit": 30,
 		},
-		"group_by": []string{"name"},
-		"having": et.Json{
-			"name": et.Json{
-				"eq": "name",
-			},
-			"AND": []et.Json{},
-			"OR":  []et.Json{},
-		},
-		"order_by": et.Json{
-			"ASC":  []string{"name"},
-			"DESC": []string{"name"},
-		},
-		"page":  1,
-		"limit": 30,
 	}
 }
 

@@ -7,7 +7,6 @@ import (
 
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/timezone"
-	"github.com/cgalvisleon/et/utility"
 )
 
 type TypeColumn int
@@ -326,7 +325,7 @@ func init() {
 		CreatedAt:  "created_at",
 		UpdatedAt:  "updated_at",
 		StatusId:   "status_id",
-		SystemId:   "jdb_id",
+		SystemId:   "jdbid",
 		CreatedTo:  "created_to",
 		UpdatedTo:  "updated_to",
 		Fulltext:   "fulltext",
@@ -710,7 +709,7 @@ func (s *Column) DefaultValue() interface{} {
 **/
 func (s *Column) DefaultQuote() interface{} {
 	result := s.DefaultValue()
-	result = utility.Quote(result)
+	result = Quote(result)
 
 	return result
 }

@@ -7,7 +7,6 @@ import (
 	"slices"
 	"time"
 
-	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/event"
 	"github.com/cgalvisleon/et/mistake"
@@ -84,7 +83,6 @@ type Model struct {
 	IsDebug            bool                     `json:"-"`
 	isLocked           bool                     `json:"-"`
 	isInit             bool                     `json:"-"`
-	isCore             bool                     `json:"-"`
 	needMutate         bool                     `json:"-"`
 }
 
@@ -100,10 +98,6 @@ func NewModel(schema *Schema, name string, version int) *Model {
 	}
 
 	newModel := func() *Model {
-		if !schema.isCore {
-			console.Logf("model", `Model %s new`, name)
-		}
-
 		now := timezone.NowTime()
 		result := &Model{
 			Db:                 schema.Db,
@@ -132,7 +126,6 @@ func NewModel(schema *Schema, name string, version int) *Model {
 			eventsUpdate:       make([]Event, 0),
 			eventsDelete:       make([]Event, 0),
 			Version:            version,
-			isCore:             schema.isCore,
 			IsDebug:            schema.Db.IsDebug,
 		}
 		result.DefineEvent(EventInsert, eventInsertDefault)
@@ -173,10 +166,6 @@ func loadModel(schema *Schema, model *Model) (*Model, error) {
 		return schema.Db.models[idx], nil
 	}
 
-	if !schema.isCore {
-		console.Logf("model", `Model %s load`, model.Name)
-	}
-
 	schema.addModel(model)
 	model.schema = schema
 	model.Schema = schema.Name
@@ -195,7 +184,6 @@ func loadModel(schema *Schema, model *Model) (*Model, error) {
 	model.eventsInsert = make([]Event, 0)
 	model.eventsUpdate = make([]Event, 0)
 	model.eventsDelete = make([]Event, 0)
-	model.isCore = schema.isCore
 	model.IsDebug = schema.Db.IsDebug
 	model.DefineEvent(EventInsert, eventInsertDefault)
 	model.DefineEvent(EventUpdate, eventUpdateDefault)
@@ -229,11 +217,7 @@ func LoadModel(db *DB, name string) (*Model, error) {
 	}
 
 	if result != nil {
-		schema, err := loadSchema(db, result.Schema)
-		if err != nil {
-			return nil, err
-		}
-
+		schema := NewSchema(db, result.Schema)
 		return loadModel(schema, result)
 	}
 
@@ -314,7 +298,7 @@ func (s *Model) Describe() et.Json {
 * @return error
 **/
 func (s *Model) Save() error {
-	if s == nil || !s.UseCore || !s.Db.isInit {
+	if !s.UseCore {
 		return nil
 	}
 
@@ -374,12 +358,6 @@ func (s *Model) Empty() {
 * @return error
 **/
 func (s *Model) Init() error {
-	go func() {
-		for message := range s.eventEmiterChannel {
-			s.eventEmiter(message)
-		}
-	}()
-
 	if s.isInit {
 		return nil
 	}
@@ -405,24 +383,30 @@ func (s *Model) Init() error {
 		}
 	}
 
+	go func() {
+		for message := range s.eventEmiterChannel {
+			s.eventEmiter(message)
+		}
+	}()
+
 	if s.needMutate {
 		err := s.Db.MutateModel(s)
 		if err != nil {
 			return err
 		}
-	} else if !s.isInit {
+	} else {
 		err := s.Db.LoadModel(s)
 		if err != nil {
 			return err
 		}
 	}
 
+	s.isInit = true
+
 	err := s.Save()
 	if err != nil {
 		return err
 	}
-
-	s.isInit = true
 
 	return nil
 }

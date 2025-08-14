@@ -46,24 +46,11 @@ func (s *DB) defineRecycling() error {
 
 /**
 * upsertRecycling
-* @param tx *Tx, schema, name, sysId, statusId string
+* @param tx *Tx, schema, name, sysId string
 * @return error
 **/
-func (s *DB) upsertRecycling(tx *Tx, schema, name, sysId, statusId string) error {
+func (s *DB) upsertRecycling(tx *Tx, schema, name, sysId string) error {
 	if coreRecycling == nil || !coreRecycling.isInit {
-		return nil
-	}
-
-	if statusId != utility.FOR_DELETE {
-		_, err := coreRecycling.
-			Delete("schema_name").Eq(schema).
-			And("table_name").Eq(name).
-			And(cf.SystemId).Eq(sysId).
-			ExecTx(tx)
-		if err != nil {
-			return err
-		}
-
 		return nil
 	}
 
@@ -172,11 +159,11 @@ func (s *DB) QueryRecycling(search et.Json) (interface{}, error) {
 }
 
 /**
-* HandlerGetRecycling
+* HttpGetRecycling
 * @param w http.ResponseWriter
 * @param r *http.Request
 **/
-func (s *DB) HandlerGetRecycling(w http.ResponseWriter, r *http.Request) {
+func (s *DB) HttpGetRecycling(w http.ResponseWriter, r *http.Request) {
 	schema := r.PathValue("schema")
 	name := r.PathValue("name")
 	id := r.PathValue("id")
@@ -190,11 +177,11 @@ func (s *DB) HandlerGetRecycling(w http.ResponseWriter, r *http.Request) {
 }
 
 /**
-* HandlerDeleteRecycling
+* HttpDeleteRecycling
 * @param w http.ResponseWriter
 * @param r *http.Request
 **/
-func (s *DB) HandlerDeleteRecycling(w http.ResponseWriter, r *http.Request) {
+func (s *DB) HttpDeleteRecycling(w http.ResponseWriter, r *http.Request) {
 	schema := r.PathValue("schema")
 	name := r.PathValue("name")
 	id := r.PathValue("id")
@@ -216,11 +203,11 @@ func (s *DB) HandlerDeleteRecycling(w http.ResponseWriter, r *http.Request) {
 }
 
 /**
-* HandlerQueryRecycling
+* HttpQueryRecycling
 * @param w http.ResponseWriter
 * @param r *http.Request
 **/
-func (s *DB) HandlerQueryRecycling(w http.ResponseWriter, r *http.Request) {
+func (s *DB) HttpQueryRecycling(w http.ResponseWriter, r *http.Request) {
 	body, _ := response.GetBody(r)
 	result, err := s.QueryRecycling(body)
 	if err != nil {

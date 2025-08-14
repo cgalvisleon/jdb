@@ -52,7 +52,6 @@ func (s *Command) updated() error {
 				return err
 			}
 		}
-
 	}
 
 	for _, data := range s.Data {
@@ -62,7 +61,6 @@ func (s *Command) updated() error {
 				return err
 			}
 		}
-
 	}
 
 	return nil

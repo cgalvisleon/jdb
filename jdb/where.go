@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/cgalvisleon/et/et"
-	"github.com/cgalvisleon/et/utility"
 )
 
 type Connector int
@@ -246,7 +245,7 @@ func (s *QlCondition) getField() string {
 	case Field:
 		return v.asName()
 	default:
-		return fmt.Sprintf(`%v`, utility.Quote(v))
+		return fmt.Sprintf(`%v`, Quote(v))
 	}
 }
 

@@ -90,11 +90,11 @@ func (s *DB) QueryRecords(query et.Json) (interface{}, error) {
 }
 
 /**
-* HandlerQueryRecords
+* HttpQueryRecords
 * @param w http.ResponseWriter
 * @param r *http.Request
 **/
-func (s *DB) HandlerQueryRecords(w http.ResponseWriter, r *http.Request) {
+func (s *DB) HttpQueryRecords(w http.ResponseWriter, r *http.Request) {
 	body, _ := response.GetBody(r)
 	result, err := s.QueryRecords(body)
 	if err != nil {

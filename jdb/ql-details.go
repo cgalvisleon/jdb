@@ -216,7 +216,6 @@ func (s *Ql) setDetail(params et.Json) *Ql {
 	for name := range params {
 		val := params.Json(name)
 		selects := val.Array("select")
-		console.Ping()
 		joins := val.ArrayJson("join")
 		where := val.Json("where")
 		groups := val.ArrayStr("group_by")

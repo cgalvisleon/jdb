@@ -42,7 +42,6 @@ func (s *Command) inserted() error {
 				return err
 			}
 		}
-
 	}
 
 	for _, data := range s.Data {
@@ -52,7 +51,6 @@ func (s *Command) inserted() error {
 				return err
 			}
 		}
-
 	}
 
 	return nil

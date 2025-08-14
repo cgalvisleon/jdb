@@ -17,7 +17,6 @@ const (
 	Delete
 	Upsert
 	Delsert
-	Sync
 )
 
 func (s TypeCommand) Str() string {
@@ -32,8 +31,6 @@ func (s TypeCommand) Str() string {
 		return "upsert"
 	case Delsert:
 		return "delsert"
-	case Sync:
-		return "sync"
 	default:
 		return "No command"
 	}
@@ -220,11 +217,11 @@ func (s *Command) validator(val interface{}) interface{} {
 }
 
 /**
-* setWhere
-* @param setWheres et.Json
+* SetWheres
+* @param wheres et.Json
 * @return *Command
 **/
-func (s *Command) setWheres(wheres et.Json) *Command {
+func (s *Command) SetWheres(wheres et.Json) *Command {
 	and := func(vals []et.Json) {
 		for _, val := range vals {
 			for key := range val {
@@ -270,7 +267,7 @@ func (s *Command) setWheres(wheres et.Json) *Command {
 * @param returns et.Json
 * @return *Command
 **/
-func (s *Command) setReturns(returns et.Json) *Command {
+func (s *Command) SetReturns(returns et.Json) *Command {
 	for key := range returns {
 		s.Returns = append(s.Returns, s.From.getField(key, false))
 	}
@@ -283,7 +280,7 @@ func (s *Command) setReturns(returns et.Json) *Command {
 * @param isDebug bool
 * @return *Command
 **/
-func (s *Command) setIsDebug(isDebug bool) *Command {
+func (s *Command) SetIsDebug(isDebug bool) *Command {
 	s.IsDebug = isDebug
 
 	return s

@@ -5,7 +5,6 @@ import (
 	"slices"
 	"time"
 
-	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/timezone"
 	"github.com/cgalvisleon/et/utility"
@@ -20,8 +19,6 @@ type Schema struct {
 	Description string    `json:"description"`
 	UseCore     bool      `json:"use_core"`
 	models      []*Model  `json:"-"`
-	isInit      bool      `json:"-"`
-	isCore      bool      `json:"-"`
 }
 
 /**
@@ -35,74 +32,19 @@ func NewSchema(db *DB, name string) *Schema {
 		return db.schemas[idx]
 	}
 
-	newSchema := func() *Schema {
-		now := timezone.NowTime()
-		result := &Schema{
-			Db:        db,
-			CreatedAt: now,
-			UpdateAt:  now,
-			Id:        utility.UUID(),
-			Name:      name,
-			UseCore:   db.UseCore,
-			models:    make([]*Model, 0),
-		}
-		err := result.init()
-		if err != nil {
-			return nil
-		}
-
-		db.addSchema(result)
-		return result
+	now := timezone.NowTime()
+	result := &Schema{
+		Db:        db,
+		CreatedAt: now,
+		UpdateAt:  now,
+		Id:        utility.UUID(),
+		Name:      name,
+		UseCore:   db.UseCore,
+		models:    make([]*Model, 0),
 	}
-
-	if !db.UseCore || !db.isInit {
-		return newSchema()
-	}
-
-	var result *Schema
-	err := db.Load("schema", name, &result)
-	if err != nil {
-		return newSchema()
-	}
-
-	if result == nil {
-		return newSchema()
-	}
-
-	result.Db = db
-	result.models = make([]*Model, 0)
-
 	db.addSchema(result)
+
 	return result
-}
-
-/**
-* loadSchema
-* @param db *DB, name string
-* @return *Schema, error
-**/
-func loadSchema(db *DB, name string) (*Schema, error) {
-	idx := slices.IndexFunc(db.schemas, func(e *Schema) bool { return e.Name == name })
-	if idx != -1 {
-		return db.schemas[idx], nil
-	}
-
-	var result *Schema
-	err := db.Load("schema", name, &result)
-	if err != nil {
-		return nil, err
-	}
-
-	if result != nil {
-		result.Db = db
-		result.models = make([]*Model, 0)
-
-		db.addSchema(result)
-	}
-
-	console.Logf("schema", `Schema %s loaded`, name)
-
-	return result, nil
 }
 
 /**
@@ -175,47 +117,6 @@ func (s *Schema) Describe() et.Json {
 	result["models"] = models
 
 	return result
-}
-
-/**
-* Save
-* @return error
-**/
-func (s *Schema) Save() error {
-	if !s.Db.UseCore || !s.Db.isInit {
-		return nil
-	}
-
-	definition, err := s.serialize()
-	if err != nil {
-		return err
-	}
-
-	err = s.Db.upsertModel("schema", s.Name, 1, definition)
-	if err != nil {
-		return err
-	}
-
-	s.isInit = true
-
-	return nil
-}
-
-/**
-* Init
-* @return error
-**/
-func (s *Schema) init() error {
-	if s.isInit {
-		return nil
-	}
-
-	err := s.Save()
-	if err != nil {
-		return nil
-	}
-
-	return nil
 }
 
 /**
