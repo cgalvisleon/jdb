@@ -2,7 +2,7 @@
 
 [![Go Version](https://img.shields.io/badge/Go-1.23+-blue.svg)](https://golang.org)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/Version-v0.1.19-orange.svg)](version.sh)
+[![Version](https://img.shields.io/badge/Version-v0.1.20-orange.svg)](version.sh)
 
 JDB es una librería de Go que proporciona una interfaz unificada y simplificada para trabajar con múltiples bases de datos. Ofrece soporte para PostgreSQL, MySQL, SQLite y Oracle con una API consistente y fácil de usar.
 
@@ -570,7 +570,7 @@ gofmt -w . && go run --race ./cmd/jdb -port 3600 -rpc 4600
 git add .
 git commit -m 'Set new version'
 git push -u origin
-git tag v0.1.19
+git tag v0.1.20
 git push origin --tags
 ```
 
