@@ -29,41 +29,16 @@ func publishError(model *Model, sql string, err error) {
 * publishInsert
 * @param model *Model, sql string
 **/
-func publishInsert(model *Model, sql string) {
+func publishCommand(command *Command) {
+	model := command.From
+	sql := command.Sql
+	commandName := command.Command.Str()
 	event.Publish(EVENT_MODEL_INSERT, et.Json{
 		"db":      model.Db.Name,
 		"schema":  model.Schema,
 		"model":   model.Name,
 		"sql":     sql,
-		"command": "insert",
-	})
-}
-
-/**
-* publishUpdate
-* @param model *Model, sql string
-**/
-func publishUpdate(model *Model, sql string) {
-	event.Publish(EVENT_MODEL_UPDATE, et.Json{
-		"db":      model.Db.Name,
-		"schema":  model.Schema,
-		"model":   model.Name,
-		"sql":     sql,
-		"command": "update",
-	})
-}
-
-/**
-* publishDelete
-* @param model *Model, sql string
-**/
-func publishDelete(model *Model, sql string) {
-	event.Publish(EVENT_MODEL_DELETE, et.Json{
-		"db":      model.Db.Name,
-		"schema":  model.Schema,
-		"model":   model.Name,
-		"sql":     sql,
-		"command": "delete",
+		"command": commandName,
 	})
 }
 

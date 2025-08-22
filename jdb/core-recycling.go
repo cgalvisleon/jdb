@@ -55,13 +55,21 @@ func (s *DB) upsertRecycling(tx *Tx, schema, name, sysId string) error {
 	}
 
 	now := timezone.Now()
+	data := et.Json{
+		"schema_name": schema,
+		"table_name":  name,
+		cf.SystemId:   sysId,
+	}
 	_, err := coreRecycling.
-		Upsert(et.Json{
-			cf.CreatedAt:  now,
-			cf.UpdatedAt:  now,
-			"schema_name": schema,
-			"table_name":  name,
-			cf.SystemId:   sysId,
+		Upsert(data).
+		BeforeInsert(func(tx *Tx, data et.Json) error {
+			data.Set(cf.CreatedAt, now)
+			data.Set(cf.UpdatedAt, now)
+			return nil
+		}).
+		BeforeUpdate(func(tx *Tx, data et.Json) error {
+			data.Set(cf.UpdatedAt, now)
+			return nil
 		}).
 		ExecTx(tx)
 	if err != nil {

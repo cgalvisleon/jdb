@@ -37,8 +37,6 @@ func (s *DB) createCore() error {
 		return err
 	}
 
-	s.isInit = true
-
 	return nil
 }
 

@@ -17,7 +17,6 @@ func (s *Command) updated() error {
 	model := s.From
 	results, err := s.Db.Command(s)
 	if err != nil {
-		publishError(model, s.Sql, err)
 		return err
 	}
 
@@ -31,19 +30,10 @@ func (s *Command) updated() error {
 		return err
 	}
 
-	if !s.isSync && model.UseCore {
-		publishUpdate(model, s.Sql)
-	}
-
 	for key, after := range s.ResultMap {
 		before := s.CurrentMap[key]
 		if before == nil {
 			before = et.Json{}
-		}
-
-		changed := before.IsChanged(after)
-		if !changed {
-			continue
 		}
 
 		for _, event := range model.eventsUpdate {

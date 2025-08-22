@@ -44,6 +44,11 @@ func (s *Command) ExecTx(tx *Tx) (et.Items, error) {
 			return et.Items{}, err
 		}
 	case Update:
+		where := s.getWheres()
+		err = s.current(where)
+		if err != nil {
+			return et.Items{}, err
+		}
 		err = s.updated()
 		if err != nil {
 			return et.Items{}, err
@@ -55,11 +60,6 @@ func (s *Command) ExecTx(tx *Tx) (et.Items, error) {
 		}
 	case Upsert:
 		err := s.upsert()
-		if err != nil {
-			return et.Items{}, err
-		}
-	case Delsert:
-		err := s.delsert()
 		if err != nil {
 			return et.Items{}, err
 		}

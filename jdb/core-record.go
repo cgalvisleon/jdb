@@ -51,16 +51,24 @@ func (s *DB) upsertRecord(tx *Tx, schema, name, sysid, option string) error {
 	}
 
 	now := timezone.Now()
+	data := et.Json{
+		"schema_name": schema,
+		"table_name":  name,
+		"option":      option,
+		"sync":        false,
+		cf.SystemId:   sysid,
+	}
 	_, err := coreRecords.
-		Upsert(et.Json{
-			cf.CreatedAt:  now,
-			cf.UpdatedAt:  now,
-			"schema_name": schema,
-			"table_name":  name,
-			"option":      option,
-			"sync":        false,
-			cf.SystemId:   sysid,
-			cf.Index:      reg.GenIndex(),
+		Upsert(data).
+		BeforeInsert(func(tx *Tx, data et.Json) error {
+			data.Set(cf.CreatedAt, now)
+			data.Set(cf.UpdatedAt, now)
+			data.Set(cf.Index, reg.GenIndex())
+			return nil
+		}).
+		BeforeUpdate(func(tx *Tx, data et.Json) error {
+			data.Set(cf.UpdatedAt, now)
+			return nil
 		}).
 		ExecTx(tx)
 	if err != nil {

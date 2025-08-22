@@ -11,11 +11,9 @@ func (s *Command) current(where et.Json) error {
 	}
 
 	model := s.From
-	columns := model.getColumnsByType(TpColumn)
-	mainWhere := s.getWheres()
+	columns := model.getColumnsAndAtributes()
 	ql := From(model)
 	ql.SetWheres(where)
-	ql.SetWheres(mainWhere)
 	ql.SetSelects(columns)
 	current, err := ql.
 		SetDebug(s.IsDebug).

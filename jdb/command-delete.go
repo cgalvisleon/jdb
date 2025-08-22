@@ -12,7 +12,6 @@ func (s *Command) deleted() error {
 	model := s.From
 	results, err := s.Db.Command(s)
 	if err != nil {
-		publishError(model, s.Sql, err)
 		return err
 	}
 
@@ -20,10 +19,6 @@ func (s *Command) deleted() error {
 	s.ResultMap, err = model.getMapResultByPk(s.Result.Result)
 	if err != nil {
 		return err
-	}
-
-	if !s.isSync && model.UseCore {
-		publishDelete(model, s.Sql)
 	}
 
 	for _, before := range s.ResultMap {

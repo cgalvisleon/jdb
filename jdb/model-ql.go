@@ -48,6 +48,28 @@ func (s *Model) Join(name string) *QlJoin {
 }
 
 /**
+* CountedTx
+* @return int, error
+**/
+func (s *Model) CountedTx(tx *Tx) (int, error) {
+	all, err := From(s).
+		CountedTx(tx)
+	if err != nil {
+		return 0, err
+	}
+
+	return all, nil
+}
+
+/**
+* Counted
+* @return int, error
+**/
+func (s *Model) Counted() (int, error) {
+	return s.CountedTx(nil)
+}
+
+/**
 * GetFrom
 * @return *QlFrom
 **/

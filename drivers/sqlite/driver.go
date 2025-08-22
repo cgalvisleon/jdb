@@ -5,7 +5,6 @@ import (
 	"errors"
 
 	"github.com/cgalvisleon/et/config"
-	"github.com/cgalvisleon/et/envar"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/jdb/jdb"
 	_ "modernc.org/sqlite"
@@ -83,7 +82,7 @@ func init() {
 		Name:     config.String("DB_NAME", "jdb"),
 		UserCore: true,
 		NodeId:   config.Int("NODE_ID", 1),
-		Debug:    envar.Bool("DEBUG"),
+		Debug:    config.Bool("DEBUG", false),
 		Params: &Connection{
 			Database: config.String("DB_NAME", "jdb"),
 		},

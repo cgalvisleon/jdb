@@ -2,6 +2,7 @@ package jdb
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"os"
 	"runtime"
@@ -85,6 +86,24 @@ func (s *JDB) Describe() et.Json {
 }
 
 /**
+* Load
+* @return *ConnectParams, error
+**/
+func load() (*ConnectParams, error) {
+	driverName := config.String("DB_DRIVER", "")
+	if driverName == "" {
+		return nil, errors.New(MSG_DRIVER_NOT_DEFINED)
+	}
+
+	params, ok := conn.Params[driverName]
+	if !ok {
+		return nil, errors.New(MSG_DRIVER_NOT_DEFINED)
+	}
+
+	return &params, nil
+}
+
+/**
 * ConnectTo
 * @param connection *ConnectParams
 * @return *DB, error
@@ -118,6 +137,8 @@ func ConnectTo(connection ConnectParams) (*DB, error) {
 		return nil, err
 	}
 
+	result.isInit = true
+
 	return result, nil
 }
 
@@ -126,13 +147,28 @@ func ConnectTo(connection ConnectParams) (*DB, error) {
 * @return *DB, error
 **/
 func Load() (*DB, error) {
-	driverName := config.String("DB_DRIVER", PostgresDriver)
-	if driverName == "" {
-		return nil, mistake.New(MSG_DRIVER_NOT_DEFINED)
+	params, err := load()
+	if err != nil {
+		return nil, err
 	}
 
-	params := conn.Params[driverName]
-	return ConnectTo(params)
+	return ConnectTo(*params)
+}
+
+/**
+* LoadTo
+* @param database string
+* @return *DB, error
+**/
+func LoadTo(database string) (*DB, error) {
+	params, err := load()
+	if err != nil {
+		return nil, err
+	}
+
+	params.Name = database
+
+	return ConnectTo(*params)
 }
 
 /**

@@ -16,7 +16,6 @@ const (
 	Update
 	Delete
 	Upsert
-	Delsert
 )
 
 func (s TypeCommand) Str() string {
@@ -29,8 +28,6 @@ func (s TypeCommand) Str() string {
 		return "delete"
 	case Upsert:
 		return "upsert"
-	case Delsert:
-		return "delsert"
 	default:
 		return "No command"
 	}
@@ -61,7 +58,6 @@ type Command struct {
 	afterInsert  []DataFunctionTx    `json:"-"`
 	afterUpdate  []DataFunctionTx    `json:"-"`
 	afterDelete  []DataFunctionTx    `json:"-"`
-	isSync       bool                `json:"-"`
 }
 
 /**

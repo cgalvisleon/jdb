@@ -52,15 +52,6 @@ func (s *Model) Upsert(data et.Json) *Command {
 }
 
 /**
-* Delsert
-* @param data []et.Json
-* @return *Command
-**/
-func (s *Model) Delsert(data et.Json) *Command {
-	return NewCommand(s, []et.Json{data}, Delsert)
-}
-
-/**
 * Bulk
 * @param data []et.Json
 * @return *Command

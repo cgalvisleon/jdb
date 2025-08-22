@@ -39,8 +39,8 @@ func (s TypeId) Str() string {
 }
 
 var (
-	ErrNotInserted = errors.New("not inserted")
-	ErrNotUpdated  = errors.New("not updated")
+	ErrRecordExists = errors.New("record exists")
+	ErrNotUpdated   = errors.New("not updated")
 )
 
 type Model struct {
@@ -119,7 +119,7 @@ func NewModel(schema *Schema, name string, version int) *Model {
 			Joins:              make(map[string]*Join),
 			Required:           make(map[string]bool),
 			Types:              et.Json{},
-			TpId:               TpULId,
+			TpId:               TpUUId,
 			eventEmiterChannel: make(chan event.Message),
 			eventsEmiter:       make(map[string]event.Handler),
 			eventsInsert:       make([]Event, 0),
@@ -474,7 +474,7 @@ func (s *Model) GetId(id string) string {
 	case TpULId:
 		return strs.Format(`%s:%s`, s.Name, reg.ULID())
 	default:
-		return strs.Format(`%s:%s`, s.Name, uuid.NewString())
+		return strs.Format(`%s`, uuid.NewString())
 	}
 }
 
@@ -711,14 +711,14 @@ func (s *Model) getColumns(names ...string) []*Column {
 }
 
 /**
-* getColumnsByType
+* getColumnsAndAtributes
 * @param tp TypeColumn
 * @return []*Column
 **/
-func (s *Model) getColumnsByType(tp TypeColumn) []*Column {
+func (s *Model) getColumnsAndAtributes() []*Column {
 	result := []*Column{}
 	for _, col := range s.Columns {
-		if col.TypeColumn != tp {
+		if map[TypeColumn]bool{TpColumn: true, TpAtribute: true}[col.TypeColumn] {
 			result = append(result, col)
 		}
 	}
@@ -816,28 +816,6 @@ func (s *Model) getField(name string, isCreate bool) *Field {
 	default:
 		return nil
 	}
-}
-
-/**
-* Counted
-* @return int, error
-**/
-func (s *Model) CountedTx(tx *Tx) (int, error) {
-	all, err := From(s).
-		CountedTx(tx)
-	if err != nil {
-		return 0, err
-	}
-
-	return all, nil
-}
-
-/**
-* Counted
-* @return int, error
-**/
-func (s *Model) Counted() (int, error) {
-	return s.CountedTx(nil)
 }
 
 /**
