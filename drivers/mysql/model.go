@@ -25,7 +25,7 @@ func (s *Mysql) existTable(db, name string) (bool, error) {
 		WHERE UPPER(table_schema) = UPPER($1)
 		AND UPPER(table_name) = UPPER($2));`
 
-	items, err := jdb.QueryTx(nil, s.db, sql, db, name)
+	items, err := jdb.Query(s.jdb, sql, db, name)
 	if err != nil {
 		return false, err
 	}
@@ -57,7 +57,7 @@ func (s *Mysql) LoadModel(model *jdb.Model) error {
 			console.Debug(sql)
 		}
 
-		_, err = jdb.Exec(s.db, sql)
+		err = jdb.Ddl(s.jdb, sql)
 		if err != nil {
 			return err
 		}
@@ -70,24 +70,17 @@ func (s *Mysql) LoadModel(model *jdb.Model) error {
 	}
 
 	sql := `
-	SELECT
-	a.attname AS column_name, 
-	t.typname AS data_type,
-	CASE 
-		WHEN a.attlen > 0 THEN a.attlen
-		WHEN a.attlen = -1 AND a.atttypmod > 0 THEN a.atttypmod - 4
-		ELSE NULL
-	END AS size
-	FROM pg_catalog.pg_attribute a
-	JOIN pg_catalog.pg_class c ON a.attrelid = c.oid
-	JOIN pg_catalog.pg_namespace n ON c.relnamespace = n.oid
-	JOIN pg_catalog.pg_type t ON a.atttypid = t.oid
-	WHERE n.nspname = $1
-	AND c.relname = $2
-	AND a.attnum > 0
-	AND NOT a.attisdropped;`
+	SELECT 
+	COLUMN_NAME,
+  DATA_TYPE,
+  CHARACTER_MAXIMUM_LENGTH AS max_length,
+  NUMERIC_PRECISION,
+  NUMERIC_SCALE
+	FROM INFORMATION_SCHEMA.COLUMNS
+	WHERE TABLE_SCHEMA = $1
+	AND TABLE_NAME = $2;`
 
-	items, err := jdb.Query(s.db, sql, model.Schema, model.Name)
+	items, err := jdb.Query(s.jdb, sql, s.jdb.Name, table)
 	if err != nil {
 		return err
 	}
@@ -95,7 +88,7 @@ func (s *Mysql) LoadModel(model *jdb.Model) error {
 	for _, item := range items.Result {
 		name := item.Str("column_name")
 		dataType := item.Str("data_type")
-		size := item.Int("size")
+		size := item.Int("max_length")
 		typeData := s.strToTypeData(dataType, size)
 		model.DefineColumn(name, typeData)
 	}
@@ -114,7 +107,7 @@ func (s *Mysql) DropModel(model *jdb.Model) error {
 		console.Debug(sql)
 	}
 
-	_, err := jdb.Query(s.db, sql)
+	_, err := jdb.Query(s.jdb, sql)
 	if err != nil {
 		return err
 	}
@@ -133,7 +126,7 @@ func (s *Mysql) EmptyModel(model *jdb.Model) error {
 		console.Debug(sql)
 	}
 
-	_, err := jdb.Query(s.db, sql)
+	_, err := jdb.Query(s.jdb, sql)
 	if err != nil {
 		return err
 	}
@@ -158,7 +151,7 @@ func (s *Mysql) MutateModel(model *jdb.Model) error {
 		console.Debug(sql)
 	}
 
-	_, err := jdb.Query(s.db, sql)
+	_, err := jdb.Query(s.jdb, sql)
 	if err != nil {
 		return err
 	}

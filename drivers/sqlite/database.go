@@ -37,30 +37,13 @@ func (s *SqlLite) Connect(connection jdb.ConnectParams) (*sql.DB, error) {
 		return nil, mistake.New("database is required")
 	}
 
-	var err error
-	s.db, err = s.connectTo(database)
+	db, err := s.connectTo(database)
 	if err != nil {
 		return nil, err
 	}
 
-	s.connected = s.db != nil
+	s.connected = db != nil
 	console.Logf(s.name, `Connected to %s`, database)
 
-	return s.db, nil
-}
-
-/**
-* Disconnect
-* @return error
-**/
-func (s *SqlLite) Disconnect() error {
-	if !s.connected {
-		return nil
-	}
-
-	if s.db != nil {
-		s.db.Close()
-	}
-
-	return nil
+	return db, nil
 }

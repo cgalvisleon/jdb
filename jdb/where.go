@@ -2,6 +2,8 @@ package jdb
 
 import (
 	"fmt"
+	"slices"
+	"strings"
 
 	"github.com/cgalvisleon/et/et"
 )
@@ -673,6 +675,52 @@ func (s *QlWhere) NotNull() *QlWhere {
 	}
 
 	condition.Operator = NotNull
+
+	return s
+}
+
+/**
+* SetWheres
+* @param wheres et.Json
+* @return *QlWhere
+**/
+func (s *QlWhere) SetWheres(wheres et.Json) *QlWhere {
+	and := func(vals []et.Json) {
+		for _, val := range vals {
+			for key := range val {
+				s.And(key).setValue(val.Json(key))
+			}
+		}
+	}
+
+	or := func(vals []et.Json) {
+		for _, val := range vals {
+			for key := range val {
+				s.Or(key).setValue(val.Json(key))
+			}
+		}
+	}
+
+	for key := range wheres {
+		key = strings.ToLower(key)
+		if slices.Contains([]string{"and", "or"}, key) {
+			continue
+		}
+
+		val := wheres.Json(key)
+		s.Where(key).setValue(val)
+	}
+
+	for key := range wheres {
+		switch strings.ToLower(key) {
+		case "and":
+			vals := wheres.ArrayJson(key)
+			and(vals)
+		case "or":
+			vals := wheres.ArrayJson(key)
+			or(vals)
+		}
+	}
 
 	return s
 }

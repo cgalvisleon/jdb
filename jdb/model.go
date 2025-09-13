@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"regexp"
 	"slices"
 	"time"
 
@@ -13,7 +14,6 @@ import (
 	"github.com/cgalvisleon/et/reg"
 	"github.com/cgalvisleon/et/strs"
 	"github.com/cgalvisleon/et/timezone"
-	"github.com/google/uuid"
 )
 
 type TypeId int
@@ -75,9 +75,12 @@ type Model struct {
 	FullTextField      *Column                  `json:"-"`
 	ProjectField       *Column                  `json:"-"`
 	Version            int                      `json:"version"`
-	eventsInsert       []Event                  `json:"-"`
-	eventsUpdate       []Event                  `json:"-"`
-	eventsDelete       []Event                  `json:"-"`
+	beforeInsert       []DataFunctionTx         `json:"-"`
+	beforeUpdate       []DataFunctionTx         `json:"-"`
+	beforeDelete       []DataFunctionTx         `json:"-"`
+	afterInsert        []DataFunctionTx         `json:"-"`
+	afterUpdate        []DataFunctionTx         `json:"-"`
+	afterDelete        []DataFunctionTx         `json:"-"`
 	eventEmiterChannel chan event.Message       `json:"-"`
 	eventsEmiter       map[string]event.Handler `json:"-"`
 	IsDebug            bool                     `json:"-"`
@@ -105,7 +108,7 @@ func NewModel(schema *Schema, name string, version int) *Model {
 			Schema:             schema.Name,
 			CreatedAt:          now,
 			UpdateAt:           now,
-			Id:                 reg.GenUlId("model"),
+			Id:                 reg.GetULID("model"),
 			Name:               name,
 			UseCore:            schema.UseCore,
 			Definitions:        et.Json{},
@@ -120,17 +123,20 @@ func NewModel(schema *Schema, name string, version int) *Model {
 			Required:           make(map[string]bool),
 			Types:              et.Json{},
 			TpId:               TpUUId,
+			beforeInsert:       []DataFunctionTx{},
+			beforeUpdate:       []DataFunctionTx{},
+			beforeDelete:       []DataFunctionTx{},
+			afterInsert:        []DataFunctionTx{},
+			afterUpdate:        []DataFunctionTx{},
+			afterDelete:        []DataFunctionTx{},
 			eventEmiterChannel: make(chan event.Message),
 			eventsEmiter:       make(map[string]event.Handler),
-			eventsInsert:       make([]Event, 0),
-			eventsUpdate:       make([]Event, 0),
-			eventsDelete:       make([]Event, 0),
 			Version:            version,
 			IsDebug:            schema.Db.IsDebug,
 		}
-		result.DefineEvent(EventInsert, eventInsertDefault)
-		result.DefineEvent(EventUpdate, eventUpdateDefault)
-		result.DefineEvent(EventDelete, eventDeleteDefault)
+		result.AfterInsert(result.afterInsertDefault)
+		result.AfterUpdate(result.afterUpdateDefault)
+		result.AfterDelete(result.afterDeleteDefault)
 
 		schema.addModel(result)
 		return result
@@ -181,13 +187,16 @@ func loadModel(schema *Schema, model *Model) (*Model, error) {
 	/* Event */
 	model.eventEmiterChannel = make(chan event.Message)
 	model.eventsEmiter = make(map[string]event.Handler)
-	model.eventsInsert = make([]Event, 0)
-	model.eventsUpdate = make([]Event, 0)
-	model.eventsDelete = make([]Event, 0)
+	model.afterInsert = make([]DataFunctionTx, 0)
+	model.afterUpdate = make([]DataFunctionTx, 0)
+	model.afterDelete = make([]DataFunctionTx, 0)
+	model.beforeInsert = make([]DataFunctionTx, 0)
+	model.beforeUpdate = make([]DataFunctionTx, 0)
+	model.beforeDelete = make([]DataFunctionTx, 0)
+	model.AfterInsert(model.afterInsertDefault)
+	model.AfterUpdate(model.afterUpdateDefault)
+	model.AfterDelete(model.afterDeleteDefault)
 	model.IsDebug = schema.Db.IsDebug
-	model.DefineEvent(EventInsert, eventInsertDefault)
-	model.DefineEvent(EventUpdate, eventUpdateDefault)
-	model.DefineEvent(EventDelete, eventDeleteDefault)
 	/* Define columns */
 	for name := range model.Definitions {
 		definition := model.Definitions.Json(name)
@@ -219,6 +228,31 @@ func LoadModel(db *DB, name string) (*Model, error) {
 	if result != nil {
 		schema := NewSchema(db, result.Schema)
 		return loadModel(schema, result)
+	}
+
+	return result, nil
+}
+
+/**
+* Collection
+* @param db *DB, name string
+* @return *Model, error
+**/
+func Collection(db *DB, name string) (*Model, error) {
+	result, err := LoadModel(db, name)
+	if err != nil {
+		return nil, err
+	}
+
+	if result != nil {
+		return result, nil
+	}
+
+	schema := NewSchema(db, "collections")
+	result = NewModel(schema, name, 1)
+	result.DefineProjectModel()
+	if err := result.Init(); err != nil {
+		return nil, err
 	}
 
 	return result, nil
@@ -474,7 +508,7 @@ func (s *Model) GetId(id string) string {
 	case TpULId:
 		return strs.Format(`%s:%s`, s.Name, reg.ULID())
 	default:
-		return strs.Format(`%s`, uuid.NewString())
+		return strs.Format(`%s`, reg.UUID())
 	}
 }
 
@@ -532,7 +566,6 @@ func (s *Model) getMapByPk(data []et.Json) (map[string]et.Json, error) {
 func (s *Model) getMapResultByPk(data []et.Json) (map[string]et.Json, error) {
 	result := map[string]et.Json{}
 	for _, item := range data {
-		item = item.Json("result")
 		key, err := s.getKeyByPk(item)
 		if err != nil {
 			return nil, err
@@ -744,11 +777,11 @@ func (s *Model) getColumnsArray(names ...string) []string {
 
 /**
 * getField
-* @param name string, isCreate bool
+* @param name string
 * @return *Field
 **/
 func (s *Model) getField(name string, isCreate bool) *Field {
-	getField := func(name string, isCreate bool) *Field {
+	getField := func(name string) *Field {
 		col := s.getColumn(name)
 		if col != nil {
 			return col.GetField()
@@ -771,7 +804,13 @@ func (s *Model) getField(name string, isCreate bool) *Field {
 		return result.GetField()
 	}
 
-	list := strs.Split(name, ":")
+	result := getField(name)
+	if result != nil {
+		return result
+	}
+
+	re := regexp.MustCompile(`(?i)\s*AS\s*`)
+	list := re.Split(name, -1)
 	alias := ""
 	if len(list) > 1 {
 		name = list[0]
@@ -781,7 +820,7 @@ func (s *Model) getField(name string, isCreate bool) *Field {
 	list = strs.Split(name, ".")
 	switch len(list) {
 	case 1:
-		result := getField(list[0], isCreate)
+		result := getField(list[0])
 		if result != nil && alias != "" {
 			result.Alias = alias
 		}
@@ -792,7 +831,7 @@ func (s *Model) getField(name string, isCreate bool) *Field {
 			return nil
 		}
 
-		result := getField(list[1], isCreate)
+		result := getField(list[1])
 		if result != nil && alias != "" {
 			result.Alias = alias
 		}
@@ -807,7 +846,7 @@ func (s *Model) getField(name string, isCreate bool) *Field {
 			return nil
 		}
 
-		result := getField(list[2], isCreate)
+		result := getField(list[2])
 		if result != nil && alias != "" {
 			result.Alias = alias
 		}

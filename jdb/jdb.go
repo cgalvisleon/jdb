@@ -3,6 +3,7 @@ package jdb
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"os"
 	"runtime"
@@ -16,11 +17,11 @@ import (
 )
 
 type JDB struct {
-	Os       string                   `json:"os"`
-	HostName string                   `json:"host_name"`
-	Drivers  map[string]func() Driver `json:"-"`
-	Params   map[string]ConnectParams `json:"-"`
-	DBS      []*DB                    `json:"-"`
+	Os       string                         `json:"os"`
+	HostName string                         `json:"host_name"`
+	Drivers  map[string]func(db *DB) Driver `json:"-"`
+	Params   map[string]ConnectParams       `json:"-"`
+	DBS      []*DB                          `json:"-"`
 }
 
 var conn *JDB
@@ -34,7 +35,7 @@ func init() {
 	conn = &JDB{
 		Os:       runtime.GOOS,
 		HostName: hostName,
-		Drivers:  map[string]func() Driver{},
+		Drivers:  map[string]func(db *DB) Driver{},
 		Params:   map[string]ConnectParams{},
 		DBS:      make([]*DB, 0),
 	}
@@ -387,22 +388,6 @@ func describe(kind, name string) (et.Json, error) {
 }
 
 /**
-* queryTx
-* @param tx *Tx, params et.Json
-* @return interface{}, error
-**/
-func queryTx(tx *Tx, params et.Json) (interface{}, error) {
-	from := params.Str("from")
-	model := GetModel(from)
-	if model == nil {
-		return nil, mistake.Newf(MSG_MODEL_NOT_FOUND, from)
-	}
-
-	return From(model).
-		queryTx(tx, params)
-}
-
-/**
 * commandsTx
 * @param tx *Tx, params et.Json
 * @return interface{}, error
@@ -466,7 +451,7 @@ func commandsTx(tx *Tx, params et.Json) (et.Items, error) {
 		if param["delete"] != nil {
 			where := param.Json("where")
 			items, err := model.
-				delete().
+				Delete().
 				SetWheres(where).
 				setDebug(debug).
 				ExecTx(tx)
@@ -537,8 +522,21 @@ func ModelDefine(w http.ResponseWriter, r *http.Request) {
 * @param r *http.Request
 **/
 func ModelQuery(w http.ResponseWriter, r *http.Request) {
-	params, _ := response.GetBody(r)
-	result, err := queryTx(nil, params)
+	body, err := response.GetBody(r)
+	if err != nil {
+		response.HTTPError(w, r, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	from := body.Str("from")
+	model := GetModel(from)
+	if model == nil {
+		response.HTTPError(w, r, http.StatusBadRequest, fmt.Errorf(MSG_MODEL_NOT_FOUND, from).Error())
+		return
+	}
+
+	result, err := From(model).
+		queryTx(nil, body)
 	if err != nil {
 		response.HTTPError(w, r, http.StatusBadRequest, err.Error())
 		return

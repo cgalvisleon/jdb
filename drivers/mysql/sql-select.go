@@ -242,7 +242,7 @@ func (s *Mysql) Select(ql *jdb.Ql) (et.Items, error) {
 	}
 
 	if ql.TypeSelect == jdb.Source {
-		result, err := jdb.DataTx(ql.Tx(), s.db, "result", ql.Sql)
+		result, err := jdb.ResultTx(s.jdb, ql.Tx(), ql.Sql)
 		if err != nil {
 			return et.Items{}, err
 		}
@@ -250,7 +250,7 @@ func (s *Mysql) Select(ql *jdb.Ql) (et.Items, error) {
 		return result, nil
 	}
 
-	result, err := jdb.QueryTx(ql.Tx(), s.db, ql.Sql)
+	result, err := jdb.QueryTx(s.jdb, ql.Tx(), ql.Sql)
 	if err != nil {
 		return et.Items{}, err
 	}

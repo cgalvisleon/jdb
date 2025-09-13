@@ -132,7 +132,8 @@ func (s *DB) deleteRecycling(tx *Tx, schema, name, sysId string) error {
 	}
 
 	item, err := coreRecycling.
-		Delete("schema_name").Eq(schema).
+		Delete().
+		Where("schema_name").Eq(schema).
 		And("table_name").Eq(name).
 		And(cf.SystemId).Eq(sysId).
 		ExecTx(tx)

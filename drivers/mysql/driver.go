@@ -1,7 +1,6 @@
 package mysql
 
 import (
-	"database/sql"
 	"errors"
 
 	"github.com/cgalvisleon/et/config"
@@ -84,15 +83,16 @@ func (s *Connection) Validate() error {
 }
 
 type Mysql struct {
-	db         *sql.DB
+	jdb        *jdb.DB
 	name       string
 	version    int
 	connected  bool
 	connection Connection
 }
 
-func newDriver() jdb.Driver {
+func newDriver(db *jdb.DB) jdb.Driver {
 	return &Mysql{
+		jdb:       db,
 		name:      jdb.MysqlDriver,
 		connected: false,
 		connection: Connection{

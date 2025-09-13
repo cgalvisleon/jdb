@@ -101,7 +101,8 @@ func (s *DB) deleteModel(kind, name string) error {
 	}
 
 	_, err := coreModel.
-		Delete("kind").Eq(kind).
+		Delete().
+		Where("kind").Eq(kind).
 		And("name").Eq(name).
 		Exec()
 	if err != nil {

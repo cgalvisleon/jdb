@@ -25,7 +25,7 @@ func (s *SqlLite) Exists(ql *jdb.Ql) (bool, error) {
 		console.Debug(ql.Sql)
 	}
 
-	item, err := jdb.Query(s.db, ql.Sql)
+	item, err := jdb.Query(s.jdb, ql.Sql)
 	if err != nil {
 		return false, err
 	}

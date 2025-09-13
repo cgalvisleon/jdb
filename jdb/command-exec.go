@@ -99,3 +99,51 @@ func (s *Command) Exec() (et.Items, error) {
 func (s *Command) One() (et.Item, error) {
 	return s.OneTx(nil)
 }
+
+/**
+* DoTx
+* @param tx *Tx
+* @return map[string]interface{}, error
+**/
+func (s *Command) DoTx(tx *Tx, wheres et.Json) (map[string]interface{}, error) {
+	result, err := s.
+		SetWhere(wheres).
+		ExecTx(tx)
+	if err != nil {
+		return map[string]interface{}{}, err
+	}
+
+	return result.ToMap(), nil
+}
+
+/**
+* Do
+* @return map[string]interface{}, error
+**/
+func (s *Command) Do(wheres et.Json) (map[string]interface{}, error) {
+	return s.DoTx(nil, wheres)
+}
+
+/**
+* DoOneTx
+* @param tx *Tx
+* @return map[string]interface{}, error
+**/
+func (s *Command) DoOneTx(tx *Tx, wheres et.Json) (map[string]interface{}, error) {
+	result, err := s.
+		SetWhere(wheres).
+		ExecTx(tx)
+	if err != nil {
+		return map[string]interface{}{}, err
+	}
+
+	return result.First().ToMap(), nil
+}
+
+/**
+* DoOne
+* @return map[string]interface{}, error
+**/
+func (s *Command) DoOne(wheres et.Json) (map[string]interface{}, error) {
+	return s.DoOneTx(nil, wheres)
+}

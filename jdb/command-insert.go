@@ -1,7 +1,6 @@
 package jdb
 
 import (
-	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/mistake"
 )
 
@@ -31,17 +30,14 @@ func (s *Command) inserted() error {
 	}
 
 	for _, after := range s.ResultMap {
-		for _, event := range model.eventsInsert {
-			err := event(s.tx, model, et.Json{}, after)
+		for _, fn := range model.afterInsert {
+			err := fn(s.tx, after)
 			if err != nil {
 				return err
 			}
 		}
-	}
-
-	for _, data := range s.Data {
 		for _, fn := range s.afterInsert {
-			err := fn(s.tx, data)
+			err := fn(s.tx, after)
 			if err != nil {
 				return err
 			}

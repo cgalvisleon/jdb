@@ -27,7 +27,7 @@ func (s *SqlLite) Command(command *jdb.Command) (et.Items, error) {
 		console.Debug(command.Sql)
 	}
 
-	result, err := jdb.QueryTx(command.Tx(), s.db, command.Sql)
+	result, err := jdb.Cmd(s.jdb, command.Tx(), command.Sql)
 	if err != nil {
 		return et.Items{}, err
 	}

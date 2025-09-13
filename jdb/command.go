@@ -281,3 +281,25 @@ func (s *Command) SetIsDebug(isDebug bool) *Command {
 
 	return s
 }
+
+/**
+* Debug
+* @param v bool
+* @return *Command
+**/
+func (s *Command) Debug() *Command {
+	s.QlWhere.Debug()
+
+	return s
+}
+
+/**
+* setDebug
+* @param debug bool
+* @return *Command
+**/
+func (s *Command) setDebug(debug bool) *Command {
+	s.QlWhere.setDebug(debug)
+
+	return s
+}

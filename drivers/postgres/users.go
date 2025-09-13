@@ -15,35 +15,35 @@ import (
 func (s *Postgres) GrantPrivileges(username, database string) error {
 	/* Grant privileges */
 	grantDatabase := fmt.Sprintf("GRANT CONNECT ON DATABASE %s TO %s;", database, username)
-	_, err := jdb.Exec(s.db, grantDatabase)
+	err := jdb.Ddl(s.jdb, grantDatabase)
 	if err != nil {
 		return err
 	}
 
 	/* Grant schema */
 	grantSchema := fmt.Sprintf("GRANT USAGE ON SCHEMA public TO %s;", username)
-	_, err = jdb.Exec(s.db, grantSchema)
+	err = jdb.Ddl(s.jdb, grantSchema)
 	if err != nil {
 		return err
 	}
 
 	/* Grant tables */
 	grantTables := fmt.Sprintf("GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO %s;", username)
-	_, err = jdb.Exec(s.db, grantTables)
+	err = jdb.Ddl(s.jdb, grantTables)
 	if err != nil {
 		return err
 	}
 
 	/* Revoke drop */
 	revokeDrop := fmt.Sprintf("ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE ALL ON TABLES FROM %s;", username)
-	_, err = jdb.Exec(s.db, revokeDrop)
+	err = jdb.Ddl(s.jdb, revokeDrop)
 	if err != nil {
 		return err
 	}
 
 	/* Grant future tables */
 	grantFutureTables := fmt.Sprintf("ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO %s;", username)
-	_, err = jdb.Exec(s.db, grantFutureTables)
+	err = jdb.Ddl(s.jdb, grantFutureTables)
 	if err != nil {
 		return err
 	}
@@ -62,13 +62,13 @@ func (s *Postgres) CreateUser(username, password, confirmation string) error {
 	}
 
 	query := fmt.Sprintf("CREATE ROLE %s WITH LOGIN PASSWORD '%s';", username, password)
-	_, err := jdb.Exec(s.db, query)
+	err := jdb.Ddl(s.jdb, query)
 	if err != nil {
 		return err
 	}
 
 	grantPrivilegesQuery := fmt.Sprintf(`GRANT ALL PRIVILEGES ON DATABASE %s;`, username)
-	_, err = jdb.Exec(s.db, grantPrivilegesQuery)
+	err = jdb.Ddl(s.jdb, grantPrivilegesQuery)
 	if err != nil {
 		return err
 	}
@@ -87,7 +87,7 @@ func (s *Postgres) ChangePassword(username, password, confirmation string) error
 	}
 
 	query := fmt.Sprintf("ALTER ROLE %s WITH PASSWORD '%s';", username, password)
-	_, err := jdb.Exec(s.db, query)
+	err := jdb.Ddl(s.jdb, query)
 	if err != nil {
 		return err
 	}
@@ -102,7 +102,7 @@ func (s *Postgres) ChangePassword(username, password, confirmation string) error
 **/
 func (s *Postgres) DeleteUser(username string) error {
 	query := fmt.Sprintf("DROP ROLE IF EXISTS %s;", username)
-	_, err := jdb.Exec(s.db, query)
+	err := jdb.Ddl(s.jdb, query)
 	if err != nil {
 		return err
 	}

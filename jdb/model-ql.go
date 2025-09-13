@@ -1,5 +1,7 @@
 package jdb
 
+import "github.com/cgalvisleon/et/et"
+
 /**
 * Select
 * @param fields ...interface{}
@@ -75,4 +77,27 @@ func (s *Model) Counted() (int, error) {
 **/
 func (s *Model) GetFrom() *QlFrom {
 	return &QlFrom{Model: s}
+}
+
+/**
+* QTx
+* @param params et.Json
+* @return et.Json, error
+**/
+func (s *Model) QTx(tx *Tx, params et.Json) (map[string]interface{}, error) {
+	result, err := From(s).QueryTx(tx, params)
+	if err != nil {
+		return map[string]interface{}{}, err
+	}
+
+	return result.ToMap(), nil
+}
+
+/**
+* Q
+* @param params et.Json
+* @return map[string]interface{}, error
+**/
+func (s *Model) Q(params et.Json) (map[string]interface{}, error) {
+	return s.QTx(nil, params)
 }

@@ -1155,21 +1155,11 @@ func (s *Model) DefineConcurrent(name string, fn DataFunction) *Model {
 }
 
 /**
-* DefineEvent
-* @param tp TypeEvent, event Event
-* @return Model
+* setFields
+* @param fields et.Json
 **/
-func (s *Model) DefineEvent(tp TypeEvent, event Event) *Model {
-	switch tp {
-	case EventInsert:
-		s.eventsInsert = append(s.eventsInsert, event)
-	case EventUpdate:
-		s.eventsUpdate = append(s.eventsUpdate, event)
-	case EventDelete:
-		s.eventsDelete = append(s.eventsDelete, event)
-	}
-
-	return s
+func (s *Model) setFields(fields et.Json) {
+	s.defineFields(fields)
 }
 
 /**

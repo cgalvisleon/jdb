@@ -2,10 +2,9 @@ package postgres
 
 import (
 	"database/sql"
+	"fmt"
 
 	"github.com/cgalvisleon/et/console"
-	"github.com/cgalvisleon/et/mistake"
-	"github.com/cgalvisleon/et/msg"
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
@@ -29,19 +28,22 @@ func (s *Postgres) connectTo(chain string) (*sql.DB, error) {
 
 /**
 * ExistDatabase
-* @param name string
+* @param db *DB, name string
 * @return bool, error
 **/
-func (s *Postgres) ExistDatabase(name string) (bool, error) {
+func (s *Postgres) ExistDatabase(db *sql.DB, name string) (bool, error) {
 	sql := `
 	SELECT EXISTS(
 	SELECT 1
 	FROM pg_database
 	WHERE UPPER(datname) = UPPER($1));`
-	items, err := jdb.Query(s.db, sql, name)
+	rows, err := db.Query(sql, name)
 	if err != nil {
 		return false, err
 	}
+	defer rows.Close()
+
+	items := jdb.RowsToItems(rows)
 
 	if items.Count == 0 {
 		return false, nil
@@ -55,15 +57,11 @@ func (s *Postgres) ExistDatabase(name string) (bool, error) {
 
 /**
 * CreateDatabase
-* @param name string
+* @param db *sql.DB, name string
 * @return error
 **/
-func (s *Postgres) CreateDatabase(name string) error {
-	if s.db == nil {
-		return mistake.Newf(msg.NOT_DRIVER_DB)
-	}
-
-	exist, err := s.ExistDatabase(name)
+func (s *Postgres) CreateDatabase(db *sql.DB, name string) error {
+	exist, err := s.ExistDatabase(db, name)
 	if err != nil {
 		return err
 	}
@@ -72,9 +70,8 @@ func (s *Postgres) CreateDatabase(name string) error {
 		return nil
 	}
 
-	sql := jdb.SQLDDL(`
-	CREATE DATABASE $1;`, name)
-	_, err = jdb.Exec(s.db, sql)
+	sql := `CREATE DATABASE $1;`
+	_, err = db.Exec(sql, name)
 	if err != nil {
 		return err
 	}
@@ -86,15 +83,11 @@ func (s *Postgres) CreateDatabase(name string) error {
 
 /**
 * DropDatabase
-* @param name string
+* @param db *sql.DB, name string
 * @return error
 **/
-func (s *Postgres) DropDatabase(name string) error {
-	if s.db == nil {
-		return mistake.Newf(msg.NOT_DRIVER_DB)
-	}
-
-	exist, err := s.ExistDatabase(name)
+func (s *Postgres) DropDatabase(db *sql.DB, name string) error {
+	exist, err := s.ExistDatabase(db, name)
 	if err != nil {
 		return err
 	}
@@ -103,8 +96,8 @@ func (s *Postgres) DropDatabase(name string) error {
 		return nil
 	}
 
-	sql := jdb.SQLDDL(`DROP DATABASE $1`, name)
-	_, err = jdb.Exec(s.db, sql, name)
+	sql := `DROP DATABASE $1;`
+	_, err = db.Exec(sql, name)
 	if err != nil {
 		return err
 	}
@@ -117,28 +110,32 @@ func (s *Postgres) DropDatabase(name string) error {
 /**
 * Connect
 * @param connection jdb.ConnectParams
-* @return error
+* @return *sql.DB, error
 **/
 func (s *Postgres) Connect(connection jdb.ConnectParams) (*sql.DB, error) {
+	if s.jdb == nil {
+		return nil, fmt.Errorf(MSG_JDB_NOT_DEFINED)
+	}
+
 	defaultChain, err := s.connection.defaultChain()
 	if err != nil {
 		return nil, err
 	}
 
-	s.db, err = s.connectTo(defaultChain)
+	db, err := s.connectTo(defaultChain)
 	if err != nil {
 		return nil, err
 	}
 
 	params := connection.Params.(*Connection)
 	params.Database = connection.Name
-	err = s.CreateDatabase(params.Database)
+	err = s.CreateDatabase(db, params.Database)
 	if err != nil {
 		return nil, err
 	}
 
-	if s.db != nil {
-		err := s.db.Close()
+	if db != nil {
+		err := db.Close()
 		if err != nil {
 			return nil, err
 		}
@@ -149,29 +146,13 @@ func (s *Postgres) Connect(connection jdb.ConnectParams) (*sql.DB, error) {
 		return nil, err
 	}
 
-	s.db, err = s.connectTo(chain)
+	db, err = s.connectTo(chain)
 	if err != nil {
 		return nil, err
 	}
 
-	s.connected = s.db != nil
+	s.connected = db != nil
 	console.Logf(s.name, `Connected to %s:%s`, params.Host, params.Database)
 
-	return s.db, nil
-}
-
-/**
-* Disconnect
-* @return error
-**/
-func (s *Postgres) Disconnect() error {
-	if !s.connected {
-		return nil
-	}
-
-	if s.db != nil {
-		s.db.Close()
-	}
-
-	return nil
+	return db, nil
 }

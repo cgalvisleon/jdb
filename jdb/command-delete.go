@@ -1,9 +1,5 @@
 package jdb
 
-import (
-	"github.com/cgalvisleon/et/et"
-)
-
 func (s *Command) deleted() error {
 	if err := s.prepare(); err != nil {
 		return err
@@ -22,8 +18,8 @@ func (s *Command) deleted() error {
 	}
 
 	for _, before := range s.ResultMap {
-		for _, event := range model.eventsDelete {
-			err := event(s.tx, model, before, et.Json{})
+		for _, fn := range model.afterDelete {
+			err := fn(s.tx, before)
 			if err != nil {
 				return err
 			}

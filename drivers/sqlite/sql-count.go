@@ -22,7 +22,7 @@ func (s *SqlLite) Count(ql *jdb.Ql) (int, error) {
 		console.Debug(ql.Sql)
 	}
 
-	result, err := jdb.Query(s.db, ql.Sql)
+	result, err := jdb.Query(s.jdb, ql.Sql)
 	if err != nil {
 		return 0, err
 	}

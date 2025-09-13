@@ -35,18 +35,14 @@ func (s *Command) updated() error {
 		if before == nil {
 			before = et.Json{}
 		}
-
-		for _, event := range model.eventsUpdate {
-			err := event(s.tx, model, before, after)
+		for _, fn := range model.afterUpdate {
+			err := fn(s.tx, after)
 			if err != nil {
 				return err
 			}
 		}
-	}
-
-	for _, data := range s.Data {
 		for _, fn := range s.afterUpdate {
-			err := fn(s.tx, data)
+			err := fn(s.tx, after)
 			if err != nil {
 				return err
 			}

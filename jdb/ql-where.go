@@ -1,9 +1,6 @@
 package jdb
 
 import (
-	"slices"
-	"strings"
-
 	"github.com/cgalvisleon/et/et"
 )
 
@@ -199,42 +196,7 @@ func (s *Ql) SetDebug(debug bool) *Ql {
 * @return *Ql
 **/
 func (s *Ql) SetWheres(wheres et.Json) *Ql {
-	and := func(vals []et.Json) {
-		for _, val := range vals {
-			for key := range val {
-				s.And(key).setValue(val.Json(key))
-			}
-		}
-	}
-
-	or := func(vals []et.Json) {
-		for _, val := range vals {
-			for key := range val {
-				s.Or(key).setValue(val.Json(key))
-			}
-		}
-	}
-
-	for key := range wheres {
-		key = strings.ToLower(key)
-		if slices.Contains([]string{"and", "or"}, key) {
-			continue
-		}
-
-		val := wheres.Json(key)
-		s.Where(key).setValue(val)
-	}
-
-	for key := range wheres {
-		switch strings.ToLower(key) {
-		case "and":
-			vals := wheres.ArrayJson(key)
-			and(vals)
-		case "or":
-			vals := wheres.ArrayJson(key)
-			or(vals)
-		}
-	}
+	s.QlWhere.SetWheres(wheres)
 
 	return s
 }

@@ -1,5 +1,7 @@
 package jdb
 
+import "github.com/cgalvisleon/et/et"
+
 /**
 * Where
 * @param field string
@@ -165,23 +167,13 @@ func (s *Command) NotNull() *Command {
 }
 
 /**
-* Debug
-* @param v bool
-* @return *Command
+* SetWhere
+* @param tx *Tx
+* @param params et.Json
+* @return map[string]interface{}, error
 **/
-func (s *Command) Debug() *Command {
-	s.QlWhere.Debug()
-
-	return s
-}
-
-/**
-* setDebug
-* @param debug bool
-* @return *Command
-**/
-func (s *Command) setDebug(debug bool) *Command {
-	s.QlWhere.setDebug(debug)
+func (s *Command) SetWhere(wheres et.Json) *Command {
+	s.QlWhere.SetWheres(wheres)
 
 	return s
 }

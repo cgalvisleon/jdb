@@ -171,24 +171,6 @@ func (s *Ql) Counted() (int, error) {
 }
 
 /**
-* QueryTx
-* @param tx *Tx, params et.Json
-* @return et.Json, error
-**/
-func (s *Ql) QueryTx(tx *Tx, params et.Json) (et.Json, error) {
-	return s.queryTx(tx, params)
-}
-
-/**
-* Query
-* @param params et.Json
-* @return et.Json, error
-**/
-func (s *Ql) Query(params et.Json) (et.Json, error) {
-	return s.QueryTx(nil, params)
-}
-
-/**
 * queryTx
 * @param tx *Tx, params et.Json
 * @return et.Items, error
@@ -201,7 +183,7 @@ func (s *Ql) queryTx(tx *Tx, params et.Json) (et.Json, error) {
 	havings := params.Json("having")
 	orderBy := params.Json("order_by")
 	page := params.Int("page")
-	limit := params.ValInt(30, "limit")
+	limit := params.ValInt(1, "limit")
 	debug := params.Bool("debug")
 
 	result, err := s.
@@ -219,4 +201,22 @@ func (s *Ql) queryTx(tx *Tx, params et.Json) (et.Json, error) {
 	}
 
 	return result, nil
+}
+
+/**
+* QueryTx
+* @param tx *Tx, params et.Json
+* @return et.Json, error
+**/
+func (s *Ql) QueryTx(tx *Tx, params et.Json) (et.Json, error) {
+	return s.queryTx(tx, params)
+}
+
+/**
+* Query
+* @param params et.Json
+* @return et.Json, error
+**/
+func (s *Ql) Query(params et.Json) (et.Json, error) {
+	return s.QueryTx(nil, params)
 }

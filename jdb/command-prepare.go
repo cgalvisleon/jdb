@@ -15,6 +15,12 @@ func (s *Command) prepare() error {
 		value := make(map[string]*Field, 0)
 		switch s.Command {
 		case Insert:
+			for _, fn := range model.beforeInsert {
+				err := fn(s.tx, data)
+				if err != nil {
+					return err
+				}
+			}
 			for _, fn := range s.beforeInsert {
 				err := fn(s.tx, data)
 				if err != nil {
@@ -24,6 +30,12 @@ func (s *Command) prepare() error {
 				s.Data[i] = data
 			}
 		case Update:
+			for _, fn := range model.beforeUpdate {
+				err := fn(s.tx, data)
+				if err != nil {
+					return err
+				}
+			}
 			for _, fn := range s.beforeUpdate {
 				err := fn(s.tx, data)
 				if err != nil {
@@ -33,6 +45,12 @@ func (s *Command) prepare() error {
 				s.Data[i] = data
 			}
 		case Delete:
+			for _, fn := range model.beforeDelete {
+				err := fn(s.tx, data)
+				if err != nil {
+					return err
+				}
+			}
 			for _, fn := range s.beforeDelete {
 				err := fn(s.tx, data)
 				if err != nil {

@@ -16,7 +16,6 @@ const (
 type Driver interface {
 	Name() string
 	Connect(connection ConnectParams) (*sql.DB, error)
-	Disconnect() error
 	/* Model */
 	LoadModel(model *Model) error
 	DropModel(model *Model) error
@@ -32,9 +31,9 @@ type Driver interface {
 
 /**
 * Register
-* @param name string, driver func() Driver, params ConnectParams
+* @param name string, driver func(db *DB) Driver, params ConnectParams
 **/
-func Register(name string, driver func() Driver, params ConnectParams) {
+func Register(name string, driver func(db *DB) Driver, params ConnectParams) {
 	conn.Drivers[name] = driver
 	conn.Params[name] = params
 }

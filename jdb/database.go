@@ -20,11 +20,11 @@ type DB struct {
 	Description string    `json:"description"`
 	UseCore     bool      `json:"use_core"`
 	NodeId      int       `json:"node_id"`
+	db          *sql.DB   `json:"-"`
 	driver      Driver    `json:"-"`
 	schemas     []*Schema `json:"-"`
 	models      []*Model  `json:"-"`
 	isInit      bool      `json:"-"`
-	db          *sql.DB   `json:"-"`
 	IsDebug     bool      `json:"-"`
 }
 
@@ -53,10 +53,10 @@ func NewDatabase(id, name, driver string) (*DB, error) {
 		UpdateAt:  now,
 		Id:        id,
 		Name:      name,
-		driver:    conn.Drivers[driver](),
 		schemas:   make([]*Schema, 0),
 		models:    make([]*Model, 0),
 	}
+	result.driver = conn.Drivers[driver](result)
 	conn.DBS = append(conn.DBS, result)
 
 	return result, nil
@@ -209,7 +209,7 @@ func (s *DB) Disconected() error {
 		return mistake.New(MSG_DRIVER_NOT_DEFINED)
 	}
 
-	return s.driver.Disconnect()
+	return s.db.Close()
 }
 
 /**
@@ -433,7 +433,7 @@ func (s *DB) Query(sql string, arg ...any) (et.Items, error) {
 		return et.Items{}, mistake.New(MSG_DATABASE_NOT_CONNECTED)
 	}
 
-	return Query(s.db, sql, arg...)
+	return Query(s, sql, arg...)
 }
 
 /**
