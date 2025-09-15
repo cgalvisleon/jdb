@@ -1,8 +1,9 @@
 package postgres
 
 import (
+	"fmt"
+
 	"github.com/cgalvisleon/et/console"
-	"github.com/cgalvisleon/et/mistake"
 	"github.com/cgalvisleon/et/msg"
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
@@ -14,7 +15,7 @@ import (
 **/
 func (s *Postgres) loadSchema(name string) error {
 	if s.jdb == nil {
-		return mistake.Newf(msg.NOT_DRIVER_DB)
+		return fmt.Errorf(msg.NOT_DRIVER_DB)
 	}
 
 	exist, err := s.existSchema(name)
@@ -27,7 +28,7 @@ func (s *Postgres) loadSchema(name string) error {
 	}
 
 	sql := jdb.SQLDDL(`CREATE SCHEMA IF NOT EXISTS $1`, name)
-	err = jdb.Ddl(s.jdb, sql)
+	err = jdb.Definition(s.jdb, sql)
 	if err != nil {
 		return err
 	}
@@ -44,11 +45,11 @@ func (s *Postgres) loadSchema(name string) error {
 **/
 func (s *Postgres) DropSchema(name string) error {
 	if s.jdb == nil {
-		return mistake.Newf(msg.NOT_DRIVER_DB)
+		return fmt.Errorf(msg.NOT_DRIVER_DB)
 	}
 
 	sql := jdb.SQLDDL(`DROP SCHEMA IF EXISTS $1 CASCADE`, name)
-	err := jdb.Ddl(s.jdb, sql)
+	err := jdb.Definition(s.jdb, sql)
 	if err != nil {
 		return err
 	}
@@ -65,7 +66,7 @@ func (s *Postgres) DropSchema(name string) error {
 **/
 func (s *Postgres) existSchema(name string) (bool, error) {
 	if s.jdb == nil {
-		return false, mistake.Newf(msg.NOT_DRIVER_DB)
+		return false, fmt.Errorf(msg.NOT_DRIVER_DB)
 	}
 
 	items, err := jdb.Query(s.jdb, `
@@ -78,5 +79,9 @@ func (s *Postgres) existSchema(name string) (bool, error) {
 		return false, err
 	}
 
-	return items.Ok, nil
+	if items.Count == 0 {
+		return false, nil
+	}
+
+	return items.Bool(0, "exists"), nil
 }

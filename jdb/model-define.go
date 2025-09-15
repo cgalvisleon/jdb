@@ -7,8 +7,6 @@ import (
 	"strings"
 
 	"github.com/cgalvisleon/et/et"
-	"github.com/cgalvisleon/et/mistake"
-	"github.com/cgalvisleon/et/strs"
 )
 
 type TypeDefinition int
@@ -38,6 +36,7 @@ const (
 	TypeDefinitionValues
 	TypeDefinitionModel
 	TypeDefinitionProjectModel
+	TypeDefinitionCustomerModel
 )
 
 func (s TypeDefinition) Str() string {
@@ -90,6 +89,8 @@ func (s TypeDefinition) Str() string {
 		return "model"
 	case TypeDefinitionProjectModel:
 		return "project_model"
+	case TypeDefinitionCustomerModel:
+		return "customer_model"
 	}
 
 	return ""
@@ -116,7 +117,7 @@ func toTypeData(val interface{}) (TypeData, error) {
 		return TypeData(i), nil
 	}
 
-	return TypeDataNone, mistake.Newf("invalid type: %T to TypeData", val)
+	return TypeDataNone, fmt.Errorf("invalid type: %T to TypeData", val)
 }
 
 /**
@@ -139,7 +140,7 @@ func toArrayString(val interface{}) ([]string, error) {
 		return strings.Split(v, ","), nil
 	}
 
-	return nil, mistake.Newf("invalid type: %T to []string", val)
+	return nil, fmt.Errorf("invalid type: %T to []string", val)
 }
 
 /**
@@ -159,7 +160,7 @@ func toMapString(val interface{}) (map[string]string, error) {
 		return result, nil
 	}
 
-	return nil, mistake.Newf("invalid type: %T to map[string]string", val)
+	return nil, fmt.Errorf("invalid type: %T to map[string]string", val)
 }
 
 /**
@@ -352,6 +353,8 @@ func (s *Model) defineColumns(tp int, args ...interface{}) error {
 		s.defineModel()
 	case TypeDefinitionProjectModel:
 		s.defineProjectModel()
+	case TypeDefinitionCustomerModel:
+		s.defineCustomerModel()
 	}
 
 	return nil
@@ -414,7 +417,7 @@ func (s *Model) defineIndex(sort bool, colums []string) *Model {
 	for _, col := range cols {
 		if col.TypeColumn == TpColumn {
 			idx := newIndex(col, sort)
-			name := strs.Format("%s_%s_idx", s.Name, col.Name)
+			name := fmt.Sprintf("%s_%s_idx", s.Name, col.Name)
 			s.Indices[name] = idx
 		}
 	}
@@ -435,7 +438,7 @@ func (s *Model) defineUnique(colums []string) *Model {
 
 	for _, col := range cols {
 		idx := newIndex(col, true)
-		name := strs.Format("%s_%s_idx", s.Name, col.Name)
+		name := fmt.Sprintf("%s_%s_idx", s.Name, col.Name)
 		s.Uniques[name] = idx
 	}
 
@@ -498,7 +501,7 @@ func (s *Model) defineForeignKey(fks map[string]string, withName string, onDelet
 		OnUpdateCascade: onUpdateCascade,
 	}
 
-	name := strs.Format("%s_%s_fk", s.Name, with.Name)
+	name := fmt.Sprintf("%s_%s_fk", s.Name, with.Name)
 	for fkn, pkn := range fks {
 		pk := with.getColumn(pkn)
 		if pk == nil {
@@ -652,7 +655,27 @@ func (s *Model) defineProjectField() *Column {
 
 	result := s.defineColumnIdx(cf.ProjectId, TypeDataKey, idx)
 	s.defineIndex(true, []string{cf.ProjectId})
-	s.ProjectField = result
+
+	return result
+}
+
+/**
+* defineCustomerField
+* @return *Column
+**/
+func (s *Model) defineCustomerField() *Column {
+	idx := -1
+	for _, pk := range s.PrimaryKeys {
+		min := slices.IndexFunc(s.Columns, func(e *Column) bool { return e.Name == pk.Name })
+		if min != -1 && idx == -1 {
+			idx = min
+		} else if min != -1 && min < idx {
+			idx = min
+		}
+	}
+
+	result := s.defineColumnIdx(cf.CustomerId, TypeDataKey, idx)
+	s.defineIndex(true, []string{cf.CustomerId})
 
 	return result
 }
@@ -806,6 +829,23 @@ func (s *Model) defineProjectModel() *Model {
 	s.defineCreatedAtField()
 	s.defineUpdatedAtField()
 	s.defineProjectField()
+	s.defineStatusField()
+	s.definePrimaryKeyField()
+	s.defineSourceField()
+	s.defineSystemKeyField()
+	s.defineIndexField()
+
+	return s
+}
+
+/**
+* defineCustomerModel
+* @return *Model
+**/
+func (s *Model) defineCustomerModel() *Model {
+	s.defineCreatedAtField()
+	s.defineUpdatedAtField()
+	s.defineCustomerField()
 	s.defineStatusField()
 	s.definePrimaryKeyField()
 	s.defineSourceField()
@@ -1103,6 +1143,16 @@ func (s *Model) DefineProjectModel() *Model {
 	key := "project_model"
 	s.setDefine(key, TypeDefinitionProjectModel)
 	return s.defineProjectModel()
+}
+
+/**
+* DefineCustomerModel
+* @return *Model
+**/
+func (s *Model) DefineCustomerModel() *Model {
+	key := "customer_model"
+	s.setDefine(key, TypeDefinitionCustomerModel)
+	return s.defineCustomerModel()
 }
 
 /**

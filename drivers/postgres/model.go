@@ -60,7 +60,7 @@ func (s *Postgres) LoadModel(model *jdb.Model) error {
 			console.Debug(sql)
 		}
 
-		err = jdb.Ddl(s.jdb, sql)
+		err = jdb.Definition(s.jdb, sql)
 		if err != nil {
 			return err
 		}
@@ -119,7 +119,7 @@ func (s *Postgres) DropModel(model *jdb.Model) error {
 		console.Debug(sql)
 	}
 
-	return jdb.Ddl(s.jdb, sql)
+	return jdb.Definition(s.jdb, sql)
 }
 
 /**
@@ -133,7 +133,7 @@ func (s *Postgres) EmptyModel(model *jdb.Model) error {
 		console.Debug(sql)
 	}
 
-	return jdb.Ddl(s.jdb, sql)
+	return jdb.Definition(s.jdb, sql)
 }
 
 /**
@@ -142,7 +142,7 @@ func (s *Postgres) EmptyModel(model *jdb.Model) error {
 * @return error
 **/
 func (s *Postgres) MutateModel(model *jdb.Model) error {
-	backupTable := strs.Format(`%s_backup`, tableName(model))
+	backupTable := fmt.Sprintf(`%s_backup`, tableName(model))
 	sql := "\n"
 	sql = strs.Append(sql, s.ddlTableRename(tableName(model), backupTable), "\n")
 	sql = strs.Append(sql, s.ddlTable(model), "\n")
@@ -153,5 +153,5 @@ func (s *Postgres) MutateModel(model *jdb.Model) error {
 		console.Debug(sql)
 	}
 
-	return jdb.Ddl(s.jdb, sql)
+	return jdb.Definition(s.jdb, sql)
 }

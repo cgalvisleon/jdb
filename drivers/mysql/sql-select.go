@@ -1,6 +1,7 @@
 package mysql
 
 import (
+	"fmt"
 	"slices"
 
 	"github.com/cgalvisleon/et/console"
@@ -40,27 +41,27 @@ func asField(field jdb.Field) string {
 	setAgregaction := func(val string) string {
 		switch field.Agregation {
 		case jdb.AgregationSum:
-			val = strs.Format(`SUM(%s)`, val)
+			val = fmt.Sprintf(`SUM(%s)`, val)
 		case jdb.AgregationCount:
-			val = strs.Format(`COUNT(%s)`, val)
+			val = fmt.Sprintf(`COUNT(%s)`, val)
 		case jdb.AgregationAvg:
-			val = strs.Format(`AVG(%s)`, val)
+			val = fmt.Sprintf(`AVG(%s)`, val)
 		case jdb.AgregationMin:
-			val = strs.Format(`MIN(%s)`, val)
+			val = fmt.Sprintf(`MIN(%s)`, val)
 		case jdb.AgregationMax:
-			val = strs.Format(`MAX(%s)`, val)
+			val = fmt.Sprintf(`MAX(%s)`, val)
 		case jdb.ExtractYear:
-			val = strs.Format(`EXTRACT(YEAR FROM %s)`, val)
+			val = fmt.Sprintf(`EXTRACT(YEAR FROM %s)`, val)
 		case jdb.ExtractMonth:
-			val = strs.Format(`EXTRACT(MONTH FROM %s)`, val)
+			val = fmt.Sprintf(`EXTRACT(MONTH FROM %s)`, val)
 		case jdb.ExtractDay:
-			val = strs.Format(`EXTRACT(DAY FROM %s)`, val)
+			val = fmt.Sprintf(`EXTRACT(DAY FROM %s)`, val)
 		case jdb.ExtractHour:
-			val = strs.Format(`EXTRACT(HOUR FROM %s)`, val)
+			val = fmt.Sprintf(`EXTRACT(HOUR FROM %s)`, val)
 		case jdb.ExtractMinute:
-			val = strs.Format(`EXTRACT(MINUTE FROM %s)`, val)
+			val = fmt.Sprintf(`EXTRACT(MINUTE FROM %s)`, val)
 		case jdb.ExtractSecond:
-			val = strs.Format(`EXTRACT(SECOND FROM %s)`, val)
+			val = fmt.Sprintf(`EXTRACT(SECOND FROM %s)`, val)
 		}
 
 		return val
@@ -73,8 +74,8 @@ func asField(field jdb.Field) string {
 		result = setAgregaction(result)
 	case jdb.TpAtribute:
 		result = strs.Append(result, field.Source, ".")
-		result = strs.Format(`%s#>>'{%s}'`, result, field.Name)
-		result = strs.Format(`COALESCE(%s, %v)`, result, field.Column.DefaultQuote())
+		result = fmt.Sprintf(`%s#>>'{%s}'`, result, field.Name)
+		result = fmt.Sprintf(`COALESCE(%s, %v)`, result, field.Column.DefaultQuote())
 		result = setAgregaction(result)
 	}
 
@@ -105,7 +106,7 @@ func jsonBuildObject(result, obj string) string {
 		return result
 	}
 
-	return strs.Append(result, strs.Format("jsonb_build_object(\n%s)", obj), "||\n")
+	return strs.Append(result, fmt.Sprintf("jsonb_build_object(\n%s)", obj), "||\n")
 }
 
 /**
@@ -157,7 +158,7 @@ func (s *Mysql) sqlBuildObject(selects []*jdb.Field) string {
 			continue
 		}
 		def := asField(*fld)
-		def = strs.Format(`'%s', %s`, fld.Alias, def)
+		def = fmt.Sprintf(`'%s', %s`, fld.Alias, def)
 		obj = strs.Append(obj, def, ",\n")
 
 		if n == l {
@@ -175,7 +176,7 @@ func (s *Mysql) sqlBuildObject(selects []*jdb.Field) string {
 		def := aliasAsField(*fld)
 		sources = strs.Append(sources, def, "||\n")
 		if i == len(sourceField)-1 {
-			result = strs.Format(`%s||%s`, def, result)
+			result = fmt.Sprintf(`%s||%s`, def, result)
 		}
 	}
 
@@ -235,7 +236,7 @@ func (s *Mysql) Select(ql *jdb.Ql) (et.Items, error) {
 	ql.Sql = strs.Append(ql.Sql, s.sqlHaving(ql), "\n")
 	ql.Sql = strs.Append(ql.Sql, s.sqlOrderBy(ql), "\n")
 	ql.Sql = strs.Append(ql.Sql, s.sqlLimit(ql), "\n")
-	ql.Sql = strs.Format(`%s;`, ql.Sql)
+	ql.Sql = fmt.Sprintf(`%s;`, ql.Sql)
 
 	if ql.IsDebug {
 		console.Debug(ql.Sql)

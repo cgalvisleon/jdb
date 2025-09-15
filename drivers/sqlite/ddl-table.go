@@ -1,11 +1,11 @@
 package sqlite
 
 import (
+	"fmt"
 	"slices"
 
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/strs"
-	"github.com/cgalvisleon/et/utility"
 	"github.com/cgalvisleon/jdb/jdb"
 )
 
@@ -133,7 +133,7 @@ func (s *SqlLite) defaultValue(tp jdb.TypeData) interface{} {
 	case jdb.TypeDataFullText:
 		return jdb.Quote("")
 	case jdb.TypeDataState:
-		return jdb.Quote(utility.ACTIVE)
+		return jdb.Quote(jdb.ACTIVE)
 	case jdb.TypeDataUser:
 		return jdb.Quote("")
 	case jdb.TypeDataFilesMedia:
@@ -164,13 +164,13 @@ func (s *SqlLite) ddlTable(model *jdb.Model) string {
 	var columnsDef string
 	for _, column := range model.Columns {
 		if slices.Contains([]*jdb.Column{model.SystemKeyField}, column) {
-			def := strs.Format("\n\t%s %s DEFAULT %v", column.Name, s.typeData(column.TypeData), s.defaultValue(column.TypeData))
+			def := fmt.Sprintf("\n\t%s %s DEFAULT %v", column.Name, s.typeData(column.TypeData), s.defaultValue(column.TypeData))
 			columnsDef = strs.Append(columnsDef, def, ",")
 		} else if slices.Contains([]*jdb.Column{model.FullTextField}, column) && column.FullText != nil {
-			def := strs.Format("\n\t%s TEXT", column.Name)
+			def := fmt.Sprintf("\n\t%s TEXT", column.Name)
 			columnsDef = strs.Append(columnsDef, def, ",")
 		} else if column.TypeColumn == jdb.TpColumn {
-			def := strs.Format("\n\t%s %s DEFAULT %v", column.Name, s.typeData(column.TypeData), s.defaultValue(column.TypeData))
+			def := fmt.Sprintf("\n\t%s %s DEFAULT %v", column.Name, s.typeData(column.TypeData), s.defaultValue(column.TypeData))
 			columnsDef = strs.Append(columnsDef, def, ",")
 		}
 	}
@@ -179,7 +179,7 @@ func (s *SqlLite) ddlTable(model *jdb.Model) string {
 	columnsDef = strs.Append(columnsDef, ddlPrimaryKey, ",\n\t")
 	ddlForeignKeys := s.ddlForeignKeys(model)
 	columnsDef = strs.Append(columnsDef, ddlForeignKeys, ",\n\t")
-	result := strs.Format("\nCREATE TABLE IF NOT EXISTS %s (%s\n);", tableName(model), columnsDef)
+	result := fmt.Sprintf("\nCREATE TABLE IF NOT EXISTS %s (%s\n);", tableName(model), columnsDef)
 
 	return result
 }
@@ -191,7 +191,7 @@ func (s *SqlLite) ddlTable(model *jdb.Model) string {
 * @return string
 **/
 func (s *SqlLite) ddlTableRename(oldName, newName string) string {
-	result := strs.Format(`ALTER TABLE %s RENAME TO %s;`, oldName, newName)
+	result := fmt.Sprintf(`ALTER TABLE %s RENAME TO %s;`, oldName, newName)
 	return result
 }
 
@@ -205,10 +205,10 @@ func (s *SqlLite) ddlTableInsertTo(model *jdb.Model, tableOrigin string) string 
 	fields := ""
 	for _, column := range model.Columns {
 		if column.TypeColumn == jdb.TpColumn {
-			fields = strs.Append(fields, strs.Format("%s", column.Name), ", ")
+			fields = strs.Append(fields, fmt.Sprintf("%s", column.Name), ", ")
 		}
 	}
-	result := strs.Format("INSERT INTO %s (%s) SELECT %s FROM %s;", tableName(model), fields, fields, tableOrigin)
+	result := fmt.Sprintf("INSERT INTO %s (%s) SELECT %s FROM %s;", tableName(model), fields, fields, tableOrigin)
 	return result
 }
 
@@ -218,7 +218,7 @@ func (s *SqlLite) ddlTableInsertTo(model *jdb.Model, tableOrigin string) string 
 * @return string
 **/
 func (s *SqlLite) ddlTableDrop(table string) string {
-	result := strs.Format("DROP TABLE IF EXISTS %s;", table)
+	result := fmt.Sprintf("DROP TABLE IF EXISTS %s;", table)
 	return result
 }
 
@@ -228,6 +228,6 @@ func (s *SqlLite) ddlTableDrop(table string) string {
 * @return string
 **/
 func (s *SqlLite) ddlTableEmpty(table string) string {
-	result := strs.Format("DELETE FROM %s;", table)
+	result := fmt.Sprintf("DELETE FROM %s;", table)
 	return result
 }

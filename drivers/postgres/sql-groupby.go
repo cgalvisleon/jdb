@@ -1,7 +1,8 @@
 package postgres
 
 import (
-	"github.com/cgalvisleon/et/strs"
+	"fmt"
+
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
@@ -17,7 +18,7 @@ func (s *Postgres) sqlGroupBy(ql *jdb.Ql) string {
 		return result
 	}
 
-	result = strs.Format("GROUP BY %s", columns)
+	result = fmt.Sprintf("GROUP BY %s", columns)
 
 	return result
 }

@@ -1,11 +1,11 @@
 package mysql
 
 import (
+	"fmt"
 	"slices"
 
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/strs"
-	"github.com/cgalvisleon/et/utility"
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
@@ -155,7 +155,7 @@ func (s *Mysql) defaultValue(tp jdb.TypeData) interface{} {
 	case jdb.TypeDataFullText:
 		return jdb.Quote("")
 	case jdb.TypeDataState:
-		return jdb.Quote(utility.ACTIVE)
+		return jdb.Quote(jdb.ACTIVE)
 	case jdb.TypeDataUser:
 		return jdb.Quote("")
 	case jdb.TypeDataFilesMedia:
@@ -186,21 +186,21 @@ func (s *Mysql) ddlTable(model *jdb.Model) string {
 	var columnsDef string
 	for _, column := range model.Columns {
 		if slices.Contains([]*jdb.Column{model.SystemKeyField}, column) {
-			def := strs.Format("\n\t%s %s DEFAULT %v", column.Name, s.typeData(column.TypeData), s.defaultValue(column.TypeData))
+			def := fmt.Sprintf("\n\t%s %s DEFAULT %v", column.Name, s.typeData(column.TypeData), s.defaultValue(column.TypeData))
 			columnsDef = strs.Append(columnsDef, def, ",")
 		} else if slices.Contains([]*jdb.Column{model.FullTextField}, column) && column.FullText != nil {
 			columns := ""
 			for _, col := range column.FullText.Columns {
-				columns = strs.Append(columns, strs.Format("COALESCE(%s, '')", col), " || ' ' || ")
+				columns = strs.Append(columns, fmt.Sprintf("COALESCE(%s, '')", col), " || ' ' || ")
 			}
-			def := strs.Format("\n\t%s TSVECTOR GENERATED ALWAYS AS (to_tsvector('%s', %s)) STORED", column.Name, column.FullText.Language, columns)
+			def := fmt.Sprintf("\n\t%s TSVECTOR GENERATED ALWAYS AS (to_tsvector('%s', %s)) STORED", column.Name, column.FullText.Language, columns)
 			columnsDef = strs.Append(columnsDef, def, ",")
 		} else if column.TypeColumn == jdb.TpColumn {
-			def := strs.Format("\n\t%s %s DEFAULT %v", column.Name, s.typeData(column.TypeData), s.defaultValue(column.TypeData))
+			def := fmt.Sprintf("\n\t%s %s DEFAULT %v", column.Name, s.typeData(column.TypeData), s.defaultValue(column.TypeData))
 			columnsDef = strs.Append(columnsDef, def, ",")
 		}
 	}
-	result := strs.Format("\nCREATE TABLE IF NOT EXISTS %s (%s\n);", tableName(model), columnsDef)
+	result := fmt.Sprintf("\nCREATE TABLE IF NOT EXISTS %s (%s\n);", tableName(model), columnsDef)
 
 	return result
 }
@@ -212,7 +212,7 @@ func (s *Mysql) ddlTable(model *jdb.Model) string {
 * @return string
 **/
 func (s *Mysql) ddlTableRename(oldName, newName string) string {
-	result := strs.Format(`ALTER TABLE %s RENAME TO %s;`, oldName, newName)
+	result := fmt.Sprintf(`ALTER TABLE %s RENAME TO %s;`, oldName, newName)
 
 	return result
 }
@@ -227,10 +227,10 @@ func (s *Mysql) ddlTableInsertTo(model *jdb.Model, tableOrigin string) string {
 	fields := ""
 	for _, column := range model.Columns {
 		if column.TypeColumn == jdb.TpColumn {
-			fields = strs.Append(fields, strs.Format("%s", column.Name), ", ")
+			fields = strs.Append(fields, fmt.Sprintf("%s", column.Name), ", ")
 		}
 	}
-	result := strs.Format("INSERT INTO %s (%s)\nSELECT %s FROM %s;", tableName(model), fields, fields, tableOrigin)
+	result := fmt.Sprintf("INSERT INTO %s (%s)\nSELECT %s FROM %s;", tableName(model), fields, fields, tableOrigin)
 
 	return result
 }
@@ -241,7 +241,7 @@ func (s *Mysql) ddlTableInsertTo(model *jdb.Model, tableOrigin string) string {
 * @return string
 **/
 func (s *Mysql) ddlTableDrop(table string) string {
-	result := strs.Format("DROP TABLE IF EXISTS %s CASCADE;", table)
+	result := fmt.Sprintf("DROP TABLE IF EXISTS %s CASCADE;", table)
 
 	return result
 }
@@ -252,7 +252,7 @@ func (s *Mysql) ddlTableDrop(table string) string {
 * @return string
 **/
 func (s *Mysql) ddlTableEmpty(table string) string {
-	result := strs.Format("TRUNCATE TABLE %s CASCADE;", table)
+	result := fmt.Sprintf("TRUNCATE TABLE %s CASCADE;", table)
 
 	return result
 }

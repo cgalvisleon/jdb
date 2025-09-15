@@ -3,10 +3,37 @@ package jdb
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/event"
 )
+
+func TipoSQL(query string) string {
+	q := strings.TrimSpace(strings.ToUpper(query))
+
+	parts := strings.Fields(q)
+	if len(parts) == 0 {
+		return "DESCONOCIDO"
+	}
+
+	cmd := parts[0]
+
+	switch cmd {
+	case "SELECT":
+		return "query"
+	case "INSERT", "UPDATE", "DELETE", "MERGE":
+		return "command"
+	case "CREATE", "ALTER", "DROP", "TRUNCATE":
+		return "definition"
+	case "GRANT", "REVOKE":
+		return "definition"
+	case "COMMIT", "ROLLBACK", "SAVEPOINT", "SET":
+		return "definition"
+	default:
+		return "desconocido"
+	}
+}
 
 /**
 * queryTx
@@ -68,7 +95,8 @@ func query(db *DB, tx *Tx, sourceFiled, sql string, arg ...any) (et.Items, error
 		return et.Items{}, err
 	}
 
-	event.Publish(EVENT_SQL_QUERY, et.Json{
+	tp := TipoSQL(sql)
+	event.Publish(fmt.Sprintf("sql:%s", tp), et.Json{
 		"db_name": db.Name,
 		"sql":     sql,
 		"arg":     arg,
@@ -83,24 +111,7 @@ func query(db *DB, tx *Tx, sourceFiled, sql string, arg ...any) (et.Items, error
 * @return et.Items, error
 **/
 func QueryTx(db *DB, tx *Tx, sql string, arg ...any) (et.Items, error) {
-	result, err := queryTx(db.db, tx, "", sql, arg...)
-	if err != nil {
-		event.Publish(EVENT_SQL_ERROR, et.Json{
-			"db_name": db.Name,
-			"sql":     sql,
-			"arg":     arg,
-			"error":   err,
-		})
-		return et.Items{}, err
-	}
-
-	event.Publish(EVENT_SQL_QUERY, et.Json{
-		"db_name": db.Name,
-		"sql":     sql,
-		"arg":     arg,
-	})
-
-	return result, nil
+	return query(db, tx, "", sql, arg...)
 }
 
 /**
@@ -131,53 +142,24 @@ func Result(db *DB, sql string, arg ...any) (et.Items, error) {
 }
 
 /**
-* Ddl
+* DefinitionTx
 * @param db *DB, tx *Tx, sql string, arg ...any
 * @return error
 **/
-func Ddl(db *DB, sql string, arg ...any) error {
-	_, err := queryTx(db.db, nil, "", sql, arg...)
+func DefinitionTx(db *DB, tx *Tx, sql string, arg ...any) error {
+	_, err := query(db, tx, "", sql, arg...)
 	if err != nil {
-		event.Publish(EVENT_SQL_ERROR, et.Json{
-			"db_name": db.Name,
-			"sql":     sql,
-			"arg":     arg,
-			"error":   err,
-		})
 		return err
 	}
-
-	event.Publish(EVENT_SQL_DDL, et.Json{
-		"db_name": db.Name,
-		"sql":     sql,
-		"arg":     arg,
-	})
 
 	return nil
 }
 
 /**
-* Cmd
-* @param db *DB, tx *Tx, sql string, arg ...any
-* @return et.Items, error
+* Definition
+* @param db *DB, sql string, arg ...any
+* @return error
 **/
-func Cmd(db *DB, tx *Tx, sql string, arg ...any) (et.Items, error) {
-	result, err := queryTx(db.db, tx, "result", sql, arg...)
-	if err != nil {
-		event.Publish(EVENT_SQL_ERROR, et.Json{
-			"db_name": db.Name,
-			"sql":     sql,
-			"arg":     arg,
-			"error":   err,
-		})
-		return et.Items{}, err
-	}
-
-	event.Publish(EVENT_SQL_COMMAND, et.Json{
-		"db_name": db.Name,
-		"sql":     sql,
-		"arg":     arg,
-	})
-
-	return result, nil
+func Definition(db *DB, sql string, arg ...any) error {
+	return DefinitionTx(db, nil, sql, arg...)
 }

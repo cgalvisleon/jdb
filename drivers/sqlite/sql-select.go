@@ -1,6 +1,7 @@
 package sqlite
 
 import (
+	"fmt"
 	"slices"
 
 	"github.com/cgalvisleon/et/console"
@@ -40,27 +41,27 @@ func asField(field jdb.Field) string {
 	setAgregaction := func(val string) string {
 		switch field.Agregation {
 		case jdb.AgregationSum:
-			val = strs.Format(`SUM(%s)`, val)
+			val = fmt.Sprintf(`SUM(%s)`, val)
 		case jdb.AgregationCount:
-			val = strs.Format(`COUNT(%s)`, val)
+			val = fmt.Sprintf(`COUNT(%s)`, val)
 		case jdb.AgregationAvg:
-			val = strs.Format(`AVG(%s)`, val)
+			val = fmt.Sprintf(`AVG(%s)`, val)
 		case jdb.AgregationMin:
-			val = strs.Format(`MIN(%s)`, val)
+			val = fmt.Sprintf(`MIN(%s)`, val)
 		case jdb.AgregationMax:
-			val = strs.Format(`MAX(%s)`, val)
+			val = fmt.Sprintf(`MAX(%s)`, val)
 		case jdb.ExtractYear:
-			val = strs.Format(`strftime('%%Y', %s)`, val)
+			val = fmt.Sprintf(`strftime('%%Y', %s)`, val)
 		case jdb.ExtractMonth:
-			val = strs.Format(`strftime('%%m', %s)`, val)
+			val = fmt.Sprintf(`strftime('%%m', %s)`, val)
 		case jdb.ExtractDay:
-			val = strs.Format(`strftime('%%d', %s)`, val)
+			val = fmt.Sprintf(`strftime('%%d', %s)`, val)
 		case jdb.ExtractHour:
-			val = strs.Format(`strftime('%%H', %s)`, val)
+			val = fmt.Sprintf(`strftime('%%H', %s)`, val)
 		case jdb.ExtractMinute:
-			val = strs.Format(`strftime('%%M', %s)`, val)
+			val = fmt.Sprintf(`strftime('%%M', %s)`, val)
 		case jdb.ExtractSecond:
-			val = strs.Format(`strftime('%%S', %s)`, val)
+			val = fmt.Sprintf(`strftime('%%S', %s)`, val)
 		}
 
 		return val
@@ -73,8 +74,8 @@ func asField(field jdb.Field) string {
 		result = setAgregaction(result)
 	case jdb.TpAtribute:
 		result = strs.Append(result, field.Source, ".")
-		result = strs.Format(`json_extract(%s, '$.%s')`, result, field.Name)
-		result = strs.Format(`COALESCE(%s, %v)`, result, field.Column.DefaultQuote())
+		result = fmt.Sprintf(`json_extract(%s, '$.%s')`, result, field.Name)
+		result = fmt.Sprintf(`COALESCE(%s, %v)`, result, field.Column.DefaultQuote())
 		result = setAgregaction(result)
 	}
 
@@ -105,7 +106,7 @@ func jsonBuildObject(result, obj string) string {
 		return result
 	}
 
-	return strs.Append(result, strs.Format("json_object(\n%s)", obj), ",\n")
+	return strs.Append(result, fmt.Sprintf("json_object(\n%s)", obj), ",\n")
 }
 
 /**
@@ -157,7 +158,7 @@ func (s *SqlLite) sqlBuildObject(selects []*jdb.Field) string {
 			continue
 		}
 		def := asField(*fld)
-		def = strs.Format(`'%s', %s`, fld.Alias, def)
+		def = fmt.Sprintf(`'%s', %s`, fld.Alias, def)
 		obj = strs.Append(obj, def, ",\n")
 
 		if n == l {
@@ -175,7 +176,7 @@ func (s *SqlLite) sqlBuildObject(selects []*jdb.Field) string {
 		def := aliasAsField(*fld)
 		sources = strs.Append(sources, def, ",\n")
 		if i == len(sourceField)-1 {
-			result = strs.Format(`json_patch(%s, %s)`, result, sources)
+			result = fmt.Sprintf(`json_patch(%s, %s)`, result, sources)
 		}
 	}
 
@@ -235,7 +236,7 @@ func (s *SqlLite) Select(ql *jdb.Ql) (et.Items, error) {
 	ql.Sql = strs.Append(ql.Sql, s.sqlHaving(ql), "\n")
 	ql.Sql = strs.Append(ql.Sql, s.sqlOrderBy(ql), "\n")
 	ql.Sql = strs.Append(ql.Sql, s.sqlLimit(ql), "\n")
-	ql.Sql = strs.Format(`%s;`, ql.Sql)
+	ql.Sql = fmt.Sprintf(`%s;`, ql.Sql)
 
 	if ql.IsDebug {
 		console.Debug(ql.Sql)

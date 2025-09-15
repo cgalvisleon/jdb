@@ -27,7 +27,7 @@ func (s *Postgres) Command(command *jdb.Command) (et.Items, error) {
 		console.Debug(command.Sql)
 	}
 
-	result, err := jdb.Cmd(s.jdb, command.Tx(), command.Sql)
+	result, err := jdb.ResultTx(s.jdb, command.Tx(), command.Sql)
 	if err != nil {
 		return et.Items{}, err
 	}

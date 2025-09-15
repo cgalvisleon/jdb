@@ -1,9 +1,10 @@
 package jdb
 
 import (
+	"fmt"
+
 	"github.com/cgalvisleon/et/config"
 	"github.com/cgalvisleon/et/et"
-	"github.com/cgalvisleon/et/mistake"
 )
 
 /**
@@ -13,7 +14,7 @@ import (
 **/
 func (s *Ql) ListTx(tx *Tx, page, rows int) (et.List, error) {
 	if s.Db == nil {
-		return et.List{}, mistake.New(MSG_DATABASE_NOT_FOUND)
+		return et.List{}, fmt.Errorf(MSG_DATABASE_IS_REQUIRED)
 	}
 
 	all, err := s.Db.Count(s)

@@ -57,7 +57,7 @@ func (s *Mysql) LoadModel(model *jdb.Model) error {
 			console.Debug(sql)
 		}
 
-		err = jdb.Ddl(s.jdb, sql)
+		err = jdb.Definition(s.jdb, sql)
 		if err != nil {
 			return err
 		}
@@ -140,7 +140,7 @@ func (s *Mysql) EmptyModel(model *jdb.Model) error {
 * @return error
 **/
 func (s *Mysql) MutateModel(model *jdb.Model) error {
-	backupTable := strs.Format(`%s_backup`, tableName(model))
+	backupTable := fmt.Sprintf(`%s_backup`, tableName(model))
 	sql := "\n"
 	sql = strs.Append(sql, s.ddlTableRename(tableName(model), backupTable), "\n")
 	sql = strs.Append(sql, s.ddlTable(model), "\n")

@@ -1,8 +1,6 @@
 package jdb
 
-import (
-	"github.com/cgalvisleon/et/mistake"
-)
+import "fmt"
 
 var coreSchema *Schema
 
@@ -12,7 +10,7 @@ var coreSchema *Schema
 **/
 func (s *DB) createCore() error {
 	if s.driver == nil {
-		return mistake.New(MSG_DRIVER_NOT_DEFINED)
+		return fmt.Errorf(MSG_DRIVER_NOT_DEFINED)
 	}
 	if err := s.defineModel(); err != nil {
 		return err
@@ -26,14 +24,7 @@ func (s *DB) createCore() error {
 	if err := s.defineRecycling(); err != nil {
 		return err
 	}
-
-	if err := coreRecords.Save(); err != nil {
-		return err
-	}
-	if err := coreModel.Save(); err != nil {
-		return err
-	}
-	if err := coreRecycling.Save(); err != nil {
+	if err := s.defineSeries(); err != nil {
 		return err
 	}
 
@@ -47,7 +38,7 @@ func (s *DB) defineSchema() error {
 
 	coreSchema = NewSchema(s, "core")
 	if coreSchema == nil {
-		return mistake.New(MSG_SCHEMA_NOT_FOUND)
+		return fmt.Errorf(MSG_SCHEMA_NOT_FOUND, "core")
 	}
 
 	return nil

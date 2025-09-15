@@ -1,13 +1,14 @@
 package jdb
 
 import (
+	"fmt"
+
 	"github.com/cgalvisleon/et/et"
-	"github.com/cgalvisleon/et/mistake"
 )
 
 func (s *Command) current(where et.Json) error {
 	if len(s.Data) != 1 {
-		return mistake.New(MSG_MANY_INSERT_DATA)
+		return fmt.Errorf(MSG_MANY_INSERT_DATA)
 	}
 
 	model := s.From

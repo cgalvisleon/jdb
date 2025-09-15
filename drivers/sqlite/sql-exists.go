@@ -1,6 +1,8 @@
 package sqlite
 
 import (
+	"fmt"
+
 	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/strs"
 	jdb "github.com/cgalvisleon/jdb/jdb"
@@ -18,7 +20,7 @@ func (s *SqlLite) Exists(ql *jdb.Ql) (bool, error) {
 	ql.Sql = strs.Append(ql.Sql, s.sqlWhere(ql.QlWhere), "\n")
 
 	if len(ql.Sql) > 0 {
-		ql.Sql = strs.Format(`SELECT EXISTS (%s) AS "exists";`, ql.Sql)
+		ql.Sql = fmt.Sprintf(`SELECT EXISTS (%s) AS "exists";`, ql.Sql)
 	}
 
 	if ql.IsDebug {

@@ -1,6 +1,7 @@
 package sqlite
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/cgalvisleon/et/strs"
@@ -38,7 +39,7 @@ func (s *SqlLite) ddlPrimaryKey(model *jdb.Model) string {
 	}
 
 	if len(primaryKeys()) > 0 {
-		result = strs.Format("PRIMARY KEY (%s)", strings.Join(primaryKeys(), ", "))
+		result = fmt.Sprintf("PRIMARY KEY (%s)", strings.Join(primaryKeys(), ", "))
 	}
 	return result
 }
@@ -59,8 +60,8 @@ func (s *SqlLite) ddlForeignKeys(model *jdb.Model) string {
 					fks := ""
 					references := ""
 					for fkn, pkn := range fk {
-						fks = strs.Append(fks, strs.Format("%s", fkn), ", ")
-						references = strs.Append(references, strs.Format("%s", pkn), ", ")
+						fks = strs.Append(fks, fmt.Sprintf("%s", fkn), ", ")
+						references = strs.Append(references, fmt.Sprintf("%s", pkn), ", ")
 					}
 					fks = strings.TrimSuffix(fks, ", ")
 					references = strings.TrimSuffix(references, ", ")
@@ -75,7 +76,7 @@ func (s *SqlLite) ddlForeignKeys(model *jdb.Model) string {
 						onUpdate = " ON UPDATE CASCADE"
 					}
 
-					idx := strs.Format("FOREIGN KEY (%s) REFERENCES %s (%s)%s%s",
+					idx := fmt.Sprintf("FOREIGN KEY (%s) REFERENCES %s (%s)%s%s",
 						fks,
 						tableName(with),
 						references,
@@ -100,7 +101,7 @@ func (s *SqlLite) ddlIndex(model *jdb.Model) string {
 	for _, column := range model.Columns {
 		if column.TypeColumn == jdb.TpColumn {
 			if column.IsKeyfield {
-				idx := strs.Format("CREATE INDEX IF NOT EXISTS idx_%s_%s ON %s (%s);", model.Name, column.Name, tableName(model), column.Name)
+				idx := fmt.Sprintf("CREATE INDEX IF NOT EXISTS idx_%s_%s ON %s (%s);", model.Name, column.Name, tableName(model), column.Name)
 				result = strs.Append(result, idx, "\n")
 			}
 		}
@@ -138,5 +139,5 @@ func (s *SqlLite) ddlTableIndex(model *jdb.Model) string {
 	result = strs.Append(result, s.ddlIndex(model), "\n")
 	result = strs.Append(result, s.ddlUniqueIndex(model), "\n")
 
-	return strs.Format("\n%s", result)
+	return fmt.Sprintf("\n%s", result)
 }

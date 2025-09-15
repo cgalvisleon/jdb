@@ -1,6 +1,8 @@
 package mysql
 
 import (
+	"fmt"
+
 	"github.com/cgalvisleon/et/strs"
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
@@ -17,7 +19,7 @@ func (s *Mysql) sqlFrom(froms *jdb.QlFroms) string {
 
 	from := froms.Froms[0]
 	def := s.tableAs(from)
-	result := strs.Format("FROM %s", def)
+	result := fmt.Sprintf("FROM %s", def)
 
 	return result
 }

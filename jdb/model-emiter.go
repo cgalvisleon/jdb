@@ -6,7 +6,6 @@ import (
 	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/event"
-	"github.com/cgalvisleon/et/mistake"
 	"github.com/cgalvisleon/et/timezone"
 	"github.com/cgalvisleon/et/utility"
 )
@@ -49,7 +48,7 @@ func (s *Model) On(channel string, handler event.Handler) *Model {
 **/
 func (s *Model) Emit(channel string, data et.Json) *Model {
 	if s.eventEmiterChannel == nil {
-		console.Alert(mistake.Newf("event channel not found (%s)", channel))
+		console.Alert(fmt.Errorf("event channel not found (%s)", channel))
 	}
 
 	message := event.Message{

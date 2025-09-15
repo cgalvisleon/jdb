@@ -2,10 +2,10 @@ package mysql
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/cgalvisleon/et/config"
 	"github.com/cgalvisleon/et/et"
-	"github.com/cgalvisleon/et/strs"
 	"github.com/cgalvisleon/jdb/jdb"
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -29,7 +29,7 @@ func (s *Connection) Chain() (string, error) {
 		return "", err
 	}
 
-	result := strs.Format(`%s:%s@tcp(%s:%d)/%s?parseTime=true`, s.Username, s.Password, s.Host, s.Port, s.Database)
+	result := fmt.Sprintf(`%s:%s@tcp(%s:%d)/%s?parseTime=true`, s.Username, s.Password, s.Host, s.Port, s.Database)
 
 	return result, nil
 }
@@ -39,7 +39,7 @@ func (s *Connection) Chain() (string, error) {
 * @return string, error
 **/
 func (s *Connection) defaultChain() (string, error) {
-	return strs.Format(`%s:%s@tcp(%s:%d)/%s?parseTime=true`, s.Username, s.Password, s.Host, s.Port, "mysql"), nil
+	return fmt.Sprintf(`%s:%s@tcp(%s:%d)/%s?parseTime=true`, s.Username, s.Password, s.Host, s.Port, "mysql"), nil
 }
 
 /**

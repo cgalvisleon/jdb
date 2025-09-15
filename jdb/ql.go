@@ -1,6 +1,7 @@
 package jdb
 
 import (
+	"fmt"
 	"strings"
 	"sync"
 
@@ -216,5 +217,5 @@ func (s *Ql) asField(field *Field) string {
 		return field.Name
 	}
 
-	return strs.Format("%s.%s", field.Model, field.Name)
+	return fmt.Sprintf("%s.%s", field.Model, field.Name)
 }

@@ -1,6 +1,8 @@
 package mysql
 
 import (
+	"fmt"
+
 	"github.com/cgalvisleon/et/strs"
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
@@ -54,7 +56,7 @@ func whereCondition(con *jdb.QlCondition) string {
 	key := whereValue(con.Field)
 	values := whereValue(con.Value)
 	def := whereOperator(con, values)
-	return strs.Format("%v%v", key, def)
+	return fmt.Sprintf("%v%v", key, def)
 }
 
 /**
@@ -72,11 +74,11 @@ func whereValue(val interface{}) string {
 		var result string
 		for _, w := range v {
 			val := whereValue(w)
-			result = strs.Append(result, strs.Format(`%v`, val), ",")
+			result = strs.Append(result, fmt.Sprintf(`%v`, val), ",")
 		}
 		return result
 	default:
-		return strs.Format(`%v`, jdb.Quote(v))
+		return fmt.Sprintf(`%v`, jdb.Quote(v))
 	}
 }
 
@@ -89,29 +91,29 @@ func whereValue(val interface{}) string {
 func whereOperator(condition *jdb.QlCondition, val interface{}) string {
 	switch condition.Operator {
 	case jdb.Equal:
-		return strs.Format("=%v", val)
+		return fmt.Sprintf("=%v", val)
 	case jdb.Neg:
-		return strs.Format("!=%v", val)
+		return fmt.Sprintf("!=%v", val)
 	case jdb.In:
-		return strs.Format(" IN (%v)", val)
+		return fmt.Sprintf(" IN (%v)", val)
 	case jdb.Like:
-		return strs.Format(" ILIKE %v", val)
+		return fmt.Sprintf(" ILIKE %v", val)
 	case jdb.More:
-		return strs.Format(">%v", val)
+		return fmt.Sprintf(">%v", val)
 	case jdb.Less:
-		return strs.Format("<%v", val)
+		return fmt.Sprintf("<%v", val)
 	case jdb.MoreEq:
-		return strs.Format(">=%v", val)
+		return fmt.Sprintf(">=%v", val)
 	case jdb.LessEq:
-		return strs.Format("<=%v", val)
+		return fmt.Sprintf("<=%v", val)
 	case jdb.Between:
-		return strs.Format(" BETWEEN (%v)", val)
+		return fmt.Sprintf(" BETWEEN (%v)", val)
 	case jdb.IsNull:
 		return " IS NULL"
 	case jdb.NotNull:
 		return " IS NOT NULL"
 	case jdb.Search:
-		return strs.Format(" @@ to_tsquery('%s', %v)", condition.Language, val)
+		return fmt.Sprintf(" @@ to_tsquery('%s', %v)", condition.Language, val)
 	default:
 		return ""
 	}

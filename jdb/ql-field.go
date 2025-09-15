@@ -2,6 +2,7 @@ package jdb
 
 import (
 	"encoding/json"
+	"fmt"
 	"regexp"
 
 	"github.com/cgalvisleon/et/et"
@@ -247,15 +248,15 @@ func (s *Field) setAgregation(agr TypeAgregation) {
 	s.Agregation = agr
 	switch agr {
 	case AgregationSum:
-		s.Alias = strs.Format("sum_%s", s.Name)
+		s.Alias = fmt.Sprintf("sum_%s", s.Name)
 	case AgregationCount:
-		s.Alias = strs.Format("count_%s", s.Name)
+		s.Alias = fmt.Sprintf("count_%s", s.Name)
 	case AgregationAvg:
-		s.Alias = strs.Format("avg_%s", s.Name)
+		s.Alias = fmt.Sprintf("avg_%s", s.Name)
 	case AgregationMin:
-		s.Alias = strs.Format("min_%s", s.Name)
+		s.Alias = fmt.Sprintf("min_%s", s.Name)
 	case AgregationMax:
-		s.Alias = strs.Format("max_%s", s.Name)
+		s.Alias = fmt.Sprintf("max_%s", s.Name)
 	}
 }
 
@@ -265,7 +266,7 @@ func (s *Field) setAgregation(agr TypeAgregation) {
 **/
 func (s *Field) ValueQuoted() any {
 	if s.Unquoted {
-		return strs.Format(`%v`, s.Value)
+		return fmt.Sprintf(`%v`, s.Value)
 	}
 
 	return Quote(s.Value)
@@ -291,10 +292,10 @@ func (s *Field) asField() string {
 **/
 func (s *Field) asName() string {
 	if s.As != "" {
-		return strs.Format(`%s.%s`, s.As, s.Name)
+		return fmt.Sprintf(`%s.%s`, s.As, s.Name)
 	}
 
-	return strs.Format(`%v`, s.Name)
+	return fmt.Sprintf(`%v`, s.Name)
 }
 
 /**

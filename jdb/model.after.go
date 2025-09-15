@@ -2,7 +2,6 @@ package jdb
 
 import (
 	"github.com/cgalvisleon/et/et"
-	"github.com/cgalvisleon/et/utility"
 )
 
 /**
@@ -42,9 +41,9 @@ func (s *Model) afterUpdateDefault(tx *Tx, data et.Json) error {
 		}
 
 		if s.StatusField != nil {
-			oldStatus := data.ValStr(utility.ACTIVE, s.StatusField.Name)
+			oldStatus := data.ValStr(ACTIVE, s.StatusField.Name)
 			newStatus := data.ValStr(oldStatus, s.StatusField.Name)
-			if oldStatus != newStatus && newStatus == utility.FOR_DELETE {
+			if oldStatus != newStatus && newStatus == FOR_DELETE {
 				err := s.Db.upsertRecycling(tx, s.Schema, s.Name, sysId)
 				if err != nil {
 					return err

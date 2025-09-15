@@ -1,8 +1,9 @@
 package jdb
 
 import (
+	"fmt"
+
 	"github.com/cgalvisleon/et/et"
-	"github.com/cgalvisleon/et/mistake"
 )
 
 /**
@@ -64,7 +65,7 @@ func (s *Command) ExecTx(tx *Tx) (et.Items, error) {
 			return et.Items{}, err
 		}
 	default:
-		return et.Items{}, mistake.New(MSG_NOT_COMMAND)
+		return et.Items{}, fmt.Errorf(MSG_NOT_COMMAND)
 	}
 
 	return s.Result, nil

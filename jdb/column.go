@@ -264,6 +264,7 @@ type ColumnFields struct {
 	Key        string
 	Index      string
 	Source     string
+	CustomerId string
 	ProjectId  string
 	CreatedAt  string
 	UpdatedAt  string
@@ -282,38 +283,40 @@ type ColumnFields struct {
 **/
 func (s *ColumnFields) Json() et.Json {
 	return et.Json{
-		"key":        s.Key,
-		"index":      s.Index,
-		"source":     s.Source,
-		"project_id": s.ProjectId,
-		"created_at": s.CreatedAt,
-		"updated_at": s.UpdatedAt,
-		"status_id":  s.StatusId,
-		"system_id":  s.SystemId,
-		"created_to": s.CreatedTo,
-		"updated_to": s.UpdatedTo,
-		"fulltext":   s.Fulltext,
-		"historical": s.Historical,
-		"checked":    s.Checked,
+		"key":         s.Key,
+		"index":       s.Index,
+		"source":      s.Source,
+		"customer_id": s.CustomerId,
+		"project_id":  s.ProjectId,
+		"created_at":  s.CreatedAt,
+		"updated_at":  s.UpdatedAt,
+		"status_id":   s.StatusId,
+		"system_id":   s.SystemId,
+		"created_to":  s.CreatedTo,
+		"updated_to":  s.UpdatedTo,
+		"fulltext":    s.Fulltext,
+		"historical":  s.Historical,
+		"checked":     s.Checked,
 	}
 }
 
 var (
-	cf         *ColumnFields
-	KEY        string
-	PRIMARYKEY string
-	INDEX      string
-	SOURCE     string
-	PROJECT_ID string
-	CREATED_AT string
-	UPDATED_AT string
-	STATUS_ID  string
-	SYSID      string
-	CREATED_TO string
-	UPDATED_TO string
-	FULLTEXT   string
-	HISTORYCAL string
-	CHECKED    string
+	cf          *ColumnFields
+	KEY         string
+	PRIMARYKEY  string
+	INDEX       string
+	SOURCE      string
+	CUSTOMER_ID string
+	PROJECT_ID  string
+	CREATED_AT  string
+	UPDATED_AT  string
+	STATUS_ID   string
+	SYSID       string
+	CREATED_TO  string
+	UPDATED_TO  string
+	FULLTEXT    string
+	HISTORYCAL  string
+	CHECKED     string
 )
 
 func init() {
@@ -321,10 +324,11 @@ func init() {
 		Key:        "id",
 		Index:      "idx",
 		Source:     "source",
+		CustomerId: "customer_id",
 		ProjectId:  "project_id",
 		CreatedAt:  "created_at",
 		UpdatedAt:  "updated_at",
-		StatusId:   "status_id",
+		StatusId:   "status",
 		SystemId:   "jdbid",
 		CreatedTo:  "created_to",
 		UpdatedTo:  "updated_to",
@@ -346,6 +350,7 @@ func SetColumnFields(fields *ColumnFields) {
 	PRIMARYKEY = cf.Key
 	INDEX = cf.Index
 	SOURCE = cf.Source
+	CUSTOMER_ID = cf.CustomerId
 	PROJECT_ID = cf.ProjectId
 	CREATED_AT = cf.CreatedAt
 	UPDATED_AT = cf.UpdatedAt

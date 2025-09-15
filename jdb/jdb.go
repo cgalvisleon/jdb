@@ -11,7 +11,6 @@ import (
 
 	"github.com/cgalvisleon/et/config"
 	"github.com/cgalvisleon/et/et"
-	"github.com/cgalvisleon/et/mistake"
 	"github.com/cgalvisleon/et/response"
 	"github.com/cgalvisleon/et/strs"
 )
@@ -297,21 +296,21 @@ func define(params et.Json) (et.Json, error) {
 	case "model":
 		model := GetModel(name)
 		if model == nil {
-			return et.Json{}, mistake.Newf(MSG_MODEL_NOT_FOUND, name)
+			return et.Json{}, fmt.Errorf(MSG_MODEL_NOT_FOUND, name)
 		}
 
 		return model.Describe(), nil
 	case "schema":
 		schema := GetSchema(name)
 		if schema == nil {
-			return et.Json{}, mistake.Newf(MSG_SCHEMA_NOT_FOUND, name)
+			return et.Json{}, fmt.Errorf(MSG_SCHEMA_NOT_FOUND, name)
 		}
 
 		return schema.Describe(), nil
 	case "db":
 		db := GetDB(name)
 		if db == nil {
-			return et.Json{}, mistake.Newf(MSG_DATABASE_NOT_FOUND, name)
+			return et.Json{}, fmt.Errorf(MSG_DATABASE_NOT_FOUND, name)
 		}
 
 		return db.Describe(), nil
@@ -336,28 +335,28 @@ func describe(kind, name string) (et.Json, error) {
 	}
 
 	if kind == "" {
-		return help, mistake.New(MSG_KIND_NOT_DEFINED)
+		return help, fmt.Errorf(MSG_KIND_NOT_DEFINED)
 	}
 
 	switch kind {
 	case "db":
 		result := GetDB(name)
 		if result == nil {
-			return et.Json{}, mistake.Newf(MSG_DATABASE_NOT_FOUND, name)
+			return et.Json{}, fmt.Errorf(MSG_DATABASE_NOT_FOUND, name)
 		}
 
 		return result.Describe(), nil
 	case "schema":
 		result := GetSchema(name)
 		if result == nil {
-			return et.Json{}, mistake.Newf(MSG_SCHEMA_NOT_FOUND, name)
+			return et.Json{}, fmt.Errorf(MSG_SCHEMA_NOT_FOUND, name)
 		}
 
 		return result.Describe(), nil
 	case "model":
 		result := GetModel(name)
 		if result == nil {
-			return et.Json{}, mistake.Newf(MSG_MODEL_NOT_FOUND, name)
+			return et.Json{}, fmt.Errorf(MSG_MODEL_NOT_FOUND, name)
 		}
 
 		return result.Describe(), nil
@@ -368,17 +367,17 @@ func describe(kind, name string) (et.Json, error) {
 				"message": MSG_INVALID_NAME,
 				"help":    "It is required at least two parts in the name of the field, first part is the name of model and second is field name.",
 				"example": "model.field",
-			}, mistake.New(MSG_INVALID_NAME)
+			}, fmt.Errorf(MSG_INVALID_NAME, name)
 		}
 
 		model := GetModel(list[0])
 		if model == nil {
-			return et.Json{}, mistake.Newf(MSG_MODEL_NOT_FOUND, list[0])
+			return et.Json{}, fmt.Errorf(MSG_MODEL_NOT_FOUND, list[0])
 		}
 
 		field := model.getField(list[1], false)
 		if field == nil {
-			return et.Json{}, mistake.Newf(MSG_FIELD_NOT_FOUND, list[1])
+			return et.Json{}, fmt.Errorf(MSG_FIELD_NOT_FOUND, list[1])
 		}
 
 		return field.Describe(), nil
@@ -410,12 +409,12 @@ func commandsTx(tx *Tx, params et.Json) (et.Items, error) {
 	for name := range params {
 		model := GetModel(name)
 		if model == nil {
-			return et.Items{}, mistake.Newf(MSG_MODEL_NOT_FOUND, name)
+			return et.Items{}, fmt.Errorf(MSG_MODEL_NOT_FOUND, name)
 		}
 
 		param := params.Json(name)
 		if param.IsEmpty() {
-			return et.Items{}, mistake.New(help.ToString())
+			return et.Items{}, fmt.Errorf(help.ToString())
 		}
 
 		debug := param.ValBool(false, "debug")

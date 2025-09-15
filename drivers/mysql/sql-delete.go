@@ -1,6 +1,8 @@
 package mysql
 
 import (
+	"fmt"
+
 	"github.com/cgalvisleon/et/strs"
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
@@ -14,7 +16,7 @@ func (s *Mysql) sqlDelete(command *jdb.Command) string {
 	from := command.From
 	where := whereConditions(command.QlWhere)
 	objects := s.sqlObject(from.GetFrom())
-	returns := strs.Format("%s AS result", objects)
+	returns := fmt.Sprintf("%s AS result", objects)
 	if len(command.Returns) > 0 {
 		returns = ""
 		for _, fld := range command.Returns {
@@ -22,5 +24,5 @@ func (s *Mysql) sqlDelete(command *jdb.Command) string {
 		}
 	}
 	result := "DELETE FROM %s\nWHERE %s\nRETURNING\n%s;"
-	return strs.Format(result, tableName(from), where, returns)
+	return fmt.Sprintf(result, tableName(from), where, returns)
 }

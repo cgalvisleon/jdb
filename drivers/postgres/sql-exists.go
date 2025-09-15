@@ -1,6 +1,8 @@
 package postgres
 
 import (
+	"fmt"
+
 	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/strs"
 	jdb "github.com/cgalvisleon/jdb/jdb"
@@ -18,7 +20,7 @@ func (s *Postgres) Exists(ql *jdb.Ql) (bool, error) {
 	ql.Sql = strs.Append(ql.Sql, s.sqlWhere(ql.QlWhere), "\n")
 
 	if len(ql.Sql) > 0 {
-		ql.Sql = strs.Format("SELECT EXISTS (%s);", ql.Sql)
+		ql.Sql = fmt.Sprintf("SELECT EXISTS (%s);", ql.Sql)
 	}
 
 	if ql.IsDebug {

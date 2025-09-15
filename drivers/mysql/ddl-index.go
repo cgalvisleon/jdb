@@ -1,6 +1,7 @@
 package mysql
 
 import (
+	"fmt"
 	"slices"
 	"strings"
 
@@ -61,7 +62,7 @@ func (s *Mysql) ddlPrimaryKey(model *jdb.Model) string {
 	}
 
 	if len(primaryKeys()) > 0 {
-		result = strs.Format("ALTER TABLE %s ADD CONSTRAINT %s_pk PRIMARY KEY (%s);", tableName(model), model.Name, strings.Join(primaryKeys(), ", "))
+		result = fmt.Sprintf("ALTER TABLE %s ADD CONSTRAINT %s_pk PRIMARY KEY (%s);", tableName(model), model.Name, strings.Join(primaryKeys(), ", "))
 	}
 
 	return result
@@ -86,7 +87,7 @@ func (s *Mysql) ddlForeignKeys(model *jdb.Model) string {
 			key = strs.Append(key, fkn, ", ")
 			referenceKey = strs.Append(referenceKey, pkn, ", ")
 		}
-		def := strs.Format(`ALTER TABLE IF EXISTS %s ADD CONSTRAINT %s FOREIGN KEY (%s) REFERENCES %s(%s)`, tableName(model), name, key, tableName(reference), referenceKey)
+		def := fmt.Sprintf(`ALTER TABLE IF EXISTS %s ADD CONSTRAINT %s FOREIGN KEY (%s) REFERENCES %s(%s)`, tableName(model), name, key, tableName(reference), referenceKey)
 		if relation.OnDeleteCascade {
 			def = def + " ON DELETE CASCADE"
 		}
@@ -152,5 +153,5 @@ func (s *Mysql) ddlTableIndex(model *jdb.Model) string {
 	result = strs.Append(result, s.ddlForeignKeys(model), "\n")
 	result = strs.Append(result, s.ddlUniqueIndex(model), "\n")
 
-	return strs.Format("\n%s", result)
+	return fmt.Sprintf("\n%s", result)
 }

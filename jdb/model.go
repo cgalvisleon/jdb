@@ -10,7 +10,6 @@ import (
 
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/event"
-	"github.com/cgalvisleon/et/mistake"
 	"github.com/cgalvisleon/et/reg"
 	"github.com/cgalvisleon/et/strs"
 	"github.com/cgalvisleon/et/timezone"
@@ -73,7 +72,6 @@ type Model struct {
 	IndexField         *Column                  `json:"-"`
 	SourceField        *Column                  `json:"-"`
 	FullTextField      *Column                  `json:"-"`
-	ProjectField       *Column                  `json:"-"`
 	Version            int                      `json:"version"`
 	beforeInsert       []DataFunctionTx         `json:"-"`
 	beforeUpdate       []DataFunctionTx         `json:"-"`
@@ -321,7 +319,6 @@ func (s *Model) Describe() et.Json {
 	result["index_field"] = s.IndexField
 	result["source_field"] = s.SourceField
 	result["full_text_field"] = s.FullTextField
-	result["project_field"] = s.ProjectField
 	result["types"] = s.Types
 
 	return result
@@ -454,7 +451,7 @@ func (s *Model) CheckRequired(data et.Json) error {
 	for name, required := range s.Required {
 		if required {
 			if data[name] == nil {
-				return mistake.Newf(MSG_REQUIRED_FIELD_REQUIRED, name)
+				return fmt.Errorf(MSG_REQUIRED_FIELD_REQUIRED, name)
 			}
 		}
 	}
@@ -471,7 +468,7 @@ func (s *Model) CheckForeignKeys(data et.Json) error {
 	for name, relation := range s.ForeignKeys {
 		with := relation.With
 		if with == nil {
-			return mistake.Newf(MSG_RELATION_WITH_REQUIRED, name)
+			return fmt.Errorf(MSG_RELATION_WITH_REQUIRED, name)
 		}
 
 		where := relation.GetWhere(data)
@@ -485,7 +482,7 @@ func (s *Model) CheckForeignKeys(data et.Json) error {
 		}
 
 		if !exist {
-			return mistake.Newf(MSG_FOREIGN_KEY_NOT_EXIST, name, where.ToString())
+			return fmt.Errorf(MSG_FOREIGN_KEY_NOT_EXIST, name, where.ToString())
 		}
 	}
 
@@ -504,11 +501,11 @@ func (s *Model) GetId(id string) string {
 
 	switch s.TpId {
 	case TpXId:
-		return strs.Format(`%s:%s`, s.Name, reg.XID())
+		return fmt.Sprintf(`%s:%s`, s.Name, reg.XID())
 	case TpULId:
-		return strs.Format(`%s:%s`, s.Name, reg.ULID())
+		return fmt.Sprintf(`%s:%s`, s.Name, reg.ULID())
 	default:
-		return strs.Format(`%s`, reg.UUID())
+		return fmt.Sprintf(`%s`, reg.UUID())
 	}
 }
 
@@ -530,7 +527,7 @@ func (s *Model) getKeyByPk(data et.Json) (string, error) {
 	for name := range s.PrimaryKeys {
 		val := data.Get(name)
 		if val == nil {
-			return "", mistake.Newf(MSG_PRIMARY_KEY_REQUIRED, name, s.Name)
+			return "", fmt.Errorf(MSG_PRIMARY_KEY_REQUIRED, name, s.Name)
 		}
 
 		result = strs.Append(result, fmt.Sprintf(`%v`, val), ":")
@@ -589,7 +586,7 @@ func (s *Model) GetWhereByRequired(data et.Json) (et.Json, error) {
 	for name := range s.Required {
 		val := data.Get(name)
 		if val == nil {
-			return et.Json{}, mistake.Newf(MSG_FIELD_REQUIRED, name, s.Name)
+			return et.Json{}, fmt.Errorf(MSG_FIELD_REQUIRED, name, s.Name)
 		}
 
 		col := s.getColumn(name)
@@ -630,7 +627,7 @@ func (s *Model) GetWhereByPrimaryKeys(data et.Json) (et.Json, error) {
 	for name := range s.PrimaryKeys {
 		val := data.Get(name)
 		if val == nil {
-			return et.Json{}, mistake.Newf(MSG_PRIMARY_KEY_REQUIRED, name, s.Name)
+			return et.Json{}, fmt.Errorf(MSG_PRIMARY_KEY_REQUIRED, name, s.Name)
 		}
 
 		col := s.getColumn(name)

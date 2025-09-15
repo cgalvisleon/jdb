@@ -2,10 +2,10 @@ package postgres
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/cgalvisleon/et/config"
 	"github.com/cgalvisleon/et/et"
-	"github.com/cgalvisleon/et/strs"
 	"github.com/cgalvisleon/jdb/jdb"
 	_ "github.com/lib/pq"
 )
@@ -30,7 +30,7 @@ func (s *Connection) Chain() (string, error) {
 		return "", err
 	}
 
-	result := strs.Format(`%s://%s:%s@%s:%d/%s?sslmode=disable&application_name=%s`, jdb.PostgresDriver, s.Username, s.Password, s.Host, s.Port, s.Database, s.App)
+	result := fmt.Sprintf(`%s://%s:%s@%s:%d/%s?sslmode=disable&application_name=%s`, jdb.PostgresDriver, s.Username, s.Password, s.Host, s.Port, s.Database, s.App)
 
 	return result, nil
 }
@@ -40,7 +40,7 @@ func (s *Connection) Chain() (string, error) {
 * @return string, error
 **/
 func (s *Connection) defaultChain() (string, error) {
-	return strs.Format(`%s://%s:%s@%s:%d/%s?sslmode=disable&application_name=%s`, jdb.PostgresDriver, s.Username, s.Password, s.Host, s.Port, "postgres", s.App), nil
+	return fmt.Sprintf(`%s://%s:%s@%s:%d/%s?sslmode=disable&application_name=%s`, jdb.PostgresDriver, s.Username, s.Password, s.Host, s.Port, "postgres", s.App), nil
 }
 
 /**

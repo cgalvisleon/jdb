@@ -49,10 +49,7 @@ func (s *Postgres) ExistDatabase(db *sql.DB, name string) (bool, error) {
 		return false, nil
 	}
 
-	first := items.Result[0]
-	result := first.Bool("exists")
-
-	return result, nil
+	return items.Bool(0, "exists"), nil
 }
 
 /**
@@ -70,8 +67,8 @@ func (s *Postgres) CreateDatabase(db *sql.DB, name string) error {
 		return nil
 	}
 
-	sql := `CREATE DATABASE $1;`
-	_, err = db.Exec(sql, name)
+	sql := fmt.Sprintf(`CREATE DATABASE %s;`, name)
+	_, err = db.Exec(sql)
 	if err != nil {
 		return err
 	}
@@ -96,8 +93,8 @@ func (s *Postgres) DropDatabase(db *sql.DB, name string) error {
 		return nil
 	}
 
-	sql := `DROP DATABASE $1;`
-	_, err = db.Exec(sql, name)
+	sql := fmt.Sprintf(`DROP DATABASE %s;`, name)
+	_, err = db.Exec(sql)
 	if err != nil {
 		return err
 	}

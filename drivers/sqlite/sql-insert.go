@@ -26,7 +26,7 @@ func (s *SqlLite) sqlInsert(command *jdb.Command) string {
 			switch field.Column.TypeColumn {
 			case jdb.TpColumn:
 				columns.Add(key)
-				def := strs.Format(`%v`, field.ValueQuoted())
+				def := fmt.Sprintf(`%v`, field.ValueQuoted())
 				value = strs.Append(value, def, ", ")
 			case jdb.TpAtribute:
 				atribs.Set(key, field.Value)
@@ -41,12 +41,12 @@ func (s *SqlLite) sqlInsert(command *jdb.Command) string {
 			value = strs.Append(value, def, ", ")
 		}
 
-		value = strs.Format(`(%s)`, value)
+		value = fmt.Sprintf(`(%s)`, value)
 		values = strs.Append(values, value, ",\n")
 	}
 
 	objects := s.sqlObject(from.GetFrom())
-	returns := strs.Format("%s AS result", objects)
+	returns := fmt.Sprintf("%s AS result", objects)
 	if len(command.Returns) > 0 {
 		returns := ""
 		for _, fld := range command.Returns {
@@ -60,5 +60,5 @@ func (s *SqlLite) sqlInsert(command *jdb.Command) string {
 	}
 
 	result := "INSERT INTO %s(%s)\nVALUES %s\nRETURNING\n%s;"
-	return strs.Format(result, tableName(from), strings.Join(columnNames, ", "), values, returns)
+	return fmt.Sprintf(result, tableName(from), strings.Join(columnNames, ", "), values, returns)
 }

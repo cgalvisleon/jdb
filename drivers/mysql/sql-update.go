@@ -1,6 +1,8 @@
 package mysql
 
 import (
+	"fmt"
+
 	"github.com/cgalvisleon/et/strs"
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
@@ -19,27 +21,27 @@ func (s *Mysql) sqlUpdate(command *jdb.Command) string {
 		for key, field := range value {
 			if field.Column.TypeColumn == jdb.TpColumn {
 				val := field.ValueQuoted()
-				def := strs.Format(`%s = %v`, key, val)
+				def := fmt.Sprintf(`%s = %v`, key, val)
 				set = strs.Append(set, def, ",\n")
 			} else if field.Column.TypeColumn == jdb.TpAtribute && from.SourceField != nil {
 				val := jdb.JsonQuote(field.Value)
 				if len(atribs) == 0 {
 					atribs = from.SourceField.Name
-					atribs = strs.Format("jsonb_set(%s, '{%s}', %v::jsonb, true)", atribs, key, val)
+					atribs = fmt.Sprintf("jsonb_set(%s, '{%s}', %v::jsonb, true)", atribs, key, val)
 				} else {
-					atribs = strs.Format("jsonb_set(\n%s, \n'{%s}', %v::jsonb, true)", atribs, key, val)
+					atribs = fmt.Sprintf("jsonb_set(\n%s, \n'{%s}', %v::jsonb, true)", atribs, key, val)
 				}
 			}
 		}
 		if len(atribs) > 0 {
-			def := strs.Format(`%s = %v`, from.SourceField.Name, atribs)
+			def := fmt.Sprintf(`%s = %v`, from.SourceField.Name, atribs)
 			set = strs.Append(set, def, ",\n")
 		}
 	}
 
 	where = whereConditions(command.QlWhere)
 	objects := s.sqlObject(from.GetFrom())
-	returns := strs.Format("%s AS result", objects)
+	returns := fmt.Sprintf("%s AS result", objects)
 	if len(command.Returns) > 0 {
 		returns = ""
 		for _, fld := range command.Returns {
@@ -48,5 +50,5 @@ func (s *Mysql) sqlUpdate(command *jdb.Command) string {
 	}
 
 	result := "UPDATE %s SET\n%s\nWHERE %s\nRETURNING\n%s;"
-	return strs.Format(result, tableName(from), set, where, returns)
+	return fmt.Sprintf(result, tableName(from), set, where, returns)
 }

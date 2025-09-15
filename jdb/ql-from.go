@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/cgalvisleon/et/et"
-	"github.com/cgalvisleon/et/strs"
 )
 
 func helpQl() et.Json {
@@ -161,7 +160,7 @@ func (s *Ql) From(name string) *Ql {
 func (s *Ql) getForms() []string {
 	var result []string
 	for _, from := range s.Froms.Froms {
-		result = append(result, strs.Format(`%s.%s, %s`, from.Schema, from.Name, from.As))
+		result = append(result, fmt.Sprintf(`%s.%s, %s`, from.Schema, from.Name, from.As))
 	}
 
 	return result

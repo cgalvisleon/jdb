@@ -1,7 +1,8 @@
 package postgres
 
 import (
-	"github.com/cgalvisleon/et/strs"
+	"fmt"
+
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
@@ -18,7 +19,7 @@ func (s *Postgres) sqlHaving(ql *jdb.Ql) string {
 		return result
 	}
 
-	result = strs.Format("HAVING %s", where)
+	result = fmt.Sprintf("HAVING %s", where)
 
 	return result
 }
