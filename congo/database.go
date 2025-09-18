@@ -7,7 +7,6 @@ import (
 
 	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
-	"github.com/cgalvisleon/et/utility"
 )
 
 var dbs map[string]*Database
@@ -46,10 +45,10 @@ func (s *Database) ToJson() et.Json {
 
 /**
 * GetDatabase
-* @param name string
+* @param name, driver string, params et.Json
 * @return (*Database, error)
 **/
-func getDatabase(name, driver string) (*Database, error) {
+func getDatabase(name, driver string, params et.Json) (*Database, error) {
 	result, ok := dbs[name]
 	if !ok {
 		if _, ok := drivers[driver]; !ok {
@@ -57,8 +56,9 @@ func getDatabase(name, driver string) (*Database, error) {
 		}
 
 		result = &Database{
-			Name:   name,
-			Models: make(map[string]*Model),
+			Name:       name,
+			Models:     make(map[string]*Model),
+			Connection: params,
 		}
 		result.driver = drivers[driver](result)
 		err := result.load()
@@ -118,76 +118,46 @@ func (s *Database) init(model *Model) error {
 }
 
 /**
-* getModel
-* @param id string
-* @return (*Model, error)
+* query
+* @param tx *Tx, query *JQuery
+* @return (et.Items, error)
 **/
-func (s *Database) getModel(schema, name string) (*Model, error) {
-	if !utility.ValidStr(schema, 0, []string{}) {
-		return nil, fmt.Errorf(MSG_SCHEMA_REQUIRED)
+func (s *Database) query(tx *Tx, query *JQuery) (et.Items, error) {
+	query.tx = tx
+	if err := query.validate(); err != nil {
+		return et.Items{}, err
 	}
 
-	if !utility.ValidStr(name, 0, []string{}) {
-		return nil, fmt.Errorf(MSG_NAME_REQUIRED)
+	result, err := s.driver.Query(query)
+	if err != nil {
+		return et.Items{}, err
 	}
 
-	id := fmt.Sprintf("%s.%s", schema, name)
-	model, ok := s.Models[id]
-	if !ok {
-		model = &Model{
-			Id:           id,
-			Database:     s.Name,
-			Schema:       schema,
-			Name:         name,
-			Table:        "",
-			Columns:      et.Json{},
-			Atribs:       et.Json{},
-			SourceField:  "",
-			Details:      et.Json{},
-			Masters:      et.Json{},
-			Rollups:      et.Json{},
-			PrimaryKeys:  []string{},
-			ForeignKeys:  et.Json{},
-			Indices:      []string{},
-			Required:     []string{},
-			db:           s,
-			details:      make(map[string]*Model),
-			masters:      make(map[string]*Model),
-			rollups:      make(map[string]*Model),
-			beforeInsert: []DataFunctionTx{},
-			beforeUpdate: []DataFunctionTx{},
-			beforeDelete: []DataFunctionTx{},
-			afterInsert:  []DataFunctionTx{},
-			afterUpdate:  []DataFunctionTx{},
-			afterDelete:  []DataFunctionTx{},
-		}
-		model.BeforeInsert(model.beforeInsertDefault)
-		model.BeforeUpdate(model.beforeUpdateDefault)
-		model.BeforeDelete(model.beforeDeleteDefault)
-		model.AfterInsert(model.afterInsertDefault)
-		model.AfterUpdate(model.afterUpdateDefault)
-		model.AfterDelete(model.afterDeleteDefault)
-		s.Models[id] = model
+	if query.isDebug {
+		console.Debugf("query:%s", query.toJson().ToString())
 	}
 
-	return model, nil
+	return result, nil
 }
 
 /**
-* GetModel
-* @param database, schema, name string
-* @return (*Model, error)
+* command
+* @param tx *Tx, command *Command
+* @return (et.Items, error)
 **/
-func GetModel(database, schema, name string) (*Model, error) {
-	db, ok := dbs[database]
-	if !ok {
-		return nil, fmt.Errorf("database %s not found", database)
+func (s *Database) command(tx *Tx, command *Command) (et.Items, error) {
+	command.tx = tx
+	if err := command.validate(); err != nil {
+		return et.Items{}, err
 	}
 
-	id := fmt.Sprintf("%s.%s", schema, name)
-	result, ok := db.Models[id]
-	if !ok {
-		return nil, fmt.Errorf("model %s not found", id)
+	result, err := s.driver.Command(command)
+	if err != nil {
+		return et.Items{}, err
+	}
+
+	if command.isDebug {
+		console.Debugf("command:%s", command.toJson().ToString())
 	}
 
 	return result, nil

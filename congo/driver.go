@@ -1,6 +1,10 @@
 package jdb
 
-import "database/sql"
+import (
+	"database/sql"
+
+	"github.com/cgalvisleon/et/et"
+)
 
 const (
 	DriverPostgres = "postgres"
@@ -13,6 +17,8 @@ const (
 type Driver interface {
 	Connect(db *Database) (*sql.DB, error)
 	Load(model *Model) error
+	Query(query *JQuery) (et.Items, error)
+	Command(command *Command) (et.Items, error)
 }
 
 var drivers map[string]func(db *Database) Driver

@@ -131,7 +131,8 @@ func DefineModel(definition et.Json) (*Model, error) {
 
 	driver := envar.GetStr("DB_DRIVER", DriverPostgres)
 	driver = definition.ValStr(driver, "driver")
-	db, err := getDatabase(database, driver)
+	connection := definition.Json("connection")
+	db, err := getDatabase(database, driver, connection)
 	if err != nil {
 		return nil, err
 	}
@@ -226,39 +227,6 @@ func (s *Model) ToJson() et.Json {
 }
 
 /**
-* validate
-* @return error
-**/
-func (s *Model) validate() error {
-	if len(s.Columns) != 0 {
-		return nil
-	}
-
-	err := s.defineSourceField(SOURCE)
-	if err != nil {
-		return err
-	}
-
-	s.defineColumn(KEY, et.Json{
-		"type": TypeKey,
-	})
-
-	s.definePrimaryKeys(KEY)
-
-	s.defineRecordField(RECORDID)
-
-	return nil
-}
-
-/**
-* save
-* @return error
-**/
-func (s *Model) save() error {
-	return setModel(s.Id, s.ToJson(), s.isDebug)
-}
-
-/**
 * GetColumn
 * @param name string
 * @return (et.Json, bool)
@@ -273,6 +241,10 @@ func (s *Model) GetColumn(name string) (et.Json, bool) {
 	return result, ok
 }
 
+/**
+* SetInit
+* @return
+**/
 func (s *Model) SetInit() {
 	s.isInit = true
 }
@@ -330,4 +302,53 @@ func (s *Model) Init() error {
 	}
 
 	return nil
+}
+
+/**
+* Insert
+* @param data et.Json
+* @return *Command
+**/
+func (s *Model) Insert(data et.Json) *Command {
+	return newCommand(s, TypeInsert, []et.Json{data})
+}
+
+/**
+* Update
+* @param data et.Json
+* @return *Command
+**/
+func (s *Model) Update(data et.Json) *Command {
+	return newCommand(s, TypeUpdate, []et.Json{data})
+}
+
+/**
+* Delete
+* @param data et.Json
+* @return *Command
+**/
+func (s *Model) Delete(data et.Json) *Command {
+	return newCommand(s, TypeDelete, []et.Json{data})
+}
+
+/**
+* Upsert
+* @param data et.Json
+* @return *Command
+**/
+func (s *Model) Upsert(data et.Json) *Command {
+	return newCommand(s, TypeUpsert, []et.Json{data})
+}
+
+/**
+* Query
+* @param query et.Json
+* @return *JQuery
+**/
+func (s *Model) Query(query et.Json) *JQuery {
+	result := newJQuery(s.db)
+	result.addFrom(s.Name)
+	result.setQuery(query)
+
+	return result
 }

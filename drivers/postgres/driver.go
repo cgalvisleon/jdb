@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/cgalvisleon/et/envar"
+	"github.com/cgalvisleon/et/et"
 	jdb "github.com/cgalvisleon/jdb/congo"
 )
 
@@ -54,4 +55,22 @@ func (s *Postgres) Load(model *jdb.Model) error {
 	model.SetInit()
 
 	return nil
+}
+
+/**
+* Query
+* @param query *jdb.JQuery
+* @return (et.Items, error)
+**/
+func (s *Postgres) Query(query *jdb.JQuery) (et.Items, error) {
+	return et.Items{}, nil
+}
+
+/**
+* Command
+* @param command *jdb.Command
+* @return (et.Items, error)
+**/
+func (s *Postgres) Command(command *jdb.Command) (et.Items, error) {
+	return et.Items{}, nil
 }

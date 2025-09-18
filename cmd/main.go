@@ -5,8 +5,8 @@ import (
 	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/event"
-	jdb "github.com/cgalvisleon/jdb/congo"
 	_ "github.com/cgalvisleon/jdb/drivers/postgres"
+	jdb "github.com/cgalvisleon/jdb/v2"
 )
 
 func main() {
@@ -64,17 +64,6 @@ func main() {
 		},
 		"required": []string{"id"},
 		"debug":    true,
-		// "foreign_keys": et.Json{
-		// 	"id": "id",
-		// },
-		// "indices": []string{
-		// 	"id",
-		// 	"name",
-		// 	"email",
-		// },
-		// "uniques":  []string{"id"},
-		// 	"profiles": et.Json{},
-		// },
 	})
 	if err != nil {
 		console.Panic(err)
