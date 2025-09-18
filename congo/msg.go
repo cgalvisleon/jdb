@@ -6,4 +6,5 @@ const (
 	MSG_NAME_REQUIRED     = "name is required"
 	MSG_TYPE_REQUIRED     = "type is required"
 	MSG_DRIVER_REQUIRED   = "driver is required"
+	MSG_DRIVER_NOT_FOUND  = "driver %s not found"
 )

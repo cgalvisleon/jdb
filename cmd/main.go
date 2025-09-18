@@ -6,6 +6,7 @@ import (
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/event"
 	jdb "github.com/cgalvisleon/jdb/congo"
+	_ "github.com/cgalvisleon/jdb/drivers/postgres"
 )
 
 func main() {
@@ -25,7 +26,7 @@ func main() {
 	// }
 
 	model, err := jdb.Define(et.Json{
-		"database": "catalogo",
+		"database": "josephine",
 		"schema":   "projects",
 		"name":     "users",
 		"version":  1,

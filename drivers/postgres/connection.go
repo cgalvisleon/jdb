@@ -1,12 +1,10 @@
 package postgres
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/utility"
-	"github.com/cgalvisleon/jdb/jdb"
 )
 
 type Connection struct {
@@ -24,7 +22,7 @@ type Connection struct {
 * @return string, error
 **/
 func (s *Connection) defaultChain() (string, error) {
-	return fmt.Sprintf(`%s://%s:%s@%s:%d/%s?sslmode=disable&application_name=%s`, jdb.PostgresDriver, s.Username, s.Password, s.Host, s.Port, "postgres", s.App), nil
+	return fmt.Sprintf(`%s://%s:%s@%s:%d/%s?sslmode=disable&application_name=%s`, driver, s.Username, s.Password, s.Host, s.Port, "postgres", s.App), nil
 }
 
 /**
@@ -37,78 +35,51 @@ func (s *Connection) chain() (string, error) {
 		return "", err
 	}
 
-	result := fmt.Sprintf(`%s://%s:%s@%s:%d/%s?sslmode=disable&application_name=%s`, jdb.PostgresDriver, s.Username, s.Password, s.Host, s.Port, s.Database, s.App)
+	result := fmt.Sprintf(`%s://%s:%s@%s:%d/%s?sslmode=disable&application_name=%s`, driver, s.Username, s.Password, s.Host, s.Port, s.Database, s.App)
 
 	return result, nil
 }
 
 /**
-* ToJson
-* @return et.Json
-**/
-func (s *Connection) ToJson() et.Json {
-	bt, err := json.Marshal(s)
-	if err != nil {
-		return et.Json{}
-	}
-
-	var result et.Json
-	err = json.Unmarshal(bt, &result)
-	if err != nil {
-		return et.Json{}
-	}
-
-	return result
-}
-
-/**
-* Load
+* load
 * @param params et.Json
 * @return error
 **/
-func (s *Connection) Load(params et.Json) error {
+func (s *Connection) load(params et.Json) error {
 	database := params.Str("database")
-	if !utility.ValidStr(database, 0, []string{}) {
-		return fmt.Errorf("database is required")
+	if utility.ValidStr(database, 0, []string{}) {
+		s.Database = database
 	}
 
 	host := params.Str("host")
-	if !utility.ValidStr(host, 0, []string{}) {
-		return fmt.Errorf("host is required")
+	if utility.ValidStr(host, 0, []string{}) {
+		s.Host = host
 	}
 
 	port := params.Int("port")
-	if port == 0 {
-		return fmt.Errorf("port is required")
+	if port != 0 {
+		s.Port = port
 	}
 
 	username := params.Str("username")
-	if !utility.ValidStr(username, 0, []string{}) {
-		return fmt.Errorf("username is required")
+	if utility.ValidStr(username, 0, []string{}) {
+		s.Username = username
 	}
 
 	password := params.Str("password")
-	if !utility.ValidStr(password, 0, []string{}) {
-		return fmt.Errorf("password is required")
+	if utility.ValidStr(password, 0, []string{}) {
+		s.Password = password
 	}
 
 	app := params.Str("app")
-	if !utility.ValidStr(app, 0, []string{}) {
-		return fmt.Errorf("app is required")
+	if utility.ValidStr(app, 0, []string{}) {
+		s.App = app
 	}
 
 	version := params.Int("version")
-	if version == 0 {
-		return fmt.Errorf("version is required")
+	if version != 0 {
+		s.Version = version
 	}
-
-	s.Database = database
-	s.Host = host
-	s.Port = port
-	s.Username = username
-	s.Password = password
-	s.App = app
-	s.Version = version
 
 	return s.validate()
 }

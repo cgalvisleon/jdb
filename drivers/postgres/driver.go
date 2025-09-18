@@ -7,8 +7,10 @@ import (
 	jdb "github.com/cgalvisleon/jdb/congo"
 )
 
+var driver = "postgres"
+
 func init() {
-	jdb.Register("postgres", &Postgres{})
+	jdb.Register(driver, newDriver)
 }
 
 type Postgres struct {
@@ -17,8 +19,13 @@ type Postgres struct {
 	connection *Connection   `json:"-"`
 }
 
+/**
+* newDriver
+* @param database *jdb.Database
+* @return jdb.Driver
+**/
 func newDriver(database *jdb.Database) jdb.Driver {
-	return &Postgres{
+	result := &Postgres{
 		database: database,
 		name:     database.Name,
 		connection: &Connection{
@@ -31,6 +38,10 @@ func newDriver(database *jdb.Database) jdb.Driver {
 			Version:  envar.GetInt("DB_VERSION", 13),
 		},
 	}
+
+	result.connection.load(result.database.Connection)
+
+	return result
 }
 
 /**

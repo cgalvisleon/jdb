@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/cgalvisleon/et/envar"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/utility"
 )
@@ -127,7 +128,9 @@ func Define(definition et.Json) (*Model, error) {
 		return nil, fmt.Errorf(MSG_NAME_REQUIRED)
 	}
 
-	db, err := getDatabase(database)
+	driver := envar.GetStr("DB_DRIVER", DriverPostgres)
+	driver = definition.ValStr(driver, "driver")
+	db, err := getDatabase(database, driver)
 	if err != nil {
 		return nil, err
 	}

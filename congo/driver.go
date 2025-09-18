@@ -15,12 +15,12 @@ type Driver interface {
 	Load(model *Model) error
 }
 
-var drivers map[string]Driver
+var drivers map[string]func(db *Database) Driver
 
 func init() {
-	drivers = make(map[string]Driver)
+	drivers = make(map[string]func(db *Database) Driver)
 }
 
-func Register(name string, driver Driver) {
+func Register(name string, driver func(db *Database) Driver) {
 	drivers[name] = driver
 }

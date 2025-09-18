@@ -49,15 +49,18 @@ func (s *Database) ToJson() et.Json {
 * @param name string
 * @return (*Database, error)
 **/
-func getDatabase(name string) (*Database, error) {
+func getDatabase(name, driver string) (*Database, error) {
 	result, ok := dbs[name]
 	if !ok {
+		if _, ok := drivers[driver]; !ok {
+			return nil, fmt.Errorf(MSG_DRIVER_NOT_FOUND, driver)
+		}
+
 		result = &Database{
 			Name:   name,
 			Models: make(map[string]*Model),
-			driver: drivers[DriverPostgres],
 		}
-
+		result.driver = drivers[driver](result)
 		err := result.load()
 		if err != nil {
 			return nil, err
