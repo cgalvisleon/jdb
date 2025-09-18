@@ -9,37 +9,39 @@ import (
 
 /**
 * defineColumn
-* @param params et.Json
+* @param name string, params et.Json
 * @return error
 **/
-func (s *Model) defineColumn(params et.Json) error {
-	name := params.String("name")
+func (s *Model) defineColumn(name string, params et.Json) error {
 	if !utility.ValidStr(name, 0, []string{}) {
-		return fmt.Errorf("name is required")
+		return fmt.Errorf(`%s (%s)`, MSG_NAME_REQUIRED, "defineColumn")
 	}
 
 	typeData := params.String("type")
 	if !TypeData[typeData] {
-		return fmt.Errorf("type is required")
+		return fmt.Errorf(MSG_TYPE_REQUIRED)
 	}
 
-	s.Columns[name] = params
+	s.Columns[name] = et.Json{
+		"type":    typeData,
+		"default": params.String("default"),
+	}
 	return nil
 }
 
 /**
 * defineAtrib
-* @param name string
+* @param name string, defaultValue interface{}
 * @return error
 **/
-func (s *Model) defineAtrib(name string) error {
+func (s *Model) defineAtrib(name string, defaultValue interface{}) error {
 	if s.SourceField == "" {
 		s.defineSourceField(SOURCE)
 	}
 
-	return s.defineColumn(et.Json{
-		"name": name,
-		"type": TypeAtribute,
+	return s.defineColumn(name, et.Json{
+		"type":    TypeAtribute,
+		"default": defaultValue,
 	})
 }
 
@@ -113,10 +115,37 @@ func (s *Model) defineSourceField(name string) error {
 	}
 
 	s.SourceField = name
-	return s.defineColumn(et.Json{
-		"name": name,
+	err := s.defineColumn(name, et.Json{
 		"type": TypeJson,
 	})
+	if err != nil {
+		return err
+	}
+
+	s.defineIndices(name)
+	return nil
+}
+
+/**
+* defineRecordField
+* @param name string
+* @return error
+**/
+func (s *Model) defineRecordField(name string) error {
+	if !utility.ValidStr(name, 0, []string{}) {
+		return nil
+	}
+
+	s.RecordField = name
+	err := s.defineColumn(name, et.Json{
+		"type": TypeJson,
+	})
+	if err != nil {
+		return err
+	}
+
+	s.defineIndices(name)
+	return nil
 }
 
 /**
@@ -169,10 +198,22 @@ func (s *Model) defineForeignKeys(params et.Json) error {
 				return fmt.Errorf("column %s not found in %s", val, model.Id)
 			}
 
-			err := s.defineColumn(et.Json{
-				"name": key,
+			err := s.defineColumn(key, et.Json{
 				"type": pk.String("type"),
 			})
+			if err != nil {
+				return err
+			}
+
+			if !utility.ValidStr(onDelete, 0, []string{}) {
+				continue
+			}
+
+			if !utility.ValidStr(onUpdate, 0, []string{}) {
+				continue
+			}
+
+			err = s.defineIndices(key)
 			if err != nil {
 				return err
 			}
@@ -193,11 +234,11 @@ func (s *Model) defineForeignKeys(params et.Json) error {
 }
 
 /**
-* defineRelations
+* defineDetails
 * @param params et.Json
 * @return error
 **/
-func (s *Model) defineRelations(params et.Json) error {
+func (s *Model) defineDetails(params et.Json) error {
 	for key := range params {
 		param := params.Json(key)
 
@@ -224,12 +265,12 @@ func (s *Model) defineRelations(params et.Json) error {
 		onDelete := references.String("on_delete")
 		onUpdate := references.String("on_update")
 
-		relation, err := s.db.getModel(schema, name)
+		detail, err := s.db.getModel(schema, name)
 		if err != nil {
 			return err
 		}
 
-		err = relation.defineForeignKeys(et.Json{
+		err = detail.defineForeignKeys(et.Json{
 			s.Name: et.Json{
 				"schema": s.Schema,
 				"name":   s.Name,
@@ -244,7 +285,31 @@ func (s *Model) defineRelations(params et.Json) error {
 			return err
 		}
 
-		s.Relations[key] = param
+		detail.masters[s.Name] = s
+		detail.Masters[s.Name] = et.Json{
+			"schema": s.Schema,
+			"name":   s.Name,
+			"references": et.Json{
+				"columns": columns,
+			},
+		}
+
+		err = detail.defineColumn(s.Name, et.Json{
+			"type": TypeMaster,
+		})
+		if err != nil {
+			return err
+		}
+
+		err = s.defineColumn(name, et.Json{
+			"type": TypeDetail,
+		})
+		if err != nil {
+			return err
+		}
+
+		s.details[name] = detail
+		s.Details[key] = param
 	}
 
 	return nil

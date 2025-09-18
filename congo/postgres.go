@@ -14,5 +14,7 @@ type PostgresDriver struct {
 func (s *PostgresDriver) Load(model *Model) error {
 	model.Table = fmt.Sprintf("%s.%s", model.Schema, model.Name)
 
+	model.isInit = true
+
 	return nil
 }

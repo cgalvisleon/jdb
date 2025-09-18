@@ -1,9 +1,11 @@
 package jdb
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/cgalvisleon/et/et"
+	"github.com/cgalvisleon/et/utility"
 )
 
 var dbs map[string]*Database
@@ -15,7 +17,7 @@ func init() {
 type Database struct {
 	Name   string            `json:"name"`
 	Models map[string]*Model `json:"models"`
-	Driver Driver            `json:"driver"`
+	driver Driver            `json:"-"`
 }
 
 /**
@@ -23,10 +25,18 @@ type Database struct {
 * @return et.Json
 **/
 func (s *Database) ToJson() et.Json {
-	return et.Json{
-		"name":   s.Name,
-		"models": s.Models,
+	bt, err := json.Marshal(s)
+	if err != nil {
+		return et.Json{}
 	}
+
+	var result et.Json
+	err = json.Unmarshal(bt, &result)
+	if err != nil {
+		return et.Json{}
+	}
+
+	return result
 }
 
 /**
@@ -40,7 +50,7 @@ func getDatabase(name string) *Database {
 		result = &Database{
 			Name:   name,
 			Models: make(map[string]*Model),
-			Driver: drivers["postgres"],
+			driver: drivers[DriverPostgres],
 		}
 		dbs[name] = result
 	}
@@ -54,7 +64,12 @@ func getDatabase(name string) *Database {
 * @return error
 **/
 func (s *Database) init(model *Model) error {
-	return s.Driver.Load(model)
+	err := model.save()
+	if err != nil {
+		return err
+	}
+
+	return s.driver.Load(model)
 }
 
 /**
@@ -63,6 +78,14 @@ func (s *Database) init(model *Model) error {
 * @return (*Model, error)
 **/
 func (s *Database) getModel(schema, name string) (*Model, error) {
+	if !utility.ValidStr(schema, 0, []string{}) {
+		return nil, fmt.Errorf(MSG_SCHEMA_REQUIRED)
+	}
+
+	if !utility.ValidStr(name, 0, []string{}) {
+		return nil, fmt.Errorf(MSG_NAME_REQUIRED)
+	}
+
 	id := fmt.Sprintf("%s.%s", schema, name)
 	model, ok := s.Models[id]
 	if !ok {
@@ -74,18 +97,23 @@ func (s *Database) getModel(schema, name string) (*Model, error) {
 			Table:        "",
 			Columns:      et.Json{},
 			SourceField:  "",
-			Relations:    et.Json{},
+			Details:      et.Json{},
+			Masters:      et.Json{},
+			Rollups:      et.Json{},
 			PrimaryKeys:  et.Json{},
 			ForeignKeys:  et.Json{},
 			Indices:      []string{},
 			Required:     []string{},
+			db:           s,
+			details:      make(map[string]*Model),
+			masters:      make(map[string]*Model),
+			rollups:      make(map[string]*Model),
 			beforeInsert: []DataFunctionTx{},
 			beforeUpdate: []DataFunctionTx{},
 			beforeDelete: []DataFunctionTx{},
 			afterInsert:  []DataFunctionTx{},
 			afterUpdate:  []DataFunctionTx{},
 			afterDelete:  []DataFunctionTx{},
-			db:           s,
 		}
 		s.Models[id] = model
 	}

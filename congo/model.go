@@ -1,6 +1,7 @@
 package jdb
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/cgalvisleon/et/et"
@@ -8,68 +9,101 @@ import (
 )
 
 const (
-	SOURCE        = "source"
-	KEY           = "id"
-	TypeInt       = "int"
-	TypeFloat     = "float"
-	TypeKey       = "key"
-	TypeText      = "text"
-	TypeMemo      = "memo"
-	TypeDateTime  = "datetime"
-	TypeBoolean   = "boolean"
-	TypeJson      = "json"
-	TypeSerial    = "serial"
-	TypeBytes     = "bytes"
-	TypeGeometry  = "geometry"
-	TypeAtribute  = "atribute"
-	TypeCalc      = "calc"
-	TypeRelatedTo = "related_to"
-	TypeRollup    = "rollup"
+	SOURCE       = "source"
+	KEY          = "id"
+	RECORDID     = "index"
+	TypeInt      = "int"
+	TypeFloat    = "float"
+	TypeKey      = "key"
+	TypeText     = "text"
+	TypeMemo     = "memo"
+	TypeDateTime = "datetime"
+	TypeBoolean  = "boolean"
+	TypeJson     = "json"
+	TypeSerial   = "serial"
+	TypeBytes    = "bytes"
+	TypeGeometry = "geometry"
+	TypeAtribute = "atribute"
+	TypeCalc     = "calc"
+	TypeDetail   = "detail"
+	TypeMaster   = "master"
+	TypeRollup   = "rollup"
 )
 
 var (
 	TypeData = map[string]bool{
-		TypeInt:       true,
-		TypeFloat:     true,
-		TypeKey:       true,
-		TypeText:      true,
-		TypeMemo:      true,
-		TypeDateTime:  true,
-		TypeBoolean:   true,
-		TypeJson:      true,
-		TypeSerial:    true,
-		TypeBytes:     true,
-		TypeGeometry:  true,
-		TypeAtribute:  true,
-		TypeCalc:      true,
-		TypeRelatedTo: true,
-		TypeRollup:    true,
+		TypeInt:      true,
+		TypeFloat:    true,
+		TypeKey:      true,
+		TypeText:     true,
+		TypeMemo:     true,
+		TypeDateTime: true,
+		TypeBoolean:  true,
+		TypeJson:     true,
+		TypeSerial:   true,
+		TypeBytes:    true,
+		TypeGeometry: true,
+		TypeAtribute: true,
+		TypeCalc:     true,
+		TypeDetail:   true,
+		TypeMaster:   true,
+		TypeRollup:   true,
+	}
+
+	TypeColumn = map[string]bool{
+		TypeInt:      true,
+		TypeFloat:    true,
+		TypeKey:      true,
+		TypeText:     true,
+		TypeMemo:     true,
+		TypeDateTime: true,
+		TypeBoolean:  true,
+		TypeJson:     true,
+		TypeSerial:   true,
+		TypeBytes:    true,
+		TypeGeometry: true,
+	}
+
+	TypeColumnCalc = map[string]bool{
+		TypeCalc:   true,
+		TypeDetail: true,
+		TypeMaster: true,
+		TypeRollup: true,
 	}
 )
 
 type DataFunctionTx func(tx *Tx, data et.Json) error
 
 type Model struct {
-	Id           string           `json:"id"`
-	Database     string           `json:"database"`
-	Schema       string           `json:"schema"`
-	Name         string           `json:"name"`
-	Table        string           `json:"table"`
-	Columns      et.Json          `json:"columns"`
-	SourceField  string           `json:"source_field"`
-	Relations    et.Json          `json:"relations"`
-	PrimaryKeys  et.Json          `json:"primary_keys"`
-	ForeignKeys  et.Json          `json:"foreign_keys"`
-	Indices      []string         `json:"indices"`
-	Required     []string         `json:"required"`
-	IsLocked     bool             `json:"is_locked"`
-	db           *Database        `json:"-"`
-	beforeInsert []DataFunctionTx `json:"-"`
-	beforeUpdate []DataFunctionTx `json:"-"`
-	beforeDelete []DataFunctionTx `json:"-"`
-	afterInsert  []DataFunctionTx `json:"-"`
-	afterUpdate  []DataFunctionTx `json:"-"`
-	afterDelete  []DataFunctionTx `json:"-"`
+	Id           string            `json:"id"`
+	Database     string            `json:"database"`
+	Schema       string            `json:"schema"`
+	Name         string            `json:"name"`
+	Table        string            `json:"table"`
+	Columns      et.Json           `json:"columns"`
+	SourceField  string            `json:"source_field"`
+	RecordField  string            `json:"record_field"`
+	Details      et.Json           `json:"details"`
+	Masters      et.Json           `json:"masters"`
+	Rollups      et.Json           `json:"rollups"`
+	PrimaryKeys  et.Json           `json:"primary_keys"`
+	ForeignKeys  et.Json           `json:"foreign_keys"`
+	Indices      []string          `json:"indices"`
+	Required     []string          `json:"required"`
+	IsLocked     bool              `json:"is_locked"`
+	Version      int               `json:"version"`
+	db           *Database         `json:"-"`
+	details      map[string]*Model `json:"-"`
+	masters      map[string]*Model `json:"-"`
+	rollups      map[string]*Model `json:"-"`
+	isInit       bool              `json:"-"`
+	isDebug      bool              `json:"-"`
+	beforeInsert []DataFunctionTx  `json:"-"`
+	beforeUpdate []DataFunctionTx  `json:"-"`
+	beforeDelete []DataFunctionTx  `json:"-"`
+	afterInsert  []DataFunctionTx  `json:"-"`
+	afterUpdate  []DataFunctionTx  `json:"-"`
+	afterDelete  []DataFunctionTx  `json:"-"`
 }
 
 /**
@@ -80,17 +114,17 @@ type Model struct {
 func Define(definition et.Json) (*Model, error) {
 	database := definition.String("database")
 	if !utility.ValidStr(database, 0, []string{}) {
-		return nil, fmt.Errorf("database is required")
+		return nil, fmt.Errorf(MSG_DATABASE_REQUIRED)
 	}
 
 	schema := definition.String("schema")
 	if !utility.ValidStr(schema, 0, []string{}) {
-		return nil, fmt.Errorf("schema is required")
+		return nil, fmt.Errorf(MSG_SCHEMA_REQUIRED)
 	}
 
 	name := definition.String("name")
 	if !utility.ValidStr(name, 0, []string{}) {
-		return nil, fmt.Errorf("name is required")
+		return nil, fmt.Errorf(MSG_NAME_REQUIRED)
 	}
 
 	db := getDatabase(database)
@@ -98,11 +132,20 @@ func Define(definition et.Json) (*Model, error) {
 	result.Table = definition.String("table")
 	result.Indices = definition.ArrayStr("indices")
 	result.Required = definition.ArrayStr("required")
+	result.Version = definition.Int("version")
 
 	columns := definition.Json("columns")
 	for k := range columns {
 		param := columns.Json(k)
-		err := result.defineColumn(param)
+		err := result.defineColumn(k, param)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	atribs := definition.Json("atribs")
+	for k, v := range atribs {
+		err := result.defineAtrib(k, v)
 		if err != nil {
 			return nil, err
 		}
@@ -121,13 +164,19 @@ func Define(definition et.Json) (*Model, error) {
 		return nil, err
 	}
 
-	relations := definition.Json("relations")
-	if !relations.IsEmpty() {
-		err := result.defineRelations(relations)
+	details := definition.Json("details")
+	if !details.IsEmpty() {
+		err := result.defineDetails(details)
 		if err != nil {
 			return nil, err
 		}
 	}
+
+	required := definition.ArrayStr("required")
+	result.defineRequired(required...)
+
+	debug := definition.Bool("debug")
+	result.isDebug = debug
 
 	return result, nil
 }
@@ -137,21 +186,18 @@ func Define(definition et.Json) (*Model, error) {
 * @return et.Json
 **/
 func (s *Model) ToJson() et.Json {
-	return et.Json{
-		"id":           s.Id,
-		"database":     s.Database,
-		"schema":       s.Schema,
-		"name":         s.Name,
-		"table":        s.Table,
-		"columns":      s.Columns,
-		"source_field": s.SourceField,
-		"relations":    s.Relations,
-		"primary_keys": s.PrimaryKeys,
-		"foreign_keys": s.ForeignKeys,
-		"indices":      s.Indices,
-		"required":     s.Required,
-		"is_locked":    s.IsLocked,
+	bt, err := json.Marshal(s)
+	if err != nil {
+		return et.Json{}
 	}
+
+	var result et.Json
+	err = json.Unmarshal(bt, &result)
+	if err != nil {
+		return et.Json{}
+	}
+
+	return result
 }
 
 /**
@@ -168,16 +214,23 @@ func (s *Model) validate() error {
 		return err
 	}
 
-	if len(s.PrimaryKeys) == 0 {
-		s.defineColumn(et.Json{
-			"name": KEY,
-			"type": TypeKey,
-		})
+	s.defineColumn(KEY, et.Json{
+		"type": TypeKey,
+	})
 
-		s.definePrimaryKeys(KEY)
-	}
+	s.definePrimaryKeys(KEY)
+
+	s.defineRecordField(RECORDID)
 
 	return nil
+}
+
+/**
+* save
+* @return error
+**/
+func (s *Model) save() error {
+	return setModel(s.Id, s.ToJson(), s.isDebug)
 }
 
 /**
@@ -201,6 +254,7 @@ func (s *Model) GetColumn(name string) (et.Json, bool) {
 **/
 func (s *Model) Lock() {
 	s.IsLocked = true
+	s.save()
 }
 
 /**
@@ -209,6 +263,15 @@ func (s *Model) Lock() {
 **/
 func (s *Model) Unlock() {
 	s.IsLocked = false
+	s.save()
+}
+
+/**
+* Debug
+* @return
+**/
+func (s *Model) Debug() {
+	s.isDebug = true
 }
 
 /**
@@ -216,21 +279,26 @@ func (s *Model) Unlock() {
 * @return error
 **/
 func (s *Model) Init() error {
-	if !utility.ValidStr(s.Database, 0, []string{}) {
-		return fmt.Errorf("database is required")
-	}
-
-	if !utility.ValidStr(s.Schema, 0, []string{}) {
-		return fmt.Errorf("schema is required")
-	}
-
-	if !utility.ValidStr(s.Name, 0, []string{}) {
-		return fmt.Errorf("name is required")
-	}
-
 	if err := s.validate(); err != nil {
 		return err
 	}
 
-	return s.db.init(s)
+	if s.isInit {
+		return nil
+	}
+
+	err := s.db.init(s)
+	if err != nil {
+		return err
+	}
+
+	for _, m := range s.details {
+		m.isDebug = s.isDebug
+		err := m.Init()
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

@@ -28,7 +28,27 @@ func main() {
 		"database": "catalogo",
 		"schema":   "projects",
 		"name":     "users",
-		"relations": et.Json{
+		"version":  1,
+		"columns": et.Json{
+			"id": et.Json{
+				"type":    "key",
+				"default": "-1",
+			},
+			"name": et.Json{
+				"type": "text",
+			},
+			"email": et.Json{
+				"type": "text",
+			},
+		},
+		"atribs": et.Json{
+			"apellido": "", //name, defaultValue
+			"rol":      "",
+		},
+		"primary_keys": []string{
+			"id",
+		},
+		"details": et.Json{
 			"roles": et.Json{
 				"schema": "projects",
 				"name":   "roles",
@@ -36,26 +56,13 @@ func main() {
 					"columns": et.Json{
 						"user_id": "id",
 					},
-					"on_delete": "cascade",
-					"on_update": "cascade",
+					"on_delete": "",
+					"on_update": "",
 				},
 			},
 		},
-		// "columns": et.Json{
-		// 	"id": et.Json{
-		// 		"type":    "key",
-		// 		"default": "-1",
-		// 	},
-		// 	"name": et.Json{
-		// 		"type": "text",
-		// 	},
-		// 	"email": et.Json{
-		// 		"type": "text",
-		// 	},
-		// },
-		// "primary_keys": []string{
-		// 	"id",
-		// },
+		"required": []string{"id"},
+		"debug":    true,
 		// "foreign_keys": et.Json{
 		// 	"id": "id",
 		// },
@@ -65,8 +72,6 @@ func main() {
 		// 	"email",
 		// },
 		// "uniques":  []string{"id"},
-		// "required": []string{"id"},
-		// "details": et.Json{
 		// 	"profiles": et.Json{},
 		// },
 	})
@@ -74,12 +79,10 @@ func main() {
 		console.Panic(err)
 	}
 
-	// ddl, err := model.Load()
-	// if err != nil {
-	// 	console.Panic(err)
-	// }
-
-	console.Debug("ddl:", model.ToJson().ToString())
+	err = model.Init()
+	if err != nil {
+		console.Panic(err)
+	}
 
 	// sql, err := js.Query(et.Json{
 	// 	"users": et.Json{
