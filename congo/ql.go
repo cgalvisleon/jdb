@@ -8,7 +8,7 @@ import (
 	"github.com/cgalvisleon/et/utility"
 )
 
-type JQuery struct {
+type Ql struct {
 	Froms   []map[string]string `json:"froms"`
 	Selects et.Json             `json:"selects"`
 	Joins   []et.Json           `json:"joins"`
@@ -24,11 +24,11 @@ type JQuery struct {
 }
 
 /**
-* NewJQuery
-* @return *JQuery
+* NewQl
+* @return *Ql
 **/
-func newJQuery(db *Database) *JQuery {
-	return &JQuery{
+func newQl(db *Database) *Ql {
+	return &Ql{
 		Froms:   []map[string]string{},
 		Selects: et.Json{},
 		Joins:   make([]et.Json, 0),
@@ -44,9 +44,9 @@ func newJQuery(db *Database) *JQuery {
 /**
 * Query
 * @param query et.Json
-* @return (*JQuery, error)
+* @return (*Ql, error)
 **/
-func Query(query et.Json) (*JQuery, error) {
+func Query(query et.Json) (*Ql, error) {
 	database := query.String("database")
 	if !utility.ValidStr(database, 0, []string{}) {
 		return nil, fmt.Errorf(MSG_DATABASE_REQUIRED)
@@ -57,7 +57,7 @@ func Query(query et.Json) (*JQuery, error) {
 		return nil, err
 	}
 
-	result := newJQuery(db)
+	result := newQl(db)
 
 	from := query.ArrayStr("from")
 	for _, v := range from {
@@ -71,7 +71,7 @@ func Query(query et.Json) (*JQuery, error) {
 * ToJson
 * @return et.Json
 **/
-func (s *JQuery) toJson() et.Json {
+func (s *Ql) toJson() et.Json {
 	bt, err := json.Marshal(s)
 	if err != nil {
 		return et.Json{}
@@ -88,9 +88,9 @@ func (s *JQuery) toJson() et.Json {
 
 /**
 * Debug
-* @return *JQuery
+* @return *Ql
 **/
-func (s *JQuery) Debug() *JQuery {
+func (s *Ql) Debug() *Ql {
 	s.isDebug = true
 	return s
 }
@@ -98,9 +98,9 @@ func (s *JQuery) Debug() *JQuery {
 /**
 * addFrom
 * @param name string
-* @return *JQuery
+* @return *Ql
 **/
-func (s *JQuery) addFrom(name string) *JQuery {
+func (s *Ql) addFrom(name string) *Ql {
 	n := len(s.Joins)
 	as := string(rune(65 + n))
 	s.Froms = append(s.Froms, map[string]string{
@@ -110,5 +110,15 @@ func (s *JQuery) addFrom(name string) *JQuery {
 	if n != 0 {
 
 	}
+	return s
+}
+
+/**
+* setTx
+* @param tx *Tx
+* @return *Ql
+**/
+func (s *Ql) setTx(tx *Tx) *Ql {
+	s.tx = tx
 	return s
 }

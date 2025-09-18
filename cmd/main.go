@@ -25,7 +25,7 @@ func main() {
 	// 	console.Panic(err)
 	// }
 
-	model, err := jdb.DefineModel(et.Json{
+	model, err := jdb.NewModel(et.Json{
 		"database": "josephine",
 		"schema":   "projects",
 		"name":     "users",
@@ -74,31 +74,34 @@ func main() {
 		console.Panic(err)
 	}
 
-	// sql, err := js.Query(et.Json{
-	// 	"users": et.Json{
-	// 		"select": []string{"id", "name", "email as correo"},
-	// 		"where": et.Json{
-	// 			"id": et.Json{
-	// 				"eq": 1,
-	// 			},
-	// 		},
-	// 		"and": et.Json{
-	// 			"name": et.Json{
-	// 				"eq": "John",
-	// 			},
-	// 			"profiles": et.Json{
-	// 				"verified": et.Json{
-	// 					"eq": true,
-	// 				},
-	// 			},
-	// 		},
-	// 	},
-	// })
-	// if err != nil {
-	// 	console.Panic(err)
-	// }
+	query, err := jdb.Query(et.Json{
+		"users": et.Json{
+			"select": []string{"id", "name", "email as correo"},
+			"where": et.Json{
+				"id": et.Json{
+					"eq": 1,
+				},
+			},
+			"and": et.Json{
+				"name": et.Json{
+					"eq": "John",
+				},
+				"profiles": et.Json{
+					"verified": et.Json{
+						"eq": true,
+					},
+				},
+			},
+		},
+	})
+	if err != nil {
+		console.Panic(err)
+	}
 
-	// console.Debug("sql:", sql)
+	result, err := query.ItExists()
+	if err != nil {
+		console.Panic(err)
+	}
 
-	// console.Debug("db:", db.Name)
+	console.Debug("exists:", result)
 }

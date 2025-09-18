@@ -6,10 +6,10 @@ import (
 )
 
 /**
-* DefineModel
+* NewModel
 * @param definition et.Json
 * @return (*jdb.Model, error)
 **/
-func DefineModel(definition et.Json) (*jdb.Model, error) {
+func NewModel(definition et.Json) (*jdb.Model, error) {
 	return jdb.DefineModel(definition)
 }

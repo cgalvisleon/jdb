@@ -8,4 +8,5 @@ const (
 	MSG_DRIVER_REQUIRED    = "driver is required"
 	MSG_DRIVER_NOT_FOUND   = "driver %s not found"
 	MSG_DATABASE_NOT_FOUND = "database %s not found"
+	MSG_DATA_REQUIRED      = "data is required"
 )

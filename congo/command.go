@@ -2,8 +2,10 @@ package jdb
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/cgalvisleon/et/et"
+	"github.com/cgalvisleon/et/utility"
 )
 
 const (
@@ -91,4 +93,79 @@ func (s *Command) Exec(tx *Tx) (et.Items, error) {
 	}
 
 	return et.Items{}, nil
+}
+
+/**
+* command
+* @param cmd string, param et.Json
+* @return (*Command, error)
+**/
+func command(cmd string, param et.Json) (*Command, error) {
+	database := param.String("database")
+	if !utility.ValidStr(database, 0, []string{}) {
+		return nil, fmt.Errorf(MSG_DATABASE_REQUIRED)
+	}
+
+	db, err := GetDatabase(database)
+	if err != nil {
+		return nil, err
+	}
+
+	eschema := param.String("schema")
+	if !utility.ValidStr(eschema, 0, []string{}) {
+		return nil, fmt.Errorf(MSG_SCHEMA_REQUIRED)
+	}
+
+	name := param.String("name")
+	if !utility.ValidStr(name, 0, []string{}) {
+		return nil, fmt.Errorf(MSG_NAME_REQUIRED)
+	}
+
+	model, err := db.getModel(eschema, name)
+	if err != nil {
+		return nil, err
+	}
+
+	data := param.ArrayJson("data")
+	if len(data) == 0 {
+		return nil, fmt.Errorf(MSG_DATA_REQUIRED)
+	}
+
+	return newCommand(model, cmd, data), nil
+}
+
+/**
+* Insert
+* @param param et.Json
+* @return (*Command, error)
+**/
+func Insert(param et.Json) (*Command, error) {
+	return command(TypeInsert, param)
+}
+
+/**
+* Update
+* @param param et.Json
+* @return (*Command, error)
+**/
+func Update(param et.Json) (*Command, error) {
+	return command(TypeUpdate, param)
+}
+
+/**
+* Delete
+* @param param et.Json
+* @return (*Command, error)
+**/
+func Delete(param et.Json) (*Command, error) {
+	return command(TypeDelete, param)
+}
+
+/**
+* Upsert
+* @param param et.Json
+* @return (*Command, error)
+**/
+func Upsert(param et.Json) (*Command, error) {
+	return command(TypeUpsert, param)
 }

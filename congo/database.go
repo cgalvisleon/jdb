@@ -119,11 +119,10 @@ func (s *Database) init(model *Model) error {
 
 /**
 * query
-* @param tx *Tx, query *JQuery
+* @param query *Ql
 * @return (et.Items, error)
 **/
-func (s *Database) query(tx *Tx, query *JQuery) (et.Items, error) {
-	query.tx = tx
+func (s *Database) query(query *Ql) (et.Items, error) {
 	if err := query.validate(); err != nil {
 		return et.Items{}, err
 	}
@@ -141,12 +140,33 @@ func (s *Database) query(tx *Tx, query *JQuery) (et.Items, error) {
 }
 
 /**
+* exists
+* @param query *Ql
+* @return (bool, error)
+**/
+func (s *Database) exists(query *Ql) (bool, error) {
+	if err := query.validate(); err != nil {
+		return false, err
+	}
+
+	result, err := s.driver.Exists(query)
+	if err != nil {
+		return false, err
+	}
+
+	if query.isDebug {
+		console.Debugf("exists:%s", query.toJson().ToString())
+	}
+
+	return result, nil
+}
+
+/**
 * command
-* @param tx *Tx, command *Command
+* @param command *Command
 * @return (et.Items, error)
 **/
-func (s *Database) command(tx *Tx, command *Command) (et.Items, error) {
-	command.tx = tx
+func (s *Database) command(command *Command) (et.Items, error) {
 	if err := command.validate(); err != nil {
 		return et.Items{}, err
 	}

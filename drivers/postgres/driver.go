@@ -59,11 +59,20 @@ func (s *Postgres) Load(model *jdb.Model) error {
 
 /**
 * Query
-* @param query *jdb.JQuery
+* @param query *jdb.Ql
 * @return (et.Items, error)
 **/
-func (s *Postgres) Query(query *jdb.JQuery) (et.Items, error) {
+func (s *Postgres) Query(query *jdb.Ql) (et.Items, error) {
 	return et.Items{}, nil
+}
+
+/**
+* Exists
+* @param query *jdb.Ql
+* @return (bool, error)
+**/
+func (s *Postgres) Exists(query *jdb.Ql) (bool, error) {
+	return false, nil
 }
 
 /**

@@ -17,7 +17,8 @@ const (
 type Driver interface {
 	Connect(db *Database) (*sql.DB, error)
 	Load(model *Model) error
-	Query(query *JQuery) (et.Items, error)
+	Query(query *Ql) (et.Items, error)
+	Exists(query *Ql) (bool, error)
 	Command(command *Command) (et.Items, error)
 }
 

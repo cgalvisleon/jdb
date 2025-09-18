@@ -343,10 +343,10 @@ func (s *Model) Upsert(data et.Json) *Command {
 /**
 * Query
 * @param query et.Json
-* @return *JQuery
+* @return *Ql
 **/
-func (s *Model) Query(query et.Json) *JQuery {
-	result := newJQuery(s.db)
+func (s *Model) Query(query et.Json) *Ql {
+	result := newQl(s.db)
 	result.addFrom(s.Name)
 	result.setQuery(query)
 

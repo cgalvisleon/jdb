@@ -3,21 +3,11 @@ package jdb
 import "github.com/cgalvisleon/et/et"
 
 /**
-* setLimit
-* @param limits et.Json
-* @return *JQuery
-**/
-func (s *JQuery) setLimit(limits et.Json) *JQuery {
-	s.Limit = limits
-	return s
-}
-
-/**
 * setQuery
 * @param query et.Json
-* @return *JQuery
+* @return *Ql
 **/
-func (s *JQuery) setQuery(query et.Json) *JQuery {
+func (s *Ql) setQuery(query et.Json) *Ql {
 	s.setSelect(query.Json("select")).
 		setWhere(query.Json("where")).
 		setAnd(query.Json("and")).
@@ -30,42 +20,52 @@ func (s *JQuery) setQuery(query et.Json) *JQuery {
 	return s
 }
 
-func (s *JQuery) setSelect(selects et.Json) *JQuery {
+func (s *Ql) setSelect(selects et.Json) *Ql {
 	s.Selects = selects
 	return s
 }
 
-func (s *JQuery) setWhere(where et.Json) *JQuery {
+func (s *Ql) setWhere(where et.Json) *Ql {
 	s.Wheres = where
 	return s
 }
 
-func (s *JQuery) setAnd(and et.Json) *JQuery {
+func (s *Ql) setAnd(and et.Json) *Ql {
 	s.Wheres = and
 	return s
 }
 
-func (s *JQuery) setOr(or et.Json) *JQuery {
+func (s *Ql) setOr(or et.Json) *Ql {
 	s.Wheres = or
 	return s
 }
 
-func (s *JQuery) setJoin(join et.Json) *JQuery {
+func (s *Ql) setJoin(join et.Json) *Ql {
 	s.Joins = append(s.Joins, join)
 	return s
 }
 
-func (s *JQuery) setOrder(orderBy et.Json) *JQuery {
+func (s *Ql) setOrder(orderBy et.Json) *Ql {
 	s.OrderBy = orderBy
 	return s
 }
 
-func (s *JQuery) setGroup(groupBy et.Json) *JQuery {
+func (s *Ql) setGroup(groupBy et.Json) *Ql {
 	s.GroupBy = groupBy
 	return s
 }
 
-func (s *JQuery) setHaving(having et.Json) *JQuery {
+func (s *Ql) setHaving(having et.Json) *Ql {
 	s.Having = having
+	return s
+}
+
+/**
+* setLimit
+* @param limits et.Json
+* @return *Ql
+**/
+func (s *Ql) setLimit(limits et.Json) *Ql {
+	s.Limit = limits
 	return s
 }
