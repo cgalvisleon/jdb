@@ -17,11 +17,12 @@ func init() {
 }
 
 type Database struct {
-	Name    string            `json:"name"`
-	Models  map[string]*Model `json:"models"`
-	UseCore bool              `json:"use_core"`
-	driver  Driver            `json:"-"`
-	db      *sql.DB           `json:"-"`
+	Name       string            `json:"name"`
+	Models     map[string]*Model `json:"models"`
+	UseCore    bool              `json:"use_core"`
+	Connection et.Json           `json:"-"`
+	driver     Driver            `json:"-"`
+	db         *sql.DB           `json:"-"`
 }
 
 /**
@@ -57,7 +58,7 @@ func getDatabase(name string) (*Database, error) {
 			driver: drivers[DriverPostgres],
 		}
 
-		err := result.Load()
+		err := result.load()
 		if err != nil {
 			return nil, err
 		}
@@ -69,10 +70,10 @@ func getDatabase(name string) (*Database, error) {
 }
 
 /**
-* Load
+* load
 * @return error
 **/
-func (s *Database) Load() error {
+func (s *Database) load() error {
 	if s.driver == nil {
 		return fmt.Errorf(MSG_DRIVER_REQUIRED)
 	}

@@ -252,6 +252,10 @@ func (s *Model) GetColumn(name string) (et.Json, bool) {
 	return result, ok
 }
 
+func (s *Model) SetInit() {
+	s.isInit = true
+}
+
 /**
 * Lock
 * @return
