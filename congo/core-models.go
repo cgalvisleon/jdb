@@ -6,6 +6,15 @@ import (
 )
 
 /**
+* defineModel
+* @param id string, data et.Json
+* @return error
+**/
+func defineModel() error {
+	return nil
+}
+
+/**
 * setModel
 * @param id string, data et.Json
 * @return error
