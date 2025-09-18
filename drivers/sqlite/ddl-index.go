@@ -17,7 +17,7 @@ import (
 func ddlUniqueIndex(name string, col *jdb.Column) string {
 	result := ""
 	if col.TypeColumn == jdb.TpColumn {
-		result = jdb.SQLDDL(`CREATE UNIQUE INDEX IF NOT EXISTS $1 ON $2($3);`, name, tableName(col.Model), col.Name)
+		result = jdb.SQLDDL(`CREATE UNIQUE INDEX IF NOT EXISTS $1 ON $2($3);`, name, col.Model.Table, col.Name)
 	}
 
 	return result
@@ -78,7 +78,7 @@ func (s *SqlLite) ddlForeignKeys(model *jdb.Model) string {
 
 					idx := fmt.Sprintf("FOREIGN KEY (%s) REFERENCES %s (%s)%s%s",
 						fks,
-						tableName(with),
+						with.Table,
 						references,
 						onDelete,
 						onUpdate)
@@ -101,7 +101,7 @@ func (s *SqlLite) ddlIndex(model *jdb.Model) string {
 	for _, column := range model.Columns {
 		if column.TypeColumn == jdb.TpColumn {
 			if column.IsKeyfield {
-				idx := fmt.Sprintf("CREATE INDEX IF NOT EXISTS idx_%s_%s ON %s (%s);", model.Name, column.Name, tableName(model), column.Name)
+				idx := fmt.Sprintf("CREATE INDEX IF NOT EXISTS idx_%s_%s ON %s (%s);", model.Name, column.Name, model.Table, column.Name)
 				result = strs.Append(result, idx, "\n")
 			}
 		}

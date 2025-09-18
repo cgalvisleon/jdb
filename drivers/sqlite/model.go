@@ -8,10 +8,6 @@ import (
 	"github.com/cgalvisleon/jdb/jdb"
 )
 
-func tableName(model *jdb.Model) string {
-	return fmt.Sprintf(`%s_%s`, model.Schema, model.Name)
-}
-
 /**
 * existTable
 * @param name string
@@ -38,8 +34,8 @@ func (s *SqlLite) existTable(name string) (bool, error) {
 * @return error
 **/
 func (s *SqlLite) LoadModel(model *jdb.Model) error {
-	table := tableName(model)
-	exist, err := s.existTable(table)
+	model.Table = fmt.Sprintf(`%s_%s`, model.Schema, model.Name)
+	exist, err := s.existTable(model.Table)
 	if err != nil {
 		return err
 	}
@@ -57,7 +53,7 @@ func (s *SqlLite) LoadModel(model *jdb.Model) error {
 			return err
 		}
 
-		console.Logf("Model", "Create %s", tableName(model))
+		console.Logf("Model", "Create %s", model.Table)
 
 		return nil
 	}
@@ -73,7 +69,7 @@ func (s *SqlLite) LoadModel(model *jdb.Model) error {
     256 AS size
 	FROM pragma_table_info(?);`
 
-	items, err := jdb.Query(s.jdb, sql, table)
+	items, err := jdb.Query(s.jdb, sql, model.Table)
 	if err != nil {
 		return err
 	}
@@ -95,7 +91,7 @@ func (s *SqlLite) LoadModel(model *jdb.Model) error {
 * @return error
 **/
 func (s *SqlLite) DropModel(model *jdb.Model) error {
-	sql := s.ddlTableDrop(tableName(model))
+	sql := s.ddlTableDrop(model.Table)
 	if model.IsDebug {
 		console.Debug(sql)
 	}
@@ -114,7 +110,7 @@ func (s *SqlLite) DropModel(model *jdb.Model) error {
 * @return error
 **/
 func (s *SqlLite) EmptyModel(model *jdb.Model) error {
-	sql := s.ddlTableEmpty(tableName(model))
+	sql := s.ddlTableEmpty(model.Table)
 	if model.IsDebug {
 		console.Debug(sql)
 	}
@@ -133,9 +129,9 @@ func (s *SqlLite) EmptyModel(model *jdb.Model) error {
 * @return error
 **/
 func (s *SqlLite) MutateModel(model *jdb.Model) error {
-	backupTable := fmt.Sprintf(`%s_backup`, tableName(model))
+	backupTable := fmt.Sprintf(`%s_backup`, model.Table)
 	sql := "\n"
-	sql = strs.Append(sql, s.ddlTableRename(tableName(model), backupTable), "\n")
+	sql = strs.Append(sql, s.ddlTableRename(model.Table, backupTable), "\n")
 	sql = strs.Append(sql, s.ddlTable(model), "\n")
 	sql = strs.Append(sql, s.ddlTableInsertTo(model, backupTable), "\n\n")
 	sql = strs.Append(sql, s.ddlTableIndex(model), "\n\n")

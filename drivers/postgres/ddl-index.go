@@ -18,13 +18,13 @@ import (
 func ddlIndex(name string, col *jdb.Column) string {
 	result := ""
 	if slices.Contains([]jdb.TypeData{jdb.TypeDataObject}, col.TypeData) {
-		result = jdb.SQLDDL(`CREATE INDEX IF NOT EXISTS $1 ON $2 USING GIN($3 jsonb_path_ops);`, name, tableName(col.Model), col.Name)
+		result = jdb.SQLDDL(`CREATE INDEX IF NOT EXISTS $1 ON $2 USING GIN($3 jsonb_path_ops);`, name, col.Model.Table, col.Name)
 	} else if slices.Contains([]jdb.TypeData{jdb.TypeDataFullText}, col.TypeData) {
-		result = jdb.SQLDDL(`CREATE INDEX IF NOT EXISTS $1 ON $2 USING GIN($3);`, name, tableName(col.Model), col.Name)
+		result = jdb.SQLDDL(`CREATE INDEX IF NOT EXISTS $1 ON $2 USING GIN($3);`, name, col.Model.Table, col.Name)
 	} else if col.TypeColumn == jdb.TpAtribute && col.Model.SourceField != nil {
-		result = jdb.SQLDDL(`CREATE INDEX IF NOT EXISTS $1 ON $2 (($3->>'$4'));`, name, tableName(col.Model), col.Model.SourceField.Name, col.Name)
+		result = jdb.SQLDDL(`CREATE INDEX IF NOT EXISTS $1 ON $2 (($3->>'$4'));`, name, col.Model.Table, col.Model.SourceField.Name, col.Name)
 	} else {
-		result = jdb.SQLDDL(`CREATE INDEX IF NOT EXISTS $1 ON $2($3);`, name, tableName(col.Model), col.Name)
+		result = jdb.SQLDDL(`CREATE INDEX IF NOT EXISTS $1 ON $2($3);`, name, col.Model.Table, col.Name)
 	}
 
 	return result
@@ -39,7 +39,7 @@ func ddlIndex(name string, col *jdb.Column) string {
 func ddlUniqueIndex(name string, col *jdb.Column) string {
 	result := ""
 	if col.TypeColumn == jdb.TpColumn {
-		result = jdb.SQLDDL(`CREATE UNIQUE INDEX IF NOT EXISTS $1 ON $2($3);`, name, tableName(col.Model), col.Name)
+		result = jdb.SQLDDL(`CREATE UNIQUE INDEX IF NOT EXISTS $1 ON $2($3);`, name, col.Model.Table, col.Name)
 	}
 
 	return result
@@ -62,7 +62,7 @@ func (s *Postgres) ddlPrimaryKey(model *jdb.Model) string {
 	}
 
 	if len(primaryKeys()) > 0 {
-		result = fmt.Sprintf("ALTER TABLE %s ADD CONSTRAINT %s_pk PRIMARY KEY (%s);", tableName(model), model.Name, strings.Join(primaryKeys(), ", "))
+		result = fmt.Sprintf("ALTER TABLE %s ADD CONSTRAINT %s_pk PRIMARY KEY (%s);", model.Table, model.Name, strings.Join(primaryKeys(), ", "))
 	}
 
 	return result
@@ -87,7 +87,7 @@ func (s *Postgres) ddlForeignKeys(model *jdb.Model) string {
 			key = strs.Append(key, fkn, ", ")
 			referenceKey = strs.Append(referenceKey, pkn, ", ")
 		}
-		def := fmt.Sprintf(`ALTER TABLE IF EXISTS %s ADD CONSTRAINT %s FOREIGN KEY (%s) REFERENCES %s(%s)`, tableName(model), name, key, tableName(reference), referenceKey)
+		def := fmt.Sprintf(`ALTER TABLE IF EXISTS %s ADD CONSTRAINT %s FOREIGN KEY (%s) REFERENCES %s(%s)`, model.Table, name, key, reference.Table, referenceKey)
 		if relation.OnDeleteCascade {
 			def = def + " ON DELETE CASCADE"
 		}

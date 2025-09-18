@@ -7,11 +7,15 @@ import (
 )
 
 func (s *Command) current(where et.Json) error {
+	model := s.getModel()
+	if model == nil {
+		return fmt.Errorf(MSG_MODEL_REQUIRED)
+	}
+
 	if len(s.Data) != 1 {
 		return fmt.Errorf(MSG_MANY_INSERT_DATA)
 	}
 
-	model := s.From
 	columns := model.getColumnsAndAtributes()
 	ql := From(model)
 	ql.SetWheres(where)

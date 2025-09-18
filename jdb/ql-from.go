@@ -2,8 +2,10 @@ package jdb
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/cgalvisleon/et/et"
+	"github.com/cgalvisleon/et/utility"
 )
 
 func helpQl() et.Json {
@@ -68,16 +70,6 @@ func helpQl() et.Json {
 	}
 }
 
-type QlFrom struct {
-	*Model
-	As string
-}
-
-type QlFroms struct {
-	Froms []*QlFrom
-	index int
-}
-
 /**
 * From
 * @param model *Model
@@ -98,30 +90,29 @@ func From(name interface{}) *Ql {
 		tpSelect = Source
 	}
 
-	result := NewQl(model.Db)
-	result.TypeSelect = tpSelect
+	result := &Ql{
+		Id:         utility.UUID(),
+		Db:         model.Db,
+		TypeSelect: tpSelect,
+		Froms:      newForms(),
+		Joins:      make([]*QlJoin, 0),
+		Selects:    make([]*Field, 0),
+		Hiddens:    make([]string, 0),
+		Details:    make([]*Field, 0),
+		Groups:     make([]*Field, 0),
+		Orders:     &QlOrder{Asc: make([]*Field, 0), Desc: make([]*Field, 0)},
+		Offset:     0,
+		Limit:      0,
+		Sheet:      0,
+		Help:       helpQl(),
+		wg:         &sync.WaitGroup{},
+	}
+	result.QlWhere = newQlWhere(result.validator)
 	result.IsDebug = model.IsDebug
-	result.addFrom(model)
+	result.Havings = NewQlHaving(result)
+	result.Froms.add(model)
 
 	return result
-}
-
-/**
-* addFrom
-* @param m *Model
-* @return *QlFrom
-**/
-func (s *Ql) addFrom(m *Model) *QlFrom {
-	as := string(rune(s.Froms.index))
-	from := &QlFrom{
-		Model: m,
-		As:    as,
-	}
-
-	s.Froms.Froms = append(s.Froms.Froms, from)
-	s.Froms.index++
-
-	return from
 }
 
 /**
@@ -135,7 +126,7 @@ func (s *Ql) From(name string) *Ql {
 		return s
 	}
 
-	main := s.addFrom(model)
+	main := s.Froms.add(model)
 	for _, from := range s.Froms.Froms {
 		if from.As != main.As {
 			for _, detail := range from.RelationsTo {

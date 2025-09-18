@@ -34,6 +34,6 @@ func (s *SqlLite) tableAs(from *jdb.QlFrom) string {
 		return ""
 	}
 
-	table := tableName(from.Model)
+	table := from.Model.Table
 	return strs.Append(table, from.As, " AS ")
 }

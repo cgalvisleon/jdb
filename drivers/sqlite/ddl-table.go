@@ -179,7 +179,7 @@ func (s *SqlLite) ddlTable(model *jdb.Model) string {
 	columnsDef = strs.Append(columnsDef, ddlPrimaryKey, ",\n\t")
 	ddlForeignKeys := s.ddlForeignKeys(model)
 	columnsDef = strs.Append(columnsDef, ddlForeignKeys, ",\n\t")
-	result := fmt.Sprintf("\nCREATE TABLE IF NOT EXISTS %s (%s\n);", tableName(model), columnsDef)
+	result := fmt.Sprintf("\nCREATE TABLE IF NOT EXISTS %s (%s\n);", model.Table, columnsDef)
 
 	return result
 }
@@ -208,7 +208,7 @@ func (s *SqlLite) ddlTableInsertTo(model *jdb.Model, tableOrigin string) string 
 			fields = strs.Append(fields, fmt.Sprintf("%s", column.Name), ", ")
 		}
 	}
-	result := fmt.Sprintf("INSERT INTO %s (%s) SELECT %s FROM %s;", tableName(model), fields, fields, tableOrigin)
+	result := fmt.Sprintf("INSERT INTO %s (%s) SELECT %s FROM %s;", model.Table, fields, fields, tableOrigin)
 	return result
 }
 

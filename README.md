@@ -270,6 +270,7 @@ user.EventsUpdate = append(user.EventsUpdate, func(model *jdb.Model, before, aft
 
 ```bash
 gofmt -w . && go run --race ./cmd
+gofmt -w . && go run ./cmd
 ```
 
 ### Compilar para producción

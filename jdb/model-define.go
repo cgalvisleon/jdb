@@ -1082,13 +1082,13 @@ func (s *Model) DefineRelation(name, relatedTo string, fks map[string]string, li
 
 /**
 * DefineRollup
-* @param name, rollupFrom string, fks map[string]string, field string
+* @param name, rollupFrom string, fks map[string]string, fields []string
 * @return *Model
 **/
-func (s *Model) DefineRollup(name, rollupFrom string, fks map[string]string, field string) *Column {
+func (s *Model) DefineRollup(name, rollupFrom string, fks map[string]string, fields []string) *Column {
 	key := fmt.Sprintf("rollup_%v", name)
-	s.setDefine(key, TypeDefinitionRollup, name, rollupFrom, fks, field, ShowAtrib)
-	return s.defineRollup(name, rollupFrom, fks, []string{field}, ShowAtrib)
+	s.setDefine(key, TypeDefinitionRollup, name, rollupFrom, fks, fields, ShowAtrib)
+	return s.defineRollup(name, rollupFrom, fks, fields, ShowAtrib)
 }
 
 /**
@@ -1247,12 +1247,12 @@ func (s *Model) defineFields(fields et.Json) {
 			relation.With.setFields(fields)
 		case TpRollup:
 			rollupFrom := definition.Str("rollup_from")
-			fieldName := definition.Str("field")
+			fields := definition.ArrayStr("fields")
 			fks := map[string]string{}
 			for key, value := range definition.Json("foreign_keys") {
 				fks[key] = fmt.Sprintf("%v", value)
 			}
-			field = s.DefineRollup(key, rollupFrom, fks, fieldName)
+			field = s.DefineRollup(key, rollupFrom, fks, fields)
 		}
 
 		if field != nil {

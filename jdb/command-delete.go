@@ -1,11 +1,17 @@
 package jdb
 
+import "fmt"
+
 func (s *Command) deleted() error {
+	model := s.getModel()
+	if model == nil {
+		return fmt.Errorf(MSG_MODEL_REQUIRED)
+	}
+
 	if err := s.prepare(); err != nil {
 		return err
 	}
 
-	model := s.From
 	results, err := s.Db.Command(s)
 	if err != nil {
 		return err

@@ -84,23 +84,24 @@ func queryTx(db *sql.DB, tx *Tx, sourceFiled, sql string, arg ...any) (et.Items,
 * @return et.Items, error
 **/
 func query(db *DB, tx *Tx, sourceFiled, sql string, arg ...any) (et.Items, error) {
-	result, err := queryTx(db.db, tx, sourceFiled, sql, arg...)
+	sql = SQLParse(sql, arg...)
+	data := et.Json{
+		"db_name": db.Name,
+		"sql":     sql,
+	}
+	if tx != nil {
+		data["tx_id"] = tx.Id
+	}
+
+	result, err := queryTx(db.db, tx, sourceFiled, sql)
 	if err != nil {
-		event.Publish(EVENT_SQL_ERROR, et.Json{
-			"db_name": db.Name,
-			"sql":     sql,
-			"arg":     arg,
-			"error":   err,
-		})
-		return et.Items{}, err
+		data["error"] = err.Error()
+		event.Publish(EVENT_SQL_ERROR, data)
+		return et.Items{}, fmt.Errorf("query error: %s\nsql: %s\n", err.Error(), sql)
 	}
 
 	tp := TipoSQL(sql)
-	event.Publish(fmt.Sprintf("sql:%s", tp), et.Json{
-		"db_name": db.Name,
-		"sql":     sql,
-		"arg":     arg,
-	})
+	event.Publish(fmt.Sprintf("sql:%s", tp), data)
 
 	return result, nil
 }

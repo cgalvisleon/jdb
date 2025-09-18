@@ -45,6 +45,7 @@ const (
 	MSG_DATABASE_NOT_CONNECTED   = "database not connected"
 	MSG_EVENT_NOT_FOUND          = "event not found (%s) in model %s"
 	MSG_DATABASE_NOT_CONCURRENT  = "database not concurrent"
+	MSG_DB_NOT_CONNECTED         = "db not connected"
 	MSG_RELATION_WITH_REQUIRED   = "relation with required (%s)"
 	MSG_FOREIGN_KEY_NOT_EXIST    = "foreign key not exist (%s) keys:%s"
 	MSG_REQUIRED_FIELD_REQUIRED  = "required field required (%s)"

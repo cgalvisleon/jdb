@@ -24,7 +24,7 @@ func publishError(model *Model, sql string, err error) {
 * @param model *Model, sql string
 **/
 func publishCommand(command *Command) {
-	model := command.From
+	model := command.getModel()
 	sql := command.Sql
 	commandName := command.Command.Str()
 	event.Publish(EVENT_MODEL_INSERT, et.Json{

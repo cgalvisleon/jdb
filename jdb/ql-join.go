@@ -154,7 +154,7 @@ func (s *Ql) Join(name interface{}) *QlJoin {
 		model = s.Db.GetModel(str)
 	}
 
-	with := s.addFrom(model)
+	with := s.Froms.add(model)
 	result := &QlJoin{
 		QlWhere:  newQlWhere(s.validator),
 		Ql:       s,

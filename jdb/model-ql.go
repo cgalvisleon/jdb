@@ -72,14 +72,6 @@ func (s *Model) Counted() (int, error) {
 }
 
 /**
-* GetFrom
-* @return *QlFrom
-**/
-func (s *Model) GetFrom() *QlFrom {
-	return &QlFrom{Model: s}
-}
-
-/**
 * QTx
 * @param params et.Json
 * @return et.Json, error

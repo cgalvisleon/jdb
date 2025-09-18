@@ -1,11 +1,11 @@
 package postgres
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/cgalvisleon/et/config"
 	"github.com/cgalvisleon/et/et"
+	"github.com/cgalvisleon/et/utility"
 	"github.com/cgalvisleon/jdb/jdb"
 	_ "github.com/lib/pq"
 )
@@ -60,29 +60,81 @@ func (s *Connection) ToJson() et.Json {
 }
 
 /**
+* Load
+* @param params et.Json
+* @return error
+**/
+func (s *Connection) Load(params et.Json) error {
+	database := params.Str("database")
+	if utility.ValidStr(database, 0, []string{}) {
+		return fmt.Errorf("database is required")
+	}
+
+	host := params.Str("host")
+	if utility.ValidStr(host, 0, []string{}) {
+		return fmt.Errorf("host is required")
+	}
+
+	port := params.Int("port")
+	if port == 0 {
+		return fmt.Errorf("port is required")
+	}
+
+	username := params.Str("username")
+	if utility.ValidStr(username, 0, []string{}) {
+		return fmt.Errorf("username is required")
+	}
+
+	password := params.Str("password")
+	if utility.ValidStr(password, 0, []string{}) {
+		return fmt.Errorf("password is required")
+	}
+
+	app := params.Str("app")
+	if utility.ValidStr(app, 0, []string{}) {
+		return fmt.Errorf("app is required")
+	}
+
+	version := params.Int("version")
+	if version == 0 {
+		return fmt.Errorf("version is required")
+	}
+
+	s.Database = database
+	s.Host = host
+	s.Port = port
+	s.Username = username
+	s.Password = password
+	s.App = app
+	s.Version = version
+
+	return nil
+}
+
+/**
 * Validate
 * @return error
 **/
 func (s *Connection) Validate() error {
 	if s.Database == "" {
-		return errors.New("database is required")
+		return fmt.Errorf("database is required")
 	}
 	if s.Host == "" {
-		return errors.New("host is required")
+		return fmt.Errorf("host is required")
 	}
 	if s.Port == 0 {
-		return errors.New("port is required")
+		return fmt.Errorf("port is required")
 	}
 	if s.Username == "" {
-		return errors.New("username is required")
+		return fmt.Errorf("username is required")
 	}
 
 	if s.Password == "" {
-		return errors.New("password is required")
+		return fmt.Errorf("password is required")
 	}
 
 	if s.App == "" {
-		return errors.New("app is required")
+		return fmt.Errorf("app is required")
 	}
 
 	return nil

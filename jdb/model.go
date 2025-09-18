@@ -2,7 +2,6 @@ package jdb
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"regexp"
 	"slices"
@@ -38,8 +37,10 @@ func (s TypeId) Str() string {
 }
 
 var (
-	ErrRecordExists = errors.New("record exists")
-	ErrNotUpdated   = errors.New("not updated")
+	ErrNotInserted = fmt.Errorf("record not inserted")
+	ErrNotUpdated  = fmt.Errorf("record not updated")
+	ErrNotFound    = fmt.Errorf("record not found")
+	ErrNotUpserted = fmt.Errorf("record not inserted or updated")
 )
 
 type Model struct {
@@ -51,6 +52,7 @@ type Model struct {
 	Id                 string                   `json:"id"`
 	Name               string                   `json:"name"`
 	Description        string                   `json:"description"`
+	Table              string                   `json:"table"`
 	UseCore            bool                     `json:"use_core"`
 	Integrity          bool                     `json:"integrity"`
 	Definitions        et.Json                  `json:"definitions"`
@@ -781,7 +783,7 @@ func (s *Model) getField(name string, isCreate bool) *Field {
 	getField := func(name string) *Field {
 		col := s.getColumn(name)
 		if col != nil {
-			return col.GetField()
+			return GetField(col)
 		}
 
 		if s.Integrity {
@@ -798,7 +800,7 @@ func (s *Model) getField(name string, isCreate bool) *Field {
 
 		result := newAtribute(s, name, TypeDataText)
 
-		return result.GetField()
+		return GetField(result)
 	}
 
 	result := getField(name)

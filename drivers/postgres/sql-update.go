@@ -13,7 +13,11 @@ import (
 * @return string
 **/
 func (s *Postgres) sqlUpdate(command *jdb.Command) string {
-	from := command.From
+	from := command.GetFrom()
+	if from == nil {
+		return ""
+	}
+
 	set := ""
 	atribs := ""
 	where := ""
@@ -40,7 +44,7 @@ func (s *Postgres) sqlUpdate(command *jdb.Command) string {
 	}
 
 	where = whereConditions(command.QlWhere)
-	objects := s.sqlObject(from.GetFrom())
+	objects := s.sqlObject(from)
 	returns := fmt.Sprintf("%s AS result", objects)
 	if len(command.Returns) > 0 {
 		returns = ""
@@ -50,5 +54,5 @@ func (s *Postgres) sqlUpdate(command *jdb.Command) string {
 	}
 
 	result := "UPDATE %s SET\n%s\nWHERE %s\nRETURNING\n%s;"
-	return fmt.Sprintf(result, tableName(from), set, where, returns)
+	return fmt.Sprintf(result, from.Model.Table, set, where, returns)
 }

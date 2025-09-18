@@ -7,15 +7,19 @@ import (
 )
 
 func (s *Command) updated() error {
+	model := s.getModel()
+	if model == nil {
+		return fmt.Errorf(MSG_MODEL_REQUIRED)
+	}
+
 	if len(s.Data) == 0 {
-		return fmt.Errorf(MSG_NOT_DATA, s.Command.Str(), s.From.Name)
+		return fmt.Errorf(MSG_NOT_DATA, s.Command.Str(), model.Name)
 	}
 
 	if err := s.prepare(); err != nil {
 		return err
 	}
 
-	model := s.From
 	results, err := s.Db.Command(s)
 	if err != nil {
 		return err

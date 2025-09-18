@@ -143,11 +143,12 @@ func Quote(val interface{}) any {
 	case time.Time:
 		return fmt.Sprintf(fm, v.Format("2006-01-02 15:04:05"))
 	case []string:
-		result := ""
-		for _, s := range v {
-			result = strs.Append(result, fmt.Sprintf(fm, s), ",")
+		bt, err := json.Marshal(v)
+		if err != nil {
+			logs.Errorf("Quote", "type:%v, value:%v, error marshalling array: %v", reflect.TypeOf(v), v, err)
+			return fmt.Sprintf(fm, `[]`)
 		}
-		return result
+		return fmt.Sprintf(fm, string(bt))
 	case et.Json:
 		return fmt.Sprintf(fm, v.ToString())
 	case map[string]interface{}:

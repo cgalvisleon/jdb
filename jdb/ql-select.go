@@ -23,7 +23,7 @@ func (s *Ql) setSelect(field *Field) *Ql {
 		}
 
 		if field.Column.CalcFunction != nil {
-			s.Details = append(s.Details, field)
+			s.addDetail(field)
 		}
 	} else {
 		if slices.Contains([]TypeColumn{TpRollup}, field.Column.TypeColumn) {
@@ -35,7 +35,7 @@ func (s *Ql) setSelect(field *Field) *Ql {
 
 		idx := slices.IndexFunc(s.Details, func(e *Field) bool { return e == field })
 		if idx == -1 {
-			s.Details = append(s.Details, field)
+			s.addDetail(field)
 		}
 	}
 

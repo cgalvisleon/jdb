@@ -2,14 +2,12 @@ package jdb
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"os"
 	"runtime"
 	"slices"
 
-	"github.com/cgalvisleon/et/config"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/response"
 	"github.com/cgalvisleon/et/strs"
@@ -86,24 +84,6 @@ func (s *JDB) Describe() et.Json {
 }
 
 /**
-* Load
-* @return *ConnectParams, error
-**/
-func load() (*ConnectParams, error) {
-	driverName := config.String("DB_DRIVER", "")
-	if driverName == "" {
-		return nil, errors.New(MSG_DRIVER_NOT_DEFINED)
-	}
-
-	params, ok := conn.Params[driverName]
-	if !ok {
-		return nil, errors.New(MSG_DRIVER_NOT_DEFINED)
-	}
-
-	return &params, nil
-}
-
-/**
 * ConnectTo
 * @param connection *ConnectParams
 * @return *DB, error
@@ -122,6 +102,7 @@ func ConnectTo(connection ConnectParams) (*DB, error) {
 	result.IsDebug = connection.Debug
 	result.UseCore = connection.UserCore
 	result.NodeId = connection.NodeId
+	result.connectParams = connection
 	err = result.Conected(connection)
 	if err != nil {
 		return nil, err

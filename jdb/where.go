@@ -228,9 +228,9 @@ func (s *QlCondition) setVal(val interface{}) {
 	case Field:
 		s.Value = v
 	case Column:
-		s.Value = v.GetField()
+		s.Value = GetField(&v)
 	case *Column:
-		s.Value = v.GetField()
+		s.Value = GetField(v)
 	default:
 		s.Value = val
 	}

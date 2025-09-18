@@ -8,10 +8,6 @@ import (
 	"github.com/cgalvisleon/jdb/jdb"
 )
 
-func tableName(model *jdb.Model) string {
-	return fmt.Sprintf(`%s.%s`, model.Schema, model.Name)
-}
-
 /**
 * existTable
 * @param schema string
@@ -42,6 +38,7 @@ func (s *Postgres) existTable(schema, name string) (bool, error) {
 * @return error
 **/
 func (s *Postgres) LoadModel(model *jdb.Model) error {
+	model.Table = fmt.Sprintf(`%s.%s`, model.Schema, model.Name)
 	err := s.loadSchema(model.Schema)
 	if err != nil {
 		return err
@@ -65,7 +62,7 @@ func (s *Postgres) LoadModel(model *jdb.Model) error {
 			return err
 		}
 
-		console.Logf("Model", "Create %s", tableName(model))
+		console.Logf("Model", "Create %s", model.Table)
 
 		return nil
 	}
@@ -114,7 +111,7 @@ func (s *Postgres) LoadModel(model *jdb.Model) error {
 * @return error
 **/
 func (s *Postgres) DropModel(model *jdb.Model) error {
-	sql := s.ddlTableDrop(tableName(model))
+	sql := s.ddlTableDrop(model.Table)
 	if model.IsDebug {
 		console.Debug(sql)
 	}
@@ -128,7 +125,7 @@ func (s *Postgres) DropModel(model *jdb.Model) error {
 * @return error
 **/
 func (s *Postgres) EmptyModel(model *jdb.Model) error {
-	sql := s.ddlTableEmpty(tableName(model))
+	sql := s.ddlTableEmpty(model.Table)
 	if model.IsDebug {
 		console.Debug(sql)
 	}
@@ -142,9 +139,9 @@ func (s *Postgres) EmptyModel(model *jdb.Model) error {
 * @return error
 **/
 func (s *Postgres) MutateModel(model *jdb.Model) error {
-	backupTable := fmt.Sprintf(`%s_backup`, tableName(model))
+	backupTable := fmt.Sprintf(`%s_backup`, model.Table)
 	sql := "\n"
-	sql = strs.Append(sql, s.ddlTableRename(tableName(model), backupTable), "\n")
+	sql = strs.Append(sql, s.ddlTableRename(model.Table, backupTable), "\n")
 	sql = strs.Append(sql, s.ddlTable(model), "\n")
 	sql = strs.Append(sql, s.ddlTableInsertTo(model, backupTable), "\n\n")
 	sql = strs.Append(sql, s.ddlTableIndex(model), "\n\n")

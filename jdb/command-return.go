@@ -6,9 +6,13 @@ package jdb
 * @return *Command
 **/
 func (s *Command) Return(fields ...string) *Command {
-	model := s.From
+	model := s.getModel()
+	if model == nil {
+		return s
+	}
+
 	for _, pK := range model.PrimaryKeys {
-		field := pK.GetField()
+		field := GetField(pK)
 		s.Returns = append(s.Returns, field)
 	}
 

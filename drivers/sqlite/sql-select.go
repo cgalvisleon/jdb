@@ -117,7 +117,7 @@ func jsonBuildObject(result, obj string) string {
 func (s *SqlLite) sqlObject(from *jdb.QlFrom) string {
 	var selects = []*jdb.Field{}
 	for _, col := range from.Columns {
-		field := col.GetField()
+		field := jdb.GetField(col)
 		if field == nil {
 			continue
 		}

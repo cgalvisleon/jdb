@@ -1,10 +1,16 @@
 package jdb
 
-import "github.com/cgalvisleon/et/et"
+import (
+	"fmt"
+
+	"github.com/cgalvisleon/et/config"
+	"github.com/cgalvisleon/et/et"
+)
 
 type Connected interface {
 	Chain() (string, error)
 	ToJson() et.Json
+	Load(params et.Json) error
 	Validate() error
 }
 
@@ -31,4 +37,46 @@ func (s *ConnectParams) ToJson() et.Json {
 		"node_id":   s.NodeId,
 		"params":    s.Params.ToJson(),
 	}
+}
+
+/**
+* LoadConnectParams
+* @param params et.Json
+* @return *ConnectParams, error
+**/
+func LoadConnectParams(params et.Json) (*ConnectParams, error) {
+	connection := params.Json("params")
+	result := &ConnectParams{
+		Id:       params.Str("id"),
+		Driver:   params.Str("driver"),
+		Name:     params.Str("name"),
+		UserCore: params.Bool("user_core"),
+		NodeId:   params.Int("node_id"),
+		Debug:    params.Bool("debug"),
+	}
+
+	err := result.Params.Load(connection)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+/**
+* Load
+* @return *ConnectParams, error
+**/
+func load() (*ConnectParams, error) {
+	driverName := config.String("DB_DRIVER", "")
+	if driverName == "" {
+		return nil, fmt.Errorf(MSG_DRIVER_NOT_DEFINED)
+	}
+
+	params, ok := conn.Params[driverName]
+	if !ok {
+		return nil, fmt.Errorf(MSG_DRIVER_NOT_DEFINED)
+	}
+
+	return &params, nil
 }

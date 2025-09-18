@@ -200,7 +200,7 @@ func (s *Postgres) ddlTable(model *jdb.Model) string {
 			columnsDef = strs.Append(columnsDef, def, ",")
 		}
 	}
-	result := fmt.Sprintf("\nCREATE TABLE IF NOT EXISTS %s (%s\n);", tableName(model), columnsDef)
+	result := fmt.Sprintf("\nCREATE TABLE IF NOT EXISTS %s (%s\n);", model.Table, columnsDef)
 
 	return result
 }
@@ -230,7 +230,7 @@ func (s *Postgres) ddlTableInsertTo(model *jdb.Model, tableOrigin string) string
 			fields = strs.Append(fields, fmt.Sprintf("%s", column.Name), ", ")
 		}
 	}
-	result := fmt.Sprintf("INSERT INTO %s (%s)\nSELECT %s FROM %s;", tableName(model), fields, fields, tableOrigin)
+	result := fmt.Sprintf("INSERT INTO %s (%s)\nSELECT %s FROM %s;", model.Table, fields, fields, tableOrigin)
 
 	return result
 }

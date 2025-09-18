@@ -14,11 +14,10 @@ import (
 * @return error
 **/
 func (s *Command) beforeInsertDefault(tx *Tx, data et.Json) error {
-	if s.From == nil {
+	model := s.getModel()
+	if model == nil {
 		return fmt.Errorf(MSG_MODEL_REQUIRED)
 	}
-
-	model := s.From
 
 	if model.IndexField != nil && data.Int(model.IndexField.Name) == 0 {
 		data[model.IndexField.Name] = reg.GenIndex()
@@ -46,12 +45,12 @@ func (s *Command) beforeInsertDefault(tx *Tx, data et.Json) error {
 * @return error
 **/
 func (s *Command) beforeUpdateDefault(tx *Tx, data et.Json) error {
-	if s.From == nil {
+	model := s.getModel()
+	if model == nil {
 		return fmt.Errorf(MSG_MODEL_REQUIRED)
 	}
 
 	now := utility.Now()
-	model := s.From
 	if model.CreatedAtField != nil {
 		delete(data, model.CreatedAtField.Name)
 	}

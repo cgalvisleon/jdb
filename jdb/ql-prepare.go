@@ -22,7 +22,7 @@ func (s *Ql) prepare() *Ql {
 			}
 
 			if !slices.Contains([]TypeColumn{TpAtribute}, col.TypeColumn) {
-				field := col.GetField()
+				field := GetField(col)
 				field.As = frm.As
 				s.setSelect(field)
 			}
@@ -36,7 +36,7 @@ func (s *Ql) prepare() *Ql {
 
 			idx = slices.IndexFunc(s.Details, func(e *Field) bool { return e.Name == name })
 			if idx != -1 {
-				s.Details = append(s.Details[:idx], s.Details[idx+1:]...)
+				s.deleteDetail(idx)
 			}
 		}
 	}

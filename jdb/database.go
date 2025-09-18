@@ -13,19 +13,20 @@ import (
 )
 
 type DB struct {
-	CreatedAt   time.Time `json:"created_at"`
-	UpdateAt    time.Time `json:"update_at"`
-	Id          string    `json:"id"`
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
-	UseCore     bool      `json:"use_core"`
-	NodeId      int       `json:"node_id"`
-	db          *sql.DB   `json:"-"`
-	driver      Driver    `json:"-"`
-	schemas     []*Schema `json:"-"`
-	models      []*Model  `json:"-"`
-	isInit      bool      `json:"-"`
-	IsDebug     bool      `json:"-"`
+	CreatedAt     time.Time     `json:"created_at"`
+	UpdateAt      time.Time     `json:"update_at"`
+	Id            string        `json:"id"`
+	Name          string        `json:"name"`
+	Description   string        `json:"description"`
+	UseCore       bool          `json:"use_core"`
+	NodeId        int           `json:"node_id"`
+	connectParams ConnectParams `json:"-"`
+	db            *sql.DB       `json:"-"`
+	driver        Driver        `json:"-"`
+	schemas       []*Schema     `json:"-"`
+	models        []*Model      `json:"-"`
+	isInit        bool          `json:"-"`
+	IsDebug       bool          `json:"-"`
 }
 
 /**
@@ -73,6 +74,40 @@ func (s *DB) serialize() ([]byte, error) {
 	}
 
 	return result, nil
+}
+
+/**
+* Ping
+* @return error
+**/
+func (s *DB) Ping() error {
+	if s.db == nil {
+		return fmt.Errorf(MSG_DB_NOT_CONNECTED)
+	}
+
+	return s.db.Ping()
+}
+
+/**
+* Restore
+* @return error
+**/
+func (s *DB) Restore() error {
+	if s.db == nil {
+		return fmt.Errorf(MSG_DB_NOT_CONNECTED)
+	}
+
+	err := s.db.Close()
+	if err != nil {
+		return err
+	}
+
+	err = s.Conected(s.connectParams)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 /**
@@ -414,7 +449,7 @@ func (s *DB) Command(command *Command) (et.Items, error) {
 
 	result, err := s.driver.Command(command)
 	if err != nil {
-		publishError(command.From, command.Sql, err)
+		publishError(command.getModel(), command.Sql, err)
 		return et.Items{}, err
 	}
 

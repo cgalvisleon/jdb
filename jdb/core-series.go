@@ -1,7 +1,6 @@
 package jdb
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/cgalvisleon/et/console"
@@ -48,7 +47,7 @@ func (s *DB) defineSeries() error {
 **/
 func GetSeries(kind, tag string) (string, error) {
 	if coreSeries == nil {
-		return "", errors.New(MSG_DATABASE_NOT_CONCURRENT)
+		return "", fmt.Errorf(MSG_DATABASE_NOT_CONCURRENT)
 	}
 
 	item, err := coreSeries.
@@ -87,7 +86,7 @@ func GetSeries(kind, tag string) (string, error) {
 **/
 func SetSeries(kind, tag, format string, lastValue int) error {
 	if coreSeries == nil {
-		return errors.New(MSG_DATABASE_NOT_CONCURRENT)
+		return fmt.Errorf(MSG_DATABASE_NOT_CONCURRENT)
 	}
 
 	_, err := coreSeries.
