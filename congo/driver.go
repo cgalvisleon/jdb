@@ -1,5 +1,7 @@
 package jdb
 
+import "database/sql"
+
 const (
 	DriverPostgres = "postgres"
 	DriverMysql    = "mysql"
@@ -9,6 +11,7 @@ const (
 )
 
 type Driver interface {
+	Connect(db *Database) (*sql.DB, error)
 	Load(model *Model) error
 }
 

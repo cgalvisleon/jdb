@@ -1,5 +1,36 @@
 package jdb
 
+import "github.com/cgalvisleon/et/et"
+
+/**
+* afterInsertDefault
+* @param tx *Tx, data et.Json
+* @return error
+**/
+func (s *Model) afterInsertDefault(tx *Tx, data et.Json) error {
+	if s.RecordField != "" {
+	}
+	return nil
+}
+
+/**
+* afterUpdateDefault
+* @param tx *Tx, data et.Json
+* @return error
+**/
+func (s *Model) afterUpdateDefault(tx *Tx, data et.Json) error {
+	return nil
+}
+
+/**
+* afterDeleteDefault
+* @param tx *Tx, data et.Json
+* @return error
+**/
+func (s *Model) afterDeleteDefault(tx *Tx, data et.Json) error {
+	return nil
+}
+
 /**
 * AfterInsert
 * @param fn DataFunction

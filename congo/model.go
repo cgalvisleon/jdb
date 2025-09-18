@@ -127,7 +127,11 @@ func Define(definition et.Json) (*Model, error) {
 		return nil, fmt.Errorf(MSG_NAME_REQUIRED)
 	}
 
-	db := getDatabase(database)
+	db, err := getDatabase(database)
+	if err != nil {
+		return nil, err
+	}
+
 	result, err := db.getModel(schema, name)
 	result.Table = definition.String("table")
 	result.Indices = definition.ArrayStr("indices")

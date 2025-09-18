@@ -1,9 +1,11 @@
 package jdb
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 
+	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/utility"
 )
@@ -15,9 +17,11 @@ func init() {
 }
 
 type Database struct {
-	Name   string            `json:"name"`
-	Models map[string]*Model `json:"models"`
-	driver Driver            `json:"-"`
+	Name    string            `json:"name"`
+	Models  map[string]*Model `json:"models"`
+	UseCore bool              `json:"use_core"`
+	driver  Driver            `json:"-"`
+	db      *sql.DB           `json:"-"`
 }
 
 /**
@@ -42,9 +46,9 @@ func (s *Database) ToJson() et.Json {
 /**
 * GetDatabase
 * @param name string
-* @return *Database
+* @return (*Database, error)
 **/
-func getDatabase(name string) *Database {
+func getDatabase(name string) (*Database, error) {
 	result, ok := dbs[name]
 	if !ok {
 		result = &Database{
@@ -52,14 +56,46 @@ func getDatabase(name string) *Database {
 			Models: make(map[string]*Model),
 			driver: drivers[DriverPostgres],
 		}
+
+		err := result.Load()
+		if err != nil {
+			return nil, err
+		}
+
 		dbs[name] = result
 	}
 
-	return result
+	return result, nil
 }
 
 /**
-* Init
+* Load
+* @return error
+**/
+func (s *Database) Load() error {
+	if s.driver == nil {
+		return fmt.Errorf(MSG_DRIVER_REQUIRED)
+	}
+
+	db, err := s.driver.Connect(s)
+	if err != nil {
+		return err
+	}
+
+	s.db = db
+
+	if s.UseCore {
+		err := initCore()
+		if err != nil {
+			console.Panic(err)
+		}
+	}
+
+	return nil
+}
+
+/**
+* initModel
 * @param model *Model
 * @return error
 **/
@@ -115,6 +151,12 @@ func (s *Database) getModel(schema, name string) (*Model, error) {
 			afterUpdate:  []DataFunctionTx{},
 			afterDelete:  []DataFunctionTx{},
 		}
+		model.BeforeInsert(model.beforeInsertDefault)
+		model.BeforeUpdate(model.beforeUpdateDefault)
+		model.BeforeDelete(model.beforeDeleteDefault)
+		model.AfterInsert(model.afterInsertDefault)
+		model.AfterUpdate(model.afterUpdateDefault)
+		model.AfterDelete(model.afterDeleteDefault)
 		s.Models[id] = model
 	}
 
