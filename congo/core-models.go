@@ -17,3 +17,12 @@ func setModel(id string, data et.Json, debug bool) error {
 
 	return nil
 }
+
+/**
+* loadModel
+* @param id string
+* @return et.Json
+**/
+func loadModel(id string) et.Json {
+	return et.Json{}
+}

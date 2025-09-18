@@ -104,12 +104,17 @@ func (s *Database) load() error {
 * @return error
 **/
 func (s *Database) init(model *Model) error {
-	err := model.save()
+	err := s.driver.Load(model)
 	if err != nil {
 		return err
 	}
 
-	return s.driver.Load(model)
+	err = model.save()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 /**
@@ -136,11 +141,12 @@ func (s *Database) getModel(schema, name string) (*Model, error) {
 			Name:         name,
 			Table:        "",
 			Columns:      et.Json{},
+			Atribs:       et.Json{},
 			SourceField:  "",
 			Details:      et.Json{},
 			Masters:      et.Json{},
 			Rollups:      et.Json{},
-			PrimaryKeys:  et.Json{},
+			PrimaryKeys:  []string{},
 			ForeignKeys:  et.Json{},
 			Indices:      []string{},
 			Required:     []string{},

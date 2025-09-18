@@ -2,6 +2,7 @@ package jdb
 
 import (
 	"fmt"
+	"slices"
 
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/utility"
@@ -46,28 +47,42 @@ func (s *Model) defineAtrib(name string, defaultValue interface{}) error {
 }
 
 /**
+* defineColumns
+* @param params et.Json
+* @return error
+**/
+func (s *Model) defineColumns(params et.Json) error {
+	for k := range params {
+		param := params.Json(k)
+		err := s.defineColumn(k, param)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+/**
 * definePrimaryKeys
 * @param names ...string
 * @return
 **/
 func (s *Model) definePrimaryKeys(names ...string) {
-	pks := []string{}
 	for _, name := range names {
+		idx := slices.Index(s.PrimaryKeys, name)
+		if idx != -1 {
+			continue
+		}
+
 		_, ok := s.Columns[name]
 		if !ok {
 			continue
 		}
 
-		s.Required = append(s.Required, name)
-		pks = append(pks, name)
+		s.defineRequired(name)
+		s.PrimaryKeys = append(s.PrimaryKeys, name)
 	}
-
-	if len(pks) == 0 {
-		return
-	}
-
-	pk := fmt.Sprintf("pk_%s", s.Name)
-	s.PrimaryKeys[pk] = pks
 }
 
 /**
@@ -77,6 +92,11 @@ func (s *Model) definePrimaryKeys(names ...string) {
 **/
 func (s *Model) defineIndices(names ...string) error {
 	for _, name := range names {
+		idx := slices.Index(s.Indices, name)
+		if idx != -1 {
+			continue
+		}
+
 		_, ok := s.Columns[name]
 		if !ok {
 			continue
@@ -95,6 +115,11 @@ func (s *Model) defineIndices(names ...string) error {
 **/
 func (s *Model) defineRequired(names ...string) {
 	for _, name := range names {
+		idx := slices.Index(s.Required, name)
+		if idx != -1 {
+			continue
+		}
+
 		_, ok := s.Columns[name]
 		if !ok {
 			continue
@@ -297,6 +322,12 @@ func (s *Model) defineDetails(params et.Json) error {
 		err = detail.defineColumn(s.Name, et.Json{
 			"type": TypeMaster,
 		})
+		if err != nil {
+			return err
+		}
+
+		columns = param.Json("columns")
+		err = detail.defineColumns(columns)
 		if err != nil {
 			return err
 		}

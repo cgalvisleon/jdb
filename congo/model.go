@@ -82,12 +82,13 @@ type Model struct {
 	Name         string            `json:"name"`
 	Table        string            `json:"table"`
 	Columns      et.Json           `json:"columns"`
+	Atribs       et.Json           `json:"atribs"`
 	SourceField  string            `json:"source_field"`
 	RecordField  string            `json:"record_field"`
 	Details      et.Json           `json:"details"`
 	Masters      et.Json           `json:"masters"`
 	Rollups      et.Json           `json:"rollups"`
-	PrimaryKeys  et.Json           `json:"primary_keys"`
+	PrimaryKeys  []string          `json:"primary_keys"`
 	ForeignKeys  et.Json           `json:"foreign_keys"`
 	Indices      []string          `json:"indices"`
 	Required     []string          `json:"required"`
@@ -108,11 +109,11 @@ type Model struct {
 }
 
 /**
-* Define
+* DefineModel
 * @param definition et.Json
 * @return (*Model, error)
 **/
-func Define(definition et.Json) (*Model, error) {
+func DefineModel(definition et.Json) (*Model, error) {
 	database := definition.String("database")
 	if !utility.ValidStr(database, 0, []string{}) {
 		return nil, fmt.Errorf(MSG_DATABASE_REQUIRED)
@@ -142,16 +143,13 @@ func Define(definition et.Json) (*Model, error) {
 	result.Version = definition.Int("version")
 
 	columns := definition.Json("columns")
-	for k := range columns {
-		param := columns.Json(k)
-		err := result.defineColumn(k, param)
-		if err != nil {
-			return nil, err
-		}
+	err = result.defineColumns(columns)
+	if err != nil {
+		return nil, err
 	}
 
-	atribs := definition.Json("atribs")
-	for k, v := range atribs {
+	result.Atribs = definition.Json("atribs")
+	for k, v := range result.Atribs {
 		err := result.defineAtrib(k, v)
 		if err != nil {
 			return nil, err
@@ -184,6 +182,26 @@ func Define(definition et.Json) (*Model, error) {
 
 	debug := definition.Bool("debug")
 	result.isDebug = debug
+
+	return result, nil
+}
+
+/**
+* LoadModel
+* @param schema, name string
+* @return (*Model, error)
+**/
+func LoadModel(schema, name string) (*Model, error) {
+	id := fmt.Sprintf("%s.%s", schema, name)
+	src := loadModel(id)
+	if src.IsEmpty() {
+		return nil, fmt.Errorf("model %s not found", id)
+	}
+
+	result, err := DefineModel(src)
+	if err != nil {
+		return nil, err
+	}
 
 	return result, nil
 }

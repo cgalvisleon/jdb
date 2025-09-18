@@ -25,7 +25,7 @@ func main() {
 	// 	console.Panic(err)
 	// }
 
-	model, err := jdb.Define(et.Json{
+	model, err := jdb.DefineModel(et.Json{
 		"database": "josephine",
 		"schema":   "projects",
 		"name":     "users",
