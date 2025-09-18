@@ -1,7 +1,7 @@
 package jdb
 
 type Driver interface {
-	Load(model *Model) (string, error)
+	Load(model *Model) error
 }
 
 var drivers map[string]Driver

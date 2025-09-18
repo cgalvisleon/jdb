@@ -5,8 +5,7 @@ import (
 	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/event"
-	_ "github.com/cgalvisleon/jdb/drivers/postgres"
-	"github.com/cgalvisleon/jdb/jdb"
+	jdb "github.com/cgalvisleon/jdb/congo"
 )
 
 func main() {
@@ -29,6 +28,19 @@ func main() {
 		"database": "catalogo",
 		"schema":   "projects",
 		"name":     "users",
+		"relations": et.Json{
+			"roles": et.Json{
+				"schema": "projects",
+				"name":   "roles",
+				"references": et.Json{
+					"columns": et.Json{
+						"user_id": "id",
+					},
+					"on_delete": "cascade",
+					"on_update": "cascade",
+				},
+			},
+		},
 		// "columns": et.Json{
 		// 	"id": et.Json{
 		// 		"type":    "key",
@@ -62,12 +74,12 @@ func main() {
 		console.Panic(err)
 	}
 
-	ddl, err := model.Load()
-	if err != nil {
-		console.Panic(err)
-	}
+	// ddl, err := model.Load()
+	// if err != nil {
+	// 	console.Panic(err)
+	// }
 
-	console.Debug("ddl:", ddl)
+	console.Debug("ddl:", model.ToJson().ToString())
 
 	// sql, err := js.Query(et.Json{
 	// 	"users": et.Json{

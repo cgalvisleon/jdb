@@ -11,8 +11,8 @@ func init() {
 type PostgresDriver struct {
 }
 
-func (s *PostgresDriver) Load(model *Model) (string, error) {
+func (s *PostgresDriver) Load(model *Model) error {
 	model.Table = fmt.Sprintf("%s.%s", model.Schema, model.Name)
 
-	return model.ToJson().ToString(), nil
+	return nil
 }
