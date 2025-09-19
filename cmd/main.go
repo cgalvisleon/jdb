@@ -77,6 +77,11 @@ func main() {
 	query, err := jdb.Query(et.Json{
 		"database": "josephine",
 		"from":     "users",
+		"select": []string{
+			"id",
+			"name",
+			"email",
+		},
 		"joins": []et.Json{
 			{
 				"from": "roles",
@@ -117,10 +122,12 @@ func main() {
 		console.Panic(err)
 	}
 
-	result, err := query.ItExists()
-	if err != nil {
-		console.Panic(err)
-	}
+	console.Debug("query:", query.ToJson().ToString())
 
-	console.Debug("exists:", result)
+	// result, err := query.ItExists()
+	// if err != nil {
+	// 	console.Panic(err)
+	// }
+
+	// console.Debug("exists:", result)
 }

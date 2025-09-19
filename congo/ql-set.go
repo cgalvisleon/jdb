@@ -8,7 +8,8 @@ import "github.com/cgalvisleon/et/et"
 * @return *Ql
 **/
 func (s *Ql) setQuery(query et.Json) *Ql {
-	s.setSelect(query.Json("select")).
+	s.setSelect(query.ArrayStr("select")).
+		setJoin(query.ArrayJson("joins")).
 		setWhere(query.Json("where")).
 		setAnd(query.Json("and")).
 		setOr(query.Json("or")).
@@ -20,8 +21,13 @@ func (s *Ql) setQuery(query et.Json) *Ql {
 	return s
 }
 
-func (s *Ql) setSelect(selects et.Json) *Ql {
+func (s *Ql) setSelect(selects []string) *Ql {
 	s.Selects = selects
+	return s
+}
+
+func (s *Ql) setJoin(joins []et.Json) *Ql {
+	s.Joins = joins
 	return s
 }
 
@@ -37,11 +43,6 @@ func (s *Ql) setAnd(and et.Json) *Ql {
 
 func (s *Ql) setOr(or et.Json) *Ql {
 	s.Wheres = or
-	return s
-}
-
-func (s *Ql) setJoin(join et.Json) *Ql {
-	s.Joins = append(s.Joins, join)
 	return s
 }
 

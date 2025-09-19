@@ -133,7 +133,7 @@ func (s *Database) query(query *Ql) (et.Items, error) {
 	}
 
 	if query.isDebug {
-		console.Debugf("query:%s", query.toJson().ToString())
+		console.Debugf("query:%s", query.ToJson().ToString())
 	}
 
 	return result, nil
@@ -155,7 +155,7 @@ func (s *Database) exists(query *Ql) (bool, error) {
 	}
 
 	if query.isDebug {
-		console.Debugf("exists:%s", query.toJson().ToString())
+		console.Debugf("exists:%s", query.ToJson().ToString())
 	}
 
 	return result, nil

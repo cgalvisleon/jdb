@@ -9,18 +9,18 @@ import (
 )
 
 type Ql struct {
-	Froms   []map[string]string `json:"froms"`
-	Selects et.Json             `json:"selects"`
-	Joins   []et.Json           `json:"joins"`
-	Wheres  et.Json             `json:"wheres"`
-	GroupBy et.Json             `json:"group_by"`
-	Having  et.Json             `json:"having"`
-	OrderBy et.Json             `json:"order_by"`
-	Limit   et.Json             `json:"limit"`
-	SQL     string              `json:"sql"`
-	db      *Database           `json:"-"`
-	tx      *Tx                 `json:"-"`
-	isDebug bool                `json:"-"`
+	Froms   []string  `json:"froms"`
+	Selects []string  `json:"selects"`
+	Joins   []et.Json `json:"joins"`
+	Wheres  et.Json   `json:"wheres"`
+	GroupBy et.Json   `json:"group_by"`
+	Having  et.Json   `json:"having"`
+	OrderBy et.Json   `json:"order_by"`
+	Limit   et.Json   `json:"limit"`
+	SQL     string    `json:"sql"`
+	db      *Database `json:"-"`
+	tx      *Tx       `json:"-"`
+	isDebug bool      `json:"-"`
 }
 
 /**
@@ -29,8 +29,8 @@ type Ql struct {
 **/
 func newQl(db *Database) *Ql {
 	return &Ql{
-		Froms:   []map[string]string{},
-		Selects: et.Json{},
+		Froms:   []string{},
+		Selects: []string{},
 		Joins:   make([]et.Json, 0),
 		Wheres:  et.Json{},
 		GroupBy: et.Json{},
@@ -71,7 +71,7 @@ func Query(query et.Json) (*Ql, error) {
 * ToJson
 * @return et.Json
 **/
-func (s *Ql) toJson() et.Json {
+func (s *Ql) ToJson() et.Json {
 	bt, err := json.Marshal(s)
 	if err != nil {
 		return et.Json{}
@@ -96,20 +96,22 @@ func (s *Ql) Debug() *Ql {
 }
 
 /**
+* getAs
+* @return string
+**/
+func (s *Ql) getAs() string {
+	n := len(s.Joins)
+	as := string(rune(65 + n))
+	return as
+}
+
+/**
 * addFrom
 * @param name string
 * @return *Ql
 **/
 func (s *Ql) addFrom(name string) *Ql {
-	n := len(s.Joins)
-	as := string(rune(65 + n))
-	s.Froms = append(s.Froms, map[string]string{
-		name: as,
-	})
-
-	if n != 0 {
-
-	}
+	s.Froms = append(s.Froms, name)
 	return s
 }
 
