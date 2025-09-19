@@ -121,7 +121,7 @@ func command(cmd string, param et.Json) (*Command, error) {
 		return nil, fmt.Errorf(MSG_NAME_REQUIRED)
 	}
 
-	model, err := db.getModel(eschema, name)
+	model, err := db.getOrCreateModel(eschema, name)
 	if err != nil {
 		return nil, err
 	}

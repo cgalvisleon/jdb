@@ -119,11 +119,11 @@ func (s *Database) init(model *Model) error {
 }
 
 /**
-* getModel
+* getOrCreateModel
 * @param schema, name string
 * @return (*Model, error)
 **/
-func (s *Database) getModel(schema, name string) (*Model, error) {
+func (s *Database) getOrCreateModel(schema, name string) (*Model, error) {
 	if !utility.ValidStr(schema, 0, []string{}) {
 		return nil, fmt.Errorf(MSG_SCHEMA_REQUIRED)
 	}
@@ -191,7 +191,7 @@ func (s *Database) DefineModel(definition et.Json) (*Model, error) {
 		return nil, fmt.Errorf(MSG_NAME_REQUIRED)
 	}
 
-	result, err := s.getModel(schema, name)
+	result, err := s.getOrCreateModel(schema, name)
 	if err != nil {
 		return nil, err
 	}
@@ -246,11 +246,11 @@ func (s *Database) DefineModel(definition et.Json) (*Model, error) {
 }
 
 /**
-* GetModel
+* getModel
 * @param schema, name string
 * @return (*Model, error)
 **/
-func (s *Database) GetModel(schema, name string) (*Model, error) {
+func (s *Database) getModel(schema, name string) (*Model, error) {
 	id := fmt.Sprintf("%s.%s", schema, name)
 	result, ok := s.Models[id]
 	if !ok {

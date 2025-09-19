@@ -220,7 +220,7 @@ func (s *Model) defineForeignKeys(params et.Json) error {
 			return fmt.Errorf("on_update must be cascade")
 		}
 
-		model, err := s.db.getModel(schema, name)
+		model, err := s.db.getOrCreateModel(schema, name)
 		if err != nil {
 			return err
 		}
@@ -298,7 +298,7 @@ func (s *Model) defineDetails(params et.Json) error {
 		onDelete := references.String("on_delete")
 		onUpdate := references.String("on_update")
 
-		detail, err := s.db.getModel(schema, name)
+		detail, err := s.db.getOrCreateModel(schema, name)
 		if err != nil {
 			return err
 		}
