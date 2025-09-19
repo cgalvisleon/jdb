@@ -5,12 +5,27 @@ import (
 	"github.com/cgalvisleon/et/et"
 )
 
+var models *Model
+
 /**
 * defineModel
-* @param id string, data et.Json
+* @param db *Database
 * @return error
 **/
-func defineModel() error {
+func defineModel(db *Database) error {
+	if models != nil {
+		return nil
+	}
+
+	var err error
+	models, err = db.DefineModel(et.Json{
+		"schema": "congo",
+		"name":   "models",
+	})
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 

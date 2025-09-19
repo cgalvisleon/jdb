@@ -76,6 +76,15 @@ func (s *Postgres) Exists(query *jdb.Ql) (bool, error) {
 }
 
 /**
+* Count
+* @param query *jdb.Ql
+* @return (int, error)
+**/
+func (s *Postgres) Count(query *jdb.Ql) (int, error) {
+	return 0, nil
+}
+
+/**
 * Command
 * @param command *jdb.Command
 * @return (et.Items, error)

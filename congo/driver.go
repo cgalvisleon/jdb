@@ -19,6 +19,7 @@ type Driver interface {
 	Load(model *Model) error
 	Query(query *Ql) (et.Items, error)
 	Exists(query *Ql) (bool, error)
+	Count(query *Ql) (int, error)
 	Command(command *Command) (et.Items, error)
 }
 

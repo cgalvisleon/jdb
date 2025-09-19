@@ -4,20 +4,20 @@ package jdb
 * initCore
 * @return error
 **/
-func initCore() error {
-	if err := defineModel(); err != nil {
+func initCore(db *Database) error {
+	if err := defineModel(db); err != nil {
 		return err
 	}
-	if err := defineRecord(); err != nil {
+	if err := defineRecord(db); err != nil {
 		return err
 	}
-	if err := defineRecycling(); err != nil {
+	if err := defineRecycling(db); err != nil {
 		return err
 	}
-	if err := defineSeries(); err != nil {
+	if err := defineSeries(db); err != nil {
 		return err
 	}
-	if err := defineTables(); err != nil {
+	if err := defineTables(db); err != nil {
 		return err
 	}
 

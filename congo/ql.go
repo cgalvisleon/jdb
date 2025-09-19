@@ -9,18 +9,20 @@ import (
 )
 
 type Ql struct {
-	Froms   []string  `json:"froms"`
-	Selects []string  `json:"selects"`
-	Joins   []et.Json `json:"joins"`
-	Wheres  et.Json   `json:"wheres"`
-	GroupBy et.Json   `json:"group_by"`
-	Having  et.Json   `json:"having"`
-	OrderBy et.Json   `json:"order_by"`
-	Limit   et.Json   `json:"limit"`
-	SQL     string    `json:"sql"`
-	db      *Database `json:"-"`
-	tx      *Tx       `json:"-"`
-	isDebug bool      `json:"-"`
+	Froms     []string  `json:"froms"`
+	Selects   []string  `json:"selects"`
+	Joins     []et.Json `json:"joins"`
+	Wheres    et.Json   `json:"wheres"`
+	GroupBy   et.Json   `json:"group_by"`
+	Having    et.Json   `json:"having"`
+	OrderBy   et.Json   `json:"order_by"`
+	Limit     et.Json   `json:"limit"`
+	Rollups   et.Json   `json:"rollups"`
+	Relations et.Json   `json:"relations"`
+	SQL       string    `json:"sql"`
+	db        *Database `json:"-"`
+	tx        *Tx       `json:"-"`
+	isDebug   bool      `json:"-"`
 }
 
 /**
@@ -29,15 +31,17 @@ type Ql struct {
 **/
 func newQl(db *Database) *Ql {
 	return &Ql{
-		Froms:   []string{},
-		Selects: []string{},
-		Joins:   make([]et.Json, 0),
-		Wheres:  et.Json{},
-		GroupBy: et.Json{},
-		Having:  et.Json{},
-		OrderBy: et.Json{},
-		Limit:   et.Json{},
-		db:      db,
+		Froms:     []string{},
+		Selects:   []string{},
+		Joins:     make([]et.Json, 0),
+		Wheres:    et.Json{},
+		GroupBy:   et.Json{},
+		Having:    et.Json{},
+		OrderBy:   et.Json{},
+		Limit:     et.Json{},
+		Rollups:   et.Json{},
+		Relations: et.Json{},
+		db:        db,
 	}
 }
 

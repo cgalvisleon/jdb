@@ -29,6 +29,7 @@ const (
 	TypeDetail   = "detail"
 	TypeMaster   = "master"
 	TypeRollup   = "rollup"
+	TypeRelation = "relation"
 )
 
 var (
@@ -49,6 +50,7 @@ var (
 		TypeDetail:   true,
 		TypeMaster:   true,
 		TypeRollup:   true,
+		TypeRelation: true,
 	}
 
 	TypeColumn = map[string]bool{
@@ -66,10 +68,11 @@ var (
 	}
 
 	TypeColumnCalc = map[string]bool{
-		TypeCalc:   true,
-		TypeDetail: true,
-		TypeMaster: true,
-		TypeRollup: true,
+		TypeCalc:     true,
+		TypeDetail:   true,
+		TypeMaster:   true,
+		TypeRollup:   true,
+		TypeRelation: true,
 	}
 )
 
@@ -88,6 +91,7 @@ type Model struct {
 	Details      et.Json           `json:"details"`
 	Masters      et.Json           `json:"masters"`
 	Rollups      et.Json           `json:"rollups"`
+	Relations    et.Json           `json:"relations"`
 	PrimaryKeys  []string          `json:"primary_keys"`
 	ForeignKeys  et.Json           `json:"foreign_keys"`
 	Indices      []string          `json:"indices"`
@@ -119,16 +123,6 @@ func DefineModel(definition et.Json) (*Model, error) {
 		return nil, fmt.Errorf(MSG_DATABASE_REQUIRED)
 	}
 
-	schema := definition.String("schema")
-	if !utility.ValidStr(schema, 0, []string{}) {
-		return nil, fmt.Errorf(MSG_SCHEMA_REQUIRED)
-	}
-
-	name := definition.String("name")
-	if !utility.ValidStr(name, 0, []string{}) {
-		return nil, fmt.Errorf(MSG_NAME_REQUIRED)
-	}
-
 	driver := envar.GetStr("DB_DRIVER", DriverPostgres)
 	driver = definition.ValStr(driver, "driver")
 	connection := definition.Json("connection")
@@ -137,52 +131,10 @@ func DefineModel(definition et.Json) (*Model, error) {
 		return nil, err
 	}
 
-	result, err := db.getModel(schema, name)
-	result.Table = definition.String("table")
-	result.Indices = definition.ArrayStr("indices")
-	result.Required = definition.ArrayStr("required")
-	result.Version = definition.Int("version")
-
-	columns := definition.Json("columns")
-	err = result.defineColumns(columns)
+	result, err := db.DefineModel(definition)
 	if err != nil {
 		return nil, err
 	}
-
-	result.Atribs = definition.Json("atribs")
-	for k, v := range result.Atribs {
-		err := result.defineAtrib(k, v)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	primaryKeys := definition.ArrayStr("primary_keys")
-	result.definePrimaryKeys(primaryKeys...)
-
-	sourceField := definition.String("source_field")
-	err = result.defineSourceField(sourceField)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := result.validate(); err != nil {
-		return nil, err
-	}
-
-	details := definition.Json("details")
-	if !details.IsEmpty() {
-		err := result.defineDetails(details)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	required := definition.ArrayStr("required")
-	result.defineRequired(required...)
-
-	debug := definition.Bool("debug")
-	result.isDebug = debug
 
 	return result, nil
 }

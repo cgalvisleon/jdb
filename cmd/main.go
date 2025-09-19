@@ -76,36 +76,36 @@ func main() {
 
 	query, err := jdb.Query(et.Json{
 		"database": "josephine",
-		"from":     "users",
+		"from":     "users AS a",
 		"select": []string{
-			"id",
-			"name",
-			"email",
+			"a.id",
+			"a.name",
+			"a.email",
 		},
 		"joins": []et.Json{
 			{
-				"from": "roles",
-				"on":   "users.id = roles.user_id",
+				"from": "roles AS b",
+				"on":   "a.id = b.user_id",
 			},
 		},
 		"where": et.Json{
-			"id": et.Json{
+			"a.id": et.Json{
 				"eq": 1,
 			},
 		},
 		"and": et.Json{
-			"name": et.Json{
+			"a.name": et.Json{
 				"eq": "John",
 			},
 		},
 		"or": et.Json{
-			"name": et.Json{
+			"a.name": et.Json{
 				"eq": "Jane",
 			},
 		},
 		"group_by": []string{""},
 		"having": et.Json{
-			"name": et.Json{
+			"a.name": et.Json{
 				"eq": "",
 			},
 		},
