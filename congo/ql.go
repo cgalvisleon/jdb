@@ -58,11 +58,11 @@ func Query(query et.Json) (*Ql, error) {
 	}
 
 	result := newQl(db)
-
-	from := query.ArrayStr("from")
-	for _, v := range from {
-		result.addFrom(v)
+	from := query.Str("from")
+	if len(from) == 0 {
+		return nil, fmt.Errorf(MSG_FROM_REQUIRED)
 	}
+	result.addFrom(from)
 
 	return result.setQuery(query), nil
 }

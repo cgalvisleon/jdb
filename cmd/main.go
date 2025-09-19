@@ -6,7 +6,7 @@ import (
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/event"
 	_ "github.com/cgalvisleon/jdb/drivers/postgres"
-	jdb "github.com/cgalvisleon/jdb/v2"
+	jdb "github.com/cgalvisleon/jdb/v1"
 )
 
 func main() {
@@ -25,7 +25,7 @@ func main() {
 	// 	console.Panic(err)
 	// }
 
-	model, err := jdb.NewModel(et.Json{
+	model, err := jdb.DefineModel(et.Json{
 		"database": "josephine",
 		"schema":   "projects",
 		"name":     "users",
@@ -75,23 +75,42 @@ func main() {
 	}
 
 	query, err := jdb.Query(et.Json{
-		"users": et.Json{
-			"select": []string{"id", "name", "email as correo"},
-			"where": et.Json{
-				"id": et.Json{
-					"eq": 1,
-				},
+		"database": "josephine",
+		"from":     "users",
+		"joins": []et.Json{
+			{
+				"from": "roles",
+				"on":   "users.id = roles.user_id",
 			},
-			"and": et.Json{
-				"name": et.Json{
-					"eq": "John",
-				},
-				"profiles": et.Json{
-					"verified": et.Json{
-						"eq": true,
-					},
-				},
+		},
+		"where": et.Json{
+			"id": et.Json{
+				"eq": 1,
 			},
+		},
+		"and": et.Json{
+			"name": et.Json{
+				"eq": "John",
+			},
+		},
+		"or": et.Json{
+			"name": et.Json{
+				"eq": "Jane",
+			},
+		},
+		"group_by": []string{""},
+		"having": et.Json{
+			"name": et.Json{
+				"eq": "",
+			},
+		},
+		"order_by": et.Json{
+			"asc":  []string{""},
+			"desc": []string{""},
+		},
+		"limit": et.Json{
+			"page": 1,
+			"rows": 10,
 		},
 	})
 	if err != nil {
