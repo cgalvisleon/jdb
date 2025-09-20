@@ -75,10 +75,10 @@ func main() {
 
 	query, err := db.Query(et.Json{
 		"from": "users AS a",
-		"select": []string{
-			"a.id",
-			"a.name",
-			"a.email",
+		"select": et.Json{
+			"a.id":    "id",
+			"a.name":  "name",
+			"a.email": "email",
 		},
 		"joins": []et.Json{
 			{

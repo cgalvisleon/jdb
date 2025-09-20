@@ -78,6 +78,8 @@ var (
 
 type DataFunctionTx func(tx *Tx, data et.Json) error
 
+type DataContext func(data et.Json)
+
 type Val struct {
 	Value interface{} `json:"value"`
 }
@@ -109,35 +111,36 @@ func C(name string) *Column {
 }
 
 type Model struct {
-	Id           string            `json:"id"`
-	Database     string            `json:"database"`
-	Schema       string            `json:"schema"`
-	Name         string            `json:"name"`
-	Table        string            `json:"table"`
-	Columns      et.Json           `json:"columns"`
-	SourceField  string            `json:"source_field"`
-	RecordField  string            `json:"record_field"`
-	Details      et.Json           `json:"details"`
-	Masters      et.Json           `json:"masters"`
-	Rollups      et.Json           `json:"rollups"`   //SQL
-	Relations    et.Json           `json:"relations"` //SQL
-	PrimaryKeys  []string          `json:"primary_keys"`
-	ForeignKeys  et.Json           `json:"foreign_keys"`
-	Indices      []string          `json:"indices"`
-	Required     []string          `json:"required"`
-	IsLocked     bool              `json:"is_locked"`
-	Version      int               `json:"version"`
-	db           *Database         `json:"-"`
-	details      map[string]*Model `json:"-"`
-	masters      map[string]*Model `json:"-"`
-	isInit       bool              `json:"-"`
-	isDebug      bool              `json:"-"`
-	beforeInsert []DataFunctionTx  `json:"-"`
-	beforeUpdate []DataFunctionTx  `json:"-"`
-	beforeDelete []DataFunctionTx  `json:"-"`
-	afterInsert  []DataFunctionTx  `json:"-"`
-	afterUpdate  []DataFunctionTx  `json:"-"`
-	afterDelete  []DataFunctionTx  `json:"-"`
+	Id           string                  `json:"id"`
+	Database     string                  `json:"database"`
+	Schema       string                  `json:"schema"`
+	Name         string                  `json:"name"`
+	Table        string                  `json:"table"`
+	Columns      et.Json                 `json:"columns"`
+	SourceField  string                  `json:"source_field"`
+	RecordField  string                  `json:"record_field"`
+	Details      et.Json                 `json:"details"`
+	Masters      et.Json                 `json:"masters"`
+	Rollups      et.Json                 `json:"rollups"`   //SQL
+	Relations    et.Json                 `json:"relations"` //SQL
+	PrimaryKeys  []string                `json:"primary_keys"`
+	ForeignKeys  et.Json                 `json:"foreign_keys"`
+	Indices      []string                `json:"indices"`
+	Required     []string                `json:"required"`
+	IsLocked     bool                    `json:"is_locked"`
+	Version      int                     `json:"version"`
+	db           *Database               `json:"-"`
+	details      map[string]*Model       `json:"-"`
+	masters      map[string]*Model       `json:"-"`
+	isInit       bool                    `json:"-"`
+	isDebug      bool                    `json:"-"`
+	calls        map[string]*DataContext `json:"-"`
+	beforeInsert []DataFunctionTx        `json:"-"`
+	beforeUpdate []DataFunctionTx        `json:"-"`
+	beforeDelete []DataFunctionTx        `json:"-"`
+	afterInsert  []DataFunctionTx        `json:"-"`
+	afterUpdate  []DataFunctionTx        `json:"-"`
+	afterDelete  []DataFunctionTx        `json:"-"`
 }
 
 /**

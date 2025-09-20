@@ -154,6 +154,7 @@ func (s *Database) getOrCreateModel(schema, name string) (*Model, error) {
 			db:           s,
 			details:      make(map[string]*Model),
 			masters:      make(map[string]*Model),
+			calls:        make(map[string]*DataContext),
 			beforeInsert: []DataFunctionTx{},
 			beforeUpdate: []DataFunctionTx{},
 			beforeDelete: []DataFunctionTx{},

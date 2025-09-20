@@ -7,25 +7,23 @@ import (
 )
 
 type Ql struct {
-	Database  string            `json:"-"`
-	Froms     []string          `json:"froms"`
-	Selects   []string          `json:"selects"`
-	Joins     []et.Json         `json:"joins"`
-	Wheres    et.Json           `json:"wheres"`
-	GroupBy   et.Json           `json:"group_by"`
-	Having    et.Json           `json:"having"`
-	OrderBy   et.Json           `json:"order_by"`
-	Limit     et.Json           `json:"limit"`
-	SQL       string            `json:"sql"`
-	db        *Database         `json:"-"`
-	tx        *Tx               `json:"-"`
-	froms     map[string]*Model `json:"-"`
-	columns   []string          `json:"-"`
-	atributs  []string          `json:"-"`
-	rollups   map[string]*Ql    `json:"-"`
-	relations map[string]*Ql    `json:"-"`
-	calls     map[string]*Ql    `json:"-"`
-	isDebug   bool              `json:"-"`
+	Database  string                  `json:"-"`
+	Froms     []string                `json:"froms"`
+	Selects   et.Json                 `json:"selects"`
+	Atributes et.Json                 `json:"atributes"`
+	Rollups   et.Json                 `json:"rollups"`
+	Relations et.Json                 `json:"relations"`
+	Joins     []et.Json               `json:"joins"`
+	Wheres    et.Json                 `json:"wheres"`
+	GroupBy   et.Json                 `json:"group_by"`
+	Having    et.Json                 `json:"having"`
+	OrderBy   et.Json                 `json:"order_by"`
+	Limit     et.Json                 `json:"limit"`
+	SQL       string                  `json:"sql"`
+	calls     map[string]*DataContext `json:"-"`
+	db        *Database               `json:"-"`
+	tx        *Tx                     `json:"-"`
+	isDebug   bool                    `json:"-"`
 }
 
 /**
@@ -36,7 +34,10 @@ func newQl(db *Database) *Ql {
 	return &Ql{
 		Database:  db.Name,
 		Froms:     []string{},
-		Selects:   []string{},
+		Selects:   et.Json{},
+		Atributes: et.Json{},
+		Rollups:   et.Json{},
+		Relations: et.Json{},
 		Joins:     make([]et.Json, 0),
 		Wheres:    et.Json{},
 		GroupBy:   et.Json{},
@@ -44,12 +45,7 @@ func newQl(db *Database) *Ql {
 		OrderBy:   et.Json{},
 		Limit:     et.Json{},
 		db:        db,
-		froms:     make(map[string]*Model),
-		columns:   []string{},
-		atributs:  []string{},
-		rollups:   make(map[string]*Ql),
-		relations: make(map[string]*Ql),
-		calls:     make(map[string]*Ql),
+		calls:     make(map[string]*DataContext),
 	}
 }
 
