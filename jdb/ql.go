@@ -7,23 +7,25 @@ import (
 )
 
 type Ql struct {
-	Database string            `json:"-"`
-	Froms    []string          `json:"froms"`
-	Selects  []string          `json:"selects"`
-	Joins    []et.Json         `json:"joins"`
-	Wheres   et.Json           `json:"wheres"`
-	GroupBy  et.Json           `json:"group_by"`
-	Having   et.Json           `json:"having"`
-	OrderBy  et.Json           `json:"order_by"`
-	Limit    et.Json           `json:"limit"`
-	Details  []*Ql             `json:"details"`
-	SQL      string            `json:"sql"`
-	db       *Database         `json:"-"`
-	tx       *Tx               `json:"-"`
-	columns  []string          `json:"-"`
-	atributs []string          `json:"-"`
-	froms    map[string]*Model `json:"-"`
-	isDebug  bool              `json:"-"`
+	Database  string            `json:"-"`
+	Froms     []string          `json:"froms"`
+	Selects   []string          `json:"selects"`
+	Joins     []et.Json         `json:"joins"`
+	Wheres    et.Json           `json:"wheres"`
+	GroupBy   et.Json           `json:"group_by"`
+	Having    et.Json           `json:"having"`
+	OrderBy   et.Json           `json:"order_by"`
+	Limit     et.Json           `json:"limit"`
+	SQL       string            `json:"sql"`
+	db        *Database         `json:"-"`
+	tx        *Tx               `json:"-"`
+	froms     map[string]*Model `json:"-"`
+	columns   []string          `json:"-"`
+	atributs  []string          `json:"-"`
+	rollups   map[string]*Ql    `json:"-"`
+	relations map[string]*Ql    `json:"-"`
+	calls     map[string]*Ql    `json:"-"`
+	isDebug   bool              `json:"-"`
 }
 
 /**
@@ -32,20 +34,22 @@ type Ql struct {
 **/
 func newQl(db *Database) *Ql {
 	return &Ql{
-		Database: db.Name,
-		Froms:    []string{},
-		Selects:  []string{},
-		Joins:    make([]et.Json, 0),
-		Wheres:   et.Json{},
-		GroupBy:  et.Json{},
-		Having:   et.Json{},
-		OrderBy:  et.Json{},
-		Limit:    et.Json{},
-		Details:  make([]*Ql, 0),
-		db:       db,
-		columns:  []string{},
-		atributs: []string{},
-		froms:    make(map[string]*Model),
+		Database:  db.Name,
+		Froms:     []string{},
+		Selects:   []string{},
+		Joins:     make([]et.Json, 0),
+		Wheres:    et.Json{},
+		GroupBy:   et.Json{},
+		Having:    et.Json{},
+		OrderBy:   et.Json{},
+		Limit:     et.Json{},
+		db:        db,
+		froms:     make(map[string]*Model),
+		columns:   []string{},
+		atributs:  []string{},
+		rollups:   make(map[string]*Ql),
+		relations: make(map[string]*Ql),
+		calls:     make(map[string]*Ql),
 	}
 }
 

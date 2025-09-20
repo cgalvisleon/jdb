@@ -3,6 +3,7 @@ package postgres
 import (
 	"fmt"
 
+	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/envar"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/jdb/jdb"
@@ -63,6 +64,8 @@ func (s *Postgres) Load(model *jdb.Model) error {
 * @return (et.Items, error)
 **/
 func (s *Postgres) Query(query *jdb.Ql) (et.Items, error) {
+	console.Debug("query:", query.ToJson().ToString())
+
 	return et.Items{}, nil
 }
 

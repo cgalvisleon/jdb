@@ -26,6 +26,15 @@ func (s *Ql) getRelationsTx(tx *Tx, data et.Json) {
 }
 
 /**
+* getCallsTx
+* @param tx *Tx, data et.Json
+* @return
+**/
+func (s *Ql) getCallsTx(tx *Tx, data et.Json) {
+
+}
+
+/**
 * FirstTx
 * @param tx *Tx, n int
 * @return et.Items, error
@@ -57,6 +66,7 @@ func (s *Ql) FirstTx(tx *Tx, n int) (et.Items, error) {
 			defer wg.Done()
 			s.getRollupsTx(tx, data)
 			s.getRelationsTx(tx, data)
+			s.getCallsTx(tx, data)
 		}(data)
 	}
 	wg.Wait()

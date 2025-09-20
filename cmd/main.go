@@ -120,12 +120,10 @@ func main() {
 		console.Panic(err)
 	}
 
-	console.Debug("query:", query.ToJson().ToString())
+	result, err := query.All()
+	if err != nil {
+		console.Panic(err)
+	}
 
-	// result, err := query.ItExists()
-	// if err != nil {
-	// 	console.Panic(err)
-	// }
-
-	// console.Debug("exists:", result)
+	console.Debug("exists:", result.ToString())
 }

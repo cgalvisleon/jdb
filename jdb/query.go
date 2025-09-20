@@ -1,0 +1,66 @@
+package jdb
+
+import (
+	"fmt"
+
+	"github.com/cgalvisleon/et/et"
+	"github.com/cgalvisleon/et/event"
+)
+
+/**
+* queryTx
+* @param db *sql.DB, tx *Tx, sourceFiled, sql string, arg ...any
+* @return *sql.Rows, error
+**/
+func query(db *Database, tx *Tx, sourceFiled, sql string, arg ...any) (et.Items, error) {
+	sql = SQLParse(sql, arg...)
+	data := et.Json{
+		"db_name": db.Name,
+		"sql":     sql,
+	}
+
+	if tx != nil {
+		err := tx.Begin(db.db)
+		if err != nil {
+			return et.Items{}, err
+		}
+
+		rows, err := tx.Tx.Query(sql, arg...)
+		if err != nil {
+			errRollback := tx.Rollback()
+			if errRollback != nil {
+				data["error"] = err.Error()
+				event.Publish(EVENT_SQL_ERROR, data)
+				err = fmt.Errorf("error on rollback: %w: %s", errRollback, err)
+			}
+
+			return et.Items{}, err
+		}
+		defer rows.Close()
+
+		if tx.Committed {
+			tp := tipoSQL(sql)
+			event.Publish(fmt.Sprintf("sql:%s", tp), data)
+		}
+
+		if sourceFiled != "" {
+			return RowsToSourceItems(rows, sourceFiled), nil
+		}
+
+		return RowsToItems(rows), nil
+	}
+
+	rows, err := db.db.Query(sql, arg...)
+	if err != nil {
+		return et.Items{}, err
+	}
+	defer rows.Close()
+
+	tp := tipoSQL(sql)
+	event.Publish(fmt.Sprintf("sql:%s", tp), data)
+	if sourceFiled != "" {
+		return RowsToSourceItems(rows, sourceFiled), nil
+	}
+
+	return RowsToItems(rows), nil
+}
