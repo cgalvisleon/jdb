@@ -25,18 +25,24 @@ var (
 )
 
 type Cmd struct {
-	Command  string    `json:"command"`
-	Data     []et.Json `json:"data"`
-	Before   et.Json   `json:"before"`
-	After    et.Json   `json:"after"`
-	SQL      string    `json:"sql"`
-	db       *Database `json:"-"`
-	tx       *Tx       `json:"-"`
-	from     *Model    `json:"-"`
-	result   []et.Json `json:"-"`
-	columns  []string  `json:"-"`
-	atributs []string  `json:"-"`
-	isDebug  bool      `json:"-"`
+	Command      string           `json:"command"`
+	Data         []et.Json        `json:"data"`
+	Before       et.Json          `json:"before"`
+	After        et.Json          `json:"after"`
+	SQL          string           `json:"sql"`
+	db           *Database        `json:"-"`
+	tx           *Tx              `json:"-"`
+	from         *Model           `json:"-"`
+	result       []et.Json        `json:"-"`
+	columns      []string         `json:"-"`
+	atributs     []string         `json:"-"`
+	isDebug      bool             `json:"-"`
+	beforeInsert []DataFunctionTx `json:"-"`
+	beforeUpdate []DataFunctionTx `json:"-"`
+	beforeDelete []DataFunctionTx `json:"-"`
+	afterInsert  []DataFunctionTx `json:"-"`
+	afterUpdate  []DataFunctionTx `json:"-"`
+	afterDelete  []DataFunctionTx `json:"-"`
 }
 
 /**
@@ -45,7 +51,7 @@ type Cmd struct {
 * @return *Cmd
 **/
 func newCommand(model *Model, cmd string, data []et.Json) *Cmd {
-	return &Cmd{
+	result := &Cmd{
 		Command:  cmd,
 		Data:     data,
 		Before:   et.Json{},
@@ -56,6 +62,26 @@ func newCommand(model *Model, cmd string, data []et.Json) *Cmd {
 		columns:  []string{},
 		atributs: []string{},
 	}
+	for _, v := range model.beforeInsert {
+		result.BeforeInsert(v)
+	}
+	for _, v := range model.beforeUpdate {
+		result.BeforeUpdate(v)
+	}
+	for _, v := range model.beforeDelete {
+		result.BeforeDelete(v)
+	}
+	for _, v := range model.afterInsert {
+		result.AfterInsert(v)
+	}
+	for _, v := range model.afterUpdate {
+		result.AfterUpdate(v)
+	}
+	for _, v := range model.afterDelete {
+		result.AfterDelete(v)
+	}
+
+	return result
 }
 
 /**
@@ -138,6 +164,77 @@ func command(cmd string, param et.Json) (*Cmd, error) {
 	}
 
 	return newCommand(model, cmd, data), nil
+}
+
+/**
+* BeforeInsert
+* @param fn DataFunctionTx
+* @return *Cmd
+**/
+func (s *Cmd) BeforeInsert(fn DataFunctionTx) *Cmd {
+	s.beforeInsert = append(s.beforeInsert, fn)
+	return s
+}
+
+/**
+* BeforeUpdate
+* @param fn DataFunctionTx
+* @return *Cmd
+**/
+func (s *Cmd) BeforeUpdate(fn DataFunctionTx) *Cmd {
+	s.beforeUpdate = append(s.beforeUpdate, fn)
+	return s
+}
+
+/**
+* BeforeDelete
+* @param fn DataFunctionTx
+* @return *Cmd
+**/
+func (s *Cmd) BeforeDelete(fn DataFunctionTx) *Cmd {
+	s.beforeDelete = append(s.beforeDelete, fn)
+	return s
+}
+
+/**
+* AfterInsert
+* @param fn DataFunctionTx
+* @return *Cmd
+**/
+func (s *Cmd) AfterInsert(fn DataFunctionTx) *Cmd {
+	s.afterInsert = append(s.afterInsert, fn)
+	return s
+}
+
+/**
+* AfterUpdate
+* @param fn DataFunctionTx
+* @return *Cmd
+**/
+func (s *Cmd) AfterUpdate(fn DataFunctionTx) *Cmd {
+	s.afterUpdate = append(s.afterUpdate, fn)
+	return s
+}
+
+/**
+* AfterDelete
+* @param fn DataFunctionTx
+* @return *Cmd
+**/
+func (s *Cmd) AfterDelete(fn DataFunctionTx) *Cmd {
+	s.afterDelete = append(s.afterDelete, fn)
+	return s
+}
+
+/**
+* BeforeInsertOrUpdate
+* @param fn DataFunctionTx
+* @return *Cmd
+**/
+func (s *Cmd) BeforeInsertOrUpdate(fn DataFunctionTx) *Cmd {
+	s.beforeInsert = append(s.beforeInsert, fn)
+	s.beforeUpdate = append(s.beforeUpdate, fn)
+	return s
 }
 
 /**
