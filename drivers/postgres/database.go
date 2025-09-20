@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/cgalvisleon/et/console"
-	jdb "github.com/cgalvisleon/jdb/congo"
+	"github.com/cgalvisleon/jdb/jdb"
 	_ "github.com/lib/pq"
 )
 
