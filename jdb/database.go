@@ -143,6 +143,7 @@ func (s *Database) getOrCreateModel(schema, name string) (*Model, error) {
 			Table:        "",
 			Columns:      et.Json{},
 			SourceField:  "",
+			RecordField:  "",
 			Details:      et.Json{},
 			Masters:      et.Json{},
 			Rollups:      et.Json{},
@@ -175,11 +176,11 @@ func (s *Database) getOrCreateModel(schema, name string) (*Model, error) {
 }
 
 /**
-* DefineModel
+* Define
 * @param definition et.Json
 * @return (*Model, error)
 **/
-func (s *Database) DefineModel(definition et.Json) (*Model, error) {
+func (s *Database) Define(definition et.Json) (*Model, error) {
 	schema := definition.String("schema")
 	if !utility.ValidStr(schema, 0, []string{}) {
 		return nil, fmt.Errorf(MSG_SCHEMA_REQUIRED)
@@ -223,6 +224,12 @@ func (s *Database) DefineModel(definition et.Json) (*Model, error) {
 		return nil, err
 	}
 
+	recordField := definition.String("record_field")
+	err = result.defineRecordField(recordField)
+	if err != nil {
+		return nil, err
+	}
+
 	if err := result.validate(); err != nil {
 		return nil, err
 	}
@@ -245,17 +252,17 @@ func (s *Database) DefineModel(definition et.Json) (*Model, error) {
 }
 
 /**
-* Query
+* Select
 * @param query et.Json
 * @return (*Ql, error)
 **/
-func (s *Database) Query(query et.Json) (*Ql, error) {
+func (s *Database) Select(query et.Json) (*Ql, error) {
 	result := newQl(s)
-	from := query.Str("from")
-	if len(from) == 0 {
+	from := query.Json("from")
+	if from.IsEmpty() {
 		return nil, fmt.Errorf(MSG_FROM_REQUIRED)
 	}
-	result.addFrom(from)
+	result.Froms = from
 
 	return result.setQuery(query), nil
 }

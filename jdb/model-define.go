@@ -171,7 +171,7 @@ func (s *Model) defineRecordField(name string) error {
 
 	s.RecordField = name
 	err := s.defineColumn(name, et.Json{
-		"type": TypeJson,
+		"type": TypeKey,
 	})
 	if err != nil {
 		return err

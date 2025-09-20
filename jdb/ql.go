@@ -8,11 +8,12 @@ import (
 
 type Ql struct {
 	Database  string                  `json:"-"`
-	Froms     []string                `json:"froms"`
+	Froms     et.Json                 `json:"froms"`
 	Selects   et.Json                 `json:"selects"`
-	Atributes et.Json                 `json:"atributes"`
+	Atribs    et.Json                 `json:"atribs"`
 	Rollups   et.Json                 `json:"rollups"`
 	Relations et.Json                 `json:"relations"`
+	Calls     et.Json                 `json:"calls"`
 	Joins     []et.Json               `json:"joins"`
 	Wheres    et.Json                 `json:"wheres"`
 	GroupBy   et.Json                 `json:"group_by"`
@@ -33,11 +34,12 @@ type Ql struct {
 func newQl(db *Database) *Ql {
 	return &Ql{
 		Database:  db.Name,
-		Froms:     []string{},
+		Froms:     et.Json{},
 		Selects:   et.Json{},
-		Atributes: et.Json{},
+		Atribs:    et.Json{},
 		Rollups:   et.Json{},
 		Relations: et.Json{},
+		Calls:     et.Json{},
 		Joins:     make([]et.Json, 0),
 		Wheres:    et.Json{},
 		GroupBy:   et.Json{},
@@ -89,11 +91,11 @@ func getAs(ql *Ql) string {
 
 /**
 * addFrom
-* @param name string
+* @param name, as string
 * @return *Ql
 **/
-func (s *Ql) addFrom(name string) *Ql {
-	s.Froms = append(s.Froms, name)
+func (s *Ql) addFrom(name, as string) *Ql {
+	s.Froms[name] = as
 	return s
 }
 

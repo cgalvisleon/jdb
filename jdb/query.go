@@ -64,3 +64,7 @@ func query(db *Database, tx *Tx, sourceFiled, sql string, arg ...any) (et.Items,
 
 	return RowsToItems(rows), nil
 }
+
+func (s *Database) Query(tx *Tx, sql string, arg ...any) (et.Items, error) {
+	return query(s, nil, "", "", nil)
+}

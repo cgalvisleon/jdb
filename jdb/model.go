@@ -21,7 +21,7 @@ const (
 	TypeDateTime = "datetime"
 	TypeBoolean  = "boolean"
 	TypeJson     = "json"
-	TypeSerial   = "serial"
+	TypeIndex    = "index"
 	TypeBytes    = "bytes"
 	TypeGeometry = "geometry"
 	TypeAtribute = "atribute"
@@ -42,7 +42,7 @@ var (
 		TypeDateTime: true,
 		TypeBoolean:  true,
 		TypeJson:     true,
-		TypeSerial:   true,
+		TypeIndex:    true,
 		TypeBytes:    true,
 		TypeGeometry: true,
 		TypeAtribute: true,
@@ -62,7 +62,7 @@ var (
 		TypeDateTime: true,
 		TypeBoolean:  true,
 		TypeJson:     true,
-		TypeSerial:   true,
+		TypeIndex:    true,
 		TypeBytes:    true,
 		TypeGeometry: true,
 	}
@@ -144,11 +144,11 @@ type Model struct {
 }
 
 /**
-* DefineModel
+* Define
 * @param definition et.Json
 * @return (*Model, error)
 **/
-func DefineModel(definition et.Json) (*Model, error) {
+func Define(definition et.Json) (*Model, error) {
 	database := definition.String("database")
 	if !utility.ValidStr(database, 0, []string{}) {
 		return nil, fmt.Errorf(MSG_DATABASE_REQUIRED)
@@ -162,7 +162,7 @@ func DefineModel(definition et.Json) (*Model, error) {
 		return nil, err
 	}
 
-	result, err := db.DefineModel(definition)
+	result, err := db.Define(definition)
 	if err != nil {
 		return nil, err
 	}
@@ -182,7 +182,7 @@ func LoadModel(schema, name string) (*Model, error) {
 		return nil, fmt.Errorf("model %s not found", id)
 	}
 
-	result, err := DefineModel(src)
+	result, err := Define(src)
 	if err != nil {
 		return nil, err
 	}

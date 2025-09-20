@@ -79,11 +79,11 @@ func GetModel(database, schema, name string) (*Model, error) {
 }
 
 /**
-* Query
+* Select
 * @param query et.Json
 * @return (*Ql, error)
 **/
-func Query(query et.Json) (*Ql, error) {
+func Select(query et.Json) (*Ql, error) {
 	database := query.String("database")
 	if !utility.ValidStr(database, 0, []string{}) {
 		return nil, fmt.Errorf(MSG_DATABASE_REQUIRED)
@@ -94,5 +94,5 @@ func Query(query et.Json) (*Ql, error) {
 		return nil, err
 	}
 
-	return db.Query(query)
+	return db.Select(query)
 }

@@ -9,7 +9,7 @@ import "github.com/cgalvisleon/et/et"
 **/
 func (s *Model) Query(query et.Json) *Ql {
 	result := newQl(s.db)
-	result.addFrom(s.Name)
+	result.addFrom(s.Name, "A")
 	result.setQuery(query)
 
 	return result

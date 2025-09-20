@@ -25,7 +25,7 @@ func main() {
 		console.Panic(err)
 	}
 
-	model, err := db.DefineModel(et.Json{
+	model, err := db.Define(et.Json{
 		"schema":  "projects",
 		"name":    "users",
 		"version": 1,
@@ -73,17 +73,29 @@ func main() {
 		console.Panic(err)
 	}
 
-	query, err := db.Query(et.Json{
-		"from": "users AS a",
+	query, err := db.Select(et.Json{
+		"from": et.Json{
+			"users": "a",
+		},
 		"select": et.Json{
 			"a.id":    "id",
 			"a.name":  "name",
 			"a.email": "email",
 		},
+		"atribs": et.Json{
+			"apellido": "apellido",
+			"role":     "role",
+		},
 		"joins": []et.Json{
 			{
-				"from": "roles AS b",
-				"on":   "a.id = b.user_id",
+				"from": et.Json{
+					"roles": "b",
+				},
+				"on": et.Json{
+					"a.id": et.Json{
+						"eq": "b.user_id",
+					},
+				},
 			},
 		},
 		"where": et.Json{
