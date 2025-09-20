@@ -6,11 +6,25 @@ import (
 	"github.com/cgalvisleon/et/et"
 )
 
+const (
+	TpRows   = "rows"
+	TpObject = "object"
+)
+
+var (
+	TpQuerys = map[string]bool{
+		TpObject: true,
+		TpRows:   true,
+	}
+)
+
 type Ql struct {
-	Database  string                  `json:"-"`
+	Database  string                  `json:"database"`
+	Type      string                  `json:"type"`
 	Froms     et.Json                 `json:"froms"`
 	Selects   et.Json                 `json:"selects"`
 	Atribs    et.Json                 `json:"atribs"`
+	Hidden    []string                `json:"hidden"`
 	Rollups   et.Json                 `json:"rollups"`
 	Relations et.Json                 `json:"relations"`
 	Calls     et.Json                 `json:"calls"`
@@ -34,9 +48,11 @@ type Ql struct {
 func newQl(db *Database) *Ql {
 	return &Ql{
 		Database:  db.Name,
+		Type:      TpRows,
 		Froms:     et.Json{},
 		Selects:   et.Json{},
 		Atribs:    et.Json{},
+		Hidden:    []string{},
 		Rollups:   et.Json{},
 		Relations: et.Json{},
 		Calls:     et.Json{},

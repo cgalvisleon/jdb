@@ -2,8 +2,6 @@ package jdb
 
 import (
 	"database/sql"
-
-	"github.com/cgalvisleon/et/et"
 )
 
 const (
@@ -17,10 +15,8 @@ const (
 type Driver interface {
 	Connect(db *Database) (*sql.DB, error)
 	Load(model *Model) error
-	Query(query *Ql) (et.Items, error)
-	Exists(query *Ql) (bool, error)
-	Count(query *Ql) (int, error)
-	Command(command *Cmd) (et.Items, error)
+	Query(query *Ql) (string, error)
+	Command(command *Cmd) (string, error)
 }
 
 var drivers map[string]func(db *Database) Driver

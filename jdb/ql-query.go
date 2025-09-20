@@ -130,12 +130,16 @@ func (s *Ql) ItExistsTx(tx *Tx) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	result, err := s.db.exists(s)
+	result, err := s.db.query(s)
 	if err != nil {
 		return false, err
 	}
 
-	return result, nil
+	if result.Count == 0 {
+		return false, nil
+	}
+
+	return result.Bool(0, "exists"), nil
 }
 
 /**
@@ -153,12 +157,16 @@ func (s *Ql) CountedTx(tx *Tx) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	result, err := s.db.count(s)
+	result, err := s.db.query(s)
 	if err != nil {
 		return 0, err
 	}
 
-	return result, nil
+	if result.Count == 0 {
+		return 0, nil
+	}
+
+	return result.Int(0, "all"), nil
 }
 
 /**

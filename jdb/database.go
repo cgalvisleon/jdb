@@ -258,7 +258,7 @@ func (s *Database) Define(definition et.Json) (*Model, error) {
 **/
 func (s *Database) Select(query et.Json) (*Ql, error) {
 	result := newQl(s)
-	from := query.Json("from")
+	from := query.Json("froms")
 	if from.IsEmpty() {
 		return nil, fmt.Errorf(MSG_FROM_REQUIRED)
 	}
@@ -292,7 +292,7 @@ func (s *Database) query(query *Ql) (et.Items, error) {
 		return et.Items{}, err
 	}
 
-	result, err := s.driver.Query(query)
+	sql, err := s.driver.Query(query)
 	if err != nil {
 		return et.Items{}, err
 	}
@@ -301,48 +301,9 @@ func (s *Database) query(query *Ql) (et.Items, error) {
 		console.Debugf("query:%s", query.ToJson().ToString())
 	}
 
-	return result, nil
-}
-
-/**
-* exists
-* @param query *Ql
-* @return (bool, error)
-**/
-func (s *Database) exists(query *Ql) (bool, error) {
-	if err := query.validate(); err != nil {
-		return false, err
-	}
-
-	result, err := s.driver.Exists(query)
+	result, err := s.QueryTx(query.tx, sql)
 	if err != nil {
-		return false, err
-	}
-
-	if query.isDebug {
-		console.Debugf("exists:%s", query.ToJson().ToString())
-	}
-
-	return result, nil
-}
-
-/**
-* count
-* @param query *Ql
-* @return (int, error)
-**/
-func (s *Database) count(query *Ql) (int, error) {
-	if err := query.validate(); err != nil {
-		return 0, err
-	}
-
-	result, err := s.driver.Count(query)
-	if err != nil {
-		return 0, err
-	}
-
-	if query.isDebug {
-		console.Debugf("count:%s", query.ToJson().ToString())
+		return et.Items{}, err
 	}
 
 	return result, nil
@@ -358,13 +319,18 @@ func (s *Database) command(command *Cmd) (et.Items, error) {
 		return et.Items{}, err
 	}
 
-	result, err := s.driver.Command(command)
+	sql, err := s.driver.Command(command)
 	if err != nil {
 		return et.Items{}, err
 	}
 
 	if command.isDebug {
 		console.Debugf("command:%s", command.toJson().ToString())
+	}
+
+	result, err := s.QueryTx(command.tx, sql)
+	if err != nil {
+		return et.Items{}, err
 	}
 
 	return result, nil

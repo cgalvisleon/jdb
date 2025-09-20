@@ -5,7 +5,6 @@ import (
 
 	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/envar"
-	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/jdb/jdb"
 )
 
@@ -61,37 +60,26 @@ func (s *Postgres) Load(model *jdb.Model) error {
 /**
 * Query
 * @param query *jdb.Ql
-* @return (et.Items, error)
+* @return (string, error)
 **/
-func (s *Postgres) Query(query *jdb.Ql) (et.Items, error) {
-	console.Debug("query:", query.ToJson().ToString())
+func (s *Postgres) Query(query *jdb.Ql) (string, error) {
+	defintion := query.ToJson()
+	sql, err := s.buildQuery(defintion)
+	if err != nil {
+		return "", err
+	}
 
-	return et.Items{}, nil
-}
+	query.SQL = sql
+	console.Debug("sql:", sql)
 
-/**
-* Exists
-* @param query *jdb.Ql
-* @return (bool, error)
-**/
-func (s *Postgres) Exists(query *jdb.Ql) (bool, error) {
-	return false, nil
-}
-
-/**
-* Count
-* @param query *jdb.Ql
-* @return (int, error)
-**/
-func (s *Postgres) Count(query *jdb.Ql) (int, error) {
-	return 0, nil
+	return query.SQL, nil
 }
 
 /**
 * Cmd
 * @param command *jdb.Cmd
-* @return (et.Items, error)
+* @return (string, error)
 **/
-func (s *Postgres) Command(command *jdb.Cmd) (et.Items, error) {
-	return et.Items{}, nil
+func (s *Postgres) Command(command *jdb.Cmd) (string, error) {
+	return command.SQL, nil
 }

@@ -5,6 +5,15 @@ import (
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
+const (
+	TpObject = jdb.TpObject
+	TpRows   = jdb.TpRows
+)
+
+var (
+	TpQuerys = jdb.TpQuerys
+)
+
 /**
 * ConnectTo
 * @param name, driver string, params et.Json

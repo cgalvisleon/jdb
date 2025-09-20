@@ -8,7 +8,8 @@ import "github.com/cgalvisleon/et/et"
 * @return *Ql
 **/
 func (s *Ql) setQuery(query et.Json) *Ql {
-	s.setSelect(query.Json("select")).
+	s.setType(query.String("type")).
+		setSelect(query.Json("select")).
 		setAtribs(query.Json("atribs")).
 		setRollup(query.Json("rollups")).
 		setRelation(query.Json("relations")).
@@ -22,6 +23,15 @@ func (s *Ql) setQuery(query et.Json) *Ql {
 		setHaving(query.Json("having")).
 		setLimit(query.Json("limit"))
 
+	return s
+}
+
+func (s *Ql) setType(tp string) *Ql {
+	if _, ok := TpQuerys[tp]; !ok {
+		return s
+	}
+
+	s.Type = tp
 	return s
 }
 

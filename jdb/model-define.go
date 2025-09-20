@@ -147,6 +147,7 @@ func (s *Model) defineSourceField(name string) error {
 		return nil
 	}
 
+	SOURCE = name
 	s.SourceField = name
 	err := s.defineColumn(name, et.Json{
 		"type": TypeJson,

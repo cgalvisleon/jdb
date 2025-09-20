@@ -10,9 +10,6 @@ import (
 )
 
 const (
-	SOURCE       = "source"
-	KEY          = "id"
-	RECORDID     = "index"
 	TypeInt      = "int"
 	TypeFloat    = "float"
 	TypeKey      = "key"
@@ -33,6 +30,9 @@ const (
 )
 
 var (
+	SOURCE   = "source"
+	KEY      = "id"
+	RECORDID = "index"
 	TypeData = map[string]bool{
 		TypeInt:      true,
 		TypeFloat:    true,

@@ -65,18 +65,31 @@ func RowsToItems(rows *sql.Rows) et.Items {
 
 		result.Ok = true
 		result.Count++
-		result.Result = append(result.Result, item)
+		if len(item) == 1 {
+			for _, v := range item {
+				switch val := v.(type) {
+				case et.Json:
+					result.Result = append(result.Result, val)
+				case map[string]interface{}:
+					result.Result = append(result.Result, et.Json(val))
+				default:
+					result.Result = append(result.Result, item)
+				}
+			}
+		} else {
+			result.Result = append(result.Result, item)
+		}
 	}
 
 	return result
 }
 
 /**
-* RowsToSourceItems
+* rowsToSourceItems
 * @param rows *sql.Rows, source string
 * @return et.Items
 **/
-func RowsToSourceItems(rows *sql.Rows, source string) et.Items {
+func rowsToSourceItems(rows *sql.Rows, source string) et.Items {
 	var result = et.Items{Result: []et.Json{}}
 	for rows.Next() {
 		var item et.Json
