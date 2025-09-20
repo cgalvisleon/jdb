@@ -4,313 +4,113 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"slices"
-	"time"
 
 	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
-	"github.com/cgalvisleon/et/timezone"
+	"github.com/cgalvisleon/et/utility"
 )
 
-type DB struct {
-	CreatedAt     time.Time     `json:"created_at"`
-	UpdateAt      time.Time     `json:"update_at"`
-	Id            string        `json:"id"`
-	Name          string        `json:"name"`
-	Description   string        `json:"description"`
-	UseCore       bool          `json:"use_core"`
-	NodeId        int           `json:"node_id"`
-	connectParams ConnectParams `json:"-"`
-	db            *sql.DB       `json:"-"`
-	driver        Driver        `json:"-"`
-	schemas       []*Schema     `json:"-"`
-	models        []*Model      `json:"-"`
-	isInit        bool          `json:"-"`
-	IsDebug       bool          `json:"-"`
+var dbs map[string]*Database
+
+func init() {
+	dbs = make(map[string]*Database)
+}
+
+type Database struct {
+	Name       string            `json:"name"`
+	Models     map[string]*Model `json:"models"`
+	UseCore    bool              `json:"use_core"`
+	Connection et.Json           `json:"-"`
+	driver     Driver            `json:"-"`
+	db         *sql.DB           `json:"-"`
 }
 
 /**
-* NewDatabaseById
-* @param id, name, driver string
-* @return *DB, error
-**/
-func NewDatabase(id, name, driver string) (*DB, error) {
-	idx := slices.IndexFunc(conn.DBS, func(e *DB) bool { return e.Name == name })
-	if idx != -1 {
-		return conn.DBS[idx], nil
-	}
-
-	if driver == "" {
-		return nil, fmt.Errorf(MSG_DRIVER_NOT_DEFINED)
-	}
-
-	if _, ok := conn.Drivers[driver]; !ok {
-		return nil, fmt.Errorf(MSG_DRIVER_NOT_FOUND, driver)
-	}
-
-	now := timezone.NowTime()
-	result := &DB{
-		CreatedAt: now,
-		UpdateAt:  now,
-		Id:        id,
-		Name:      name,
-		schemas:   make([]*Schema, 0),
-		models:    make([]*Model, 0),
-	}
-	result.driver = conn.Drivers[driver](result)
-	conn.DBS = append(conn.DBS, result)
-
-	return result, nil
-}
-
-/**
-* Serialize
-* @return []byte, error
-**/
-func (s *DB) serialize() ([]byte, error) {
-	result, err := json.Marshal(s)
-	if err != nil {
-		return []byte{}, err
-	}
-
-	return result, nil
-}
-
-/**
-* Ping
-* @return error
-**/
-func (s *DB) Ping() error {
-	if s.db == nil {
-		return fmt.Errorf(MSG_DB_NOT_CONNECTED)
-	}
-
-	return s.db.Ping()
-}
-
-/**
-* Restore
-* @return error
-**/
-func (s *DB) Restore() error {
-	if s.db == nil {
-		return fmt.Errorf(MSG_DB_NOT_CONNECTED)
-	}
-
-	err := s.db.Close()
-	if err != nil {
-		return err
-	}
-
-	err = s.Conected(s.connectParams)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-/**
-* Describe
+* ToJson
 * @return et.Json
 **/
-func (s *DB) Describe() et.Json {
-	definition, err := s.serialize()
+func (s *Database) ToJson() et.Json {
+	bt, err := json.Marshal(s)
 	if err != nil {
 		return et.Json{}
 	}
 
-	result := et.Json{}
-	err = json.Unmarshal(definition, &result)
+	var result et.Json
+	err = json.Unmarshal(bt, &result)
 	if err != nil {
 		return et.Json{}
 	}
-
-	var schemas = make([]et.Json, 0)
-	for _, schema := range s.schemas {
-		schemas = append(schemas, schema.Describe())
-	}
-
-	result["kind"] = "db"
-	result["schemas"] = schemas
-	result["driver"] = s.driver.Name()
 
 	return result
 }
 
 /**
-* Load
-* @param kind, name string, out interface{}
+* GetDatabase
+* @param name, driver string, params et.Json
+* @return (*Database, error)
+**/
+func getDatabase(name, driver string, params et.Json) (*Database, error) {
+	result, ok := dbs[name]
+	if !ok {
+		if _, ok := drivers[driver]; !ok {
+			return nil, fmt.Errorf(MSG_DRIVER_NOT_FOUND, driver)
+		}
+
+		result = &Database{
+			Name:       name,
+			Models:     make(map[string]*Model),
+			Connection: params,
+		}
+		result.driver = drivers[driver](result)
+		err := result.load()
+		if err != nil {
+			return nil, err
+		}
+
+		dbs[name] = result
+	}
+
+	return result, nil
+}
+
+/**
+* load
 * @return error
 **/
-func (s *DB) Load(kind, name string, out interface{}) error {
-	if !s.UseCore || !s.isInit {
-		return nil
-	}
-
-	item, err := s.getModel(kind, name)
-	if err != nil {
-		return err
-	}
-
-	if !item.Ok {
-		return fmt.Errorf(MSG_MODEL_NOT_FOUND, name)
-	}
-
-	definition, err := item.Byte("definition")
-	if err != nil {
-		return err
-	}
-
-	if s.IsDebug {
-		console.Debug(kind, ":", string(definition))
-	}
-
-	err = json.Unmarshal(definition, out)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-/**
-* Save
-* @return error
-**/
-func (s *DB) Save() error {
-	if !s.UseCore || !s.isInit {
-		return nil
-	}
-
-	definition, err := s.serialize()
-	if err != nil {
-		return err
-	}
-
-	err = s.upsertModel("db", s.Name, 1, definition)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-/**
-* SetDebug
-* @param debug bool
-**/
-func (s *DB) SetDebug(debug bool) {
-	s.IsDebug = debug
-}
-
-/**
-* Debug
-**/
-func (s *DB) Debug() {
-	s.SetDebug(true)
-}
-
-/**
-* Conected
-* @param connection *ConnectParams
-* @return bool
-**/
-func (s *DB) Conected(connection ConnectParams) error {
+func (s *Database) load() error {
 	if s.driver == nil {
-		return fmt.Errorf(MSG_DRIVER_NOT_DEFINED)
+		return fmt.Errorf(MSG_DRIVER_REQUIRED)
 	}
 
-	if s.db != nil {
-		return nil
-	}
-
-	db, err := s.driver.Connect(connection)
+	db, err := s.driver.Connect(s)
 	if err != nil {
 		return err
 	}
 
 	s.db = db
 
-	return nil
-}
-
-/**
-* Disconected
-* @return error
-**/
-func (s *DB) Disconected() error {
-	if s.driver == nil {
-		return fmt.Errorf(MSG_DRIVER_NOT_DEFINED)
-	}
-
-	return s.db.Close()
-}
-
-/**
-* AddSchema
-* @param schema *Schema
-**/
-func (s *DB) addSchema(schema *Schema) {
-	idx := slices.IndexFunc(s.schemas, func(e *Schema) bool { return e.Name == schema.Name })
-	if idx != -1 {
-		return
-	}
-
-	s.schemas = append(s.schemas, schema)
-}
-
-/**
-* GetSchema
-* @param name string
-* @return *Schema
-**/
-func (s *DB) GetSchema(name string) *Schema {
-	idx := slices.IndexFunc(s.schemas, func(e *Schema) bool { return e.Name == name })
-	if idx != -1 {
-		return s.schemas[idx]
-	}
-
-	return nil
-}
-
-/**
-* GetModel
-* @param name string
-* @return *Model
-**/
-func (s *DB) GetModel(name string) *Model {
-	idx := slices.IndexFunc(s.models, func(e *Model) bool { return e.Name == name })
-	if idx != -1 {
-		return s.models[idx]
-	}
-
-	return nil
-}
-
-/**
-* DropSchema
-* @param name string
-* @return error
-**/
-func (s *DB) DropSchema(name string) error {
-	if s.driver == nil {
-		return fmt.Errorf(MSG_DRIVER_NOT_DEFINED)
-	}
-
-	schema := s.GetSchema(name)
-	if schema == nil {
-		return fmt.Errorf(MSG_SCHEMA_NOT_FOUND, name)
-	}
-
-	for _, model := range schema.models {
-		err := s.DropModel(model)
+	if s.UseCore {
+		err := initCore(s)
 		if err != nil {
-			return err
+			console.Panic(err)
 		}
 	}
 
-	err := s.deleteModel("schema", name)
+	return nil
+}
+
+/**
+* initModel
+* @param model *Model
+* @return error
+**/
+func (s *Database) init(model *Model) error {
+	err := s.driver.Load(model)
+	if err != nil {
+		return err
+	}
+
+	err = model.save()
 	if err != nil {
 		return err
 	}
@@ -319,168 +119,265 @@ func (s *DB) DropSchema(name string) error {
 }
 
 /**
-* LoadModel
-* @param model *Model
-* @return error
+* getOrCreateModel
+* @param schema, name string
+* @return (*Model, error)
 **/
-func (s *DB) LoadModel(model *Model) error {
-	if s.driver == nil {
-		return fmt.Errorf(MSG_DRIVER_NOT_DEFINED)
+func (s *Database) getOrCreateModel(schema, name string) (*Model, error) {
+	if !utility.ValidStr(schema, 0, []string{}) {
+		return nil, fmt.Errorf(MSG_SCHEMA_REQUIRED)
 	}
 
-	return s.driver.LoadModel(model)
+	if !utility.ValidStr(name, 0, []string{}) {
+		return nil, fmt.Errorf(MSG_NAME_REQUIRED)
+	}
+
+	id := fmt.Sprintf("%s.%s", schema, name)
+	model, ok := s.Models[id]
+	if !ok {
+		model = &Model{
+			Id:           id,
+			Database:     s.Name,
+			Schema:       schema,
+			Name:         name,
+			Table:        "",
+			Columns:      et.Json{},
+			Atribs:       et.Json{},
+			SourceField:  "",
+			Details:      et.Json{},
+			Masters:      et.Json{},
+			Rollups:      et.Json{},
+			Relations:    et.Json{},
+			PrimaryKeys:  []string{},
+			ForeignKeys:  et.Json{},
+			Indices:      []string{},
+			Required:     []string{},
+			db:           s,
+			details:      make(map[string]*Model),
+			masters:      make(map[string]*Model),
+			rollups:      make(map[string]*Model),
+			beforeInsert: []DataFunctionTx{},
+			beforeUpdate: []DataFunctionTx{},
+			beforeDelete: []DataFunctionTx{},
+			afterInsert:  []DataFunctionTx{},
+			afterUpdate:  []DataFunctionTx{},
+			afterDelete:  []DataFunctionTx{},
+		}
+		model.BeforeInsert(model.beforeInsertDefault)
+		model.BeforeUpdate(model.beforeUpdateDefault)
+		model.BeforeDelete(model.beforeDeleteDefault)
+		model.AfterInsert(model.afterInsertDefault)
+		model.AfterUpdate(model.afterUpdateDefault)
+		model.AfterDelete(model.afterDeleteDefault)
+		s.Models[id] = model
+	}
+
+	return model, nil
 }
 
 /**
-* MutateModel
-* @param model *Model
-* @return error
+* DefineModel
+* @param definition et.Json
+* @return (*Model, error)
 **/
-func (s *DB) MutateModel(model *Model) error {
-	if s.driver == nil {
-		return fmt.Errorf(MSG_DRIVER_NOT_DEFINED)
+func (s *Database) DefineModel(definition et.Json) (*Model, error) {
+	schema := definition.String("schema")
+	if !utility.ValidStr(schema, 0, []string{}) {
+		return nil, fmt.Errorf(MSG_SCHEMA_REQUIRED)
 	}
 
-	return s.driver.MutateModel(model)
-}
-
-/**
-* DropModel
-* @param model *Model
-**/
-func (s *DB) DropModel(model *Model) error {
-	if s.driver == nil {
-		return fmt.Errorf(MSG_DRIVER_NOT_DEFINED)
+	name := definition.String("name")
+	if !utility.ValidStr(name, 0, []string{}) {
+		return nil, fmt.Errorf(MSG_NAME_REQUIRED)
 	}
 
-	err := s.driver.DropModel(model)
+	result, err := s.getOrCreateModel(schema, name)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	schema := model.schema
-	if schema != nil {
-		schema.dropModel(model)
-	}
+	result.Table = definition.String("table")
+	result.Indices = definition.ArrayStr("indices")
+	result.Required = definition.ArrayStr("required")
+	result.Version = definition.Int("version")
 
-	err = s.deleteModel("model", model.Name)
+	columns := definition.Json("columns")
+	err = result.defineColumns(columns)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
-}
-
-/**
-* EmptyModel
-* @param model *Model
-* @return error
-**/
-func (s *DB) EmptyModel(model *Model) error {
-	if s.driver == nil {
-		return fmt.Errorf(MSG_DRIVER_NOT_DEFINED)
+	result.Atribs = definition.Json("atribs")
+	for k, v := range result.Atribs {
+		err := result.defineAtrib(k, v)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	return s.driver.EmptyModel(model)
-}
+	primaryKeys := definition.ArrayStr("primary_keys")
+	result.definePrimaryKeys(primaryKeys...)
 
-/**
-* From
-* @param name string
-* @return *Ql
-**/
-func (s *DB) From(name string) *Ql {
-	model := s.GetModel(name)
-	if model == nil {
-		return nil
-	}
-
-	return From(model)
-}
-
-/**
-* Select
-* @param ql *Ql
-* @return et.Items, error
-**/
-func (s *DB) Select(ql *Ql) (et.Items, error) {
-	if s.driver == nil {
-		return et.Items{}, fmt.Errorf(MSG_DRIVER_NOT_DEFINED)
-	}
-
-	return s.driver.Select(ql)
-}
-
-/**
-* Count
-* @param ql *Ql
-* @return int, error
-**/
-func (s *DB) Count(ql *Ql) (int, error) {
-	if s.driver == nil {
-		return 0, fmt.Errorf(MSG_DRIVER_NOT_DEFINED)
-	}
-
-	return s.driver.Count(ql)
-}
-
-/**
-* Exists
-* @param ql *Ql
-* @return bool, error
-**/
-func (s *DB) Exists(ql *Ql) (bool, error) {
-	if s.driver == nil {
-		return false, fmt.Errorf(MSG_DRIVER_NOT_DEFINED)
-	}
-
-	return s.driver.Exists(ql)
-}
-
-/**
-* Command
-* @param command *Command
-* @return et.Item, error
-**/
-func (s *DB) Command(command *Command) (et.Items, error) {
-	if s.driver == nil {
-		return et.Items{}, fmt.Errorf(MSG_DRIVER_NOT_DEFINED)
-	}
-
-	result, err := s.driver.Command(command)
+	sourceField := definition.String("source_field")
+	err = result.defineSourceField(sourceField)
 	if err != nil {
-		publishError(command.getModel(), command.Sql, err)
-		return et.Items{}, err
+		return nil, err
 	}
 
-	publishCommand(command)
+	if err := result.validate(); err != nil {
+		return nil, err
+	}
+
+	details := definition.Json("details")
+	if !details.IsEmpty() {
+		err := result.defineDetails(details)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	required := definition.ArrayStr("required")
+	result.defineRequired(required...)
+
+	debug := definition.Bool("debug")
+	result.isDebug = debug
 
 	return result, nil
 }
 
 /**
-* Query
-* @param sql string, arg ...any
-* @return et.Items, error
+* getModel
+* @param schema, name string
+* @return (*Model, error)
 **/
-func (s *DB) Query(sql string, arg ...any) (et.Items, error) {
-	if s.db == nil {
-		return et.Items{}, fmt.Errorf(MSG_DATABASE_NOT_CONNECTED)
+func (s *Database) getModel(schema, name string) (*Model, error) {
+	id := fmt.Sprintf("%s.%s", schema, name)
+	result, ok := s.Models[id]
+	if !ok {
+		return nil, fmt.Errorf(MSG_MODEL_NOT_FOUND, id)
 	}
 
-	return Query(s, sql, arg...)
+	return result, nil
 }
 
 /**
-* One
-* @param sql string, arg ...any
-* @return et.Item, error
+* query
+* @param query *Ql
+* @return (et.Items, error)
 **/
-func (s *DB) One(sql string, arg ...any) (et.Item, error) {
-	result, err := s.Query(sql, arg...)
-	if err != nil {
-		return et.Item{}, err
+func (s *Database) query(query *Ql) (et.Items, error) {
+	if err := query.validate(); err != nil {
+		return et.Items{}, err
 	}
 
-	return result.First(), nil
+	result, err := s.driver.Query(query)
+	if err != nil {
+		return et.Items{}, err
+	}
+
+	if query.isDebug {
+		console.Debugf("query:%s", query.ToJson().ToString())
+	}
+
+	return result, nil
+}
+
+/**
+* exists
+* @param query *Ql
+* @return (bool, error)
+**/
+func (s *Database) exists(query *Ql) (bool, error) {
+	if err := query.validate(); err != nil {
+		return false, err
+	}
+
+	result, err := s.driver.Exists(query)
+	if err != nil {
+		return false, err
+	}
+
+	if query.isDebug {
+		console.Debugf("exists:%s", query.ToJson().ToString())
+	}
+
+	return result, nil
+}
+
+/**
+* count
+* @param query *Ql
+* @return (int, error)
+**/
+func (s *Database) count(query *Ql) (int, error) {
+	if err := query.validate(); err != nil {
+		return 0, err
+	}
+
+	result, err := s.driver.Count(query)
+	if err != nil {
+		return 0, err
+	}
+
+	if query.isDebug {
+		console.Debugf("count:%s", query.ToJson().ToString())
+	}
+
+	return result, nil
+}
+
+/**
+* command
+* @param command *Command
+* @return (et.Items, error)
+**/
+func (s *Database) command(command *Command) (et.Items, error) {
+	if err := command.validate(); err != nil {
+		return et.Items{}, err
+	}
+
+	result, err := s.driver.Command(command)
+	if err != nil {
+		return et.Items{}, err
+	}
+
+	if command.isDebug {
+		console.Debugf("command:%s", command.toJson().ToString())
+	}
+
+	return result, nil
+}
+
+/**
+* GetDatabase
+* @param name string
+* @return (*Database, error)
+**/
+func GetDatabase(name string) (*Database, error) {
+	result, ok := dbs[name]
+	if !ok {
+		return nil, fmt.Errorf(MSG_DATABASE_NOT_FOUND, name)
+	}
+
+	return result, nil
+}
+
+/**
+* GetModel
+* @param database, schema, name string
+* @return (*Model, error)
+**/
+func GetModel(database, schema, name string) (*Model, error) {
+	db, ok := dbs[database]
+	if !ok {
+		return nil, fmt.Errorf("database %s not found", database)
+	}
+
+	id := fmt.Sprintf("%s.%s", schema, name)
+	result, ok := db.Models[id]
+	if !ok {
+		return nil, fmt.Errorf("model %s not found", id)
+	}
+
+	return result, nil
 }

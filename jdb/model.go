@@ -3,255 +3,156 @@ package jdb
 import (
 	"encoding/json"
 	"fmt"
-	"regexp"
-	"slices"
-	"time"
 
+	"github.com/cgalvisleon/et/envar"
 	"github.com/cgalvisleon/et/et"
-	"github.com/cgalvisleon/et/event"
-	"github.com/cgalvisleon/et/reg"
-	"github.com/cgalvisleon/et/strs"
-	"github.com/cgalvisleon/et/timezone"
+	"github.com/cgalvisleon/et/utility"
 )
-
-type TypeId int
 
 const (
-	TpNodeId TypeId = iota
-	TpUUId
-	TpULId
-	TpXId
+	SOURCE       = "source"
+	KEY          = "id"
+	RECORDID     = "index"
+	TypeInt      = "int"
+	TypeFloat    = "float"
+	TypeKey      = "key"
+	TypeText     = "text"
+	TypeMemo     = "memo"
+	TypeDateTime = "datetime"
+	TypeBoolean  = "boolean"
+	TypeJson     = "json"
+	TypeSerial   = "serial"
+	TypeBytes    = "bytes"
+	TypeGeometry = "geometry"
+	TypeAtribute = "atribute"
+	TypeCalc     = "calc"
+	TypeDetail   = "detail"
+	TypeMaster   = "master"
+	TypeRollup   = "rollup"
+	TypeRelation = "relation"
 )
-
-func (s TypeId) Str() string {
-	switch s {
-	case TpUUId:
-		return "uuid"
-	case TpULId:
-		return "ulid"
-	case TpXId:
-		return "xid"
-	default:
-		return "id"
-	}
-}
 
 var (
-	ErrNotInserted = fmt.Errorf("record not inserted")
-	ErrNotUpdated  = fmt.Errorf("record not updated")
-	ErrNotFound    = fmt.Errorf("record not found")
-	ErrNotUpserted = fmt.Errorf("record not inserted or updated")
+	TypeData = map[string]bool{
+		TypeInt:      true,
+		TypeFloat:    true,
+		TypeKey:      true,
+		TypeText:     true,
+		TypeMemo:     true,
+		TypeDateTime: true,
+		TypeBoolean:  true,
+		TypeJson:     true,
+		TypeSerial:   true,
+		TypeBytes:    true,
+		TypeGeometry: true,
+		TypeAtribute: true,
+		TypeCalc:     true,
+		TypeDetail:   true,
+		TypeMaster:   true,
+		TypeRollup:   true,
+		TypeRelation: true,
+	}
+
+	TypeColumn = map[string]bool{
+		TypeInt:      true,
+		TypeFloat:    true,
+		TypeKey:      true,
+		TypeText:     true,
+		TypeMemo:     true,
+		TypeDateTime: true,
+		TypeBoolean:  true,
+		TypeJson:     true,
+		TypeSerial:   true,
+		TypeBytes:    true,
+		TypeGeometry: true,
+	}
+
+	TypeColumnCalc = map[string]bool{
+		TypeCalc:     true,
+		TypeDetail:   true,
+		TypeMaster:   true,
+		TypeRollup:   true,
+		TypeRelation: true,
+	}
 )
 
+type DataFunctionTx func(tx *Tx, data et.Json) error
+
 type Model struct {
-	Db                 *DB                      `json:"-"`
-	schema             *Schema                  `json:"-"`
-	Schema             string                   `json:"schema"`
-	CreatedAt          time.Time                `json:"created_at"`
-	UpdateAt           time.Time                `json:"updated_at"`
-	Id                 string                   `json:"id"`
-	Name               string                   `json:"name"`
-	Description        string                   `json:"description"`
-	Table              string                   `json:"table"`
-	UseCore            bool                     `json:"use_core"`
-	Integrity          bool                     `json:"integrity"`
-	Definitions        et.Json                  `json:"definitions"`
-	Columns            []*Column                `json:"-"`
-	PrimaryKeys        map[string]*Column       `json:"-"`
-	ForeignKeys        map[string]*Relation     `json:"-"`
-	Indices            map[string]*Index        `json:"-"`
-	Uniques            map[string]*Index        `json:"-"`
-	RelationsTo        map[string]*Relation     `json:"-"`
-	RelationsFrom      map[string]*Relation     `json:"-"`
-	Joins              map[string]*Join         `json:"-"`
-	Required           map[string]bool          `json:"-"`
-	Types              et.Json                  `json:"types"`
-	TpId               TypeId                   `json:"tp_id"`
-	CreatedAtField     *Column                  `json:"-"`
-	UpdatedAtField     *Column                  `json:"-"`
-	SystemKeyField     *Column                  `json:"-"`
-	StatusField        *Column                  `json:"-"`
-	IndexField         *Column                  `json:"-"`
-	SourceField        *Column                  `json:"-"`
-	FullTextField      *Column                  `json:"-"`
-	Version            int                      `json:"version"`
-	beforeInsert       []DataFunctionTx         `json:"-"`
-	beforeUpdate       []DataFunctionTx         `json:"-"`
-	beforeDelete       []DataFunctionTx         `json:"-"`
-	afterInsert        []DataFunctionTx         `json:"-"`
-	afterUpdate        []DataFunctionTx         `json:"-"`
-	afterDelete        []DataFunctionTx         `json:"-"`
-	eventEmiterChannel chan event.Message       `json:"-"`
-	eventsEmiter       map[string]event.Handler `json:"-"`
-	IsDebug            bool                     `json:"-"`
-	isLocked           bool                     `json:"-"`
-	isInit             bool                     `json:"-"`
-	needMutate         bool                     `json:"-"`
+	Id           string            `json:"id"`
+	Database     string            `json:"database"`
+	Schema       string            `json:"schema"`
+	Name         string            `json:"name"`
+	Table        string            `json:"table"`
+	Columns      et.Json           `json:"columns"`
+	Atribs       et.Json           `json:"atribs"`
+	SourceField  string            `json:"source_field"`
+	RecordField  string            `json:"record_field"`
+	Details      et.Json           `json:"details"`
+	Masters      et.Json           `json:"masters"`
+	Rollups      et.Json           `json:"rollups"`
+	Relations    et.Json           `json:"relations"`
+	PrimaryKeys  []string          `json:"primary_keys"`
+	ForeignKeys  et.Json           `json:"foreign_keys"`
+	Indices      []string          `json:"indices"`
+	Required     []string          `json:"required"`
+	IsLocked     bool              `json:"is_locked"`
+	Version      int               `json:"version"`
+	db           *Database         `json:"-"`
+	details      map[string]*Model `json:"-"`
+	masters      map[string]*Model `json:"-"`
+	rollups      map[string]*Model `json:"-"`
+	isInit       bool              `json:"-"`
+	isDebug      bool              `json:"-"`
+	beforeInsert []DataFunctionTx  `json:"-"`
+	beforeUpdate []DataFunctionTx  `json:"-"`
+	beforeDelete []DataFunctionTx  `json:"-"`
+	afterInsert  []DataFunctionTx  `json:"-"`
+	afterUpdate  []DataFunctionTx  `json:"-"`
+	afterDelete  []DataFunctionTx  `json:"-"`
 }
 
 /**
-* NewModel
-* @param schema *Schema, name string, version int
-* @return *Model
+* DefineModel
+* @param definition et.Json
+* @return (*Model, error)
 **/
-func NewModel(schema *Schema, name string, version int) *Model {
-	idx := slices.IndexFunc(schema.Db.models, func(e *Model) bool { return e.Name == name })
-	if idx != -1 {
-		return schema.Db.models[idx]
+func DefineModel(definition et.Json) (*Model, error) {
+	database := definition.String("database")
+	if !utility.ValidStr(database, 0, []string{}) {
+		return nil, fmt.Errorf(MSG_DATABASE_REQUIRED)
 	}
 
-	newModel := func() *Model {
-		now := timezone.NowTime()
-		result := &Model{
-			Db:                 schema.Db,
-			schema:             schema,
-			Schema:             schema.Name,
-			CreatedAt:          now,
-			UpdateAt:           now,
-			Id:                 reg.GetULID("model"),
-			Name:               name,
-			UseCore:            schema.UseCore,
-			Definitions:        et.Json{},
-			Columns:            make([]*Column, 0),
-			PrimaryKeys:        make(map[string]*Column),
-			ForeignKeys:        make(map[string]*Relation),
-			Indices:            make(map[string]*Index),
-			Uniques:            make(map[string]*Index),
-			RelationsTo:        make(map[string]*Relation),
-			RelationsFrom:      make(map[string]*Relation),
-			Joins:              make(map[string]*Join),
-			Required:           make(map[string]bool),
-			Types:              et.Json{},
-			TpId:               TpUUId,
-			beforeInsert:       []DataFunctionTx{},
-			beforeUpdate:       []DataFunctionTx{},
-			beforeDelete:       []DataFunctionTx{},
-			afterInsert:        []DataFunctionTx{},
-			afterUpdate:        []DataFunctionTx{},
-			afterDelete:        []DataFunctionTx{},
-			eventEmiterChannel: make(chan event.Message),
-			eventsEmiter:       make(map[string]event.Handler),
-			Version:            version,
-			IsDebug:            schema.Db.IsDebug,
-		}
-		result.AfterInsert(result.afterInsertDefault)
-		result.AfterUpdate(result.afterUpdateDefault)
-		result.AfterDelete(result.afterDeleteDefault)
-
-		schema.addModel(result)
-		return result
-	}
-
-	if !schema.UseCore || !schema.Db.isInit {
-		return newModel()
-	}
-
-	var result *Model
-	err := schema.Db.Load("model", name, &result)
+	driver := envar.GetStr("DB_DRIVER", DriverPostgres)
+	driver = definition.ValStr(driver, "driver")
+	connection := definition.Json("connection")
+	db, err := getDatabase(database, driver, connection)
 	if err != nil {
-		return newModel()
+		return nil, err
 	}
 
-	result, err = loadModel(schema, result)
+	result, err := db.DefineModel(definition)
 	if err != nil {
-		result = newModel()
+		return nil, err
 	}
 
-	result.needMutate = version > result.Version
-	return result
-}
-
-/**
-* loadModel
-* @param schema *Schema, model *Model
-* @return *Model, error
-**/
-func loadModel(schema *Schema, model *Model) (*Model, error) {
-	idx := slices.IndexFunc(schema.Db.models, func(e *Model) bool { return e.Name == model.Name })
-	if idx != -1 {
-		return schema.Db.models[idx], nil
-	}
-
-	schema.addModel(model)
-	model.schema = schema
-	model.Schema = schema.Name
-	model.Db = schema.Db
-	model.Columns = make([]*Column, 0)
-	model.PrimaryKeys = make(map[string]*Column)
-	model.ForeignKeys = make(map[string]*Relation)
-	model.Indices = make(map[string]*Index)
-	model.Uniques = make(map[string]*Index)
-	model.RelationsTo = make(map[string]*Relation)
-	model.RelationsFrom = make(map[string]*Relation)
-	model.Required = make(map[string]bool)
-	/* Event */
-	model.eventEmiterChannel = make(chan event.Message)
-	model.eventsEmiter = make(map[string]event.Handler)
-	model.afterInsert = make([]DataFunctionTx, 0)
-	model.afterUpdate = make([]DataFunctionTx, 0)
-	model.afterDelete = make([]DataFunctionTx, 0)
-	model.beforeInsert = make([]DataFunctionTx, 0)
-	model.beforeUpdate = make([]DataFunctionTx, 0)
-	model.beforeDelete = make([]DataFunctionTx, 0)
-	model.AfterInsert(model.afterInsertDefault)
-	model.AfterUpdate(model.afterUpdateDefault)
-	model.AfterDelete(model.afterDeleteDefault)
-	model.IsDebug = schema.Db.IsDebug
-	/* Define columns */
-	for name := range model.Definitions {
-		definition := model.Definitions.Json(name)
-		args := definition.Array("args")
-		tp := definition.Int("tp")
-		model.defineColumns(tp, args...)
-	}
-
-	return model, nil
+	return result, nil
 }
 
 /**
 * LoadModel
-* @param db *DB, name string
-* @return *Model, error
+* @param schema, name string
+* @return (*Model, error)
 **/
-func LoadModel(db *DB, name string) (*Model, error) {
-	idx := slices.IndexFunc(db.models, func(e *Model) bool { return e.Name == name })
-	if idx != -1 {
-		return db.models[idx], nil
+func LoadModel(schema, name string) (*Model, error) {
+	id := fmt.Sprintf("%s.%s", schema, name)
+	src := loadModel(id)
+	if src.IsEmpty() {
+		return nil, fmt.Errorf("model %s not found", id)
 	}
 
-	var result *Model
-	err := db.Load("model", name, &result)
+	result, err := DefineModel(src)
 	if err != nil {
-		return nil, err
-	}
-
-	if result != nil {
-		schema := NewSchema(db, result.Schema)
-		return loadModel(schema, result)
-	}
-
-	return result, nil
-}
-
-/**
-* Collection
-* @param db *DB, name string
-* @return *Model, error
-**/
-func Collection(db *DB, name string) (*Model, error) {
-	result, err := LoadModel(db, name)
-	if err != nil {
-		return nil, err
-	}
-
-	if result != nil {
-		return result, nil
-	}
-
-	schema := NewSchema(db, "collections")
-	result = NewModel(schema, name, 1)
-	result.DefineProjectModel()
-	if err := result.Init(); err != nil {
 		return nil, err
 	}
 
@@ -259,131 +160,71 @@ func Collection(db *DB, name string) (*Model, error) {
 }
 
 /**
-* GetModel
-* @param name string
-* @return *Model
-**/
-func (s *Model) GetModel(name string) *Model {
-	idx := slices.IndexFunc(s.Db.models, func(e *Model) bool { return e.Name == name })
-	if idx != -1 {
-		return s.Db.models[idx]
-	}
-
-	return NewModel(s.schema, name, 1)
-}
-
-/**
-* Serialize
-* @return []byte, error
-**/
-func (s *Model) serialize() ([]byte, error) {
-	result, err := json.Marshal(s)
-	if err != nil {
-		return []byte{}, err
-	}
-
-	return result, nil
-}
-
-/**
-* Describe
+* ToJson
 * @return et.Json
 **/
-func (s *Model) Describe() et.Json {
-	definition, err := s.serialize()
+func (s *Model) ToJson() et.Json {
+	bt, err := json.Marshal(s)
 	if err != nil {
 		return et.Json{}
 	}
 
-	result := et.Json{}
-	err = json.Unmarshal(definition, &result)
+	var result et.Json
+	err = json.Unmarshal(bt, &result)
 	if err != nil {
 		return et.Json{}
 	}
-
-	columns := make([]et.Json, 0)
-	for _, column := range s.Columns {
-		columns = append(columns, column.Describe())
-	}
-
-	delete(result, "definitions")
-	result["kind"] = "model"
-	result["columns"] = columns
-	result["primary_keys"] = s.PrimaryKeys
-	result["foreign_keys"] = s.ForeignKeys
-	result["indices"] = s.Indices
-	result["uniques"] = s.Uniques
-	result["relations_to"] = s.RelationsTo
-	result["relations_from"] = s.RelationsFrom
-	result["required"] = s.Required
-	result["system_key_field"] = s.SystemKeyField
-	result["status_field"] = s.StatusField
-	result["index_field"] = s.IndexField
-	result["source_field"] = s.SourceField
-	result["full_text_field"] = s.FullTextField
-	result["types"] = s.Types
 
 	return result
 }
 
 /**
-* Save
-* @return error
+* GetColumn
+* @param name string
+* @return (et.Json, bool)
 **/
-func (s *Model) Save() error {
-	if !s.UseCore {
-		return nil
+func (s *Model) GetColumn(name string) (et.Json, bool) {
+	_, ok := s.Columns[name]
+	if !ok {
+		return et.Json{}, false
 	}
 
-	definition, err := s.serialize()
-	if err != nil {
-		return err
-	}
+	result := s.Columns.Json(name)
+	return result, ok
+}
 
-	err = s.Db.upsertModel("model", s.Name, s.Version, definition)
-	if err != nil {
-		return err
-	}
-
+/**
+* SetInit
+* @return
+**/
+func (s *Model) SetInit() {
 	s.isInit = true
-
-	return nil
 }
 
 /**
-* Drop
+* Lock
+* @return
 **/
-func (s *Model) Drop() {
-	if s.Db == nil {
-		return
-	}
-
-	for _, detail := range s.RelationsTo {
-		model := detail.With
-		if model != nil && model.Name != s.Name {
-			model.Drop()
-		}
-	}
-
-	s.Db.DropModel(s)
+func (s *Model) Lock() {
+	s.IsLocked = true
+	s.save()
 }
 
 /**
-* Empty
+* Unlock
+* @return
 **/
-func (s *Model) Empty() {
-	if s.Db == nil {
-		return
-	}
+func (s *Model) Unlock() {
+	s.IsLocked = false
+	s.save()
+}
 
-	for _, detail := range s.RelationsTo {
-		model := detail.With
-		if model != nil && model.Name != s.Name {
-			model.Empty()
-		}
-	}
-
-	s.Db.EmptyModel(s)
+/**
+* Debug
+* @return
+**/
+func (s *Model) Debug() {
+	s.isDebug = true
 }
 
 /**
@@ -391,486 +232,26 @@ func (s *Model) Empty() {
 * @return error
 **/
 func (s *Model) Init() error {
+	if err := s.validate(); err != nil {
+		return err
+	}
+
 	if s.isInit {
 		return nil
 	}
 
-	if s.SourceField != nil {
-		idx := s.SourceField.idx()
-		if idx != len(s.Columns)-1 && idx != -1 {
-			s.moveColumnToEnd(s.SourceField, idx)
-		}
-	}
-
-	if s.SystemKeyField != nil {
-		idx := s.SystemKeyField.idx()
-		if idx != len(s.Columns)-1 && idx != -1 {
-			s.moveColumnToEnd(s.SystemKeyField, idx)
-		}
-	}
-
-	if s.IndexField != nil {
-		idx := s.IndexField.idx()
-		if idx != len(s.Columns)-1 && idx != -1 {
-			s.moveColumnToEnd(s.IndexField, idx)
-		}
-	}
-
-	go func() {
-		for message := range s.eventEmiterChannel {
-			s.eventEmiter(message)
-		}
-	}()
-
-	if s.needMutate {
-		err := s.Db.MutateModel(s)
-		if err != nil {
-			return err
-		}
-	} else {
-		err := s.Db.LoadModel(s)
-		if err != nil {
-			return err
-		}
-	}
-
-	s.isInit = true
-
-	err := s.Save()
+	err := s.db.init(s)
 	if err != nil {
 		return err
 	}
 
-	return nil
-}
-
-/**
-* CheckRequired
-* @param data et.Json
-* @return error
-**/
-func (s *Model) CheckRequired(data et.Json) error {
-	for name, required := range s.Required {
-		if required {
-			if data[name] == nil {
-				return fmt.Errorf(MSG_REQUIRED_FIELD_REQUIRED, name)
-			}
-		}
-	}
-
-	return nil
-}
-
-/**
-* CheckForeignKeys
-* @param data et.Json
-* @return error
-**/
-func (s *Model) CheckForeignKeys(data et.Json) error {
-	for name, relation := range s.ForeignKeys {
-		with := relation.With
-		if with == nil {
-			return fmt.Errorf(MSG_RELATION_WITH_REQUIRED, name)
-		}
-
-		where := relation.GetWhere(data)
-		ql := From(with)
-		ql.SetWheres(where)
-		exist, err := ql.
-			SetDebug(s.IsDebug).
-			ItExists()
+	for _, m := range s.details {
+		m.isDebug = s.isDebug
+		err := m.Init()
 		if err != nil {
 			return err
 		}
-
-		if !exist {
-			return fmt.Errorf(MSG_FOREIGN_KEY_NOT_EXIST, name, where.ToString())
-		}
 	}
 
 	return nil
-}
-
-/**
-* GetId
-* @param id string
-* @return string
-**/
-func (s *Model) GetId(id string) string {
-	if !map[string]bool{"": true, "*": true, "new": true}[id] {
-		return id
-	}
-
-	switch s.TpId {
-	case TpXId:
-		return fmt.Sprintf(`%s:%s`, s.Name, reg.XID())
-	case TpULId:
-		return fmt.Sprintf(`%s:%s`, s.Name, reg.ULID())
-	default:
-		return fmt.Sprintf(`%s`, reg.UUID())
-	}
-}
-
-/**
-* GenId
-* @return string
-**/
-func (s *Model) GenId() string {
-	return s.GetId("new")
-}
-
-/**
-* getKeyByPk
-* @param data et.Json
-* @return string, error
-**/
-func (s *Model) getKeyByPk(data et.Json) (string, error) {
-	result := ""
-	for name := range s.PrimaryKeys {
-		val := data.Get(name)
-		if val == nil {
-			return "", fmt.Errorf(MSG_PRIMARY_KEY_REQUIRED, name, s.Name)
-		}
-
-		result = strs.Append(result, fmt.Sprintf(`%v`, val), ":")
-	}
-
-	return result, nil
-}
-
-/**
-* getMapByPk
-* @param data []et.Json
-* @return map[string]et.Json, error
-**/
-func (s *Model) getMapByPk(data []et.Json) (map[string]et.Json, error) {
-	result := map[string]et.Json{}
-	for _, item := range data {
-		key, err := s.getKeyByPk(item)
-		if err != nil {
-			return nil, err
-		}
-
-		result[key] = item
-	}
-
-	return result, nil
-}
-
-/**
-* getMapResultByPk
-* @param data []et.Json
-* @return map[string]et.Json, error
-**/
-func (s *Model) getMapResultByPk(data []et.Json) (map[string]et.Json, error) {
-	result := map[string]et.Json{}
-	for _, item := range data {
-		key, err := s.getKeyByPk(item)
-		if err != nil {
-			return nil, err
-		}
-
-		result[key] = item
-	}
-
-	return result, nil
-}
-
-/**
-* GetWhereByRequired
-* @param data et.Json
-* @return et.Json
-**/
-func (s *Model) GetWhereByRequired(data et.Json) (et.Json, error) {
-	result := et.Json{}
-	and := []et.Json{}
-	n := 0
-	for name := range s.Required {
-		val := data.Get(name)
-		if val == nil {
-			return et.Json{}, fmt.Errorf(MSG_FIELD_REQUIRED, name, s.Name)
-		}
-
-		col := s.getColumn(name)
-		if col != nil && col.IsKeyfield {
-			vs := fmt.Sprintf(`%v`, val)
-			val = s.GetId(vs)
-		}
-
-		if n == 0 {
-			result[name] = et.Json{
-				"eq": val,
-			}
-		} else {
-			and = append(and, et.Json{
-				name: et.Json{
-					"eq": val,
-				}})
-		}
-		n++
-	}
-
-	if len(and) > 0 {
-		result["AND"] = and
-	}
-
-	return result, nil
-}
-
-/**
-* GetWhereByPrimaryKeys
-* @param data et.Json
-* @return et.Json
-**/
-func (s *Model) GetWhereByPrimaryKeys(data et.Json) (et.Json, error) {
-	result := et.Json{}
-	and := []et.Json{}
-	n := 0
-	for name := range s.PrimaryKeys {
-		val := data.Get(name)
-		if val == nil {
-			return et.Json{}, fmt.Errorf(MSG_PRIMARY_KEY_REQUIRED, name, s.Name)
-		}
-
-		col := s.getColumn(name)
-		if col != nil && col.IsKeyfield {
-			vs := fmt.Sprintf(`%v`, val)
-			val = s.GetId(vs)
-		}
-
-		if n == 0 {
-			result[name] = et.Json{
-				"eq": val,
-			}
-		} else {
-			and = append(and, et.Json{
-				name: et.Json{
-					"eq": val,
-				}})
-		}
-		n++
-	}
-
-	if len(and) > 0 {
-		result["AND"] = and
-	}
-
-	return result, nil
-}
-
-/**
-* sourceIdx
-* @return int
-**/
-func (s *Model) sourceIdx() int {
-	if s.SourceField == nil {
-		return -1
-	}
-
-	return s.SourceField.idx()
-}
-
-/**
-* Debug
-* @return *Model
-**/
-func (s *Model) Debug() *Model {
-	s.IsDebug = true
-
-	return s
-}
-
-/**
-* addColumn
-* @param column *Column
-**/
-func (s *Model) addColumn(column *Column) {
-	idx := slices.IndexFunc(s.Columns, func(e *Column) bool { return e.Name == column.Name })
-	if idx == -1 {
-		s.Columns = append(s.Columns, column)
-	}
-}
-
-/**
-* addColumnIdx
-* @param column *Column, idx int
-**/
-func (s *Model) addColumnToIdx(column *Column, idx int) {
-	if idx != -1 {
-		s.Columns = append(s.Columns[:idx], append([]*Column{column}, s.Columns[idx:]...)...)
-	}
-}
-
-/**
-* moveColumnToEnd
-* @param column *Column, idx int
-**/
-func (s *Model) moveColumnToEnd(column *Column, idx int) {
-	s.Columns = append(s.Columns[:idx], s.Columns[idx+1:]...)
-	s.addColumn(column)
-}
-
-/**
-* getColumn
-* @param name string
-* @return *Column
-**/
-func (s *Model) getColumn(name string) *Column {
-	for _, col := range s.Columns {
-		if col.Name == name {
-			return col
-		}
-	}
-
-	return nil
-}
-
-/**
-* getColumns
-* @param name string
-* @return *Column
-*
- */
-func (s *Model) getColumns(names ...string) []*Column {
-	result := []*Column{}
-	for _, name := range names {
-		if col := s.getColumn(name); col != nil {
-			result = append(result, col)
-		}
-	}
-
-	return result
-}
-
-/**
-* getColumnsAndAtributes
-* @param tp TypeColumn
-* @return []*Column
-**/
-func (s *Model) getColumnsAndAtributes() []*Column {
-	result := []*Column{}
-	for _, col := range s.Columns {
-		if map[TypeColumn]bool{TpColumn: true, TpAtribute: true}[col.TypeColumn] {
-			result = append(result, col)
-		}
-	}
-
-	return result
-}
-
-/**
-* getColumnsArray
-* @param names ...string
-* @return []string
-**/
-func (s *Model) getColumnsArray(names ...string) []string {
-	result := []string{}
-	for _, name := range names {
-		if col := s.getColumn(name); col != nil {
-			result = append(result, col.Name)
-		}
-	}
-
-	return result
-}
-
-/**
-* getField
-* @param name string
-* @return *Field
-**/
-func (s *Model) getField(name string, isCreate bool) *Field {
-	getField := func(name string) *Field {
-		col := s.getColumn(name)
-		if col != nil {
-			return GetField(col)
-		}
-
-		if s.Integrity {
-			return nil
-		}
-
-		if s.SourceField == nil {
-			return nil
-		}
-
-		if !isCreate {
-			return nil
-		}
-
-		result := newAtribute(s, name, TypeDataText)
-
-		return GetField(result)
-	}
-
-	result := getField(name)
-	if result != nil {
-		return result
-	}
-
-	re := regexp.MustCompile(`(?i)\s*AS\s*`)
-	list := re.Split(name, -1)
-	alias := ""
-	if len(list) > 1 {
-		name = list[0]
-		alias = list[1]
-	}
-
-	list = strs.Split(name, ".")
-	switch len(list) {
-	case 1:
-		result := getField(list[0])
-		if result != nil && alias != "" {
-			result.Alias = alias
-		}
-
-		return result
-	case 2:
-		if !strs.Same(s.Name, list[0]) {
-			return nil
-		}
-
-		result := getField(list[1])
-		if result != nil && alias != "" {
-			result.Alias = alias
-		}
-
-		return result
-	case 3:
-		if !strs.Same(s.Schema, list[0]) {
-			return nil
-		}
-
-		if !strs.Same(s.Name, list[1]) {
-			return nil
-		}
-
-		result := getField(list[2])
-		if result != nil && alias != "" {
-			result.Alias = alias
-		}
-
-		return result
-	default:
-		return nil
-	}
-}
-
-/**
-* QueryTx
-* @param tx *Tx, params et.Json
-* @return et.Json, error
-**/
-func (s *Model) QueryTx(tx *Tx, params et.Json) (et.Json, error) {
-	return From(s).
-		queryTx(tx, params)
-}
-
-/**
-* Query
-* @param params et.Json
-* @return et.Json, error
-**/
-func (s *Model) Query(params et.Json) (et.Json, error) {
-	return s.QueryTx(nil, params)
 }

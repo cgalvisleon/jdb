@@ -2,9 +2,28 @@ package jdb
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/cgalvisleon/et/et"
 )
+
+/**
+* getRollupsTx
+* @param tx *Tx, data et.Json
+* @return
+**/
+func (s *Ql) getRollupsTx(tx *Tx, data et.Json) {
+
+}
+
+/**
+* getRelationsTx
+* @param tx *Tx, data et.Json
+* @return
+**/
+func (s *Ql) getRelationsTx(tx *Tx, data et.Json) {
+
+}
 
 /**
 * FirstTx
@@ -12,21 +31,35 @@ import (
 * @return et.Items, error
 **/
 func (s *Ql) FirstTx(tx *Tx, n int) (et.Items, error) {
-	if s.Db == nil {
-		return et.Items{}, fmt.Errorf(MSG_DATABASE_IS_REQUIRED)
+	if s.db == nil {
+		return et.Items{}, fmt.Errorf(MSG_DATABASE_REQUIRED)
 	}
 
 	s.setTx(tx)
-	s.Limit = n
-	s.prepare()
-	result, err := s.Db.Select(s)
+	s.Limit = et.Json{
+		"page": 1,
+		"rows": n,
+	}
+	err := s.validate()
 	if err != nil {
 		return et.Items{}, err
 	}
 
-	for _, data := range result.Result {
-		s.GetDetailsTx(tx, data)
+	result, err := s.db.query(s)
+	if err != nil {
+		return et.Items{}, err
 	}
+
+	wg := &sync.WaitGroup{}
+	for _, data := range result.Result {
+		wg.Add(1)
+		go func(data et.Json) {
+			defer wg.Done()
+			s.getRollupsTx(tx, data)
+			s.getRelationsTx(tx, data)
+		}(data)
+	}
+	wg.Wait()
 
 	return result, nil
 }
@@ -78,13 +111,16 @@ func (s *Ql) RowsTx(tx *Tx, val int) (et.Items, error) {
 * @return bool, error
 **/
 func (s *Ql) ItExistsTx(tx *Tx) (bool, error) {
-	if s.Db == nil {
-		return false, fmt.Errorf(MSG_DATABASE_IS_REQUIRED)
+	if s.db == nil {
+		return false, fmt.Errorf(MSG_DATABASE_REQUIRED)
 	}
 
 	s.setTx(tx)
-	s.prepare()
-	result, err := s.Db.Exists(s)
+	err := s.validate()
+	if err != nil {
+		return false, err
+	}
+	result, err := s.db.exists(s)
 	if err != nil {
 		return false, err
 	}
@@ -98,13 +134,16 @@ func (s *Ql) ItExistsTx(tx *Tx) (bool, error) {
 * @return int, error
 **/
 func (s *Ql) CountedTx(tx *Tx) (int, error) {
-	if s.Db == nil {
-		return 0, fmt.Errorf(MSG_DATABASE_IS_REQUIRED)
+	if s.db == nil {
+		return 0, fmt.Errorf(MSG_DATABASE_REQUIRED)
 	}
 
 	s.setTx(tx)
-	s.prepare()
-	result, err := s.Db.Count(s)
+	err := s.validate()
+	if err != nil {
+		return 0, err
+	}
+	result, err := s.db.count(s)
 	if err != nil {
 		return 0, err
 	}
@@ -169,55 +208,4 @@ func (s *Ql) ItExists() (bool, error) {
 **/
 func (s *Ql) Counted() (int, error) {
 	return s.CountedTx(nil)
-}
-
-/**
-* queryTx
-* @param tx *Tx, params et.Json
-* @return et.Items, error
-**/
-func (s *Ql) queryTx(tx *Tx, params et.Json) (et.Json, error) {
-	selects := params.Array("select")
-	joins := params.ArrayJson("join")
-	where := params.Json("where")
-	groups := params.ArrayStr("group_by")
-	havings := params.Json("having")
-	orderBy := params.Json("order_by")
-	page := params.Int("page")
-	limit := params.ValInt(1, "limit")
-	debug := params.Bool("debug")
-
-	result, err := s.
-		SetJoins(joins).
-		SetWheres(where).
-		SetGroupBy(groups...).
-		SetHavings(havings).
-		SetOrderBy(orderBy).
-		SetSelects(selects...).
-		SetDebug(debug).
-		SetPage(page).
-		SetLimitTx(tx, limit)
-	if err != nil {
-		return et.Json{}, err
-	}
-
-	return result, nil
-}
-
-/**
-* QueryTx
-* @param tx *Tx, params et.Json
-* @return et.Json, error
-**/
-func (s *Ql) QueryTx(tx *Tx, params et.Json) (et.Json, error) {
-	return s.queryTx(tx, params)
-}
-
-/**
-* Query
-* @param params et.Json
-* @return et.Json, error
-**/
-func (s *Ql) Query(params et.Json) (et.Json, error) {
-	return s.QueryTx(nil, params)
 }

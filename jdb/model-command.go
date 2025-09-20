@@ -1,49 +1,39 @@
 package jdb
 
-import (
-	"github.com/cgalvisleon/et/et"
-)
+import "github.com/cgalvisleon/et/et"
 
 /**
 * Insert
-* @param data []et.Json
+* @param data et.Json
 * @return *Command
 **/
 func (s *Model) Insert(data et.Json) *Command {
-	return NewCommand(s, []et.Json{data}, Insert)
+	return newCommand(s, TypeInsert, []et.Json{data})
 }
 
 /**
 * Update
-* @param data []et.Json
+* @param data et.Json
 * @return *Command
 **/
 func (s *Model) Update(data et.Json) *Command {
-	return NewCommand(s, []et.Json{data}, Update)
+	return newCommand(s, TypeUpdate, []et.Json{data})
 }
 
 /**
 * Delete
+* @param data et.Json
 * @return *Command
 **/
-func (s *Model) Delete() *Command {
-	return NewCommand(s, []et.Json{}, Delete)
+func (s *Model) Delete(data et.Json) *Command {
+	return newCommand(s, TypeDelete, []et.Json{data})
 }
 
 /**
 * Upsert
-* @param data []et.Json
+* @param data et.Json
 * @return *Command
 **/
 func (s *Model) Upsert(data et.Json) *Command {
-	return NewCommand(s, []et.Json{data}, Upsert)
-}
-
-/**
-* Bulk
-* @param data []et.Json
-* @return *Command
-**/
-func (s *Model) Bulk(data []et.Json) *Command {
-	return NewCommand(s, data, Insert)
+	return newCommand(s, TypeUpsert, []et.Json{data})
 }

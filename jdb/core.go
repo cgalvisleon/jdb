@@ -1,44 +1,24 @@
 package jdb
 
-import "fmt"
-
-var coreSchema *Schema
-
 /**
-* createCore
+* initCore
 * @return error
 **/
-func (s *DB) createCore() error {
-	if s.driver == nil {
-		return fmt.Errorf(MSG_DRIVER_NOT_DEFINED)
-	}
-	if err := s.defineModel(); err != nil {
+func initCore(db *Database) error {
+	if err := defineModel(db); err != nil {
 		return err
 	}
-	if err := s.defineRecords(); err != nil {
+	if err := defineRecord(db); err != nil {
 		return err
 	}
-	if err := s.defineTables(); err != nil {
+	if err := defineRecycling(db); err != nil {
 		return err
 	}
-	if err := s.defineRecycling(); err != nil {
+	if err := defineSeries(db); err != nil {
 		return err
 	}
-	if err := s.defineSeries(); err != nil {
+	if err := defineTables(db); err != nil {
 		return err
-	}
-
-	return nil
-}
-
-func (s *DB) defineSchema() error {
-	if coreSchema != nil {
-		return nil
-	}
-
-	coreSchema = NewSchema(s, "core")
-	if coreSchema == nil {
-		return fmt.Errorf(MSG_SCHEMA_NOT_FOUND, "core")
 	}
 
 	return nil

@@ -2,7 +2,7 @@ package jdb
 
 import (
 	"github.com/cgalvisleon/et/et"
-	jdb "github.com/cgalvisleon/jdb/congo"
+	"github.com/cgalvisleon/jdb/jdb"
 )
 
 /**
