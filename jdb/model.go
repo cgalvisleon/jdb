@@ -78,6 +78,36 @@ var (
 
 type DataFunctionTx func(tx *Tx, data et.Json) error
 
+type Val struct {
+	Value interface{} `json:"value"`
+}
+
+/**
+* V
+* @param value interface{}
+* @return *Val
+**/
+func V(value interface{}) *Val {
+	return &Val{
+		Value: value,
+	}
+}
+
+type Column struct {
+	Name string `json:"name"`
+}
+
+/**
+* C
+* @param name string
+* @return *Column
+**/
+func C(name string) *Column {
+	return &Column{
+		Name: name,
+	}
+}
+
 type Model struct {
 	Id           string            `json:"id"`
 	Database     string            `json:"database"`
@@ -85,13 +115,12 @@ type Model struct {
 	Name         string            `json:"name"`
 	Table        string            `json:"table"`
 	Columns      et.Json           `json:"columns"`
-	Atribs       et.Json           `json:"atribs"`
 	SourceField  string            `json:"source_field"`
 	RecordField  string            `json:"record_field"`
 	Details      et.Json           `json:"details"`
 	Masters      et.Json           `json:"masters"`
-	Rollups      et.Json           `json:"rollups"`
-	Relations    et.Json           `json:"relations"`
+	Rollups      et.Json           `json:"rollups"`   //SQL
+	Relations    et.Json           `json:"relations"` //SQL
 	PrimaryKeys  []string          `json:"primary_keys"`
 	ForeignKeys  et.Json           `json:"foreign_keys"`
 	Indices      []string          `json:"indices"`
@@ -101,7 +130,6 @@ type Model struct {
 	db           *Database         `json:"-"`
 	details      map[string]*Model `json:"-"`
 	masters      map[string]*Model `json:"-"`
-	rollups      map[string]*Model `json:"-"`
 	isInit       bool              `json:"-"`
 	isDebug      bool              `json:"-"`
 	beforeInsert []DataFunctionTx  `json:"-"`

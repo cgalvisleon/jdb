@@ -8,35 +8,35 @@ import (
 /**
 * Insert
 * @param param et.Json
-* @return (*jdb.Command, error)
+* @return (*jdb.Cmd, error)
 **/
-func Insert(param et.Json) (*jdb.Command, error) {
+func Insert(param et.Json) (*jdb.Cmd, error) {
 	return jdb.Insert(param)
 }
 
 /**
 * Update
 * @param param et.Json
-* @return (*jdb.Command, error)
+* @return (*jdb.Cmd, error)
 **/
-func Update(param et.Json) (*jdb.Command, error) {
+func Update(param et.Json) (*jdb.Cmd, error) {
 	return jdb.Update(param)
 }
 
 /**
 * Delete
 * @param param et.Json
-* @return (*jdb.Command, error)
+* @return (*jdb.Cmd, error)
 **/
-func Delete(param et.Json) (*jdb.Command, error) {
+func Delete(param et.Json) (*jdb.Cmd, error) {
 	return jdb.Delete(param)
 }
 
 /**
 * Upsert
 * @param param et.Json
-* @return (*jdb.Command, error)
+* @return (*jdb.Cmd, error)
 **/
-func Upsert(param et.Json) (*jdb.Command, error) {
+func Upsert(param et.Json) (*jdb.Cmd, error) {
 	return jdb.Upsert(param)
 }

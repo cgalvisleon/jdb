@@ -20,7 +20,7 @@ type Driver interface {
 	Query(query *Ql) (et.Items, error)
 	Exists(query *Ql) (bool, error)
 	Count(query *Ql) (int, error)
-	Command(command *Command) (et.Items, error)
+	Command(command *Cmd) (et.Items, error)
 }
 
 var drivers map[string]func(db *Database) Driver

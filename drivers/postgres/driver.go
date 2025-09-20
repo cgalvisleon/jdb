@@ -85,10 +85,10 @@ func (s *Postgres) Count(query *jdb.Ql) (int, error) {
 }
 
 /**
-* Command
-* @param command *jdb.Command
+* Cmd
+* @param command *jdb.Cmd
 * @return (et.Items, error)
 **/
-func (s *Postgres) Command(command *jdb.Command) (et.Items, error) {
+func (s *Postgres) Command(command *jdb.Cmd) (et.Items, error) {
 	return et.Items{}, nil
 }

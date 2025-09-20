@@ -20,16 +20,15 @@ func main() {
 		console.Panic(err)
 	}
 
-	// db, err := jdb.Load()
-	// if err != nil {
-	// 	console.Panic(err)
-	// }
+	db, err := jdb.LoadTo("josephine")
+	if err != nil {
+		console.Panic(err)
+	}
 
-	model, err := jdb.DefineModel(et.Json{
-		"database": "josephine",
-		"schema":   "projects",
-		"name":     "users",
-		"version":  1,
+	model, err := db.DefineModel(et.Json{
+		"schema":  "projects",
+		"name":    "users",
+		"version": 1,
 		"columns": et.Json{
 			"id": et.Json{
 				"type":    "key",
@@ -74,9 +73,8 @@ func main() {
 		console.Panic(err)
 	}
 
-	query, err := jdb.Query(et.Json{
-		"database": "josephine",
-		"from":     "users AS a",
+	query, err := db.Query(et.Json{
+		"from": "users AS a",
 		"select": []string{
 			"a.id",
 			"a.name",

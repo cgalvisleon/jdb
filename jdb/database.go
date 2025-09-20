@@ -142,7 +142,6 @@ func (s *Database) getOrCreateModel(schema, name string) (*Model, error) {
 			Name:         name,
 			Table:        "",
 			Columns:      et.Json{},
-			Atribs:       et.Json{},
 			SourceField:  "",
 			Details:      et.Json{},
 			Masters:      et.Json{},
@@ -155,7 +154,6 @@ func (s *Database) getOrCreateModel(schema, name string) (*Model, error) {
 			db:           s,
 			details:      make(map[string]*Model),
 			masters:      make(map[string]*Model),
-			rollups:      make(map[string]*Model),
 			beforeInsert: []DataFunctionTx{},
 			beforeUpdate: []DataFunctionTx{},
 			beforeDelete: []DataFunctionTx{},
@@ -207,8 +205,8 @@ func (s *Database) DefineModel(definition et.Json) (*Model, error) {
 		return nil, err
 	}
 
-	result.Atribs = definition.Json("atribs")
-	for k, v := range result.Atribs {
+	atribs := definition.Json("atribs")
+	for k, v := range atribs {
 		err := result.defineAtrib(k, v)
 		if err != nil {
 			return nil, err
@@ -243,6 +241,22 @@ func (s *Database) DefineModel(definition et.Json) (*Model, error) {
 	result.isDebug = debug
 
 	return result, nil
+}
+
+/**
+* Query
+* @param query et.Json
+* @return (*Ql, error)
+**/
+func (s *Database) Query(query et.Json) (*Ql, error) {
+	result := newQl(s)
+	from := query.Str("from")
+	if len(from) == 0 {
+		return nil, fmt.Errorf(MSG_FROM_REQUIRED)
+	}
+	result.addFrom(from)
+
+	return result.setQuery(query), nil
 }
 
 /**
@@ -328,10 +342,10 @@ func (s *Database) count(query *Ql) (int, error) {
 
 /**
 * command
-* @param command *Command
+* @param command *Cmd
 * @return (et.Items, error)
 **/
-func (s *Database) command(command *Command) (et.Items, error) {
+func (s *Database) command(command *Cmd) (et.Items, error) {
 	if err := command.validate(); err != nil {
 		return et.Items{}, err
 	}
@@ -343,40 +357,6 @@ func (s *Database) command(command *Command) (et.Items, error) {
 
 	if command.isDebug {
 		console.Debugf("command:%s", command.toJson().ToString())
-	}
-
-	return result, nil
-}
-
-/**
-* GetDatabase
-* @param name string
-* @return (*Database, error)
-**/
-func GetDatabase(name string) (*Database, error) {
-	result, ok := dbs[name]
-	if !ok {
-		return nil, fmt.Errorf(MSG_DATABASE_NOT_FOUND, name)
-	}
-
-	return result, nil
-}
-
-/**
-* GetModel
-* @param database, schema, name string
-* @return (*Model, error)
-**/
-func GetModel(database, schema, name string) (*Model, error) {
-	db, ok := dbs[database]
-	if !ok {
-		return nil, fmt.Errorf("database %s not found", database)
-	}
-
-	id := fmt.Sprintf("%s.%s", schema, name)
-	result, ok := db.Models[id]
-	if !ok {
-		return nil, fmt.Errorf("model %s not found", id)
 	}
 
 	return result, nil

@@ -2,26 +2,28 @@ package jdb
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"github.com/cgalvisleon/et/et"
-	"github.com/cgalvisleon/et/utility"
 )
 
 type Ql struct {
-	Froms   []string  `json:"froms"`
-	Selects []string  `json:"selects"`
-	Joins   []et.Json `json:"joins"`
-	Wheres  et.Json   `json:"wheres"`
-	GroupBy et.Json   `json:"group_by"`
-	Having  et.Json   `json:"having"`
-	OrderBy et.Json   `json:"order_by"`
-	Limit   et.Json   `json:"limit"`
-	Details []*Ql     `json:"details"`
-	SQL     string    `json:"sql"`
-	db      *Database `json:"-"`
-	tx      *Tx       `json:"-"`
-	isDebug bool      `json:"-"`
+	Database string            `json:"-"`
+	Froms    []string          `json:"froms"`
+	Selects  []string          `json:"selects"`
+	Joins    []et.Json         `json:"joins"`
+	Wheres   et.Json           `json:"wheres"`
+	GroupBy  et.Json           `json:"group_by"`
+	Having   et.Json           `json:"having"`
+	OrderBy  et.Json           `json:"order_by"`
+	Limit    et.Json           `json:"limit"`
+	Details  []*Ql             `json:"details"`
+	SQL      string            `json:"sql"`
+	db       *Database         `json:"-"`
+	tx       *Tx               `json:"-"`
+	columns  []string          `json:"-"`
+	atributs []string          `json:"-"`
+	froms    map[string]*Model `json:"-"`
+	isDebug  bool              `json:"-"`
 }
 
 /**
@@ -30,43 +32,21 @@ type Ql struct {
 **/
 func newQl(db *Database) *Ql {
 	return &Ql{
-		Froms:   []string{},
-		Selects: []string{},
-		Joins:   make([]et.Json, 0),
-		Wheres:  et.Json{},
-		GroupBy: et.Json{},
-		Having:  et.Json{},
-		OrderBy: et.Json{},
-		Limit:   et.Json{},
-		Details: make([]*Ql, 0),
-		db:      db,
+		Database: db.Name,
+		Froms:    []string{},
+		Selects:  []string{},
+		Joins:    make([]et.Json, 0),
+		Wheres:   et.Json{},
+		GroupBy:  et.Json{},
+		Having:   et.Json{},
+		OrderBy:  et.Json{},
+		Limit:    et.Json{},
+		Details:  make([]*Ql, 0),
+		db:       db,
+		columns:  []string{},
+		atributs: []string{},
+		froms:    make(map[string]*Model),
 	}
-}
-
-/**
-* Query
-* @param query et.Json
-* @return (*Ql, error)
-**/
-func Query(query et.Json) (*Ql, error) {
-	database := query.String("database")
-	if !utility.ValidStr(database, 0, []string{}) {
-		return nil, fmt.Errorf(MSG_DATABASE_REQUIRED)
-	}
-
-	db, err := GetDatabase(database)
-	if err != nil {
-		return nil, err
-	}
-
-	result := newQl(db)
-	from := query.Str("from")
-	if len(from) == 0 {
-		return nil, fmt.Errorf(MSG_FROM_REQUIRED)
-	}
-	result.addFrom(from)
-
-	return result.setQuery(query), nil
 }
 
 /**

@@ -24,31 +24,37 @@ var (
 	}
 )
 
-type Command struct {
-	Command string    `json:"command"`
-	Data    []et.Json `json:"data"`
-	Before  et.Json   `json:"before"`
-	After   et.Json   `json:"after"`
-	SQL     string    `json:"sql"`
-	db      *Database `json:"-"`
-	tx      *Tx       `json:"-"`
-	model   *Model    `json:"-"`
-	isDebug bool      `json:"-"`
+type Cmd struct {
+	Command  string    `json:"command"`
+	Data     []et.Json `json:"data"`
+	Before   et.Json   `json:"before"`
+	After    et.Json   `json:"after"`
+	SQL      string    `json:"sql"`
+	db       *Database `json:"-"`
+	tx       *Tx       `json:"-"`
+	from     *Model    `json:"-"`
+	result   []et.Json `json:"-"`
+	columns  []string  `json:"-"`
+	atributs []string  `json:"-"`
+	isDebug  bool      `json:"-"`
 }
 
 /**
 * newCommand
 * @param model *Model, cmd string, data []et.Json
-* @return *Command
+* @return *Cmd
 **/
-func newCommand(model *Model, cmd string, data []et.Json) *Command {
-	return &Command{
-		Command: cmd,
-		Data:    data,
-		Before:  et.Json{},
-		After:   et.Json{},
-		db:      model.db,
-		model:   model,
+func newCommand(model *Model, cmd string, data []et.Json) *Cmd {
+	return &Cmd{
+		Command:  cmd,
+		Data:     data,
+		Before:   et.Json{},
+		After:    et.Json{},
+		db:       model.db,
+		from:     model,
+		result:   []et.Json{},
+		columns:  []string{},
+		atributs: []string{},
 	}
 }
 
@@ -56,7 +62,7 @@ func newCommand(model *Model, cmd string, data []et.Json) *Command {
 * toJson
 * @return et.Json
 **/
-func (s *Command) toJson() et.Json {
+func (s *Cmd) toJson() et.Json {
 	bt, err := json.Marshal(s)
 	if err != nil {
 		return et.Json{}
@@ -73,9 +79,9 @@ func (s *Command) toJson() et.Json {
 
 /**
 * Debug
-* @return *Command
+* @return *Cmd
 **/
-func (s *Command) Debug() *Command {
+func (s *Cmd) Debug() *Cmd {
 	s.isDebug = true
 	return s
 }
@@ -85,7 +91,7 @@ func (s *Command) Debug() *Command {
 * @param tx *Tx
 * @return (et.Items, error)
 **/
-func (s *Command) Exec(tx *Tx) (et.Items, error) {
+func (s *Cmd) Exec(tx *Tx) (et.Items, error) {
 	s.tx = tx
 
 	if err := s.validate(); err != nil {
@@ -98,9 +104,9 @@ func (s *Command) Exec(tx *Tx) (et.Items, error) {
 /**
 * command
 * @param cmd string, param et.Json
-* @return (*Command, error)
+* @return (*Cmd, error)
 **/
-func command(cmd string, param et.Json) (*Command, error) {
+func command(cmd string, param et.Json) (*Cmd, error) {
 	database := param.String("database")
 	if !utility.ValidStr(database, 0, []string{}) {
 		return nil, fmt.Errorf(MSG_DATABASE_REQUIRED)
@@ -137,35 +143,35 @@ func command(cmd string, param et.Json) (*Command, error) {
 /**
 * Insert
 * @param param et.Json
-* @return (*Command, error)
+* @return (*Cmd, error)
 **/
-func Insert(param et.Json) (*Command, error) {
+func Insert(param et.Json) (*Cmd, error) {
 	return command(TypeInsert, param)
 }
 
 /**
 * Update
 * @param param et.Json
-* @return (*Command, error)
+* @return (*Cmd, error)
 **/
-func Update(param et.Json) (*Command, error) {
+func Update(param et.Json) (*Cmd, error) {
 	return command(TypeUpdate, param)
 }
 
 /**
 * Delete
 * @param param et.Json
-* @return (*Command, error)
+* @return (*Cmd, error)
 **/
-func Delete(param et.Json) (*Command, error) {
+func Delete(param et.Json) (*Cmd, error) {
 	return command(TypeDelete, param)
 }
 
 /**
 * Upsert
 * @param param et.Json
-* @return (*Command, error)
+* @return (*Cmd, error)
 **/
-func Upsert(param et.Json) (*Command, error) {
+func Upsert(param et.Json) (*Cmd, error) {
 	return command(TypeUpsert, param)
 }
