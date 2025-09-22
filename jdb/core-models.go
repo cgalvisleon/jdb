@@ -18,25 +18,32 @@ func defineModel(db *Database) error {
 
 	var err error
 	models, err = db.Define(et.Json{
-		"schema": "core",
-		"name":   "models",
-		"columns": et.Json{
-			"created_at": et.Json{
+		"schema":  "core",
+		"name":    "models",
+		"version": 1,
+		"columns": []et.Json{
+			{
+				"name": "created_at",
 				"type": "datetime",
 			},
-			"updated_at": et.Json{
+			{
+				"name": "updated_at",
 				"type": "datetime",
 			},
-			"kind": et.Json{
+			{
+				"name": "kind",
 				"type": "key",
 			},
-			"name": et.Json{
+			{
+				"name": "name",
 				"type": "text",
 			},
-			"version": et.Json{
+			{
+				"name": "version",
 				"type": "int",
 			},
-			"definition": et.Json{
+			{
+				"name": "definition",
 				"type": "bytes",
 			},
 		},

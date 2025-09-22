@@ -21,8 +21,8 @@ type Database struct {
 	Models     map[string]*Model `json:"models"`
 	UseCore    bool              `json:"use_core"`
 	Connection et.Json           `json:"-"`
+	Db         *sql.DB           `json:"-"`
 	driver     Driver            `json:"-"`
-	db         *sql.DB           `json:"-"`
 }
 
 /**
@@ -88,7 +88,7 @@ func (s *Database) load() error {
 		return err
 	}
 
-	s.db = db
+	s.Db = db
 	if s.UseCore {
 		err := initCore(s)
 		if err != nil {
@@ -122,15 +122,15 @@ func (s *Database) getOrCreateModel(schema, name string) (*Model, error) {
 			Schema:       schema,
 			Name:         name,
 			Table:        "",
-			Columns:      et.Json{},
+			Columns:      []et.Json{},
 			SourceField:  "",
 			RecordField:  "",
-			Details:      et.Json{},
-			Masters:      et.Json{},
-			Rollups:      et.Json{},
-			Relations:    et.Json{},
+			Details:      []et.Json{},
+			Masters:      []et.Json{},
+			Rollups:      []et.Json{},
+			Relations:    []et.Json{},
 			PrimaryKeys:  []string{},
-			ForeignKeys:  et.Json{},
+			ForeignKeys:  []et.Json{},
 			Indices:      []string{},
 			Required:     []string{},
 			db:           s,
@@ -182,7 +182,7 @@ func (s *Database) Define(definition et.Json) (*Model, error) {
 	result.Required = definition.ArrayStr("required")
 	result.Version = definition.Int("version")
 
-	columns := definition.Json("columns")
+	columns := definition.ArrayJson("columns")
 	err = result.defineColumns(columns)
 	if err != nil {
 		return nil, err
@@ -215,8 +215,8 @@ func (s *Database) Define(definition et.Json) (*Model, error) {
 		return nil, err
 	}
 
-	details := definition.Json("details")
-	if !details.IsEmpty() {
+	details := definition.ArrayJson("details")
+	if len(details) > 0 {
 		err := result.defineDetails(details)
 		if err != nil {
 			return nil, err
@@ -278,19 +278,25 @@ func (s *Database) init(model *Model) error {
 		return err
 	}
 
-	_, err = s.Query(sql)
-	if err != nil {
-		return err
+	if model.isInit {
+		return nil
 	}
 
 	if model.isDebug {
 		console.Debugf("init:%s", model.ToJson().ToEscapeHTML())
 	}
 
+	_, err = s.Query(sql)
+	if err != nil {
+		return err
+	}
+
 	err = model.save()
 	if err != nil {
 		return err
 	}
+
+	model.SetInit()
 
 	return nil
 }

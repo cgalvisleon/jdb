@@ -31,10 +31,11 @@ func (s *Model) defineColumn(name string, params et.Json) error {
 		return fmt.Errorf(MSG_TYPE_REQUIRED)
 	}
 
-	s.Columns[name] = et.Json{
+	s.Columns = append(s.Columns, et.Json{
+		"name":    name,
 		"type":    typeData,
 		"default": params.String("default"),
-	}
+	})
 	return nil
 }
 
@@ -59,10 +60,10 @@ func (s *Model) defineAtrib(name string, defaultValue interface{}) error {
 * @param params et.Json
 * @return error
 **/
-func (s *Model) defineColumns(params et.Json) error {
-	for k := range params {
-		param := params.Json(k)
-		err := s.defineColumn(k, param)
+func (s *Model) defineColumns(params []et.Json) error {
+	for _, param := range params {
+		name := param.String("name")
+		err := s.defineColumn(name, param)
 		if err != nil {
 			return err
 		}
@@ -83,8 +84,8 @@ func (s *Model) definePrimaryKeys(names ...string) {
 			continue
 		}
 
-		_, ok := s.Columns[name]
-		if !ok {
+		idx = s.getColumnIndex(name)
+		if idx == -1 {
 			continue
 		}
 
@@ -105,8 +106,8 @@ func (s *Model) defineIndices(names ...string) error {
 			continue
 		}
 
-		_, ok := s.Columns[name]
-		if !ok {
+		idx = s.getColumnIndex(name)
+		if idx == -1 {
 			continue
 		}
 
@@ -128,8 +129,8 @@ func (s *Model) defineRequired(names ...string) {
 			continue
 		}
 
-		_, ok := s.Columns[name]
-		if !ok {
+		idx = s.getColumnIndex(name)
+		if idx == -1 {
 			continue
 		}
 
@@ -184,13 +185,11 @@ func (s *Model) defineRecordField(name string) error {
 
 /**
 * defineForeignKeys
-* @param params et.Json
+* @param params []et.Json
 * @return error
 **/
-func (s *Model) defineForeignKeys(params et.Json) error {
-	for key := range params {
-		param := params.Json(key)
-
+func (s *Model) defineForeignKeys(params []et.Json) error {
+	for _, param := range params {
 		schema := param.String("schema")
 		if !utility.ValidStr(schema, 0, []string{}) {
 			return fmt.Errorf("schema is required")
@@ -253,7 +252,7 @@ func (s *Model) defineForeignKeys(params et.Json) error {
 			}
 		}
 
-		s.ForeignKeys[key] = et.Json{
+		s.ForeignKeys = append(s.ForeignKeys, et.Json{
 			"schema": schema,
 			"name":   name,
 			"references": et.Json{
@@ -261,7 +260,7 @@ func (s *Model) defineForeignKeys(params et.Json) error {
 				"on_delete": onDelete,
 				"on_update": onUpdate,
 			},
-		}
+		})
 	}
 
 	return nil
@@ -269,13 +268,11 @@ func (s *Model) defineForeignKeys(params et.Json) error {
 
 /**
 * defineDetails
-* @param params et.Json
+* @param params []et.Json
 * @return error
 **/
-func (s *Model) defineDetails(params et.Json) error {
-	for key := range params {
-		param := params.Json(key)
-
+func (s *Model) defineDetails(params []et.Json) error {
+	for _, param := range params {
 		schema := param.String("schema")
 		if !utility.ValidStr(schema, 0, []string{}) {
 			return fmt.Errorf("schema is required")
@@ -291,8 +288,8 @@ func (s *Model) defineDetails(params et.Json) error {
 			return fmt.Errorf("references is required")
 		}
 
-		columns := references.Json("columns")
-		if columns.IsEmpty() {
+		columns := references.ArrayJson("columns")
+		if len(columns) == 0 {
 			return fmt.Errorf("columns is required in references")
 		}
 
@@ -304,8 +301,8 @@ func (s *Model) defineDetails(params et.Json) error {
 			return err
 		}
 
-		err = detail.defineForeignKeys(et.Json{
-			s.Name: et.Json{
+		err = detail.defineForeignKeys([]et.Json{
+			{
 				"schema": s.Schema,
 				"name":   s.Name,
 				"references": et.Json{
@@ -320,13 +317,13 @@ func (s *Model) defineDetails(params et.Json) error {
 		}
 
 		detail.masters[s.Name] = s
-		detail.Masters[s.Name] = et.Json{
+		detail.Masters = append(detail.Masters, et.Json{
 			"schema": s.Schema,
 			"name":   s.Name,
 			"references": et.Json{
 				"columns": columns,
 			},
-		}
+		})
 
 		err = detail.defineColumn(s.Name, et.Json{
 			"type": TypeMaster,
@@ -335,7 +332,6 @@ func (s *Model) defineDetails(params et.Json) error {
 			return err
 		}
 
-		columns = param.Json("columns")
 		err = detail.defineColumns(columns)
 		if err != nil {
 			return err
@@ -349,7 +345,7 @@ func (s *Model) defineDetails(params et.Json) error {
 		}
 
 		s.details[name] = detail
-		s.Details[key] = param
+		s.Details = append(s.Details, param)
 	}
 
 	return nil

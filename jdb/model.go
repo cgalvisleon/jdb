@@ -3,6 +3,7 @@ package jdb
 import (
 	"encoding/json"
 	"fmt"
+	"slices"
 
 	"github.com/cgalvisleon/et/envar"
 	"github.com/cgalvisleon/et/et"
@@ -14,7 +15,6 @@ const (
 	TypeFloat    = "float"
 	TypeKey      = "key"
 	TypeText     = "text"
-	TypeMemo     = "memo"
 	TypeDateTime = "datetime"
 	TypeBoolean  = "boolean"
 	TypeJson     = "json"
@@ -38,7 +38,6 @@ var (
 		TypeFloat:    true,
 		TypeKey:      true,
 		TypeText:     true,
-		TypeMemo:     true,
 		TypeDateTime: true,
 		TypeBoolean:  true,
 		TypeJson:     true,
@@ -58,7 +57,6 @@ var (
 		TypeFloat:    true,
 		TypeKey:      true,
 		TypeText:     true,
-		TypeMemo:     true,
 		TypeDateTime: true,
 		TypeBoolean:  true,
 		TypeJson:     true,
@@ -116,20 +114,19 @@ type Model struct {
 	Schema       string                  `json:"schema"`
 	Name         string                  `json:"name"`
 	Table        string                  `json:"table"`
-	Columns      et.Json                 `json:"columns"`
+	Columns      []et.Json               `json:"columns"`
 	SourceField  string                  `json:"source_field"`
 	RecordField  string                  `json:"record_field"`
-	Details      et.Json                 `json:"details"`
-	Masters      et.Json                 `json:"masters"`
-	Rollups      et.Json                 `json:"rollups"`   //SQL
-	Relations    et.Json                 `json:"relations"` //SQL
+	Details      []et.Json               `json:"details"`
+	Masters      []et.Json               `json:"masters"`
+	Rollups      []et.Json               `json:"rollups"`   //SQL
+	Relations    []et.Json               `json:"relations"` //SQL
 	PrimaryKeys  []string                `json:"primary_keys"`
-	ForeignKeys  et.Json                 `json:"foreign_keys"`
+	ForeignKeys  []et.Json               `json:"foreign_keys"`
 	Indices      []string                `json:"indices"`
 	Required     []string                `json:"required"`
 	IsLocked     bool                    `json:"is_locked"`
 	Version      int                     `json:"version"`
-	SQL          string                  `json:"sql"`
 	db           *Database               `json:"-"`
 	details      map[string]*Model       `json:"-"`
 	masters      map[string]*Model       `json:"-"`
@@ -211,19 +208,23 @@ func (s *Model) ToJson() et.Json {
 	return result
 }
 
+func (s *Model) getColumnIndex(name string) int {
+	return slices.IndexFunc(s.Columns, func(item et.Json) bool { return item.String("name") == name })
+}
+
 /**
 * GetColumn
 * @param name string
 * @return (et.Json, bool)
 **/
 func (s *Model) GetColumn(name string) (et.Json, bool) {
-	_, ok := s.Columns[name]
-	if !ok {
+	idx := s.getColumnIndex(name)
+	if idx == -1 {
 		return et.Json{}, false
 	}
 
-	result := s.Columns.Json(name)
-	return result, ok
+	result := s.Columns[idx]
+	return result, true
 }
 
 /**

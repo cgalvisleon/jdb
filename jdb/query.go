@@ -20,7 +20,7 @@ func querytx(db *Database, tx *Tx, sql string, arg ...any) (et.Items, error) {
 	}
 
 	if tx != nil {
-		err := tx.Begin(db.db)
+		err := tx.Begin(db.Db)
 		if err != nil {
 			return et.Items{}, err
 		}
@@ -46,7 +46,7 @@ func querytx(db *Database, tx *Tx, sql string, arg ...any) (et.Items, error) {
 		return RowsToItems(rows), nil
 	}
 
-	rows, err := db.db.Query(sql, arg...)
+	rows, err := db.Db.Query(sql, arg...)
 	if err != nil {
 		return et.Items{}, err
 	}

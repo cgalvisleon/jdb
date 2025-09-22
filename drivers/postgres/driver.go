@@ -52,16 +52,23 @@ func newDriver(database *jdb.Database) jdb.Driver {
 **/
 func (s *Postgres) Load(model *jdb.Model) (string, error) {
 	model.Table = fmt.Sprintf("%s.%s", model.Schema, model.Name)
+	exists, err := s.existTable(s.database.Db, model.Schema, model.Name)
+	if err != nil {
+		return "", err
+	}
+
+	if exists {
+		model.SetInit()
+		return "", nil
+	}
+
 	definition := model.ToJson()
 	sql, err := s.buildModel(definition)
 	if err != nil {
 		return "", err
 	}
 
-	model.SQL = sql
-	console.Debug("sql:\n\t", sql)
-
-	model.SetInit()
+	console.Debug("load:\n\t", sql)
 
 	return sql, nil
 }
@@ -79,7 +86,7 @@ func (s *Postgres) Query(query *jdb.Ql) (string, error) {
 	}
 
 	query.SQL = sql
-	console.Debug("sql:\n\t", sql)
+	console.Debug("query:\n\t", sql)
 
 	return query.SQL, nil
 }

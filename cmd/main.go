@@ -39,15 +39,18 @@ func main() {
 	// 	"schema":  "projects",
 	// 	"name":    "users",
 	// 	"version": 1,
-	// 	"columns": et.Json{
-	// 		"id": et.Json{
+	// 	"columns": []et.Json{
+	// 		{
+	// 			"name":    "id",
 	// 			"type":    "key",
 	// 			"default": "-1",
 	// 		},
-	// 		"name": et.Json{
+	// 		{
+	// 			"name": "name",
 	// 			"type": "text",
 	// 		},
-	// 		"email": et.Json{
+	// 		{
+	// 			"name": "email",
 	// 			"type": "text",
 	// 		},
 	// 	},
@@ -58,13 +61,15 @@ func main() {
 	// 	"primary_keys": []string{
 	// 		"id",
 	// 	},
-	// 	"details": et.Json{
-	// 		"roles": et.Json{
+	// 	"details": []et.Json{
+	// 		{
 	// 			"schema": "projects",
 	// 			"name":   "roles",
 	// 			"references": et.Json{
-	// 				"columns": et.Json{
-	// 					"user_id": "id",
+	// 				"columns": []et.Json{
+	// 					{
+	// 						"user_id": "id",
+	// 					},
 	// 				},
 	// 				"on_delete": "",
 	// 				"on_update": "",
