@@ -3,7 +3,6 @@ package main
 import (
 	"github.com/cgalvisleon/et/cache"
 	"github.com/cgalvisleon/et/console"
-	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/event"
 	_ "github.com/cgalvisleon/jdb/drivers/postgres"
 	jdb "github.com/cgalvisleon/jdb/v1"
@@ -20,7 +19,7 @@ func main() {
 		console.Panic(err)
 	}
 
-	db, err := jdb.LoadTo("josephine")
+	_, err = jdb.LoadTo("josephine")
 	if err != nil {
 		console.Panic(err)
 	}
@@ -36,53 +35,53 @@ func main() {
 
 	// console.Debug("users:", users.ToString())
 
-	model, err := db.Define(et.Json{
-		"schema":  "projects",
-		"name":    "users",
-		"version": 1,
-		"columns": et.Json{
-			"id": et.Json{
-				"type":    "key",
-				"default": "-1",
-			},
-			"name": et.Json{
-				"type": "text",
-			},
-			"email": et.Json{
-				"type": "text",
-			},
-		},
-		"atribs": et.Json{
-			"apellido": "", //name, defaultValue
-			"rol":      "",
-		},
-		"primary_keys": []string{
-			"id",
-		},
-		"details": et.Json{
-			"roles": et.Json{
-				"schema": "projects",
-				"name":   "roles",
-				"references": et.Json{
-					"columns": et.Json{
-						"user_id": "id",
-					},
-					"on_delete": "",
-					"on_update": "",
-				},
-			},
-		},
-		"required": []string{"id"},
-		"debug":    true,
-	})
-	if err != nil {
-		console.Panic(err)
-	}
+	// model, err := db.Define(et.Json{
+	// 	"schema":  "projects",
+	// 	"name":    "users",
+	// 	"version": 1,
+	// 	"columns": et.Json{
+	// 		"id": et.Json{
+	// 			"type":    "key",
+	// 			"default": "-1",
+	// 		},
+	// 		"name": et.Json{
+	// 			"type": "text",
+	// 		},
+	// 		"email": et.Json{
+	// 			"type": "text",
+	// 		},
+	// 	},
+	// 	"atribs": et.Json{
+	// 		"apellido": "", //name, defaultValue
+	// 		"rol":      "",
+	// 	},
+	// 	"primary_keys": []string{
+	// 		"id",
+	// 	},
+	// 	"details": et.Json{
+	// 		"roles": et.Json{
+	// 			"schema": "projects",
+	// 			"name":   "roles",
+	// 			"references": et.Json{
+	// 				"columns": et.Json{
+	// 					"user_id": "id",
+	// 				},
+	// 				"on_delete": "",
+	// 				"on_update": "",
+	// 			},
+	// 		},
+	// 	},
+	// 	"required": []string{"id"},
+	// 	"debug":    true,
+	// })
+	// if err != nil {
+	// 	console.Panic(err)
+	// }
 
-	err = model.Init()
-	if err != nil {
-		console.Panic(err)
-	}
+	// err = model.Init()
+	// if err != nil {
+	// 	console.Panic(err)
+	// }
 
 	// query, err := db.Select(et.Json{
 	// 	"type": jdb.TpRows,

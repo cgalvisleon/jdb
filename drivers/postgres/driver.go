@@ -48,13 +48,22 @@ func newDriver(database *jdb.Database) jdb.Driver {
 /**
 * Load
 * @param model *Model
-* @return error
+* @return (string, error)
 **/
-func (s *Postgres) Load(model *jdb.Model) error {
+func (s *Postgres) Load(model *jdb.Model) (string, error) {
 	model.Table = fmt.Sprintf("%s.%s", model.Schema, model.Name)
+	definition := model.ToJson()
+	sql, err := s.buildModel(definition)
+	if err != nil {
+		return "", err
+	}
+
+	model.SQL = sql
+	console.Debug("sql:\n\t", sql)
+
 	model.SetInit()
 
-	return nil
+	return sql, nil
 }
 
 /**

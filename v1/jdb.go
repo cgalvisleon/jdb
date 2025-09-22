@@ -16,11 +16,11 @@ var (
 
 /**
 * ConnectTo
-* @param name, driver string, params et.Json
+* @param name, driver string, userCore bool, params et.Json
 * @return (*jdb.Database, error)
 **/
-func ConnectTo(name, driver string, params et.Json) (*jdb.Database, error) {
-	return jdb.ConnectTo(name, driver, params)
+func ConnectTo(name, driver string, userCore bool, params et.Json) (*jdb.Database, error) {
+	return jdb.ConnectTo(name, driver, userCore, params)
 }
 
 /**

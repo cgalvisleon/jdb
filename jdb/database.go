@@ -46,10 +46,10 @@ func (s *Database) ToJson() et.Json {
 
 /**
 * GetDatabase
-* @param name, driver string, params et.Json
+* @param name, driver string, userCore bool, params et.Json
 * @return (*Database, error)
 **/
-func getDatabase(name, driver string, params et.Json) (*Database, error) {
+func getDatabase(name, driver string, userCore bool, params et.Json) (*Database, error) {
 	result, ok := dbs[name]
 	if !ok {
 		if _, ok := drivers[driver]; !ok {
@@ -59,6 +59,7 @@ func getDatabase(name, driver string, params et.Json) (*Database, error) {
 		result = &Database{
 			Name:       name,
 			Models:     make(map[string]*Model),
+			UseCore:    userCore,
 			Connection: params,
 		}
 		result.driver = drivers[driver](result)
@@ -88,31 +89,11 @@ func (s *Database) load() error {
 	}
 
 	s.db = db
-
 	if s.UseCore {
 		err := initCore(s)
 		if err != nil {
 			console.Panic(err)
 		}
-	}
-
-	return nil
-}
-
-/**
-* initModel
-* @param model *Model
-* @return error
-**/
-func (s *Database) init(model *Model) error {
-	err := s.driver.Load(model)
-	if err != nil {
-		return err
-	}
-
-	err = model.save()
-	if err != nil {
-		return err
 	}
 
 	return nil
@@ -283,6 +264,38 @@ func (s *Database) getModel(schema, name string) (*Model, error) {
 }
 
 /**
+* initModel
+* @param model *Model
+* @return error
+**/
+func (s *Database) init(model *Model) error {
+	if err := model.validate(); err != nil {
+		return err
+	}
+
+	sql, err := s.driver.Load(model)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.Query(sql)
+	if err != nil {
+		return err
+	}
+
+	if model.isDebug {
+		console.Debugf("init:%s", model.ToJson().ToEscapeHTML())
+	}
+
+	err = model.save()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+/**
 * query
 * @param query *Ql
 * @return (et.Items, error)
@@ -298,7 +311,7 @@ func (s *Database) query(query *Ql) (et.Items, error) {
 	}
 
 	if query.isDebug {
-		console.Debugf("query:\n\t%s", query.ToJson().ToEscapeHTML())
+		console.Debugf("query:%s", query.ToJson().ToEscapeHTML())
 	}
 
 	result, err := s.QueryTx(query.tx, sql)

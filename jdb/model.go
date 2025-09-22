@@ -129,6 +129,7 @@ type Model struct {
 	Required     []string                `json:"required"`
 	IsLocked     bool                    `json:"is_locked"`
 	Version      int                     `json:"version"`
+	SQL          string                  `json:"sql"`
 	db           *Database               `json:"-"`
 	details      map[string]*Model       `json:"-"`
 	masters      map[string]*Model       `json:"-"`
@@ -157,7 +158,8 @@ func Define(definition et.Json) (*Model, error) {
 	driver := envar.GetStr("DB_DRIVER", DriverPostgres)
 	driver = definition.ValStr(driver, "driver")
 	connection := definition.Json("connection")
-	db, err := getDatabase(database, driver, connection)
+	userCore := definition.Bool("user_core")
+	db, err := getDatabase(database, driver, userCore, connection)
 	if err != nil {
 		return nil, err
 	}
@@ -263,10 +265,6 @@ func (s *Model) Debug() {
 * @return error
 **/
 func (s *Model) Init() error {
-	if err := s.validate(); err != nil {
-		return err
-	}
-
 	if s.isInit {
 		return nil
 	}

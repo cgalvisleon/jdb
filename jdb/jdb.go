@@ -10,11 +10,11 @@ import (
 
 /**
 * ConnectTo
-* @param name, driver string, params et.Json
+* @param name, driver string, userCore bool, params et.Json
 * @return (*Database, error)
 **/
-func ConnectTo(name, driver string, params et.Json) (*Database, error) {
-	return getDatabase(name, driver, params)
+func ConnectTo(name, driver string, userCore bool, params et.Json) (*Database, error) {
+	return getDatabase(name, driver, userCore, params)
 }
 
 /**
@@ -24,7 +24,7 @@ func ConnectTo(name, driver string, params et.Json) (*Database, error) {
 **/
 func LoadTo(name string) (*Database, error) {
 	driver := envar.GetStr("DB_DRIVER", "postgres")
-	return getDatabase(name, driver, et.Json{
+	return getDatabase(name, driver, true, et.Json{
 		"database": name,
 		"host":     envar.GetStr("DB_HOST", "localhost"),
 		"port":     envar.GetInt("DB_PORT", 5432),

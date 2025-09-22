@@ -14,7 +14,7 @@ const (
 
 type Driver interface {
 	Connect(db *Database) (*sql.DB, error)
-	Load(model *Model) error
+	Load(model *Model) (string, error)
 	Query(query *Ql) (string, error)
 	Command(command *Cmd) (string, error)
 }

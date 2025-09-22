@@ -1,7 +1,6 @@
 package jdb
 
 import (
-	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
 )
 
@@ -41,7 +40,13 @@ func defineModel(db *Database) error {
 				"type": "bytes",
 			},
 		},
+		"debug": true,
 	})
+	if err != nil {
+		return err
+	}
+
+	err = models.Init()
 	if err != nil {
 		return err
 	}
@@ -55,9 +60,6 @@ func defineModel(db *Database) error {
 * @return error
 **/
 func setModel(id string, data et.Json, debug bool) error {
-	if debug {
-		console.Debugf("%s:%s", id, data.ToString())
-	}
 
 	return nil
 }
