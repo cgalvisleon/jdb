@@ -88,45 +88,45 @@ func main() {
 
 	query, err := db.Select(et.Json{
 		"type": jdb.TpObject,
-		"froms": et.Json{
-			"projects.users": "a",
+		"from": et.Json{
+			"projects.users": "A",
 		},
-		"select": et.Json{
-			"_id": "_id",
-		},
-		"atribs": et.Json{
-			"_data#>>'{created_by}'": "created_by",
-		},
+		// "select": et.Json{
+		// 	"_id": "_id",
+		// },
+		// "atribs": et.Json{
+		// 	"_data#>>'{created_by}'": "created_by",
+		// },
 		"joins": []et.Json{
 			{
-				"froms": et.Json{
-					"roles": "b",
+				"from": et.Json{
+					"roles": "B",
 				},
 				"on": et.Json{
-					"a.id": et.Json{
-						"eq": "b.user_id",
+					"A.id": et.Json{
+						"eq": "B.user_id",
 					},
 				},
 			},
 		},
 		"where": et.Json{
-			"a.id": et.Json{
+			"A.id": et.Json{
 				"eq": 1,
 			},
-		},
-		"and": et.Json{
-			"a.name": et.Json{
-				"eq": "John",
+			"and": et.Json{
+				"A.name": et.Json{
+					"eq": "'John'",
+				},
+			},
+			"or": et.Json{
+				"A.name": et.Json{
+					"eq": "'Jane'",
+				},
 			},
 		},
-		"or": et.Json{
-			"a.name": et.Json{
-				"eq": "Jane",
-			},
-		},
-		"group_by": []string{""},
+		"group_by": []string{"A.uno", "A.dos"},
 		"having": et.Json{
-			"a.name": et.Json{
+			"A.name": et.Json{
 				"eq": "",
 			},
 		},

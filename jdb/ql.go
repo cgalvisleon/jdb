@@ -18,10 +18,15 @@ var (
 	}
 )
 
+type qFrom struct {
+	model *Model `json:"-"`
+	as    string `json:"-"`
+}
+
 type Ql struct {
 	Database  string                  `json:"database"`
 	Type      string                  `json:"type"`
-	Froms     et.Json                 `json:"froms"`
+	From      et.Json                 `json:"from"`
 	Selects   et.Json                 `json:"selects"`
 	Atribs    et.Json                 `json:"atribs"`
 	Hidden    []string                `json:"hidden"`
@@ -29,12 +34,15 @@ type Ql struct {
 	Relations et.Json                 `json:"relations"`
 	Calls     et.Json                 `json:"calls"`
 	Joins     []et.Json               `json:"joins"`
-	Wheres    et.Json                 `json:"wheres"`
-	GroupBy   et.Json                 `json:"group_by"`
+	Where     et.Json                 `json:"where"`
+	And       et.Json                 `json:"and"`
+	Or        et.Json                 `json:"or"`
+	GroupBy   []string                `json:"group_by"`
 	Having    et.Json                 `json:"having"`
 	OrderBy   et.Json                 `json:"order_by"`
 	Limit     et.Json                 `json:"limit"`
 	SQL       string                  `json:"sql"`
+	froms     []qFrom                 `json:"-"`
 	calls     map[string]*DataContext `json:"-"`
 	db        *Database               `json:"-"`
 	tx        *Tx                     `json:"-"`
@@ -49,7 +57,7 @@ func newQl(db *Database) *Ql {
 	return &Ql{
 		Database:  db.Name,
 		Type:      TpRows,
-		Froms:     et.Json{},
+		From:      et.Json{},
 		Selects:   et.Json{},
 		Atribs:    et.Json{},
 		Hidden:    []string{},
@@ -57,13 +65,14 @@ func newQl(db *Database) *Ql {
 		Relations: et.Json{},
 		Calls:     et.Json{},
 		Joins:     make([]et.Json, 0),
-		Wheres:    et.Json{},
-		GroupBy:   et.Json{},
+		Where:     et.Json{},
+		GroupBy:   []string{},
 		Having:    et.Json{},
 		OrderBy:   et.Json{},
 		Limit:     et.Json{},
 		db:        db,
 		calls:     make(map[string]*DataContext),
+		froms:     make([]qFrom, 0),
 	}
 }
 
@@ -100,7 +109,7 @@ func (s *Ql) Debug() *Ql {
 * @return string
 **/
 func getAs(ql *Ql) string {
-	n := len(ql.Froms)
+	n := len(ql.From)
 	as := string(rune(65 + n))
 	return as
 }
@@ -111,8 +120,23 @@ func getAs(ql *Ql) string {
 * @return *Ql
 **/
 func (s *Ql) addFrom(name, as string) *Ql {
-	s.Froms[name] = as
+	s.From[name] = as
 	return s
+}
+
+/**
+* addModel
+* @param model *Model
+* @return *Ql
+**/
+func (s *Ql) addModel(model *Model) *Ql {
+	as := getAs(s)
+	s.froms = append(s.froms, qFrom{
+		model: model,
+		as:    as,
+	})
+
+	return s.addFrom(model.Table, as)
 }
 
 /**

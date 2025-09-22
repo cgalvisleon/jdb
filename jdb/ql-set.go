@@ -9,6 +9,7 @@ import "github.com/cgalvisleon/et/et"
 **/
 func (s *Ql) setQuery(query et.Json) *Ql {
 	s.setType(query.String("type")).
+		setDebug(query.Bool("debug")).
 		setSelect(query.Json("select")).
 		setAtribs(query.Json("atribs")).
 		setRollup(query.Json("rollups")).
@@ -18,14 +19,19 @@ func (s *Ql) setQuery(query et.Json) *Ql {
 		setWhere(query.Json("where")).
 		setAnd(query.Json("and")).
 		setOr(query.Json("or")).
-		setOrder(query.Json("order")).
-		setGroup(query.Json("group")).
+		setOrderBy(query.Json("order_by")).
+		setGroupBy(query.ArrayStr("group_by")).
 		setHaving(query.Json("having")).
 		setLimit(query.Json("limit"))
 
 	return s
 }
 
+/**
+* setType
+* @param tp string
+* @return *Ql
+**/
 func (s *Ql) setType(tp string) *Ql {
 	if _, ok := TpQuerys[tp]; !ok {
 		return s
@@ -35,61 +41,131 @@ func (s *Ql) setType(tp string) *Ql {
 	return s
 }
 
+/**
+* setDebug
+* @param debug bool
+* @return *Ql
+**/
+func (s *Ql) setDebug(debug bool) *Ql {
+	s.isDebug = debug
+	return s
+}
+
+/**
+* setSelect
+* @param selects et.Json
+* @return *Ql
+**/
 func (s *Ql) setSelect(selects et.Json) *Ql {
 	s.Selects = selects
 	return s
 }
 
+/**
+* setAtribs
+* @param atribs et.Json
+* @return *Ql
+**/
 func (s *Ql) setAtribs(atribs et.Json) *Ql {
 	s.Atribs = atribs
 	return s
 }
 
+/**
+* setRollup
+* @param rollups et.Json
+* @return *Ql
+**/
 func (s *Ql) setRollup(rollups et.Json) *Ql {
 	s.Rollups = rollups
 	return s
 }
 
+/**
+* setRelation
+* @param relations et.Json
+* @return *Ql
+**/
 func (s *Ql) setRelation(relations et.Json) *Ql {
 	s.Relations = relations
 	return s
 }
 
+/**
+* setCall
+* @param calls et.Json
+* @return *Ql
+**/
 func (s *Ql) setCall(calls et.Json) *Ql {
 	s.Calls = calls
 	return s
 }
 
+/**
+* setJoin
+* @param joins []et.Json
+* @return *Ql
+**/
 func (s *Ql) setJoin(joins []et.Json) *Ql {
 	s.Joins = joins
 	return s
 }
 
+/**
+* setWhere
+* @param where et.Json
+* @return *Ql
+**/
 func (s *Ql) setWhere(where et.Json) *Ql {
-	s.Wheres = where
+	s.Where = where
 	return s
 }
 
+/**
+* setAnd
+* @param and et.Json
+* @return *Ql
+**/
 func (s *Ql) setAnd(and et.Json) *Ql {
-	s.Wheres = and
+	s.And = and
 	return s
 }
 
+/**
+* setOr
+* @param or et.Json
+* @return *Ql
+**/
 func (s *Ql) setOr(or et.Json) *Ql {
-	s.Wheres = or
+	s.Or = or
 	return s
 }
 
-func (s *Ql) setOrder(orderBy et.Json) *Ql {
+/**
+* setOrderBy
+* @param orderBy et.Json
+* @return *Ql
+**/
+func (s *Ql) setOrderBy(orderBy et.Json) *Ql {
 	s.OrderBy = orderBy
 	return s
 }
 
-func (s *Ql) setGroup(groupBy et.Json) *Ql {
+/**
+* setGroupBy
+* @param groupBy []string
+* @return *Ql
+**/
+func (s *Ql) setGroupBy(groupBy []string) *Ql {
 	s.GroupBy = groupBy
 	return s
 }
 
+/**
+* setHaving
+* @param having et.Json
+* @return *Ql
+**/
 func (s *Ql) setHaving(having et.Json) *Ql {
 	s.Having = having
 	return s

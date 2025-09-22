@@ -70,7 +70,7 @@ func (s *Postgres) Query(query *jdb.Ql) (string, error) {
 	}
 
 	query.SQL = sql
-	console.Debug("sql:", sql)
+	console.Debug("sql:\n\t", sql)
 
 	return query.SQL, nil
 }

@@ -258,11 +258,11 @@ func (s *Database) Define(definition et.Json) (*Model, error) {
 **/
 func (s *Database) Select(query et.Json) (*Ql, error) {
 	result := newQl(s)
-	from := query.Json("froms")
+	from := query.Json("from")
 	if from.IsEmpty() {
 		return nil, fmt.Errorf(MSG_FROM_REQUIRED)
 	}
-	result.Froms = from
+	result.From = from
 
 	return result.setQuery(query), nil
 }
@@ -298,7 +298,7 @@ func (s *Database) query(query *Ql) (et.Items, error) {
 	}
 
 	if query.isDebug {
-		console.Debugf("query:%s", query.ToJson().ToString())
+		console.Debugf("query:\n\t%s", query.ToJson().ToEscapeHTML())
 	}
 
 	result, err := s.QueryTx(query.tx, sql)
