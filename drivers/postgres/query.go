@@ -109,9 +109,14 @@ func (s *Postgres) buildJoins(query et.Json) (string, error) {
 		}
 
 		result = strs.Append(result, def, "")
-		def, err = s.buildWhere(v)
+		on := v.Json("on")
+		def, err = s.buildWhere(on)
 		if err != nil {
 			return "", err
+		}
+
+		if def != "" {
+			def = fmt.Sprintf("ON %s", def)
 		}
 
 		result = strs.Append(result, def, " ")
@@ -196,28 +201,25 @@ func (s *Postgres) buildWhere(wheres et.Json) (string, error) {
 		if result == "" {
 			return cond
 		} else {
-			def := fmt.Sprintf("\n\t%s ", connect)
-			return strs.Append(result, connect, def)
+			connect = fmt.Sprintf("\n\t%s ", connect)
+			return strs.Append(result, cond, connect)
 		}
 	}
 
 	for k := range wheres {
 		if map[string]bool{"AND": true, "OR": true}[strs.Uppcase(k)] {
-			for f := range wheres.Json(k) {
-				v := wheres.Json(f)
+			andOr := wheres.Json(k)
+			for f := range andOr {
+				v := andOr.Json(f)
 				cond := condition(v)
-				result = append(cond, strs.Uppcase(k))
-			}
-		} else if map[string]bool{"or": true}[strs.Lowcase(k)] {
-			for f := range wheres.Json(k) {
-				v := wheres.Json(f)
-				cond := condition(v)
-				result = append(cond, "AND")
+				def := fmt.Sprintf("%s %s", f, cond)
+				result = append(def, strs.Uppcase(k))
 			}
 		} else {
 			v := wheres.Json(k)
 			cond := condition(v)
-			result = append(cond, "AND")
+			def := fmt.Sprintf("%s %s", k, cond)
+			result = append(def, "AND")
 		}
 	}
 

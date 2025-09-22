@@ -17,8 +17,6 @@ func (s *Ql) setQuery(query et.Json) *Ql {
 		setCall(query.Json("calls")).
 		setJoin(query.ArrayJson("joins")).
 		setWhere(query.Json("where")).
-		setAnd(query.Json("and")).
-		setOr(query.Json("or")).
 		setOrderBy(query.Json("order_by")).
 		setGroupBy(query.ArrayStr("group_by")).
 		setHaving(query.Json("having")).
@@ -118,26 +116,6 @@ func (s *Ql) setJoin(joins []et.Json) *Ql {
 **/
 func (s *Ql) setWhere(where et.Json) *Ql {
 	s.Where = where
-	return s
-}
-
-/**
-* setAnd
-* @param and et.Json
-* @return *Ql
-**/
-func (s *Ql) setAnd(and et.Json) *Ql {
-	s.And = and
-	return s
-}
-
-/**
-* setOr
-* @param or et.Json
-* @return *Ql
-**/
-func (s *Ql) setOr(or et.Json) *Ql {
-	s.Or = or
 	return s
 }
 

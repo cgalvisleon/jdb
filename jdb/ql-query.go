@@ -35,20 +35,15 @@ func (s *Ql) getCallsTx(tx *Tx, data et.Json) {
 }
 
 /**
-* FirstTx
-* @param tx *Tx, n int
-* @return et.Items, error
+* queryTx
+* @param tx *Tx
+* @return (et.Items, error)
 **/
-func (s *Ql) FirstTx(tx *Tx, n int) (et.Items, error) {
+func (s *Ql) queryTx(tx *Tx) (et.Items, error) {
 	if s.db == nil {
 		return et.Items{}, fmt.Errorf(MSG_DATABASE_REQUIRED)
 	}
 
-	s.setTx(tx)
-	s.Limit = et.Json{
-		"page": 1,
-		"rows": n,
-	}
 	err := s.validate()
 	if err != nil {
 		return et.Items{}, err
@@ -80,7 +75,21 @@ func (s *Ql) FirstTx(tx *Tx, n int) (et.Items, error) {
 * @return et.Items, error
 **/
 func (s *Ql) AllTx(tx *Tx) (et.Items, error) {
-	return s.FirstTx(tx, 0)
+	return s.queryTx(tx)
+}
+
+/**
+* FirstTx
+* @param tx *Tx, n int
+* @return et.Items, error
+**/
+func (s *Ql) FirstTx(tx *Tx, n int) (et.Items, error) {
+	s.Limit = et.Json{
+		"page": 1,
+		"rows": n,
+	}
+
+	return s.queryTx(tx)
 }
 
 /**

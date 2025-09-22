@@ -35,8 +35,6 @@ type Ql struct {
 	Calls     et.Json                 `json:"calls"`
 	Joins     []et.Json               `json:"joins"`
 	Where     et.Json                 `json:"where"`
-	And       et.Json                 `json:"and"`
-	Or        et.Json                 `json:"or"`
 	GroupBy   []string                `json:"group_by"`
 	Having    et.Json                 `json:"having"`
 	OrderBy   et.Json                 `json:"order_by"`
