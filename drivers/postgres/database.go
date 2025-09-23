@@ -51,6 +51,12 @@ func (s *Postgres) Connect(database *jdb.Database) (*sql.DB, error) {
 		return nil, err
 	}
 
+	if database.UseCore {
+		if err := triggerBeforeInsert(db); err != nil {
+			return nil, err
+		}
+	}
+
 	console.Logf(driver, `Connected to %s:%s`, s.connection.Host, s.connection.Database)
 
 	return db, nil

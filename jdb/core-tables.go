@@ -40,14 +40,9 @@ func defineTables(db *Database) error {
 				"name": "total",
 				"type": "int",
 			},
-			{
-				"name": RECORDID,
-				"type": "key",
-			},
 		},
-		"record_field": RECORDID,
 		"primary_keys": []string{"schema", "table"},
-		"indices":      []string{RECORDID},
+		"indices":      []string{},
 		"debug":        true,
 	})
 	if err != nil {
