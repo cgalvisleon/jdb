@@ -8,6 +8,10 @@ import "github.com/cgalvisleon/et/et"
 * @return error
 **/
 func (s *Model) afterInsertDefault(tx *Tx, data et.Json) error {
+	if s.isCore {
+		return nil
+	}
+
 	if s.RecordField != "" {
 	}
 	return nil
@@ -19,6 +23,10 @@ func (s *Model) afterInsertDefault(tx *Tx, data et.Json) error {
 * @return error
 **/
 func (s *Model) afterUpdateDefault(tx *Tx, data et.Json) error {
+	if s.isCore {
+		return nil
+	}
+
 	return nil
 }
 
@@ -28,6 +36,10 @@ func (s *Model) afterUpdateDefault(tx *Tx, data et.Json) error {
 * @return error
 **/
 func (s *Model) afterDeleteDefault(tx *Tx, data et.Json) error {
+	if s.isCore {
+		return nil
+	}
+
 	return nil
 }
 

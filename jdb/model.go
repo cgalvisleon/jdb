@@ -137,6 +137,7 @@ type Model struct {
 	details      map[string]*Model       `json:"-"`
 	masters      map[string]*Model       `json:"-"`
 	isInit       bool                    `json:"-"`
+	isCore       bool                    `json:"-"`
 	isDebug      bool                    `json:"-"`
 	calls        map[string]*DataContext `json:"-"`
 	beforeInsert []DataFunctionTx        `json:"-"`
@@ -189,6 +190,16 @@ func LoadModel(schema, name string) (*Model, error) {
 	}
 
 	return &result, nil
+}
+
+/**
+* DeleteModel
+* @param schema, name string
+* @return error
+**/
+func DeleteModel(schema, name string) error {
+	id := fmt.Sprintf("%s.%s", schema, name)
+	return deleteModel(id)
 }
 
 /**
