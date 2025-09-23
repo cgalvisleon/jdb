@@ -15,6 +15,7 @@ const (
 	TypeFloat    = "float"
 	TypeKey      = "key"
 	TypeText     = "text"
+	TypeMemo     = "memo"
 	TypeDateTime = "datetime"
 	TypeBoolean  = "boolean"
 	TypeJson     = "json"
@@ -44,6 +45,7 @@ var (
 		TypeFloat:    true,
 		TypeKey:      true,
 		TypeText:     true,
+		TypeMemo:     true,
 		TypeDateTime: true,
 		TypeBoolean:  true,
 		TypeJson:     true,
@@ -63,6 +65,7 @@ var (
 		TypeFloat:    true,
 		TypeKey:      true,
 		TypeText:     true,
+		TypeMemo:     true,
 		TypeDateTime: true,
 		TypeBoolean:  true,
 		TypeJson:     true,

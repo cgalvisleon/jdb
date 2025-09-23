@@ -115,7 +115,7 @@ func (s *Ql) setJoin(joins []et.Json) *Ql {
 * @return *Ql
 **/
 func (s *Ql) setWhere(where et.Json) *Ql {
-	s.Where = where
+	s.Wheres = where
 	return s
 }
 

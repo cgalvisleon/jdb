@@ -24,9 +24,10 @@ type qFrom struct {
 }
 
 type Ql struct {
+	*where
 	Database  string                  `json:"database"`
 	Type      string                  `json:"type"`
-	From      et.Json                 `json:"from"`
+	Froms     et.Json                 `json:"from"`
 	Selects   et.Json                 `json:"selects"`
 	Atribs    et.Json                 `json:"atribs"`
 	Hidden    []string                `json:"hidden"`
@@ -34,7 +35,6 @@ type Ql struct {
 	Relations et.Json                 `json:"relations"`
 	Calls     et.Json                 `json:"calls"`
 	Joins     []et.Json               `json:"joins"`
-	Where     et.Json                 `json:"where"`
 	GroupBy   []string                `json:"group_by"`
 	Having    et.Json                 `json:"having"`
 	OrderBy   et.Json                 `json:"order_by"`
@@ -53,9 +53,10 @@ type Ql struct {
 **/
 func newQl(db *Database) *Ql {
 	return &Ql{
+		where:     newWhere(),
 		Database:  db.Name,
 		Type:      TpRows,
-		From:      et.Json{},
+		Froms:     et.Json{},
 		Selects:   et.Json{},
 		Atribs:    et.Json{},
 		Hidden:    []string{},
@@ -63,7 +64,6 @@ func newQl(db *Database) *Ql {
 		Relations: et.Json{},
 		Calls:     et.Json{},
 		Joins:     make([]et.Json, 0),
-		Where:     et.Json{},
 		GroupBy:   []string{},
 		Having:    et.Json{},
 		OrderBy:   et.Json{},
@@ -107,7 +107,7 @@ func (s *Ql) Debug() *Ql {
 * @return string
 **/
 func getAs(ql *Ql) string {
-	n := len(ql.From)
+	n := len(ql.Froms)
 	as := string(rune(65 + n))
 	return as
 }
@@ -118,7 +118,7 @@ func getAs(ql *Ql) string {
 * @return *Ql
 **/
 func (s *Ql) addFrom(name, as string) *Ql {
-	s.From[name] = as
+	s.Froms[name] = as
 	return s
 }
 

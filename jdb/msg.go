@@ -11,4 +11,5 @@ const (
 	MSG_DATA_REQUIRED      = "data is required"
 	MSG_FROM_REQUIRED      = "from is required"
 	MSG_MODEL_NOT_FOUND    = "model %s not found"
+	MSG_SERIES_NOT_DEFINED = "series not defined"
 )

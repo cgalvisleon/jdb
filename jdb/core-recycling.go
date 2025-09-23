@@ -58,3 +58,61 @@ func defineRecycling(db *Database) error {
 
 	return nil
 }
+
+/**
+* SetRecycling
+* @param schema, table, index string
+* @return error
+**/
+func (s *Database) SetRecycling(schema, table, index string) error {
+	_, err := recycling.
+		Upsert(et.Json{
+			"schema": schema,
+			"table":  table,
+			RECORDID: index,
+		}).
+		Exec()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+/**
+* DeleteRecycling
+* @param schema, table, index string
+* @return error
+**/
+func (s *Database) DeleteRecycling(schema, table, index string) error {
+	_, err := recycling.
+		Delete(et.Json{
+			"where": et.Json{
+				"schema": schema,
+				"table":  table,
+				RECORDID: index,
+			},
+		}).
+		Exec()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+/**
+* QueryRecycling
+* @param query et.Json
+* @return (et.Items, error)
+**/
+func (s *Database) QueryRecycling(query et.Json) (et.Items, error) {
+	items, err := recycling.
+		Query(query).
+		All()
+	if err != nil {
+		return et.Items{}, err
+	}
+
+	return items, nil
+}

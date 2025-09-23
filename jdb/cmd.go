@@ -25,10 +25,12 @@ var (
 )
 
 type Cmd struct {
+	*where
 	Command      string           `json:"command"`
 	Data         []et.Json        `json:"data"`
 	Before       et.Json          `json:"before"`
 	After        et.Json          `json:"after"`
+	Returns      et.Json          `json:"return"`
 	SQL          string           `json:"sql"`
 	db           *Database        `json:"-"`
 	tx           *Tx              `json:"-"`
@@ -52,10 +54,12 @@ type Cmd struct {
 **/
 func newCommand(model *Model, cmd string, data []et.Json) *Cmd {
 	result := &Cmd{
+		where:    newWhere(),
 		Command:  cmd,
 		Data:     data,
 		Before:   et.Json{},
 		After:    et.Json{},
+		Returns:  et.Json{},
 		db:       model.db,
 		from:     model,
 		result:   []et.Json{},
@@ -172,6 +176,16 @@ func command(cmd string, param et.Json) (*Cmd, error) {
 	}
 
 	return newCommand(model, cmd, data), nil
+}
+
+/**
+* Return
+* @param fields et.Json
+* @return *Cmd
+**/
+func (s *Cmd) Return(fields et.Json) *Cmd {
+	s.Returns = fields
+	return s
 }
 
 /**

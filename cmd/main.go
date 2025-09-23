@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/cgalvisleon/et/cache"
 	"github.com/cgalvisleon/et/console"
+	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/event"
 	_ "github.com/cgalvisleon/jdb/drivers/postgres"
 	jdb "github.com/cgalvisleon/jdb/v1"
@@ -19,7 +20,7 @@ func main() {
 		console.Panic(err)
 	}
 
-	_, err = jdb.LoadTo("josephine")
+	db, err := jdb.LoadTo("josephine")
 	if err != nil {
 		console.Panic(err)
 	}
@@ -88,68 +89,70 @@ func main() {
 	// 	console.Panic(err)
 	// }
 
-	// query, err := db.Select(et.Json{
-	// 	"type": jdb.TpRows,
-	// 	"from": et.Json{
-	// 		"js_core.users": "A",
-	// 	},
-	// 	"select": et.Json{
-	// 		"_id":     "_id",
-	// 		"caption": "caption",
-	// 	},
-	// 	"atribs": et.Json{
-	// 		"_data#>>'{created_by}'": "created_by",
-	// 	},
-	// 	"joins": []et.Json{
-	// 		{
-	// 			"from": et.Json{
-	// 				"js_core.project_users": "B",
-	// 			},
-	// 			"on": et.Json{
-	// 				"A._id": et.Json{
-	// 					"eq": "B.user_id",
-	// 				},
-	// 			},
-	// 		},
-	// 	},
-	// 	"where": et.Json{
-	// 		"A._id": et.Json{
-	// 			"eq": "'USERA00000001'",
-	// 		},
-	// 		"and": et.Json{
-	// 			"A.name": et.Json{
-	// 				"eq": "'John'",
-	// 			},
-	// 		},
-	// 		"or": et.Json{
-	// 			"A.name": et.Json{
-	// 				"eq": "'Jane'",
-	// 			},
-	// 		},
-	// 	},
-	// 	"group_by": []string{"A.uno", "A.dos"},
-	// 	"having": et.Json{
-	// 		"A.name": et.Json{
-	// 			"eq": "'col'",
-	// 		},
-	// 	},
-	// 	"order_by": et.Json{
-	// 		"asc":  []string{"A.name", "A.apellidos"},
-	// 		"desc": []string{"B.apellidos", "B.name"},
-	// 	},
-	// 	"limit": et.Json{
-	// 		"page": 1,
-	// 		"rows": 10,
-	// 	},
-	// })
-	// if err != nil {
-	// 	console.Panic(err)
-	// }
+	query, err := db.Select(et.Json{
+		"type": jdb.TpRows,
+		"from": et.Json{
+			"js_core.users": "A",
+		},
+		"select": et.Json{
+			"_id":     "_id",
+			"caption": "caption",
+		},
+		"atribs": et.Json{
+			"_data#>>'{created_by}'": "created_by",
+		},
+		"joins": []et.Json{
+			{
+				"from": et.Json{
+					"js_core.project_users": "B",
+				},
+				"on": et.Json{
+					"A._id": et.Json{
+						"eq": "B.user_id",
+					},
+				},
+			},
+		},
+		"where": et.Json{
+			"A._id": et.Json{
+				"eq": "'USERA00000001'",
+			},
+			"and": et.Json{
+				"A.name": et.Json{
+					"eq": "'John'",
+				},
+			},
+			"or": et.Json{
+				"A.name": et.Json{
+					"eq": "'Jane'",
+				},
+			},
+		},
+		"group_by": []string{"A.uno", "A.dos"},
+		"having": et.Json{
+			"A.name": et.Json{
+				"eq": "'col'",
+			},
+		},
+		"order_by": et.Json{
+			"asc":  []string{"A.name", "A.apellidos"},
+			"desc": []string{"B.apellidos", "B.name"},
+		},
+		"limit": et.Json{
+			"page": 1,
+			"rows": 10,
+		},
+	})
+	if err != nil {
+		console.Panic(err)
+	}
 
-	// result, err := query.All()
-	// if err != nil {
-	// 	console.Panic(err)
-	// }
+	console.Debug("query:", query.ToJson().ToString())
 
-	// console.Debug("exists:", result.ToString())
+	result, err := query.All()
+	if err != nil {
+		console.Panic(err)
+	}
+
+	console.Debug("exists:", result.ToString())
 }

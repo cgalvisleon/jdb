@@ -98,6 +98,8 @@ func (s *Postgres) buildTable(definition et.Json) (string, error) {
 		case "key":
 			return "VARCHAR(80)"
 		case "text":
+			return "VARCHAR(250)"
+		case "memo":
 			return "TEXT"
 		case "datetime":
 			return "TIMESTAMP"
@@ -116,15 +118,46 @@ func (s *Postgres) buildTable(definition et.Json) (string, error) {
 		}
 	}
 
+	defaultValue := func(tp string) string {
+		switch tp {
+		case "int":
+			return "0"
+		case "float":
+			return "0.0"
+		case "key":
+			return "''"
+		case "text":
+			return "''"
+		case "memo":
+			return "''"
+		case "datetime":
+			return "NOW()"
+		case "boolean":
+			return "FALSE"
+		case "json":
+			return "'{}'"
+		case "index":
+			return "0"
+		case "bytes":
+			return "''"
+		case "geometry":
+			return "'{}'"
+		default:
+			return ""
+		}
+	}
+
 	columns := definition.ArrayJson("columns")
 	columnsDef := ""
 	for _, v := range columns {
-		tp := v.String("type")
-		if !jdb.TypeColumn[tp] {
+		tpVal := v.String("type")
+		tp := tpVal
+		if !jdb.TypeColumn[tpVal] {
 			continue
 		}
 		tp = getType(tp)
-		def := fmt.Sprintf("\n\t%s %s", v.String("name"), tp)
+		df := defaultValue(tpVal)
+		def := fmt.Sprintf("\n\t%s %s DEFAULT %s", v.String("name"), tp, df)
 		columnsDef = strs.Append(columnsDef, def, ",")
 	}
 

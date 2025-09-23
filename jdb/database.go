@@ -243,7 +243,7 @@ func (s *Database) Select(query et.Json) (*Ql, error) {
 	if from.IsEmpty() {
 		return nil, fmt.Errorf(MSG_FROM_REQUIRED)
 	}
-	result.From = from
+	result.Froms = from
 
 	return result.setQuery(query), nil
 }

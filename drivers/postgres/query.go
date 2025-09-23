@@ -274,12 +274,6 @@ func (s *Postgres) buildWhere(wheres et.Json) (string, error) {
 				vals := condition.Array(k)
 				def := fmt.Sprintf("NOT BETWEEN %v AND %v", vals[0], vals[1])
 				return def
-			case "exists":
-				def := fmt.Sprintf("EXISTS %v", v)
-				return def
-			case "not_exists":
-				def := fmt.Sprintf("NOT EXISTS %v", v)
-				return def
 			}
 		}
 
