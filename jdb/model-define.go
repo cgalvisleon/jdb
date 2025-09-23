@@ -9,14 +9,6 @@ import (
 )
 
 /**
-* save
-* @return error
-**/
-func (s *Model) save() error {
-	return setModel(s.Id, s.ToJson(), s.isDebug)
-}
-
-/**
 * defineColumn
 * @param name string, params et.Json
 * @return error
@@ -24,6 +16,11 @@ func (s *Model) save() error {
 func (s *Model) defineColumn(name string, params et.Json) error {
 	if !utility.ValidStr(name, 0, []string{}) {
 		return fmt.Errorf(`%s (%s)`, MSG_NAME_REQUIRED, "defineColumn")
+	}
+
+	idx := s.getColumnIndex(name)
+	if idx != -1 {
+		return nil
 	}
 
 	typeData := params.String("type")

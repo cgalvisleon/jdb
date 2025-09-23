@@ -1,7 +1,10 @@
 package jdb
 
 import (
+	"encoding/json"
+
 	"github.com/cgalvisleon/et/et"
+	"github.com/cgalvisleon/et/timezone"
 )
 
 var models *Model
@@ -46,8 +49,15 @@ func defineModel(db *Database) error {
 				"name": "definition",
 				"type": "bytes",
 			},
+			{
+				"name": RECORDID,
+				"type": "key",
+			},
 		},
-		"debug": true,
+		"record_field": RECORDID,
+		"primary_keys": []string{"kind", "name"},
+		"indices":      []string{"version", RECORDID},
+		"debug":        true,
 	})
 	if err != nil {
 		return err
@@ -63,10 +73,36 @@ func defineModel(db *Database) error {
 
 /**
 * setModel
-* @param id string, data et.Json
+* @param kind string, name string, version int, definition []byte
 * @return error
 **/
-func setModel(id string, data et.Json, debug bool) error {
+func setModel(kind, name string, version int, definition []byte) error {
+	if models == nil {
+		return nil
+	}
+
+	now := timezone.Now()
+	data := et.Json{
+		"kind":       kind,
+		"name":       name,
+		"version":    version,
+		"definition": definition,
+	}
+	_, err := models.
+		Upsert(data).
+		BeforeInsertOrUpdate(func(tx *Tx, data et.Json) error {
+			data.Set("created_at", now)
+			data.Set("updated_at", now)
+			return nil
+		}).
+		BeforeUpdate(func(tx *Tx, data et.Json) error {
+			data.Set("updated_at", now)
+			return nil
+		}).
+		Exec()
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -76,6 +112,59 @@ func setModel(id string, data et.Json, debug bool) error {
 * @param id string
 * @return et.Json
 **/
-func loadModel(id string) et.Json {
-	return et.Json{}
+func loadModel(id string, v any) error {
+	items, err := models.
+		Query(et.Json{
+			"where": et.Json{
+				"id": et.Json{
+					"eq": id,
+				},
+			},
+		}).
+		One()
+	if err != nil {
+		return err
+	}
+
+	if !items.Ok {
+		return nil
+	}
+
+	scr, err := items.Byte("definition")
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(scr, v)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+/**
+* deleteModel
+* @param id string
+* @return error
+**/
+func deleteModel(id string) error {
+	if models == nil {
+		return nil
+	}
+
+	_, err := models.
+		Delete(et.Json{
+			"where": et.Json{
+				"id": et.Json{
+					"eq": id,
+				},
+			},
+		}).
+		Exec()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

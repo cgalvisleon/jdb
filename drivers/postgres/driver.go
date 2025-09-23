@@ -68,8 +68,6 @@ func (s *Postgres) Load(model *jdb.Model) (string, error) {
 		return "", err
 	}
 
-	console.Debug("load:\n\t", sql)
-
 	return sql, nil
 }
 

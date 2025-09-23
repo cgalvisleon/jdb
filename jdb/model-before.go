@@ -12,7 +12,7 @@ import (
 **/
 func (s *Model) beforeInsertDefault(tx *Tx, data et.Json) error {
 	if s.RecordField != "" {
-		id := reg.GenULIDI(s.Id)
+		id := reg.ULID()
 		data.Set(s.RecordField, id)
 	}
 

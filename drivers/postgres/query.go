@@ -9,6 +9,96 @@ import (
 	"github.com/cgalvisleon/jdb/jdb"
 )
 
+/**
+* Query
+* @param query *jdb.Ql
+* @return (string, error)
+**/
+func (s *Postgres) buildQuery(query et.Json) (string, error) {
+	sql, err := s.buildSelect(query)
+	if err != nil {
+		return "", err
+	}
+
+	sql = fmt.Sprintf("SELECT %s", sql)
+	def, err := s.buildFrom(query)
+	if err != nil {
+		return "", err
+	}
+
+	def = fmt.Sprintf("FROM %s", def)
+	sql = strs.Append(sql, def, "\n\t")
+	def, err = s.buildJoins(query)
+	if err != nil {
+		return "", err
+	}
+
+	if def != "" {
+		def = fmt.Sprintf("JOIN %s", def)
+		sql = strs.Append(sql, def, "\n\t")
+	}
+
+	where := query.Json("where")
+	if !where.IsEmpty() {
+		def, err = s.buildWhere(where)
+		if err != nil {
+			return "", err
+		}
+
+		if def != "" {
+			def = fmt.Sprintf("WHERE %s", def)
+			sql = strs.Append(sql, def, "\n\t")
+		}
+	}
+
+	def, err = s.buildGroupBy(query)
+	if err != nil {
+		return "", err
+	}
+
+	if def != "" {
+		def = fmt.Sprintf("GROUP BY %s", def)
+		sql = strs.Append(sql, def, "\n\t")
+	}
+
+	def, err = s.buildHaving(query)
+	if err != nil {
+		return "", err
+	}
+
+	if def != "" {
+		def = fmt.Sprintf("HAVING %s", def)
+		sql = strs.Append(sql, def, "\n\t")
+	}
+
+	def, err = s.buildOrderBy(query)
+	if err != nil {
+		return "", err
+	}
+
+	if def != "" {
+		def = fmt.Sprintf("ORDER BY %s", def)
+		sql = strs.Append(sql, def, "\n\t")
+	}
+
+	def, err = s.buildLimit(query)
+	if err != nil {
+		return "", err
+	}
+
+	if def != "" {
+		def = fmt.Sprintf("LIMIT %s", def)
+		sql = strs.Append(sql, def, "\n\t")
+	}
+
+	return sql, nil
+}
+
+/**
+* buildSelect
+* @param query et.Json
+* @return (string, error)
+**/
 func (s *Postgres) buildSelect(query et.Json) (string, error) {
 	result := ""
 	tp := query.String("type")
@@ -321,89 +411,4 @@ func (s *Postgres) buildLimit(query et.Json) (string, error) {
 
 	offset := (page - 1) * rows
 	return fmt.Sprintf("%d OFFSET %d", rows, offset), nil
-}
-
-/**
-* Query
-* @param query *jdb.Ql
-* @return (string, error)
-**/
-func (s *Postgres) buildQuery(query et.Json) (string, error) {
-	sql, err := s.buildSelect(query)
-	if err != nil {
-		return "", err
-	}
-
-	sql = fmt.Sprintf("SELECT %s", sql)
-	def, err := s.buildFrom(query)
-	if err != nil {
-		return "", err
-	}
-
-	def = fmt.Sprintf("FROM %s", def)
-	sql = strs.Append(sql, def, "\n\t")
-	def, err = s.buildJoins(query)
-	if err != nil {
-		return "", err
-	}
-
-	if def != "" {
-		def = fmt.Sprintf("JOIN %s", def)
-		sql = strs.Append(sql, def, "\n\t")
-	}
-
-	where := query.Json("where")
-	if !where.IsEmpty() {
-		def, err = s.buildWhere(where)
-		if err != nil {
-			return "", err
-		}
-
-		if def != "" {
-			def = fmt.Sprintf("WHERE %s", def)
-			sql = strs.Append(sql, def, "\n\t")
-		}
-	}
-
-	def, err = s.buildGroupBy(query)
-	if err != nil {
-		return "", err
-	}
-
-	if def != "" {
-		def = fmt.Sprintf("GROUP BY %s", def)
-		sql = strs.Append(sql, def, "\n\t")
-	}
-
-	def, err = s.buildHaving(query)
-	if err != nil {
-		return "", err
-	}
-
-	if def != "" {
-		def = fmt.Sprintf("HAVING %s", def)
-		sql = strs.Append(sql, def, "\n\t")
-	}
-
-	def, err = s.buildOrderBy(query)
-	if err != nil {
-		return "", err
-	}
-
-	if def != "" {
-		def = fmt.Sprintf("ORDER BY %s", def)
-		sql = strs.Append(sql, def, "\n\t")
-	}
-
-	def, err = s.buildLimit(query)
-	if err != nil {
-		return "", err
-	}
-
-	if def != "" {
-		def = fmt.Sprintf("LIMIT %s", def)
-		sql = strs.Append(sql, def, "\n\t")
-	}
-
-	return sql, nil
 }

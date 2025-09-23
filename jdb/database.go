@@ -286,10 +286,11 @@ func (s *Database) init(model *Model) error {
 		console.Debugf("init:%s", model.ToJson().ToEscapeHTML())
 	}
 
-	_, err = s.Query(sql)
-	if err != nil {
-		return err
-	}
+	console.Debug("load:\n\t", sql)
+	// _, err = s.Query(sql)
+	// if err != nil {
+	// 	return err
+	// }
 
 	err = model.save()
 	if err != nil {

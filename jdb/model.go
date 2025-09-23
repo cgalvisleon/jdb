@@ -72,6 +72,12 @@ var (
 		TypeRollup:   true,
 		TypeRelation: true,
 	}
+
+	ErrNotInserted = fmt.Errorf("record not inserted")
+	ErrNotUpdated  = fmt.Errorf("record not updated")
+	ErrNotFound    = fmt.Errorf("record not found")
+	ErrNotUpserted = fmt.Errorf("record not inserted or updated")
+	ErrDuplicate   = fmt.Errorf("record duplicate")
 )
 
 type DataFunctionTx func(tx *Tx, data et.Json) error
@@ -176,17 +182,47 @@ func Define(definition et.Json) (*Model, error) {
 **/
 func LoadModel(schema, name string) (*Model, error) {
 	id := fmt.Sprintf("%s.%s", schema, name)
-	src := loadModel(id)
-	if src.IsEmpty() {
-		return nil, fmt.Errorf("model %s not found", id)
-	}
-
-	result, err := Define(src)
+	var result Model
+	err := loadModel(id, &result)
 	if err != nil {
 		return nil, err
 	}
 
-	return result, nil
+	return &result, nil
+}
+
+/**
+* Serialize
+* @return ([]byte, error)
+**/
+func (s *Model) serialize() ([]byte, error) {
+	bt, err := json.Marshal(s)
+	if err != nil {
+		return nil, err
+	}
+
+	return bt, nil
+}
+
+/**
+* save
+* @return error
+**/
+func (s *Model) save() error {
+	bt, err := s.serialize()
+	if err != nil {
+		return err
+	}
+
+	return setModel("model", s.Id, s.Version, bt)
+}
+
+/**
+* load
+* @return error
+**/
+func (s *Model) load() error {
+	return loadModel(s.Id, s)
 }
 
 /**
@@ -194,7 +230,7 @@ func LoadModel(schema, name string) (*Model, error) {
 * @return et.Json
 **/
 func (s *Model) ToJson() et.Json {
-	bt, err := json.Marshal(s)
+	bt, err := s.serialize()
 	if err != nil {
 		return et.Json{}
 	}
@@ -208,6 +244,11 @@ func (s *Model) ToJson() et.Json {
 	return result
 }
 
+/**
+* GetColumnIndex
+* @param name string
+* @return int
+**/
 func (s *Model) getColumnIndex(name string) int {
 	return slices.IndexFunc(s.Columns, func(item et.Json) bool { return item.String("name") == name })
 }
