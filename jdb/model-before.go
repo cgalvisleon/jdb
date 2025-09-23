@@ -11,13 +11,13 @@ import (
 * @return error
 **/
 func (s *Model) beforeInsertDefault(tx *Tx, data et.Json) error {
-	if s.isCore {
-		return nil
-	}
-
 	if s.RecordField != "" {
 		id := reg.ULID()
 		data.Set(s.RecordField, id)
+	}
+
+	if s.isCore {
+		return nil
 	}
 
 	return nil

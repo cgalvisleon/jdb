@@ -181,6 +181,29 @@ func (s *Model) defineRecordField(name string) error {
 }
 
 /**
+* defineStatusField
+* @param name string
+* @return error
+**/
+func (s *Model) defineStatusField(name string) error {
+	if !utility.ValidStr(name, 0, []string{}) {
+		return nil
+	}
+
+	STATUS = name
+	s.StatusField = name
+	err := s.defineColumn(name, et.Json{
+		"type": TypeJson,
+	})
+	if err != nil {
+		return err
+	}
+
+	s.defineIndices(name)
+	return nil
+}
+
+/**
 * defineForeignKeys
 * @param params []et.Json
 * @return error

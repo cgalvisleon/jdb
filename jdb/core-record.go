@@ -111,3 +111,32 @@ func upsertRecord(schema, table string) error {
 
 	return nil
 }
+
+/**
+* deleteRecord
+* @param schema, table string
+* @return error
+**/
+func deleteRecord(schema, table string) error {
+	if records == nil {
+		return nil
+	}
+
+	_, err := records.
+		Delete(et.Json{
+			"where": et.Json{
+				"schema": et.Json{
+					"eq": schema,
+				},
+				"table": et.Json{
+					"eq": table,
+				},
+			},
+		}).
+		Exec()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

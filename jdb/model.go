@@ -30,10 +30,16 @@ const (
 )
 
 var (
-	SOURCE   = "source"
-	KEY      = "id"
-	RECORDID = "index"
-	TypeData = map[string]bool{
+	SOURCE     = "source"
+	KEY        = "id"
+	RECORDID   = "index"
+	STATUS     = "status"
+	ACTIVE     = "active"
+	ARCHIVED   = "archived"
+	CANCELLED  = "cancelled"
+	OF_SYSTEM  = "of_system"
+	FOR_DELETE = "for_delete"
+	TypeData   = map[string]bool{
 		TypeInt:      true,
 		TypeFloat:    true,
 		TypeKey:      true,
@@ -123,6 +129,7 @@ type Model struct {
 	Columns      []et.Json               `json:"columns"`
 	SourceField  string                  `json:"source_field"`
 	RecordField  string                  `json:"record_field"`
+	StatusField  string                  `json:"status_field"`
 	Details      []et.Json               `json:"details"`
 	Masters      []et.Json               `json:"masters"`
 	Rollups      []et.Json               `json:"rollups"`   //SQL
