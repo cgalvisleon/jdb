@@ -8,15 +8,8 @@ import "github.com/cgalvisleon/et/et"
 * @return error
 **/
 func (s *Model) afterInsertDefault(tx *Tx, data et.Json) error {
-	if s.isCore {
+	if s.IsCore {
 		return nil
-	}
-
-	if s.RecordField != "" {
-		err := upsertRecord(s.Schema, s.Table)
-		if err != nil {
-			return err
-		}
 	}
 
 	return nil
@@ -28,15 +21,8 @@ func (s *Model) afterInsertDefault(tx *Tx, data et.Json) error {
 * @return error
 **/
 func (s *Model) afterUpdateDefault(tx *Tx, data et.Json) error {
-	if s.isCore {
+	if s.IsCore {
 		return nil
-	}
-
-	if s.RecordField != "" {
-		err := upsertRecord(s.Schema, s.Table)
-		if err != nil {
-			return err
-		}
 	}
 
 	return nil
@@ -48,15 +34,8 @@ func (s *Model) afterUpdateDefault(tx *Tx, data et.Json) error {
 * @return error
 **/
 func (s *Model) afterDeleteDefault(tx *Tx, data et.Json) error {
-	if s.isCore {
+	if s.IsCore {
 		return nil
-	}
-
-	if s.RecordField != "" {
-		err := deleteRecord(s.Schema, s.Table)
-		if err != nil {
-			return err
-		}
 	}
 
 	return nil

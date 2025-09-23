@@ -50,7 +50,7 @@ func defineRecycling(db *Database) error {
 		return err
 	}
 
-	recycling.isCore = true
+	recycling.IsCore = true
 	err = recycling.Init()
 	if err != nil {
 		return err

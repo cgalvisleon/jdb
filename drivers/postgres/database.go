@@ -52,7 +52,7 @@ func (s *Postgres) Connect(database *jdb.Database) (*sql.DB, error) {
 	}
 
 	if database.UseCore {
-		if err := triggerBeforeInsert(db); err != nil {
+		if err := triggerRecords(db); err != nil {
 			return nil, err
 		}
 	}

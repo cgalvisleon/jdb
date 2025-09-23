@@ -58,7 +58,7 @@ func defineSeries(db *Database) error {
 		return err
 	}
 
-	series.isCore = true
+	series.IsCore = true
 	err = series.Init()
 	if err != nil {
 		return err

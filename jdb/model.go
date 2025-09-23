@@ -144,7 +144,7 @@ type Model struct {
 	details      map[string]*Model       `json:"-"`
 	masters      map[string]*Model       `json:"-"`
 	isInit       bool                    `json:"-"`
-	isCore       bool                    `json:"-"`
+	IsCore       bool                    `json:"is_core"`
 	isDebug      bool                    `json:"-"`
 	calls        map[string]*DataContext `json:"-"`
 	beforeInsert []DataFunctionTx        `json:"-"`

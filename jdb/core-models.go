@@ -63,7 +63,7 @@ func defineModel(db *Database) error {
 		return err
 	}
 
-	models.isCore = true
+	models.IsCore = true
 	err = models.Init()
 	if err != nil {
 		return err

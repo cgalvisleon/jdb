@@ -16,7 +16,7 @@ func (s *Model) beforeInsertDefault(tx *Tx, data et.Json) error {
 		data.Set(s.RecordField, id)
 	}
 
-	if s.isCore {
+	if s.IsCore {
 		return nil
 	}
 
@@ -29,7 +29,7 @@ func (s *Model) beforeInsertDefault(tx *Tx, data et.Json) error {
 * @return error
 **/
 func (s *Model) beforeUpdateDefault(tx *Tx, data et.Json) error {
-	if s.isCore {
+	if s.IsCore {
 		return nil
 	}
 
@@ -42,7 +42,7 @@ func (s *Model) beforeUpdateDefault(tx *Tx, data et.Json) error {
 * @return error
 **/
 func (s *Model) beforeDeleteDefault(tx *Tx, data et.Json) error {
-	if s.isCore {
+	if s.IsCore {
 		return nil
 	}
 

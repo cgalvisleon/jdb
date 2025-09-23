@@ -30,15 +30,6 @@ func (s *Postgres) buildModel(definition et.Json) (string, error) {
 		sql = strs.Append(sql, def, "\n\t")
 	}
 
-	def, err = s.buildPrimaryKeys(definition)
-	if err != nil {
-		return "", err
-	}
-
-	if def != "" {
-		sql = strs.Append(sql, def, "\n\t")
-	}
-
 	def, err = s.buildForeignKeys(definition)
 	if err != nil {
 		return "", err
@@ -49,6 +40,15 @@ func (s *Postgres) buildModel(definition et.Json) (string, error) {
 	}
 
 	def, err = s.buildIndices(definition)
+	if err != nil {
+		return "", err
+	}
+
+	if def != "" {
+		sql = strs.Append(sql, def, "\n\t")
+	}
+
+	def, err = s.buildTriggerBeforeInsert(definition)
 	if err != nil {
 		return "", err
 	}
@@ -69,6 +69,15 @@ func (s *Postgres) buildSchema(definition et.Json) (string, error) {
 	schema := definition.String("schema")
 	if !utility.ValidStr(schema, 0, []string{}) {
 		return "", fmt.Errorf(jdb.MSG_SCHEMA_REQUIRED)
+	}
+
+	exist, err := existSchema(s.database.Db, schema)
+	if err != nil {
+		return "", err
+	}
+
+	if exist {
+		return "", nil
 	}
 
 	return fmt.Sprintf("CREATE SCHEMA IF NOT EXISTS %s;", schema), nil
@@ -119,6 +128,15 @@ func (s *Postgres) buildTable(definition et.Json) (string, error) {
 		columnsDef = strs.Append(columnsDef, def, ",")
 	}
 
+	def, err := s.buildPrimaryKeys(definition)
+	if err != nil {
+		return "", err
+	}
+
+	if def != "" {
+		columnsDef = strs.Append(columnsDef, def, ",\n\t")
+	}
+
 	table := definition.String("table")
 	result := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s);", table, columnsDef)
 
@@ -141,9 +159,8 @@ func (s *Postgres) buildPrimaryKeys(definition et.Json) (string, error) {
 		columns = strs.Append(columns, v, ", ")
 	}
 
-	table := definition.String("table")
 	name := definition.String("name")
-	result := fmt.Sprintf("ALTER TABLE %s ADD CONSTRAINT %s_pk PRIMARY KEY (%s);", table, name, columns)
+	result := fmt.Sprintf("CONSTRAINT pk_%s PRIMARY KEY (%s)", name, columns)
 
 	return result, nil
 }
@@ -196,6 +213,34 @@ func (s *Postgres) buildIndices(definition et.Json) (string, error) {
 		def = fmt.Sprintf("CREATE INDEX IF NOT EXISTS %s ON %s (%s);", def, table, v)
 		result = strs.Append(result, def, "\n\t")
 	}
+
+	return result, nil
+}
+
+/**
+* buildTriggerBeforeInsert
+* @param definition et.Json
+* @return (string, error)
+**/
+func (s *Postgres) buildTriggerBeforeInsert(definition et.Json) (string, error) {
+	recordField := definition.String("record_field")
+	if recordField != "" {
+		return "", nil
+	}
+
+	isCore := definition.Bool("is_core")
+	if isCore {
+		return "", nil
+	}
+
+	table := definition.String("table")
+	result := fmt.Sprintf(`
+	DROP TRIGGER IF EXISTS RECORDS_SET ON %s CASCADE;
+	CREATE TRIGGER RECORDS_SET
+	AFTER INSERT OR UPDATE OR DELETE ON %s
+	FOR EACH ROW
+	EXECUTE FUNCTION core.after_records();
+	`, table, table)
 
 	return result, nil
 }

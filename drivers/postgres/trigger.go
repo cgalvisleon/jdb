@@ -2,44 +2,84 @@ package postgres
 
 import "database/sql"
 
-func triggerBeforeInsert(db *sql.DB) error {
+func triggerRecords(db *sql.DB) error {
 	sql := `
 	CREATE SCHEMA IF NOT EXISTS core;
+
 	CREATE TABLE IF NOT EXISTS core.tables (
 	created_at TIMESTAMP,
 	updated_at TIMESTAMP,
-	schema VARCHAR(80),
-	table TEXT,
-	total BIGINT);
-	ALTER TABLE core.tables ADD CONSTRAINT tables_pk PRIMARY KEY (schema, table);
+	table_schema VARCHAR(250),
+	table_name VARCHAR(250),
+	total BIGINT,
+	CONSTRAINT pk_tables PRIMARY KEY (table_schema, table_name));	
 
-	CREATE OR REPLACE FUNCTION core.before_insert_records()
+	CREATE OR REPLACE FUNCTION core.after_insert_tables()
 	RETURNS TRIGGER AS $$	
-	BEGIN
-		IF TD_OP = 'INSERT' THEN
-			INSERT INTO core.tables (created_at, updated_at, schema, table, total)
-			VALUES (now(), now(), TG_TABLE_SCHEMA, TG_TABLE_NAME, 1)
-			ON CONFLICT (schema, table) DO UPDATE
-			SET total = core.tables.total + 1,
-					updated_at = now();
-		END IF;
+	BEGIN		
+		INSERT INTO core.tables (created_at, updated_at, table_schema, table_name, total)
+		VALUES (now(), now(), TG_TABLE_SCHEMA, TG_TABLE_NAME, 1)
+		ON CONFLICT (table_schema, table_name) DO UPDATE
+		SET total = total + 1,
+				updated_at = now();
 
 		RETURN NEW;
 	END;
 	$$ LANGUAGE plpgsql;
 
-	CREATE OR REPLACE FUNCTION core.before_delete_records()
+	CREATE OR REPLACE FUNCTION core.after_delete_tables()
 	RETURNS TRIGGER AS $$	
 	BEGIN
-		IF TD_OP = 'DELETE' THEN
-			UPDATE core.tables
-			SET total = core.tables.total - 1,
-					updated_at = now()
-			WHERE schema = TG_TABLE_SCHEMA
-			AND table = TG_TABLE_NAME;
-		END IF;
+		UPDATE core.tables
+		SET total = total - 1,
+				updated_at = now()
+		WHERE table_schema = TG_TABLE_SCHEMA
+		AND table_name = TG_TABLE_NAME;
 
 		RETURN OLD;
+	END;
+	$$ LANGUAGE plpgsql;
+
+	CREATE TABLE IF NOT EXISTS core.records (
+	created_at TIMESTAMP,
+	updated_at TIMESTAMP,
+	table_schema VARCHAR(250),
+	table_name VARCHAR(250),
+	index VARCHAR(80),
+	CONSTRAINT pk_records PRIMARY KEY (table_schema, table_name, index));
+
+	DROP TRIGGER IF EXISTS RECORDS_SET ON core.records CASCADE;
+	CREATE TRIGGER RECORDS_SET
+	AFTER INSERT ON core.records
+	FOR EACH ROW
+	EXECUTE FUNCTION core.after_insert_tables();
+
+	DROP TRIGGER IF EXISTS RECORDS_DELETE ON core.records CASCADE;
+	CREATE TRIGGER RECORDS_DELETE
+	AFTER DELETE ON core.records
+	FOR EACH ROW
+	EXECUTE FUNCTION core.after_delete_tables();
+
+	CREATE OR REPLACE FUNCTION core.after_records()
+	RETURNS TRIGGER AS $$	
+	BEGIN
+		IF TD_OP = 'INSERT' THEN
+			INSERT INTO core.records (created_at, updated_at, table_schema, table_name, index)
+			VALUES (now(), now(), TG_TABLE_SCHEMA, TG_TABLE_NAME, NEW.index);
+		ELSEIF TD_OP = 'UPDATE' THEN
+			UPDATE core.records
+			SET updated_at = now()
+			WHERE table_schema = TG_TABLE_SCHEMA
+			AND table_name = TG_TABLE_NAME
+			AND index = NEW.index;
+		ELSEIF TD_OP = 'DELETE' THEN
+			DELETE FROM core.records
+			WHERE table_schema = TG_TABLE_SCHEMA
+			AND table_name = TG_TABLE_NAME
+			AND index = OLD.index;
+		END IF;
+
+		RETURN NEW;
 	END;
 	$$ LANGUAGE plpgsql;
 	`
