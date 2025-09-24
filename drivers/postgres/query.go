@@ -91,6 +91,10 @@ func (s *Postgres) buildQuery(query et.Json) (string, error) {
 		sql = strs.Append(sql, def, "\n\t")
 	}
 
+	if query.Bool("exists") {
+		return fmt.Sprintf("SELECT EXISTS(%s)", sql), nil
+	}
+
 	return sql, nil
 }
 
@@ -101,6 +105,15 @@ func (s *Postgres) buildQuery(query et.Json) (string, error) {
 **/
 func (s *Postgres) buildSelect(query et.Json) (string, error) {
 	result := ""
+
+	if query.Bool("exists") {
+		return "", nil
+	}
+
+	if query.Bool("count") {
+		return "COUNT(*) AS all", nil
+	}
+
 	tp := query.String("type")
 	if tp == jdb.TpObject {
 		atribs := query.Json("atribs")

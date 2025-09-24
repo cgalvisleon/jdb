@@ -145,7 +145,7 @@ func (s *Ql) setGroupBy(groupBy []string) *Ql {
 * @return *Ql
 **/
 func (s *Ql) setHaving(having et.Json) *Ql {
-	s.Having = having
+	s.Havings = having
 	return s
 }
 

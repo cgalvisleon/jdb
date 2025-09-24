@@ -31,9 +31,11 @@ type Ql struct {
 	Calls     et.Json                 `json:"calls"`
 	Joins     []et.Json               `json:"joins"`
 	GroupBy   []string                `json:"group_by"`
-	Having    et.Json                 `json:"having"`
+	Havings   et.Json                 `json:"having"`
 	OrderBy   et.Json                 `json:"order_by"`
 	Limit     et.Json                 `json:"limit"`
+	Exists    bool                    `json:"exists"`
+	Count     bool                    `json:"count"`
 	SQL       string                  `json:"sql"`
 	calls     map[string]*DataContext `json:"-"`
 	db        *Database               `json:"-"`
@@ -59,7 +61,7 @@ func newQl(db *Database) *Ql {
 		Calls:     et.Json{},
 		Joins:     make([]et.Json, 0),
 		GroupBy:   []string{},
-		Having:    et.Json{},
+		Havings:   et.Json{},
 		OrderBy:   et.Json{},
 		Limit:     et.Json{},
 		db:        db,
@@ -112,5 +114,77 @@ func (s *Ql) addFrom(name, as string) *Ql {
 **/
 func (s *Ql) setTx(tx *Tx) *Ql {
 	s.tx = tx
+	return s
+}
+
+/**
+* Join
+* @param to, as string, on []et.Json
+* @return *Ql
+**/
+func (s *Ql) Join(to, as string, on []et.Json) *Ql {
+	n := len(s.Froms)
+	if n == 0 {
+		return s
+	}
+
+	model, err := s.db.getModelByName(to)
+	if err != nil {
+		return s
+	}
+
+	n = len(s.Joins) + 1
+	s.Joins = append(s.Joins, et.Json{
+		"from": et.Json{
+			model.Table: as,
+		},
+		"on": on,
+	})
+
+	return s
+}
+
+/**
+* Group
+* @param fields ...string
+* @return *Ql
+**/
+func (s *Ql) Group(fields ...string) *Ql {
+	s.GroupBy = append(s.GroupBy, fields...)
+	return s
+}
+
+/**
+* Having
+* @param having et.Json
+* @return *Ql
+**/
+func (s *Ql) Having(having et.Json) *Ql {
+	s.Havings = having
+	return s
+}
+
+/**
+* Order
+* @param asc bool, fields ...string
+* @return *Ql
+**/
+func (s *Ql) Order(asc bool, fields ...string) *Ql {
+	if asc {
+		s.OrderBy["asc"] = fields
+	} else {
+		s.OrderBy["desc"] = fields
+	}
+
+	return s
+}
+
+/**
+* Page
+* @param val int
+* @return *Ql
+**/
+func (s *Ql) Page(val int) *Ql {
+	s.Limit["page"] = val
 	return s
 }

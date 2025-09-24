@@ -121,7 +121,8 @@ func (s *Ql) OneTx(tx *Tx) (et.Item, error) {
 * @return et.Items, error
 **/
 func (s *Ql) RowsTx(tx *Tx, val int) (et.Items, error) {
-	return s.FirstTx(tx, val)
+	s.Limit["rows"] = val
+	return s.AllTx(tx)
 }
 
 /**
@@ -134,6 +135,7 @@ func (s *Ql) ItExistsTx(tx *Tx) (bool, error) {
 		return false, fmt.Errorf(MSG_DATABASE_REQUIRED)
 	}
 
+	s.Exists = true
 	s.setTx(tx)
 	err := s.validate()
 	if err != nil {
@@ -161,6 +163,7 @@ func (s *Ql) CountedTx(tx *Tx) (int, error) {
 		return 0, fmt.Errorf(MSG_DATABASE_REQUIRED)
 	}
 
+	s.Count = true
 	s.setTx(tx)
 	err := s.validate()
 	if err != nil {
