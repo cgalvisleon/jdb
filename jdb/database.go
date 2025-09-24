@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
@@ -157,6 +158,130 @@ func (s *Database) getOrCreateModel(schema, name string) (*Model, error) {
 }
 
 /**
+* getModel
+* @param schema, name string
+* @return (*Model, error)
+**/
+func (s *Database) getModel(schema, name string) (*Model, error) {
+	id := fmt.Sprintf("%s.%s", schema, name)
+	result, ok := s.Models[id]
+	if !ok {
+		return nil, fmt.Errorf(MSG_MODEL_NOT_FOUND, id)
+	}
+
+	return result, nil
+}
+
+/**
+* initModel
+* @param model *Model
+* @return error
+**/
+func (s *Database) init(model *Model) error {
+	if err := model.validate(); err != nil {
+		return err
+	}
+
+	sql, err := s.driver.Load(model)
+	if err != nil {
+		return err
+	}
+
+	if model.isInit {
+		return nil
+	}
+
+	if model.isDebug {
+		console.Debugf("init:%s", model.ToJson().ToEscapeHTML())
+		console.Debug("load:\n\t", sql)
+		return nil
+	}
+
+	_, err = s.Query(sql)
+	if err != nil {
+		return err
+	}
+
+	err = model.save()
+	if err != nil {
+		return err
+	}
+
+	model.SetInit()
+
+	return nil
+}
+
+/**
+* query
+* @param query *Ql
+* @return (et.Items, error)
+**/
+func (s *Database) query(query *Ql) (et.Items, error) {
+	if err := query.validate(); err != nil {
+		return et.Items{}, err
+	}
+
+	sql, err := s.driver.Query(query)
+	if err != nil {
+		return et.Items{}, err
+	}
+
+	if query.isDebug {
+		console.Debugf("query:%s", query.ToJson().ToEscapeHTML())
+	}
+
+	result, err := s.QueryTx(query.tx, sql)
+	if err != nil {
+		return et.Items{}, err
+	}
+
+	return result, nil
+}
+
+/**
+* command
+* @param command *Cmd
+* @return (et.Items, error)
+**/
+func (s *Database) command(command *Cmd) (et.Items, error) {
+	if err := command.validate(); err != nil {
+		return et.Items{}, err
+	}
+
+	sql, err := s.driver.Command(command)
+	if err != nil {
+		return et.Items{}, err
+	}
+
+	if command.isDebug {
+		console.Debugf("command:%s", command.toJson().ToString())
+	}
+
+	result, err := s.QueryTx(command.tx, sql)
+	if err != nil {
+		return et.Items{}, err
+	}
+
+	return result, nil
+}
+
+/**
+* getModelByName
+* @param name string
+* @return (*Model, error)
+**/
+func (s *Database) getModelByName(name string) (*Model, error) {
+	for _, model := range s.Models {
+		if model.Name == name {
+			return model, nil
+		}
+	}
+
+	return nil, fmt.Errorf(MSG_MODEL_NOT_FOUND, name)
+}
+
+/**
 * Define
 * @param definition et.Json
 * @return (*Model, error)
@@ -249,109 +374,26 @@ func (s *Database) Select(query et.Json) (*Ql, error) {
 }
 
 /**
-* getModel
-* @param schema, name string
-* @return (*Model, error)
+* From
+* @return *Ql
 **/
-func (s *Database) getModel(schema, name string) (*Model, error) {
-	id := fmt.Sprintf("%s.%s", schema, name)
-	result, ok := s.Models[id]
-	if !ok {
-		return nil, fmt.Errorf(MSG_MODEL_NOT_FOUND, id)
+func (s *Database) From(name string) *Ql {
+	result := newQl(s)
+	lst := strings.Split(name, ".")
+	if len(lst) == 2 {
+		model, err := s.getModel(lst[0], lst[1])
+		if err != nil {
+			return result
+		}
+		result.addFrom(model.Table, "A")
+	} else {
+		for _, model := range s.Models {
+			if model.Name == name {
+				result.addFrom(model.Table, "A")
+				break
+			}
+		}
 	}
 
-	return result, nil
-}
-
-/**
-* initModel
-* @param model *Model
-* @return error
-**/
-func (s *Database) init(model *Model) error {
-	if err := model.validate(); err != nil {
-		return err
-	}
-
-	sql, err := s.driver.Load(model)
-	if err != nil {
-		return err
-	}
-
-	if model.isInit {
-		return nil
-	}
-
-	if model.isDebug {
-		console.Debugf("init:%s", model.ToJson().ToEscapeHTML())
-	}
-
-	console.Debug("load:\n\t", sql)
-	// _, err = s.Query(sql)
-	// if err != nil {
-	// 	return err
-	// }
-
-	err = model.save()
-	if err != nil {
-		return err
-	}
-
-	model.SetInit()
-
-	return nil
-}
-
-/**
-* query
-* @param query *Ql
-* @return (et.Items, error)
-**/
-func (s *Database) query(query *Ql) (et.Items, error) {
-	if err := query.validate(); err != nil {
-		return et.Items{}, err
-	}
-
-	sql, err := s.driver.Query(query)
-	if err != nil {
-		return et.Items{}, err
-	}
-
-	if query.isDebug {
-		console.Debugf("query:%s", query.ToJson().ToEscapeHTML())
-	}
-
-	result, err := s.QueryTx(query.tx, sql)
-	if err != nil {
-		return et.Items{}, err
-	}
-
-	return result, nil
-}
-
-/**
-* command
-* @param command *Cmd
-* @return (et.Items, error)
-**/
-func (s *Database) command(command *Cmd) (et.Items, error) {
-	if err := command.validate(); err != nil {
-		return et.Items{}, err
-	}
-
-	sql, err := s.driver.Command(command)
-	if err != nil {
-		return et.Items{}, err
-	}
-
-	if command.isDebug {
-		console.Debugf("command:%s", command.toJson().ToString())
-	}
-
-	result, err := s.QueryTx(command.tx, sql)
-	if err != nil {
-		return et.Items{}, err
-	}
-
-	return result, nil
+	return result
 }

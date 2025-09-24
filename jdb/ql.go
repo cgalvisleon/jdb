@@ -18,11 +18,6 @@ var (
 	}
 )
 
-type qFrom struct {
-	model *Model `json:"-"`
-	as    string `json:"-"`
-}
-
 type Ql struct {
 	*where
 	Database  string                  `json:"database"`
@@ -40,7 +35,6 @@ type Ql struct {
 	OrderBy   et.Json                 `json:"order_by"`
 	Limit     et.Json                 `json:"limit"`
 	SQL       string                  `json:"sql"`
-	froms     []qFrom                 `json:"-"`
 	calls     map[string]*DataContext `json:"-"`
 	db        *Database               `json:"-"`
 	tx        *Tx                     `json:"-"`
@@ -70,7 +64,6 @@ func newQl(db *Database) *Ql {
 		Limit:     et.Json{},
 		db:        db,
 		calls:     make(map[string]*DataContext),
-		froms:     make([]qFrom, 0),
 	}
 }
 
@@ -103,16 +96,6 @@ func (s *Ql) Debug() *Ql {
 }
 
 /**
-* getAs
-* @return string
-**/
-func getAs(ql *Ql) string {
-	n := len(ql.Froms)
-	as := string(rune(65 + n))
-	return as
-}
-
-/**
 * addFrom
 * @param name, as string
 * @return *Ql
@@ -120,21 +103,6 @@ func getAs(ql *Ql) string {
 func (s *Ql) addFrom(name, as string) *Ql {
 	s.Froms[name] = as
 	return s
-}
-
-/**
-* addModel
-* @param model *Model
-* @return *Ql
-**/
-func (s *Ql) addModel(model *Model) *Ql {
-	as := getAs(s)
-	s.froms = append(s.froms, qFrom{
-		model: model,
-		as:    as,
-	})
-
-	return s.addFrom(model.Table, as)
 }
 
 /**

@@ -95,8 +95,8 @@ func main() {
 			"js_core.users": "A",
 		},
 		"select": et.Json{
-			"_id":     "_id",
-			"caption": "caption",
+			"A._id":     "_id",
+			"A.caption": "caption",
 		},
 		"atribs": et.Json{
 			"_data#>>'{created_by}'": "created_by",
@@ -106,32 +106,46 @@ func main() {
 				"from": et.Json{
 					"js_core.project_users": "B",
 				},
-				"on": et.Json{
-					"A._id": et.Json{
-						"eq": "B.user_id",
+				"on": []et.Json{
+					{
+						"A._id": et.Json{
+							"eq": "B.user_id",
+						},
 					},
 				},
 			},
 		},
-		"where": et.Json{
-			"A._id": et.Json{
-				"eq": "'USERA00000001'",
-			},
-			"and": et.Json{
-				"A.name": et.Json{
-					"eq": "'John'",
+		"where": []et.Json{
+			{
+				"A._id": et.Json{
+					"eq": "'USERA00000001'",
 				},
 			},
-			"or": et.Json{
-				"A.name": et.Json{
-					"eq": "'Jane'",
+			{
+				"and": []et.Json{
+					{
+						"A.name": et.Json{
+							"eq": "'John'",
+						},
+					},
+				},
+			},
+			{
+				"or": []et.Json{
+					{
+						"A.name": et.Json{
+							"eq": "'Jane'",
+						},
+					},
 				},
 			},
 		},
 		"group_by": []string{"A.uno", "A.dos"},
-		"having": et.Json{
-			"A.name": et.Json{
-				"eq": "'col'",
+		"having": []et.Json{
+			{
+				"A.name": et.Json{
+					"eq": "'col'",
+				},
 			},
 		},
 		"order_by": et.Json{

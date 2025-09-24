@@ -1,11 +1,28 @@
 package jdb
 
-import "github.com/cgalvisleon/et/et"
+import (
+	"slices"
+
+	"github.com/cgalvisleon/et/et"
+	"github.com/cgalvisleon/et/strs"
+)
 
 type condition struct {
 	Field string      `json:"field"`
 	Op    string      `json:"op"`
 	Value interface{} `json:"value"`
+}
+
+/**
+* ToJson
+* @return et.Json
+**/
+func (s *condition) ToJson() et.Json {
+	return et.Json{
+		s.Field: et.Json{
+			s.Op: s.Value,
+		},
+	}
 }
 
 /**
@@ -215,13 +232,50 @@ func NotBetween(field string, value []interface{}) condition {
 }
 
 type where struct {
-	Wheres et.Json `json:"where"`
+	Wheres []et.Json `json:"where"`
 }
 
 func newWhere() *where {
 	return &where{
-		Wheres: et.Json{},
+		Wheres: []et.Json{},
 	}
+}
+
+/**
+* where
+* @param cond condition
+* @return *where
+**/
+func (s *where) where(cond condition, conector string) *where {
+	if len(s.Wheres) == 0 {
+		s.Wheres = append(s.Wheres, et.Json{
+			cond.Field: et.Json{
+				cond.Op: cond.Value,
+			},
+		})
+	} else {
+		conds := []et.Json{}
+		idx := slices.IndexFunc(s.Wheres, func(v et.Json) bool { return strs.Uppcase(v.String(conector)) == strs.Uppcase(conector) })
+		if idx != -1 {
+			conds = s.Wheres[idx].ArrayJson(conector)
+		}
+
+		conds = append(conds, et.Json{
+			cond.Field: et.Json{
+				cond.Op: cond.Value,
+			},
+		})
+
+		if idx == -1 {
+			s.Wheres = append(s.Wheres, et.Json{
+				conector: conds,
+			})
+		} else {
+			s.Wheres[idx][conector] = conds
+		}
+	}
+
+	return s
 }
 
 /**
@@ -230,21 +284,7 @@ func newWhere() *where {
 * @return *where
 **/
 func (s *where) Where(cond condition) *where {
-	if s.Wheres.IsEmpty() {
-		s.Wheres = et.Json{
-			cond.Field: et.Json{
-				cond.Op: cond.Value,
-			},
-		}
-	} else {
-		conds := s.Wheres.Json("AND")
-		conds[cond.Field] = et.Json{
-			cond.Op: cond.Value,
-		}
-		s.Wheres["AND"] = conds
-	}
-
-	return s
+	return s.where(cond, "and")
 }
 
 /**
@@ -253,7 +293,7 @@ func (s *where) Where(cond condition) *where {
 * @return *where
 **/
 func (s *where) And(cond condition) *where {
-	return s.Where(cond)
+	return s.where(cond, "and")
 }
 
 /**
@@ -262,18 +302,5 @@ func (s *where) And(cond condition) *where {
 * @return *where
 **/
 func (s *where) Or(cond condition) *where {
-	if s.Wheres.IsEmpty() {
-		s.Wheres = et.Json{
-			cond.Field: et.Json{
-				cond.Op: cond.Value,
-			},
-		}
-	} else {
-		conds := s.Wheres.Json("OR")
-		conds[cond.Field] = et.Json{
-			cond.Op: cond.Value,
-		}
-		s.Wheres["OR"] = conds
-	}
-	return s
+	return s.where(cond, "or")
 }

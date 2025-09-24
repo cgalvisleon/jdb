@@ -180,11 +180,13 @@ func command(cmd string, param et.Json) (*Cmd, error) {
 
 /**
 * Return
-* @param fields et.Json
+* @param fields ...string
 * @return *Cmd
 **/
-func (s *Cmd) Return(fields et.Json) *Cmd {
-	s.Returns = fields
+func (s *Cmd) Return(fields ...string) *Cmd {
+	for _, field := range fields {
+		s.Returns[field] = true
+	}
 	return s
 }
 

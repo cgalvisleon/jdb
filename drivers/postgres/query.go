@@ -38,8 +38,8 @@ func (s *Postgres) buildQuery(query et.Json) (string, error) {
 		sql = strs.Append(sql, def, "\n\t")
 	}
 
-	where := query.Json("where")
-	if !where.IsEmpty() {
+	where := query.ArrayJson("where")
+	if len(where) > 0 {
 		def, err = s.buildWhere(where)
 		if err != nil {
 			return "", err
@@ -199,7 +199,7 @@ func (s *Postgres) buildJoins(query et.Json) (string, error) {
 		}
 
 		result = strs.Append(result, def, "")
-		on := v.Json("on")
+		on := v.ArrayJson("on")
 		def, err = s.buildWhere(on)
 		if err != nil {
 			return "", err
@@ -217,10 +217,10 @@ func (s *Postgres) buildJoins(query et.Json) (string, error) {
 
 /**
 * buildWhere
-* @param wheres et.Json
+* @param wheres []et.Json
 * @return (string, error)
 **/
-func (s *Postgres) buildWhere(wheres et.Json) (string, error) {
+func (s *Postgres) buildWhere(wheres []et.Json) (string, error) {
 	condition := func(condition et.Json) string {
 		for k, v := range condition {
 			switch k {
@@ -290,20 +290,24 @@ func (s *Postgres) buildWhere(wheres et.Json) (string, error) {
 		}
 	}
 
-	for k := range wheres {
-		if map[string]bool{"AND": true, "OR": true}[strs.Uppcase(k)] {
-			andOr := wheres.Json(k)
-			for f := range andOr {
-				v := andOr.Json(f)
+	for _, w := range wheres {
+		for k := range w {
+			if map[string]bool{"and": true, "or": true}[strs.Lowcase(k)] {
+				andOr := w.ArrayJson(k)
+				for _, field := range andOr {
+					for name := range field {
+						v := field.Json(name)
+						cond := condition(v)
+						def := fmt.Sprintf("%s %s", name, cond)
+						result = append(def, strs.Uppcase(k))
+					}
+				}
+			} else {
+				v := w.Json(k)
 				cond := condition(v)
-				def := fmt.Sprintf("%s %s", f, cond)
-				result = append(def, strs.Uppcase(k))
+				def := fmt.Sprintf("%s %s", k, cond)
+				result = append(def, "AND")
 			}
-		} else {
-			v := wheres.Json(k)
-			cond := condition(v)
-			def := fmt.Sprintf("%s %s", k, cond)
-			result = append(def, "AND")
 		}
 	}
 
@@ -336,8 +340,8 @@ func (s *Postgres) buildGroupBy(query et.Json) (string, error) {
 * @return (string, error)
 **/
 func (s *Postgres) buildHaving(query et.Json) (string, error) {
-	having := query.Json("having")
-	if having.IsEmpty() {
+	having := query.ArrayJson("having")
+	if len(having) == 0 {
 		return "", nil
 	}
 

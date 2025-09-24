@@ -95,12 +95,7 @@ func GetSeries(kind, tag string) (string, error) {
 			data.Set("value", "value + 1")
 			return nil
 		}).
-		Where(Eq("kind", kind)).
-		And(Eq("tag", tag)).
-		Return(et.Json{
-			"value":  "value",
-			"format": "format",
-		}).
+		Return("value", "format").
 		One()
 	if err != nil {
 		return "", err

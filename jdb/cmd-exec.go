@@ -2,37 +2,9 @@ package jdb
 
 import (
 	"fmt"
-	"sync"
 
 	"github.com/cgalvisleon/et/et"
 )
-
-/**
-* getRollupsTx
-* @param tx *Tx, data et.Json
-* @return
-**/
-func (s *Cmd) getRollupsTx(tx *Tx, data et.Json) {
-
-}
-
-/**
-* getRelationsTx
-* @param tx *Tx, data et.Json
-* @return
-**/
-func (s *Cmd) getRelationsTx(tx *Tx, data et.Json) {
-
-}
-
-/**
-* getCallsTx
-* @param tx *Tx, data et.Json
-* @return
-**/
-func (s *Cmd) getCallsTx(tx *Tx, data et.Json) {
-
-}
 
 /**
 * queryTx
@@ -53,18 +25,6 @@ func (s *Cmd) queryTx(tx *Tx) (et.Items, error) {
 	if err != nil {
 		return et.Items{}, err
 	}
-
-	wg := &sync.WaitGroup{}
-	for _, data := range result.Result {
-		wg.Add(1)
-		go func(data et.Json) {
-			defer wg.Done()
-			s.getRollupsTx(tx, data)
-			s.getRelationsTx(tx, data)
-			s.getCallsTx(tx, data)
-		}(data)
-	}
-	wg.Wait()
 
 	return result, nil
 }
