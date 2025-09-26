@@ -108,6 +108,28 @@ func rowsToSourceItems(rows *sql.Rows, source string) et.Items {
 }
 
 /**
+* SQLUnQuote
+* @param sql string
+* @param args ...any
+* @return string
+**/
+func SQLUnQuote(sql string, args ...any) string {
+	for i := range args {
+		old := fmt.Sprintf(`$%d`, i+1)
+		new := fmt.Sprintf(`{$%d}`, i+1)
+		sql = strings.ReplaceAll(sql, old, new)
+	}
+
+	for i, arg := range args {
+		old := fmt.Sprintf(`{$%d}`, i+1)
+		new := fmt.Sprintf(`%v`, arg)
+		sql = strings.ReplaceAll(sql, old, new)
+	}
+
+	return sql
+}
+
+/**
 * SQLParse
 * @param sql string
 * @param args ...any

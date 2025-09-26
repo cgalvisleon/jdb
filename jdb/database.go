@@ -114,11 +114,9 @@ func (s *Database) getOrCreateModel(schema, name string) (*Model, error) {
 		return nil, fmt.Errorf(MSG_NAME_REQUIRED)
 	}
 
-	id := fmt.Sprintf("%s.%s", schema, name)
-	model, ok := s.Models[id]
+	model, ok := s.Models[name]
 	if !ok {
 		model = &Model{
-			Id:           id,
 			Database:     s.Name,
 			Schema:       schema,
 			Name:         name,
@@ -151,7 +149,7 @@ func (s *Database) getOrCreateModel(schema, name string) (*Model, error) {
 		model.AfterInsert(model.afterInsertDefault)
 		model.AfterUpdate(model.afterUpdateDefault)
 		model.AfterDelete(model.afterDeleteDefault)
-		s.Models[id] = model
+		s.Models[name] = model
 	}
 
 	return model, nil
@@ -159,14 +157,13 @@ func (s *Database) getOrCreateModel(schema, name string) (*Model, error) {
 
 /**
 * getModel
-* @param schema, name string
+* @param name string
 * @return (*Model, error)
 **/
-func (s *Database) getModel(schema, name string) (*Model, error) {
-	id := fmt.Sprintf("%s.%s", schema, name)
-	result, ok := s.Models[id]
+func (s *Database) getModel(name string) (*Model, error) {
+	result, ok := s.Models[name]
 	if !ok {
-		return nil, fmt.Errorf(MSG_MODEL_NOT_FOUND, id)
+		return nil, fmt.Errorf(MSG_MODEL_NOT_FOUND, name)
 	}
 
 	return result, nil
@@ -264,21 +261,6 @@ func (s *Database) command(command *Cmd) (et.Items, error) {
 	}
 
 	return result, nil
-}
-
-/**
-* getModelByName
-* @param name string
-* @return (*Model, error)
-**/
-func (s *Database) getModelByName(name string) (*Model, error) {
-	for _, model := range s.Models {
-		if model.Name == name {
-			return model, nil
-		}
-	}
-
-	return nil, fmt.Errorf(MSG_MODEL_NOT_FOUND, name)
 }
 
 /**
@@ -381,19 +363,27 @@ func (s *Database) From(name string) *Ql {
 	result := newQl(s)
 	lst := strings.Split(name, ".")
 	if len(lst) == 2 {
-		model, err := s.getModel(lst[0], lst[1])
+		model, err := s.getModel(lst[1])
 		if err != nil {
 			return result
 		}
 		result.addFrom(model.Table, "A")
 	} else {
-		for _, model := range s.Models {
-			if model.Name == name {
-				result.addFrom(model.Table, "A")
-				break
-			}
+		model, err := s.getModel(lst[1])
+		if err != nil {
+			return result
 		}
+		result.addFrom(model.Table, "A")
 	}
 
 	return result
+}
+
+/**
+* GetModel
+* @param name string
+* @return (*Model, error)
+**/
+func (s *Database) GetModel(name string) (*Model, error) {
+	return s.getModel(name)
 }

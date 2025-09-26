@@ -2,30 +2,30 @@ package jdb
 
 /**
 * Where
-* @param cond condition
+* @param cond Condition
 * @return *Cmd
 **/
-func (s *Cmd) Where(cond condition) *Cmd {
+func (s *Cmd) Where(cond Condition) *Cmd {
 	s.where.Where(cond)
 	return s
 }
 
 /**
 * And
-* @param cond condition
+* @param cond Condition
 * @return *Cmd
 **/
-func (s *Cmd) And(cond condition) *Cmd {
+func (s *Cmd) And(cond Condition) *Cmd {
 	s.where.And(cond)
 	return s
 }
 
 /**
 * Or
-* @param cond condition
+* @param cond Condition
 * @return *Cmd
 **/
-func (s *Cmd) Or(cond condition) *Cmd {
+func (s *Cmd) Or(cond Condition) *Cmd {
 	s.where.Or(cond)
 	return s
 }

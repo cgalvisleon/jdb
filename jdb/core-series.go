@@ -74,9 +74,30 @@ func defineSeries(db *Database) error {
 /**
 * GetSeries
 * @param kind, tag string
+* @return et.Item, error
+**/
+func GetSeries(kind, tag string) (et.Item, error) {
+	if series == nil {
+		return et.Item{}, fmt.Errorf(MSG_SERIES_NOT_DEFINED)
+	}
+
+	result, err := series.
+		Where(Eq("kind", kind)).
+		And(Eq("tag", tag)).
+		One()
+	if err != nil {
+		return et.Item{}, err
+	}
+
+	return result, nil
+}
+
+/**
+* GenSeries
+* @param kind, tag string
 * @return string, error
 **/
-func GetSeries(kind, tag string) (string, error) {
+func GenSeries(kind, tag string) (string, error) {
 	if series == nil {
 		return "", fmt.Errorf(MSG_SERIES_NOT_DEFINED)
 	}

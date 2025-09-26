@@ -248,7 +248,7 @@ func (s *Model) defineForeignKeys(params []et.Json) error {
 		for key, val := range columns {
 			pk, ok := model.GetColumn(val.(string))
 			if !ok {
-				return fmt.Errorf("column %s not found in %s", val, model.Id)
+				return fmt.Errorf("column %s not found in %s", val, model.Name)
 			}
 
 			err := s.defineColumn(key, et.Json{

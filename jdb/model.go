@@ -40,6 +40,9 @@ var (
 	CANCELLED  = "cancelled"
 	OF_SYSTEM  = "of_system"
 	FOR_DELETE = "for_delete"
+	PENDING    = "pending"
+	APPROVED   = "approved"
+	REJECTED   = "rejected"
 	TypeData   = map[string]bool{
 		TypeInt:      true,
 		TypeFloat:    true,
@@ -124,7 +127,6 @@ func C(name string) *Column {
 }
 
 type Model struct {
-	Id           string                  `json:"id"`
 	Database     string                  `json:"database"`
 	Schema       string                  `json:"schema"`
 	Name         string                  `json:"name"`
@@ -191,10 +193,9 @@ func Define(definition et.Json) (*Model, error) {
 * @param schema, name string
 * @return (*Model, error)
 **/
-func LoadModel(schema, name string) (*Model, error) {
-	id := fmt.Sprintf("%s.%s", schema, name)
+func LoadModel(name string) (*Model, error) {
 	var result Model
-	err := loadModel(id, &result)
+	err := loadModel(name, &result)
 	if err != nil {
 		return nil, err
 	}
@@ -204,12 +205,11 @@ func LoadModel(schema, name string) (*Model, error) {
 
 /**
 * DeleteModel
-* @param schema, name string
+* @param name string
 * @return error
 **/
-func DeleteModel(schema, name string) error {
-	id := fmt.Sprintf("%s.%s", schema, name)
-	return deleteModel(id)
+func DeleteModel(name string) error {
+	return deleteModel(name)
 }
 
 /**
@@ -235,7 +235,7 @@ func (s *Model) save() error {
 		return err
 	}
 
-	return setModel("model", s.Id, s.Version, bt)
+	return setModel("model", s.Name, s.Version, bt)
 }
 
 /**
@@ -243,7 +243,7 @@ func (s *Model) save() error {
 * @return error
 **/
 func (s *Model) load() error {
-	return loadModel(s.Id, s)
+	return loadModel(s.Name, s)
 }
 
 /**

@@ -19,7 +19,7 @@ func (s *Ql) setQuery(query et.Json) *Ql {
 		setWhere(query.ArrayJson("where")).
 		setOrderBy(query.Json("order_by")).
 		setGroupBy(query.ArrayStr("group_by")).
-		setHaving(query.Json("having")).
+		setHaving(query.ArrayJson("having")).
 		setLimit(query.Json("limit"))
 
 	return s
@@ -141,10 +141,10 @@ func (s *Ql) setGroupBy(groupBy []string) *Ql {
 
 /**
 * setHaving
-* @param having et.Json
+* @param having []et.Json
 * @return *Ql
 **/
-func (s *Ql) setHaving(having et.Json) *Ql {
+func (s *Ql) setHaving(having []et.Json) *Ql {
 	s.Havings = having
 	return s
 }

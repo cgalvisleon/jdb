@@ -60,19 +60,18 @@ func GetDatabase(name string) (*Database, error) {
 
 /**
 * GetModel
-* @param database, schema, name string
+* @param database, name string
 * @return (*Model, error)
 **/
-func GetModel(database, schema, name string) (*Model, error) {
+func GetModel(database, name string) (*Model, error) {
 	db, ok := dbs[database]
 	if !ok {
 		return nil, fmt.Errorf("database %s not found", database)
 	}
 
-	id := fmt.Sprintf("%s.%s", schema, name)
-	result, ok := db.Models[id]
+	result, ok := db.Models[name]
 	if !ok {
-		return nil, fmt.Errorf("model %s not found", id)
+		return nil, fmt.Errorf("model %s not found", name)
 	}
 
 	return result, nil

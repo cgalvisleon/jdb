@@ -7,7 +7,7 @@ import (
 	"github.com/cgalvisleon/et/strs"
 )
 
-type condition struct {
+type Condition struct {
 	Field string      `json:"field"`
 	Op    string      `json:"op"`
 	Value interface{} `json:"value"`
@@ -17,7 +17,7 @@ type condition struct {
 * ToJson
 * @return et.Json
 **/
-func (s *condition) ToJson() et.Json {
+func (s *Condition) ToJson() et.Json {
 	return et.Json{
 		s.Field: et.Json{
 			s.Op: s.Value,
@@ -28,10 +28,10 @@ func (s *condition) ToJson() et.Json {
 /**
 * Eq
 * @param field string, value interface{}
-* @return condition
+* @return Condition
 **/
-func Eq(field string, value interface{}) condition {
-	return condition{
+func Eq(field string, value interface{}) Condition {
+	return Condition{
 		Field: field,
 		Op:    "eq",
 		Value: value,
@@ -41,10 +41,10 @@ func Eq(field string, value interface{}) condition {
 /**
 * Neg
 * @param field string, value interface{}
-* @return condition
+* @return Condition
 **/
-func Neg(field string, value interface{}) condition {
-	return condition{
+func Neg(field string, value interface{}) Condition {
+	return Condition{
 		Field: field,
 		Op:    "ne",
 		Value: value,
@@ -54,10 +54,10 @@ func Neg(field string, value interface{}) condition {
 /**
 * Less
 * @param field string, value interface{}
-* @return condition
+* @return Condition
 **/
-func Less(field string, value interface{}) condition {
-	return condition{
+func Less(field string, value interface{}) Condition {
+	return Condition{
 		Field: field,
 		Op:    "less",
 		Value: value,
@@ -67,10 +67,10 @@ func Less(field string, value interface{}) condition {
 /**
 * LessEq
 * @param field string, value interface{}
-* @return condition
+* @return Condition
 **/
-func LessEq(field string, value interface{}) condition {
-	return condition{
+func LessEq(field string, value interface{}) Condition {
+	return Condition{
 		Field: field,
 		Op:    "less_eq",
 		Value: value,
@@ -80,10 +80,10 @@ func LessEq(field string, value interface{}) condition {
 /**
 * More
 * @param field string, value interface{}
-* @return condition
+* @return Condition
 **/
-func More(field string, value interface{}) condition {
-	return condition{
+func More(field string, value interface{}) Condition {
+	return Condition{
 		Field: field,
 		Op:    "more",
 		Value: value,
@@ -93,10 +93,10 @@ func More(field string, value interface{}) condition {
 /**
 * MoreEq
 * @param field string, value interface{}
-* @return condition
+* @return Condition
 **/
-func MoreEq(field string, value interface{}) condition {
-	return condition{
+func MoreEq(field string, value interface{}) Condition {
+	return Condition{
 		Field: field,
 		Op:    "more_eq",
 		Value: value,
@@ -106,10 +106,10 @@ func MoreEq(field string, value interface{}) condition {
 /**
 * Like
 * @param field string, value interface{}
-* @return condition
+* @return Condition
 **/
-func Like(field string, value interface{}) condition {
-	return condition{
+func Like(field string, value interface{}) Condition {
+	return Condition{
 		Field: field,
 		Op:    "like",
 		Value: value,
@@ -119,10 +119,10 @@ func Like(field string, value interface{}) condition {
 /**
 * Ilike
 * @param field string, value interface{}
-* @return condition
+* @return Condition
 **/
-func Ilike(field string, value interface{}) condition {
-	return condition{
+func Ilike(field string, value interface{}) Condition {
+	return Condition{
 		Field: field,
 		Op:    "ilike",
 		Value: value,
@@ -132,10 +132,10 @@ func Ilike(field string, value interface{}) condition {
 /**
 * In
 * @param field string, value interface{}
-* @return condition
+* @return Condition
 **/
-func In(field string, value interface{}) condition {
-	return condition{
+func In(field string, value interface{}) Condition {
+	return Condition{
 		Field: field,
 		Op:    "in",
 		Value: value,
@@ -145,10 +145,10 @@ func In(field string, value interface{}) condition {
 /**
 * NotIn
 * @param field string, value interface{}
-* @return condition
+* @return Condition
 **/
-func NotIn(field string, value interface{}) condition {
-	return condition{
+func NotIn(field string, value interface{}) Condition {
+	return Condition{
 		Field: field,
 		Op:    "not_in",
 		Value: value,
@@ -158,10 +158,10 @@ func NotIn(field string, value interface{}) condition {
 /**
 * Is
 * @param field string, value interface{}
-* @return condition
+* @return Condition
 **/
-func Is(field string, value interface{}) condition {
-	return condition{
+func Is(field string, value interface{}) Condition {
+	return Condition{
 		Field: field,
 		Op:    "is",
 		Value: value,
@@ -171,10 +171,10 @@ func Is(field string, value interface{}) condition {
 /**
 * IsNot
 * @param field string, value interface{}
-* @return condition
+* @return Condition
 **/
-func IsNot(field string, value interface{}) condition {
-	return condition{
+func IsNot(field string, value interface{}) Condition {
+	return Condition{
 		Field: field,
 		Op:    "is_not",
 		Value: value,
@@ -184,10 +184,10 @@ func IsNot(field string, value interface{}) condition {
 /**
 * Null
 * @param field string
-* @return condition
+* @return Condition
 **/
-func Null(field string) condition {
-	return condition{
+func Null(field string) Condition {
+	return Condition{
 		Field: field,
 		Op:    "null",
 	}
@@ -196,10 +196,10 @@ func Null(field string) condition {
 /**
 * NotNull
 * @param field string
-* @return condition
+* @return Condition
 **/
-func NotNull(field string) condition {
-	return condition{
+func NotNull(field string) Condition {
+	return Condition{
 		Field: field,
 		Op:    "not_null",
 	}
@@ -208,10 +208,10 @@ func NotNull(field string) condition {
 /**
 * Between
 * @param field string, value []interface{}
-* @return condition
+* @return Condition
 **/
-func Between(field string, value []interface{}) condition {
-	return condition{
+func Between(field string, value []interface{}) Condition {
+	return Condition{
 		Field: field,
 		Op:    "between",
 		Value: value,
@@ -221,10 +221,10 @@ func Between(field string, value []interface{}) condition {
 /**
 * NotBetween
 * @param field string, value []interface{}
-* @return condition
+* @return Condition
 **/
-func NotBetween(field string, value []interface{}) condition {
-	return condition{
+func NotBetween(field string, value []interface{}) Condition {
+	return Condition{
 		Field: field,
 		Op:    "not_between",
 		Value: value,
@@ -243,10 +243,10 @@ func newWhere() *where {
 
 /**
 * where
-* @param cond condition
+* @param cond Condition
 * @return *where
 **/
-func (s *where) where(cond condition, conector string) *where {
+func (s *where) where(cond Condition, conector string) *where {
 	if len(s.Wheres) == 0 {
 		s.Wheres = append(s.Wheres, et.Json{
 			cond.Field: et.Json{
@@ -280,27 +280,27 @@ func (s *where) where(cond condition, conector string) *where {
 
 /**
 * Where
-* @param cond condition
+* @param cond Condition
 * @return *where
 **/
-func (s *where) Where(cond condition) *where {
+func (s *where) Where(cond Condition) *where {
 	return s.where(cond, "and")
 }
 
 /**
 * And
-* @param cond condition
+* @param cond Condition
 * @return *where
 **/
-func (s *where) And(cond condition) *where {
+func (s *where) And(cond Condition) *where {
 	return s.where(cond, "and")
 }
 
 /**
 * Or
-* @param cond condition
+* @param cond Condition
 * @return *where
 **/
-func (s *where) Or(cond condition) *where {
+func (s *where) Or(cond Condition) *where {
 	return s.where(cond, "or")
 }

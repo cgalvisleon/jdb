@@ -31,7 +31,7 @@ type Ql struct {
 	Calls     et.Json                 `json:"calls"`
 	Joins     []et.Json               `json:"joins"`
 	GroupBy   []string                `json:"group_by"`
-	Havings   et.Json                 `json:"having"`
+	Havings   []et.Json               `json:"having"`
 	OrderBy   et.Json                 `json:"order_by"`
 	Limit     et.Json                 `json:"limit"`
 	Exists    bool                    `json:"exists"`
@@ -61,7 +61,7 @@ func newQl(db *Database) *Ql {
 		Calls:     et.Json{},
 		Joins:     make([]et.Json, 0),
 		GroupBy:   []string{},
-		Havings:   et.Json{},
+		Havings:   make([]et.Json, 0),
 		OrderBy:   et.Json{},
 		Limit:     et.Json{},
 		db:        db,
@@ -118,19 +118,70 @@ func (s *Ql) setTx(tx *Tx) *Ql {
 }
 
 /**
-* Join
-* @param to, as string, on []et.Json
+* Select
+* @param fields interface{}
 * @return *Ql
 **/
-func (s *Ql) Join(to, as string, on []et.Json) *Ql {
+func (s *Ql) Select(fields interface{}) *Ql {
+	switch v := fields.(type) {
+	case string:
+		s.Selects[v] = v
+	case []string:
+		for _, v := range v {
+			s.Selects[v] = v
+		}
+	case et.Json:
+		for k, v := range v {
+			s.Selects[k] = v
+		}
+	}
+
+	return s
+}
+
+/**
+* Object
+* @param fields interface{}
+* @return *Ql
+**/
+func (s *Ql) Object(fields interface{}) *Ql {
+	switch v := fields.(type) {
+	case string:
+		s.Selects[v] = v
+	case []string:
+		for _, v := range v {
+			s.Selects[v] = v
+		}
+	case et.Json:
+		for k, v := range v {
+			s.Selects[k] = v
+		}
+	}
+
+	s.Type = TpObject
+	return s
+}
+
+/**
+* Join
+* @param to, as string, on []Condition
+* @return *Ql
+*
+ */
+func (s *Ql) Join(to, as string, on ...Condition) *Ql {
 	n := len(s.Froms)
 	if n == 0 {
 		return s
 	}
 
-	model, err := s.db.getModelByName(to)
+	model, err := s.db.getModel(to)
 	if err != nil {
 		return s
+	}
+
+	ons := make([]et.Json, 0)
+	for _, v := range on {
+		ons = append(ons, v.ToJson())
 	}
 
 	n = len(s.Joins) + 1
@@ -138,7 +189,7 @@ func (s *Ql) Join(to, as string, on []et.Json) *Ql {
 		"from": et.Json{
 			model.Table: as,
 		},
-		"on": on,
+		"on": ons,
 	})
 
 	return s
@@ -159,8 +210,13 @@ func (s *Ql) Group(fields ...string) *Ql {
 * @param having et.Json
 * @return *Ql
 **/
-func (s *Ql) Having(having et.Json) *Ql {
-	s.Havings = having
+func (s *Ql) Having(having ...Condition) *Ql {
+	havings := make([]et.Json, 0)
+	for _, v := range having {
+		havings = append(havings, v.ToJson())
+	}
+
+	s.Havings = havings
 	return s
 }
 

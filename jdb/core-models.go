@@ -110,15 +110,15 @@ func setModel(kind, name string, version int, definition []byte) error {
 
 /**
 * loadModel
-* @param id string
+* @param name string
 * @return et.Json
 **/
-func loadModel(id string, v any) error {
+func loadModel(name string, v any) error {
 	items, err := models.
 		Query(et.Json{
 			"where": et.Json{
-				"id": et.Json{
-					"eq": id,
+				"name": et.Json{
+					"eq": name,
 				},
 			},
 		}).
@@ -146,10 +146,10 @@ func loadModel(id string, v any) error {
 
 /**
 * deleteModel
-* @param id string
+* @param name string
 * @return error
 **/
-func deleteModel(id string) error {
+func deleteModel(name string) error {
 	if models == nil {
 		return nil
 	}
@@ -157,8 +157,8 @@ func deleteModel(id string) error {
 	_, err := models.
 		Delete(et.Json{
 			"where": et.Json{
-				"id": et.Json{
-					"eq": id,
+				"name": et.Json{
+					"eq": name,
 				},
 			},
 		}).

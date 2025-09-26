@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/cgalvisleon/et/cache"
 	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
@@ -24,6 +26,18 @@ func main() {
 	if err != nil {
 		console.Panic(err)
 	}
+
+	model := db.Models["users"]
+	if model == nil {
+		console.Panic(fmt.Errorf("model not found"))
+	}
+
+	model.Where(jdb.Eq("_id", "USERA00000001")).
+		Join("project_users", "B", jdb.Eq("A._id", "B.user_id")).
+		Group("A._id", "A.caption").
+		Having(jdb.Eq("A._id", "USERA00000001")).
+		OrderBy("A._id", "A.caption").
+		Limit()
 
 	// users, err := db.Query(`SELECT json_build_object(
 	// 	'_id', _id,

@@ -1,9 +1,14 @@
 package postgres
 
-import "database/sql"
+import (
+	"database/sql"
+
+	"github.com/cgalvisleon/et/console"
+	"github.com/cgalvisleon/jdb/jdb"
+)
 
 func triggerRecords(db *sql.DB) error {
-	sql := `
+	sql := jdb.SQLUnQuote(`
 	CREATE SCHEMA IF NOT EXISTS core;
 
 	CREATE TABLE IF NOT EXISTS core.tables (
@@ -48,6 +53,13 @@ func triggerRecords(db *sql.DB) error {
 	index VARCHAR(80),
 	CONSTRAINT pk_records PRIMARY KEY (table_schema, table_name, index));
 
+	CREATE TABLE IF NOT EXISTS core.recyclings (
+	created_at TIMESTAMP,
+	table_schema VARCHAR(250),
+	table_name VARCHAR(250),
+	index VARCHAR(80),
+	CONSTRAINT pk_recyclings PRIMARY KEY (table_schema, table_name, index));
+
 	DROP TRIGGER IF EXISTS RECORDS_SET ON core.records CASCADE;
 	CREATE TRIGGER RECORDS_SET
 	AFTER INSERT ON core.records
@@ -72,8 +84,20 @@ func triggerRecords(db *sql.DB) error {
 			WHERE table_schema = TG_TABLE_SCHEMA
 			AND table_name = TG_TABLE_NAME
 			AND index = NEW.index;
+
+			new := to_jsonb(NEW);
+			old := to_jsonb(OLD);
+			IF new ? '$1' && old ? '$1' && new->>'$1' != old->>'$1' && new->>'$1' == '$2' THEN
+				INSERT INTO core.recyclings (created_at, table_schema, table_name, index)
+				VALUES (now(), TG_TABLE_SCHEMA, TG_TABLE_NAME, NEW.index);
+			END IF;
 		ELSEIF TD_OP = 'DELETE' THEN
 			DELETE FROM core.records
+			WHERE table_schema = TG_TABLE_SCHEMA
+			AND table_name = TG_TABLE_NAME
+			AND index = OLD.index;
+
+			DELETE FROM core.recyclings
 			WHERE table_schema = TG_TABLE_SCHEMA
 			AND table_name = TG_TABLE_NAME
 			AND index = OLD.index;
@@ -82,7 +106,9 @@ func triggerRecords(db *sql.DB) error {
 		RETURN NEW;
 	END;
 	$$ LANGUAGE plpgsql;
-	`
+	`, jdb.SOURCE, jdb.FOR_DELETE)
+
+	console.Debug("sql:", sql)
 	_, err := db.Exec(sql)
 	if err != nil {
 		return err
