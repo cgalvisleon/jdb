@@ -155,6 +155,6 @@ func (s *Ql) setHaving(having []et.Json) *Ql {
 * @return *Ql
 **/
 func (s *Ql) setLimit(limits et.Json) *Ql {
-	s.Limit = limits
+	s.Limits = limits
 	return s
 }

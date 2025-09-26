@@ -36,8 +36,8 @@ func main() {
 		Join("project_users", "B", jdb.Eq("A._id", "B.user_id")).
 		Group("A._id", "A.caption").
 		Having(jdb.Eq("A._id", "USERA00000001")).
-		OrderBy("A._id", "A.caption").
-		Limit()
+		Order(true, "A._id", "A.caption").
+		Limit(1, 10)
 
 	// users, err := db.Query(`SELECT json_build_object(
 	// 	'_id', _id,

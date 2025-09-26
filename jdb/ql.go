@@ -33,7 +33,7 @@ type Ql struct {
 	GroupBy   []string                `json:"group_by"`
 	Havings   []et.Json               `json:"having"`
 	OrderBy   et.Json                 `json:"order_by"`
-	Limit     et.Json                 `json:"limit"`
+	Limits    et.Json                 `json:"limit"`
 	Exists    bool                    `json:"exists"`
 	Count     bool                    `json:"count"`
 	SQL       string                  `json:"sql"`
@@ -63,7 +63,7 @@ func newQl(db *Database) *Ql {
 		GroupBy:   []string{},
 		Havings:   make([]et.Json, 0),
 		OrderBy:   et.Json{},
-		Limit:     et.Json{},
+		Limits:    et.Json{},
 		db:        db,
 		calls:     make(map[string]*DataContext),
 	}
@@ -237,10 +237,11 @@ func (s *Ql) Order(asc bool, fields ...string) *Ql {
 
 /**
 * Page
-* @param val int
+* @param page, rows int
 * @return *Ql
 **/
-func (s *Ql) Page(val int) *Ql {
-	s.Limit["page"] = val
-	return s
+func (s *Ql) Limit(page, rows int) (items et.Items, err error) {
+	s.Limits["page"] = page
+	s.Limits["rows"] = rows
+	return s.queryTx(nil)
 }

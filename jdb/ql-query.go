@@ -84,7 +84,7 @@ func (s *Ql) AllTx(tx *Tx) (et.Items, error) {
 * @return et.Items, error
 **/
 func (s *Ql) FirstTx(tx *Tx, n int) (et.Items, error) {
-	s.Limit = et.Json{
+	s.Limits = et.Json{
 		"page": 1,
 		"rows": n,
 	}
@@ -121,7 +121,7 @@ func (s *Ql) OneTx(tx *Tx) (et.Item, error) {
 * @return et.Items, error
 **/
 func (s *Ql) RowsTx(tx *Tx, val int) (et.Items, error) {
-	s.Limit["rows"] = val
+	s.Limits["rows"] = val
 	return s.AllTx(tx)
 }
 
