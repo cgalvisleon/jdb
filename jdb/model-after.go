@@ -1,6 +1,9 @@
 package jdb
 
-import "github.com/cgalvisleon/et/et"
+import (
+	"github.com/cgalvisleon/et/et"
+	"github.com/cgalvisleon/et/event"
+)
 
 /**
 * afterInsertDefault
@@ -8,7 +11,17 @@ import "github.com/cgalvisleon/et/et"
 * @return error
 **/
 func (s *Model) afterInsertDefault(tx *Tx, data et.Json) error {
-	if s.IsCore {
+	if s.RecordField != "" {
+		id := data.String(s.RecordField)
+		event.Publish(id, et.Json{
+			"model":  s.Name,
+			"action": "insert",
+			RECORDID: id,
+			"data":   data,
+		})
+	}
+
+	if s.isCore {
 		return nil
 	}
 
@@ -21,7 +34,17 @@ func (s *Model) afterInsertDefault(tx *Tx, data et.Json) error {
 * @return error
 **/
 func (s *Model) afterUpdateDefault(tx *Tx, data et.Json) error {
-	if s.IsCore {
+	if s.RecordField != "" {
+		id := data.String(s.RecordField)
+		event.Publish(id, et.Json{
+			"model":  s.Name,
+			"action": "update",
+			RECORDID: id,
+			"data":   data,
+		})
+	}
+
+	if s.isCore {
 		return nil
 	}
 
@@ -34,7 +57,17 @@ func (s *Model) afterUpdateDefault(tx *Tx, data et.Json) error {
 * @return error
 **/
 func (s *Model) afterDeleteDefault(tx *Tx, data et.Json) error {
-	if s.IsCore {
+	if s.RecordField != "" {
+		id := data.String(s.RecordField)
+		event.Publish(id, et.Json{
+			"model":  s.Name,
+			"action": "delete",
+			RECORDID: id,
+			"data":   data,
+		})
+	}
+
+	if s.isCore {
 		return nil
 	}
 

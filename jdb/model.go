@@ -149,7 +149,7 @@ type Model struct {
 	details      map[string]*Model       `json:"-"`
 	masters      map[string]*Model       `json:"-"`
 	isInit       bool                    `json:"-"`
-	IsCore       bool                    `json:"is_core"`
+	isCore       bool                    `json:"-"`
 	isDebug      bool                    `json:"-"`
 	calls        map[string]*DataContext `json:"-"`
 	beforeInsert []DataFunctionTx        `json:"-"`
@@ -195,7 +195,7 @@ func Define(definition et.Json) (*Model, error) {
 **/
 func LoadModel(name string) (*Model, error) {
 	var result Model
-	err := loadModel(name, &result)
+	err := loadModel("model", name, &result)
 	if err != nil {
 		return nil, err
 	}
@@ -230,20 +230,16 @@ func (s *Model) serialize() ([]byte, error) {
 * @return error
 **/
 func (s *Model) save() error {
+	if s.isCore {
+		return nil
+	}
+
 	bt, err := s.serialize()
 	if err != nil {
 		return err
 	}
 
 	return setModel("model", s.Name, s.Version, bt)
-}
-
-/**
-* load
-* @return error
-**/
-func (s *Model) load() error {
-	return loadModel(s.Name, s)
 }
 
 /**
@@ -346,4 +342,33 @@ func (s *Model) Init() error {
 	}
 
 	return nil
+}
+
+/**
+* GetModel
+* @param name string
+* @return (*Model, error)
+**/
+func (s *Model) GetModel(name string) (*Model, error) {
+	return s.db.GetModel(name)
+}
+
+/**
+* GetRecord
+* @param id string
+* @return (et.Item, error)
+**/
+func (s *Model) GetRecord(id string) (et.Item, error) {
+	result, err := s.
+		Where(Eq(RECORDID, id)).
+		One()
+	if err != nil {
+		return et.Item{}, err
+	}
+
+	if !result.Ok {
+		return et.Item{}, fmt.Errorf(MSG_RECORD_NOT_FOUND, id)
+	}
+
+	return result, nil
 }

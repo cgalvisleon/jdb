@@ -2,6 +2,7 @@ package jdb
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/timezone"
@@ -57,15 +58,12 @@ func defineModel(db *Database) error {
 		"record_field": RECORDID,
 		"primary_keys": []string{"kind", "name"},
 		"indices":      []string{"version", RECORDID},
-		"debug":        true,
 	})
 	if err != nil {
 		return err
 	}
 
-	models.IsCore = true
-	err = models.Init()
-	if err != nil {
+	if err = models.Init(); err != nil {
 		return err
 	}
 
@@ -110,15 +108,26 @@ func setModel(kind, name string, version int, definition []byte) error {
 
 /**
 * loadModel
-* @param name string
+* @param kind string, name string
 * @return et.Json
 **/
-func loadModel(name string, v any) error {
+func loadModel(kind, name string, v any) error {
+	if models == nil {
+		return fmt.Errorf(MSG_MODEL_NOT_FOUND, name)
+	}
+
 	items, err := models.
 		Query(et.Json{
 			"where": et.Json{
-				"name": et.Json{
-					"eq": name,
+				"kind": et.Json{
+					"eq": kind,
+				},
+				"and": []et.Json{
+					{
+						"name": et.Json{
+							"eq": name,
+						},
+					},
 				},
 			},
 		}).

@@ -56,15 +56,12 @@ func defineSeries(db *Database) error {
 		"record_field": RECORDID,
 		"primary_keys": []string{"kind", "tag"},
 		"indices":      []string{RECORDID},
-		"debug":        true,
 	})
 	if err != nil {
 		return err
 	}
 
-	series.IsCore = true
-	err = series.Init()
-	if err != nil {
+	if err = series.Init(); err != nil {
 		return err
 	}
 

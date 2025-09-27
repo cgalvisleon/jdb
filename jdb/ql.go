@@ -41,6 +41,7 @@ type Ql struct {
 	db        *Database               `json:"-"`
 	tx        *Tx                     `json:"-"`
 	isDebug   bool                    `json:"-"`
+	isJoin    bool                    `json:"-"`
 }
 
 /**
@@ -164,11 +165,11 @@ func (s *Ql) Object(fields interface{}) *Ql {
 
 /**
 * Join
-* @param to, as string, on []Condition
+* @param to, as string, on Condition
 * @return *Ql
 *
  */
-func (s *Ql) Join(to, as string, on ...Condition) *Ql {
+func (s *Ql) Join(to, as string, on Condition) *Ql {
 	n := len(s.Froms)
 	if n == 0 {
 		return s
@@ -179,18 +180,16 @@ func (s *Ql) Join(to, as string, on ...Condition) *Ql {
 		return s
 	}
 
-	ons := make([]et.Json, 0)
-	for _, v := range on {
-		ons = append(ons, v.ToJson())
-	}
-
 	n = len(s.Joins) + 1
 	s.Joins = append(s.Joins, et.Json{
 		"from": et.Json{
 			model.Table: as,
 		},
-		"on": ons,
+		"on": []et.Json{
+			on.ToJson(),
+		},
 	})
+	s.isJoin = true
 
 	return s
 }
@@ -233,15 +232,4 @@ func (s *Ql) Order(asc bool, fields ...string) *Ql {
 	}
 
 	return s
-}
-
-/**
-* Page
-* @param page, rows int
-* @return *Ql
-**/
-func (s *Ql) Limit(page, rows int) (items et.Items, err error) {
-	s.Limits["page"] = page
-	s.Limits["rows"] = rows
-	return s.queryTx(nil)
 }

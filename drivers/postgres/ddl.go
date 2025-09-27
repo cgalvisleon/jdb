@@ -243,7 +243,7 @@ func (s *Postgres) buildIndices(definition et.Json) (string, error) {
 	result := ""
 	for _, v := range indices {
 		def := fmt.Sprintf("%s_%s_idx", name, v)
-		def = fmt.Sprintf("CREATE INDEX IF NOT EXISTS %s ON %s (%s);", def, table, v)
+		def = fmt.Sprintf("CREATE INDEX IF NOT EXISTS %s ON %s(%s);", def, table, v)
 		result = strs.Append(result, def, "\n\t")
 	}
 
@@ -257,7 +257,7 @@ func (s *Postgres) buildIndices(definition et.Json) (string, error) {
 **/
 func (s *Postgres) buildTriggerBeforeInsert(definition et.Json) (string, error) {
 	recordField := definition.String("record_field")
-	if recordField != "" {
+	if recordField == "" {
 		return "", nil
 	}
 

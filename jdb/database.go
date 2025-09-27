@@ -162,7 +162,16 @@ func (s *Database) getOrCreateModel(schema, name string) (*Model, error) {
 **/
 func (s *Database) getModel(name string) (*Model, error) {
 	result, ok := s.Models[name]
-	if !ok {
+	if ok {
+		return result, nil
+	}
+
+	err := loadModel("model", name, &result)
+	if err != nil {
+		return nil, err
+	}
+
+	if result == nil {
 		return nil, fmt.Errorf(MSG_MODEL_NOT_FOUND, name)
 	}
 
@@ -190,8 +199,6 @@ func (s *Database) init(model *Model) error {
 
 	if model.isDebug {
 		console.Debugf("init:%s", model.ToJson().ToEscapeHTML())
-		console.Debug("load:\n\t", sql)
-		return nil
 	}
 
 	_, err = s.Query(sql)

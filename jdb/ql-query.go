@@ -79,17 +79,49 @@ func (s *Ql) AllTx(tx *Tx) (et.Items, error) {
 }
 
 /**
+* All
+* @return et.Items, error
+**/
+func (s *Ql) All() (et.Items, error) {
+	return s.AllTx(nil)
+}
+
+/**
+* Page
+* @param page, rows int
+* @return *Ql
+**/
+func (s *Ql) LimitTx(tx *Tx, page, rows int) (items et.Items, err error) {
+	s.Limits["page"] = page
+	s.Limits["rows"] = rows
+	return s.queryTx(tx)
+}
+
+/**
+* Limit
+* @param page, rows int
+* @return *Ql
+**/
+func (s *Ql) Limit(page, rows int) (items et.Items, err error) {
+	return s.LimitTx(nil, page, rows)
+}
+
+/**
 * FirstTx
 * @param tx *Tx, n int
 * @return et.Items, error
 **/
 func (s *Ql) FirstTx(tx *Tx, n int) (et.Items, error) {
-	s.Limits = et.Json{
-		"page": 1,
-		"rows": n,
-	}
+	return s.LimitTx(tx, 1, n)
+}
 
-	return s.queryTx(tx)
+/**
+* First
+* @param n int
+* @return et.Items, error
+**/
+func (s *Ql) First(n int) (et.Items, error) {
+	return s.FirstTx(nil, n)
 }
 
 /**
@@ -102,12 +134,21 @@ func (s *Ql) LastTx(tx *Tx, n int) (et.Items, error) {
 }
 
 /**
+* Last
+* @param n int
+* @return et.Items, error
+**/
+func (s *Ql) Last(n int) (et.Items, error) {
+	return s.LastTx(nil, n)
+}
+
+/**
 * OneTx
 * @param tx *Tx
 * @return et.Item, error
 **/
 func (s *Ql) OneTx(tx *Tx) (et.Item, error) {
-	result, err := s.FirstTx(tx, 1)
+	result, err := s.LimitTx(tx, 1, 1)
 	if err != nil {
 		return et.Item{}, err
 	}
@@ -116,13 +157,29 @@ func (s *Ql) OneTx(tx *Tx) (et.Item, error) {
 }
 
 /**
+* One
+* @return et.Item, error
+**/
+func (s *Ql) One() (et.Item, error) {
+	return s.OneTx(nil)
+}
+
+/**
 * RowsTx
 * @param tx *Tx, limit int
 * @return et.Items, error
 **/
 func (s *Ql) RowsTx(tx *Tx, val int) (et.Items, error) {
-	s.Limits["rows"] = val
-	return s.AllTx(tx)
+	return s.LimitTx(tx, 1, val)
+}
+
+/**
+* Rows
+* @param val int
+* @return et.Items, error
+**/
+func (s *Ql) Rows(val int) (et.Items, error) {
+	return s.RowsTx(nil, val)
 }
 
 /**
@@ -154,6 +211,14 @@ func (s *Ql) ItExistsTx(tx *Tx) (bool, error) {
 }
 
 /**
+* ItExists
+* @return bool, error
+**/
+func (s *Ql) ItExists() (bool, error) {
+	return s.ItExistsTx(nil)
+}
+
+/**
 * CountedTx
 * @param tx *Tx
 * @return int, error
@@ -179,57 +244,6 @@ func (s *Ql) CountedTx(tx *Tx) (int, error) {
 	}
 
 	return result.Int(0, "all"), nil
-}
-
-/**
-* First
-* @param n int
-* @return et.Items, error
-**/
-func (s *Ql) First(n int) (et.Items, error) {
-	return s.FirstTx(nil, n)
-}
-
-/**
-* All
-* @return et.Items, error
-**/
-func (s *Ql) All() (et.Items, error) {
-	return s.AllTx(nil)
-}
-
-/**
-* Last
-* @param n int
-* @return et.Items, error
-**/
-func (s *Ql) Last(n int) (et.Items, error) {
-	return s.LastTx(nil, n)
-}
-
-/**
-* One
-* @return et.Item, error
-**/
-func (s *Ql) One() (et.Item, error) {
-	return s.OneTx(nil)
-}
-
-/**
-* Rows
-* @param n int
-* @return et.Items, error
-**/
-func (s *Ql) Rows(n int) (et.Items, error) {
-	return s.RowsTx(nil, n)
-}
-
-/**
-* ItExists
-* @return bool, error
-**/
-func (s *Ql) ItExists() (bool, error) {
-	return s.ItExistsTx(nil)
 }
 
 /**

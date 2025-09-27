@@ -5,10 +5,13 @@ package jdb
 * @return error
 **/
 func initCore(db *Database) error {
-	if err := defineSeries(db); err != nil {
+	if err := defineModel(db); err != nil {
 		return err
 	}
-	if err := defineModel(db); err != nil {
+	if err := defineRecords(db); err != nil {
+		return err
+	}
+	if err := defineSeries(db); err != nil {
 		return err
 	}
 

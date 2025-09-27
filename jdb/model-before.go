@@ -12,11 +12,11 @@ import (
 **/
 func (s *Model) beforeInsertDefault(tx *Tx, data et.Json) error {
 	if s.RecordField != "" {
-		id := reg.ULID()
+		id := reg.GenULIDI(s.Name)
 		data.Set(s.RecordField, id)
 	}
 
-	if s.IsCore {
+	if s.isCore {
 		return nil
 	}
 
@@ -29,7 +29,7 @@ func (s *Model) beforeInsertDefault(tx *Tx, data et.Json) error {
 * @return error
 **/
 func (s *Model) beforeUpdateDefault(tx *Tx, data et.Json) error {
-	if s.IsCore {
+	if s.isCore {
 		return nil
 	}
 
@@ -42,7 +42,7 @@ func (s *Model) beforeUpdateDefault(tx *Tx, data et.Json) error {
 * @return error
 **/
 func (s *Model) beforeDeleteDefault(tx *Tx, data et.Json) error {
-	if s.IsCore {
+	if s.isCore {
 		return nil
 	}
 
