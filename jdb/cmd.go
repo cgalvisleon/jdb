@@ -28,8 +28,8 @@ type Cmd struct {
 	*where
 	Command      string           `json:"command"`
 	Data         []et.Json        `json:"data"`
-	Before       et.Json          `json:"before"`
-	After        et.Json          `json:"after"`
+	Before       []et.Json        `json:"before"`
+	After        []et.Json        `json:"after"`
 	Returns      et.Json          `json:"return"`
 	SQL          string           `json:"sql"`
 	db           *Database        `json:"-"`
@@ -57,8 +57,8 @@ func newCommand(model *Model, cmd string, data []et.Json) *Cmd {
 		where:    newWhere(),
 		Command:  cmd,
 		Data:     data,
-		Before:   et.Json{},
-		After:    et.Json{},
+		Before:   []et.Json{},
+		After:    []et.Json{},
 		Returns:  et.Json{},
 		db:       model.db,
 		from:     model,
@@ -114,29 +114,6 @@ func (s *Cmd) toJson() et.Json {
 func (s *Cmd) Debug() *Cmd {
 	s.isDebug = true
 	return s
-}
-
-/**
-* ExecTx
-* @param tx *Tx
-* @return (et.Items, error)
-**/
-func (s *Cmd) ExecTx(tx *Tx) (et.Items, error) {
-	s.tx = tx
-
-	if err := s.validate(); err != nil {
-		return et.Items{}, err
-	}
-
-	return et.Items{}, nil
-}
-
-/**
-* Exec
-* @return (et.Items, error)
-**/
-func (s *Cmd) Exec() (et.Items, error) {
-	return s.ExecTx(nil)
 }
 
 /**

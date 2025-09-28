@@ -112,7 +112,7 @@ func main() {
 	// }
 
 	query, err := db.Select(et.Json{
-		"type": jdb.TpRows,
+		"source_field": "_data",
 		"from": et.Json{
 			"js_core.users": "A",
 		},

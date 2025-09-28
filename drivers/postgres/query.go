@@ -114,11 +114,11 @@ func (s *Postgres) buildSelect(query et.Json) (string, error) {
 		return "COUNT(*) AS all", nil
 	}
 
-	tp := query.String("type")
-	if tp == jdb.TpObject {
+	sourceField := query.String("source_field")
+	if sourceField != "" {
 		atribs := query.Json("atribs")
 		if atribs.IsEmpty() {
-			result = fmt.Sprintf("\n\t%s", jdb.SOURCE)
+			result = fmt.Sprintf("\n\t%s", sourceField)
 		} else {
 			for k, v := range atribs {
 				def := fmt.Sprintf("\n\t'%s', %s", v, k)
@@ -132,7 +132,7 @@ func (s *Postgres) buildSelect(query et.Json) (string, error) {
 
 		selects := query.Json("selects")
 		if selects.IsEmpty() {
-			def := fmt.Sprintf("to_jsonb(A) - '%s'", jdb.SOURCE)
+			def := fmt.Sprintf("to_jsonb(A) - '%s'", sourceField)
 			result = strs.Append(result, def, "||")
 		} else {
 			sel := ""

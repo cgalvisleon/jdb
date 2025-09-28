@@ -35,10 +35,6 @@ func defineModel(db *Database) error {
 				"type": "datetime",
 			},
 			{
-				"name": "kind",
-				"type": "key",
-			},
-			{
 				"name": "name",
 				"type": "text",
 			},
@@ -56,7 +52,7 @@ func defineModel(db *Database) error {
 			},
 		},
 		"record_field": RECORDID,
-		"primary_keys": []string{"kind", "name"},
+		"primary_keys": []string{"name"},
 		"indices":      []string{"version", RECORDID},
 	})
 	if err != nil {
@@ -72,17 +68,16 @@ func defineModel(db *Database) error {
 
 /**
 * setModel
-* @param kind string, name string, version int, definition []byte
+* @param name string, version int, definition []byte
 * @return error
 **/
-func setModel(kind, name string, version int, definition []byte) error {
+func setModel(name string, version int, definition []byte) error {
 	if models == nil {
 		return nil
 	}
 
 	now := timezone.Now()
 	data := et.Json{
-		"kind":       kind,
 		"name":       name,
 		"version":    version,
 		"definition": definition,
@@ -108,10 +103,10 @@ func setModel(kind, name string, version int, definition []byte) error {
 
 /**
 * loadModel
-* @param kind string, name string
+* @param name string
 * @return et.Json
 **/
-func loadModel(kind, name string, v any) error {
+func loadModel(name string, v any) error {
 	if models == nil {
 		return fmt.Errorf(MSG_MODEL_NOT_FOUND, name)
 	}
@@ -119,15 +114,8 @@ func loadModel(kind, name string, v any) error {
 	items, err := models.
 		Query(et.Json{
 			"where": et.Json{
-				"kind": et.Json{
-					"eq": kind,
-				},
-				"and": []et.Json{
-					{
-						"name": et.Json{
-							"eq": name,
-						},
-					},
+				"name": et.Json{
+					"eq": name,
 				},
 			},
 		}).

@@ -9,30 +9,19 @@ import "github.com/cgalvisleon/et/et"
 **/
 func (s *Model) Query(query et.Json) *Ql {
 	result := newQl(s.db)
-	result.addFrom(s.Name, "A")
+	result.addFrom(s, "A")
 	return result.setQuery(query)
 }
 
 /**
 * Select
-* @param fields interface{}
+* @param fields ...string
 * @return *Ql
 **/
-func (s *Model) Select(fields interface{}) *Ql {
+func (s *Model) Select(fields ...string) *Ql {
 	result := newQl(s.db)
-	result.addFrom(s.Name, "A")
-	return result.Select(fields)
-}
-
-/**
-* Object
-* @param fields interface{}
-* @return *Ql
-**/
-func (s *Model) Object(fields interface{}) *Ql {
-	result := newQl(s.db)
-	result.addFrom(s.Name, "A")
-	return result.Object(fields)
+	result.addFrom(s, "A")
+	return result.Select(fields...)
 }
 
 /**
@@ -42,10 +31,6 @@ func (s *Model) Object(fields interface{}) *Ql {
 **/
 func (s *Model) Where(cond Condition) *Ql {
 	result := newQl(s.db)
-	result.addFrom(s.Name, "A")
-	if s.SourceField != "" {
-		result.Type = TpObject
-	}
-
+	result.addFrom(s, "A")
 	return result.Where(cond)
 }

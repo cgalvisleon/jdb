@@ -4,11 +4,11 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"strings"
 
 	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/utility"
+	"github.com/dop251/goja"
 )
 
 var dbs map[string]*Database
@@ -117,31 +117,37 @@ func (s *Database) getOrCreateModel(schema, name string) (*Model, error) {
 	model, ok := s.Models[name]
 	if !ok {
 		model = &Model{
-			Database:     s.Name,
-			Schema:       schema,
-			Name:         name,
-			Table:        "",
-			Columns:      []et.Json{},
-			SourceField:  "",
-			RecordField:  "",
-			Details:      []et.Json{},
-			Masters:      []et.Json{},
-			Rollups:      []et.Json{},
-			Relations:    []et.Json{},
-			PrimaryKeys:  []string{},
-			ForeignKeys:  []et.Json{},
-			Indices:      []string{},
-			Required:     []string{},
-			db:           s,
-			details:      make(map[string]*Model),
-			masters:      make(map[string]*Model),
-			calls:        make(map[string]*DataContext),
-			beforeInsert: []DataFunctionTx{},
-			beforeUpdate: []DataFunctionTx{},
-			beforeDelete: []DataFunctionTx{},
-			afterInsert:  []DataFunctionTx{},
-			afterUpdate:  []DataFunctionTx{},
-			afterDelete:  []DataFunctionTx{},
+			Database:      s.Name,
+			Schema:        schema,
+			Name:          name,
+			Table:         "",
+			Columns:       []et.Json{},
+			SourceField:   "",
+			RecordField:   "",
+			Details:       []et.Json{},
+			Masters:       []et.Json{},
+			Rollups:       []et.Json{},
+			Relations:     []et.Json{},
+			PrimaryKeys:   []string{},
+			ForeignKeys:   []et.Json{},
+			Indices:       []string{},
+			Required:      []string{},
+			BeforeInserts: make([]string, 0),
+			BeforeUpdates: make([]string, 0),
+			BeforeDeletes: make([]string, 0),
+			AfterInserts:  make([]string, 0),
+			AfterUpdates:  make([]string, 0),
+			AfterDeletes:  make([]string, 0),
+			db:            s,
+			vm:            goja.New(),
+			details:       make(map[string]*Model),
+			masters:       make(map[string]*Model),
+			beforeInsert:  []DataFunctionTx{},
+			beforeUpdate:  []DataFunctionTx{},
+			beforeDelete:  []DataFunctionTx{},
+			afterInsert:   []DataFunctionTx{},
+			afterUpdate:   []DataFunctionTx{},
+			afterDelete:   []DataFunctionTx{},
 		}
 		model.BeforeInsert(model.beforeInsertDefault)
 		model.BeforeUpdate(model.beforeUpdateDefault)
@@ -166,7 +172,7 @@ func (s *Database) getModel(name string) (*Model, error) {
 		return result, nil
 	}
 
-	err := loadModel("model", name, &result)
+	err := loadModel(name, &result)
 	if err != nil {
 		return nil, err
 	}
@@ -368,21 +374,12 @@ func (s *Database) Select(query et.Json) (*Ql, error) {
 **/
 func (s *Database) From(name string) *Ql {
 	result := newQl(s)
-	lst := strings.Split(name, ".")
-	if len(lst) == 2 {
-		model, err := s.getModel(lst[1])
-		if err != nil {
-			return result
-		}
-		result.addFrom(model.Table, "A")
-	} else {
-		model, err := s.getModel(lst[1])
-		if err != nil {
-			return result
-		}
-		result.addFrom(model.Table, "A")
+	model, err := s.getModel(name)
+	if err != nil {
+		return result
 	}
 
+	result.addFrom(model, "A")
 	return result
 }
 

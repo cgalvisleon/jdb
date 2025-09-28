@@ -6,42 +6,31 @@ import (
 	"github.com/cgalvisleon/et/et"
 )
 
-const (
-	TpRows   = "rows"
-	TpObject = "object"
-)
-
-var (
-	TpQuerys = map[string]bool{
-		TpObject: true,
-		TpRows:   true,
-	}
-)
-
 type Ql struct {
 	*where
-	Database  string                  `json:"database"`
-	Type      string                  `json:"type"`
-	Froms     et.Json                 `json:"from"`
-	Selects   et.Json                 `json:"selects"`
-	Atribs    et.Json                 `json:"atribs"`
-	Hidden    []string                `json:"hidden"`
-	Rollups   et.Json                 `json:"rollups"`
-	Relations et.Json                 `json:"relations"`
-	Calls     et.Json                 `json:"calls"`
-	Joins     []et.Json               `json:"joins"`
-	GroupBy   []string                `json:"group_by"`
-	Havings   []et.Json               `json:"having"`
-	OrderBy   et.Json                 `json:"order_by"`
-	Limits    et.Json                 `json:"limit"`
-	Exists    bool                    `json:"exists"`
-	Count     bool                    `json:"count"`
-	SQL       string                  `json:"sql"`
-	calls     map[string]*DataContext `json:"-"`
-	db        *Database               `json:"-"`
-	tx        *Tx                     `json:"-"`
-	isDebug   bool                    `json:"-"`
-	isJoin    bool                    `json:"-"`
+	Database    string                  `json:"database"`
+	SourceField string                  `json:"source_field"`
+	Froms       et.Json                 `json:"from"`
+	Selects     et.Json                 `json:"selects"`
+	Atribs      et.Json                 `json:"atribs"`
+	Hidden      []string                `json:"hidden"`
+	Calls       et.Json                 `json:"calls"`
+	Rollups     et.Json                 `json:"rollups"`
+	Relations   et.Json                 `json:"relations"`
+	Joins       []et.Json               `json:"joins"`
+	GroupBy     []string                `json:"group_by"`
+	Havings     []et.Json               `json:"having"`
+	OrderBy     et.Json                 `json:"order_by"`
+	Limits      et.Json                 `json:"limit"`
+	Exists      bool                    `json:"exists"`
+	Count       bool                    `json:"count"`
+	SQL         string                  `json:"sql"`
+	calls       map[string]*DataContext `json:"-"`
+	db          *Database               `json:"-"`
+	from        *Model                  `json:"-"`
+	tx          *Tx                     `json:"-"`
+	isDebug     bool                    `json:"-"`
+	isJoin      bool                    `json:"-"`
 }
 
 /**
@@ -52,7 +41,6 @@ func newQl(db *Database) *Ql {
 	return &Ql{
 		where:     newWhere(),
 		Database:  db.Name,
-		Type:      TpRows,
 		Froms:     et.Json{},
 		Selects:   et.Json{},
 		Atribs:    et.Json{},
@@ -100,11 +88,13 @@ func (s *Ql) Debug() *Ql {
 
 /**
 * addFrom
-* @param name, as string
+* @param model *Model, as string
 * @return *Ql
 **/
-func (s *Ql) addFrom(name, as string) *Ql {
-	s.Froms[name] = as
+func (s *Ql) addFrom(model *Model, as string) *Ql {
+	s.from = model
+	s.Froms[model.Name] = as
+	s.SourceField = model.SourceField
 	return s
 }
 
@@ -123,43 +113,36 @@ func (s *Ql) setTx(tx *Tx) *Ql {
 * @param fields interface{}
 * @return *Ql
 **/
-func (s *Ql) Select(fields interface{}) *Ql {
-	switch v := fields.(type) {
-	case string:
-		s.Selects[v] = v
-	case []string:
-		for _, v := range v {
-			s.Selects[v] = v
+func (s *Ql) Select(fields ...string) *Ql {
+	if s.from == nil {
+		return s
+	}
+
+	for _, v := range fields {
+		column, ok := s.from.GetColumn(v)
+		if !ok && s.from.IsLocked {
+			continue
 		}
-	case et.Json:
-		for k, v := range v {
-			s.Selects[k] = v
+
+		if !ok {
+			s.Atribs[v] = v
+			continue
+		}
+
+		tp := column.String("type")
+		if tp == TypeCalc {
+			s.Calls[v] = column
+		} else if tp == TypeRollup {
+			s.Rollups[v] = column
+		} else if tp == TypeRelation {
+			s.Relations[v] = column
+		} else if tp == TypeDetail {
+			s.Relations[v] = column
+		} else {
+			s.Selects[v] = v
 		}
 	}
 
-	return s
-}
-
-/**
-* Object
-* @param fields interface{}
-* @return *Ql
-**/
-func (s *Ql) Object(fields interface{}) *Ql {
-	switch v := fields.(type) {
-	case string:
-		s.Selects[v] = v
-	case []string:
-		for _, v := range v {
-			s.Selects[v] = v
-		}
-	case et.Json:
-		for k, v := range v {
-			s.Selects[k] = v
-		}
-	}
-
-	s.Type = TpObject
 	return s
 }
 
