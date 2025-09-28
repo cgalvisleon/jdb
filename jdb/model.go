@@ -93,51 +93,6 @@ var (
 	ErrDuplicate   = fmt.Errorf("record duplicate")
 )
 
-type Val struct {
-	Value interface{} `json:"value"`
-}
-
-/**
-* V
-* @param value interface{}
-* @return *Val
-**/
-func V(value interface{}) *Val {
-	return &Val{
-		Value: value,
-	}
-}
-
-type Column struct {
-	Name string `json:"name"`
-}
-
-/**
-* C
-* @param name string
-* @return *Column
-**/
-func C(name string) *Column {
-	return &Column{
-		Name: name,
-	}
-}
-
-type Atrib struct {
-	Name string `json:"name"`
-}
-
-/**
-* A
-* @param name string
-* @return *Atrib
-**/
-func A(name string) *Atrib {
-	return &Atrib{
-		Name: name,
-	}
-}
-
 type DataFunctionTx func(tx *Tx, data et.Json) error
 
 type DataContext func(data et.Json)

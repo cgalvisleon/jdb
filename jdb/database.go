@@ -11,7 +11,7 @@ import (
 	"github.com/dop251/goja"
 )
 
-var dbs map[string]*Database
+// var dbs map[string]*Database
 
 func init() {
 	dbs = make(map[string]*Database)
@@ -114,9 +114,9 @@ func (s *Database) getOrCreateModel(schema, name string) (*Model, error) {
 		return nil, fmt.Errorf(MSG_NAME_REQUIRED)
 	}
 
-	model, ok := s.Models[name]
+	result, ok := s.Models[name]
 	if !ok {
-		model = &Model{
+		result = &Model{
 			Database:      s.Name,
 			Schema:        schema,
 			Name:          name,
@@ -149,16 +149,16 @@ func (s *Database) getOrCreateModel(schema, name string) (*Model, error) {
 			afterUpdate:   []DataFunctionTx{},
 			afterDelete:   []DataFunctionTx{},
 		}
-		model.BeforeInsert(model.beforeInsertDefault)
-		model.BeforeUpdate(model.beforeUpdateDefault)
-		model.BeforeDelete(model.beforeDeleteDefault)
-		model.AfterInsert(model.afterInsertDefault)
-		model.AfterUpdate(model.afterUpdateDefault)
-		model.AfterDelete(model.afterDeleteDefault)
-		s.Models[name] = model
+		result.BeforeInsert(result.beforeInsertDefault)
+		result.BeforeUpdate(result.beforeUpdateDefault)
+		result.BeforeDelete(result.beforeDeleteDefault)
+		result.AfterInsert(result.afterInsertDefault)
+		result.AfterUpdate(result.afterUpdateDefault)
+		result.AfterDelete(result.afterDeleteDefault)
+		s.Models[name] = result
 	}
 
-	return model, nil
+	return result, nil
 }
 
 /**
@@ -179,6 +179,31 @@ func (s *Database) getModel(name string) (*Model, error) {
 
 	if result == nil {
 		return nil, fmt.Errorf(MSG_MODEL_NOT_FOUND, name)
+	}
+
+	result.db = s
+	result.vm = goja.New()
+	result.BeforeInsert(result.beforeInsertDefault)
+	result.BeforeUpdate(result.beforeUpdateDefault)
+	result.BeforeDelete(result.beforeDeleteDefault)
+	result.AfterInsert(result.afterInsertDefault)
+	result.AfterUpdate(result.afterUpdateDefault)
+	result.AfterDelete(result.afterDeleteDefault)
+	s.Models[name] = result
+
+	for _, item := range result.Details {
+		name := item.String("name")
+		detail, err := s.getModel(name)
+		if err != nil {
+			continue
+		}
+
+		if detail == nil {
+			continue
+		}
+
+		result.details[name] = detail
+		detail.masters[result.Name] = result
 	}
 
 	return result, nil
@@ -228,10 +253,6 @@ func (s *Database) init(model *Model) error {
 * @return (et.Items, error)
 **/
 func (s *Database) query(query *Ql) (et.Items, error) {
-	if err := query.validate(); err != nil {
-		return et.Items{}, err
-	}
-
 	sql, err := s.driver.Query(query)
 	if err != nil {
 		return et.Items{}, err

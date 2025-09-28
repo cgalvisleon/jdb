@@ -44,11 +44,7 @@ func (s *Ql) queryTx(tx *Tx) (et.Items, error) {
 		return et.Items{}, fmt.Errorf(MSG_DATABASE_REQUIRED)
 	}
 
-	err := s.validate()
-	if err != nil {
-		return et.Items{}, err
-	}
-
+	s.setTx(tx)
 	result, err := s.db.query(s)
 	if err != nil {
 		return et.Items{}, err
@@ -193,12 +189,7 @@ func (s *Ql) ItExistsTx(tx *Tx) (bool, error) {
 	}
 
 	s.Exists = true
-	s.setTx(tx)
-	err := s.validate()
-	if err != nil {
-		return false, err
-	}
-	result, err := s.db.query(s)
+	result, err := s.queryTx(tx)
 	if err != nil {
 		return false, err
 	}
@@ -229,12 +220,7 @@ func (s *Ql) CountedTx(tx *Tx) (int, error) {
 	}
 
 	s.Count = true
-	s.setTx(tx)
-	err := s.validate()
-	if err != nil {
-		return 0, err
-	}
-	result, err := s.db.query(s)
+	result, err := s.queryTx(tx)
 	if err != nil {
 		return 0, err
 	}

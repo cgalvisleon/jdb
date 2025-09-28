@@ -8,8 +8,10 @@ require (
 	github.com/dlclark/regexp2 v1.11.4 // indirect
 	github.com/go-sourcemap/sourcemap v2.1.3+incompatible // indirect
 	github.com/google/pprof v0.0.0-20230207041349-798e818bf904 // indirect
+	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/oklog/ulid/v2 v2.1.1 // indirect
 	github.com/rs/xid v1.6.0 // indirect
+	github.com/spf13/pflag v1.0.6 // indirect
 	golang.org/x/text v0.24.0 // indirect
 )
 
@@ -26,6 +28,7 @@ require (
 	github.com/nats-io/nkeys v0.4.11 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
 	github.com/redis/go-redis/v9 v9.7.3 // indirect
+	github.com/spf13/cobra v1.9.1
 	golang.org/x/crypto v0.37.0 // indirect
 	golang.org/x/exp v0.0.0-20250408133849-7e4ce0ab07d0 // indirect
 	golang.org/x/sys v0.33.0 // indirect

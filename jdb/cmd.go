@@ -3,6 +3,7 @@ package jdb
 import (
 	"encoding/json"
 	"fmt"
+	"slices"
 
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/utility"
@@ -26,25 +27,31 @@ var (
 
 type Cmd struct {
 	*where
-	Command      string           `json:"command"`
-	Data         []et.Json        `json:"data"`
-	Before       []et.Json        `json:"before"`
-	After        []et.Json        `json:"after"`
-	Returns      et.Json          `json:"return"`
-	SQL          string           `json:"sql"`
-	db           *Database        `json:"-"`
-	tx           *Tx              `json:"-"`
-	from         *Model           `json:"-"`
-	result       []et.Json        `json:"-"`
-	columns      []string         `json:"-"`
-	atributs     []string         `json:"-"`
-	isDebug      bool             `json:"-"`
-	beforeInsert []DataFunctionTx `json:"-"`
-	beforeUpdate []DataFunctionTx `json:"-"`
-	beforeDelete []DataFunctionTx `json:"-"`
-	afterInsert  []DataFunctionTx `json:"-"`
-	afterUpdate  []DataFunctionTx `json:"-"`
-	afterDelete  []DataFunctionTx `json:"-"`
+	Command       string           `json:"command"`
+	Data          []et.Json        `json:"data"`
+	Keys          []et.Json        `json:"keys"`
+	Before        []et.Json        `json:"before"`
+	After         []et.Json        `json:"after"`
+	Returns       et.Json          `json:"return"`
+	SQL           string           `json:"sql"`
+	db            *Database        `json:"-"`
+	tx            *Tx              `json:"-"`
+	from          *Model           `json:"-"`
+	result        []et.Json        `json:"-"`
+	isDebug       bool             `json:"-"`
+	useAtribs     bool             `json:"-"`
+	beforeInsert  []DataFunctionTx `json:"-"`
+	beforeUpdate  []DataFunctionTx `json:"-"`
+	beforeDelete  []DataFunctionTx `json:"-"`
+	afterInsert   []DataFunctionTx `json:"-"`
+	afterUpdate   []DataFunctionTx `json:"-"`
+	afterDelete   []DataFunctionTx `json:"-"`
+	beforeInserts []string         `json:"-"`
+	beforeUpdates []string         `json:"-"`
+	beforeDeletes []string         `json:"-"`
+	afterInserts  []string         `json:"-"`
+	afterUpdates  []string         `json:"-"`
+	afterDeletes  []string         `json:"-"`
 }
 
 /**
@@ -52,37 +59,59 @@ type Cmd struct {
 * @param model *Model, cmd string, data []et.Json
 * @return *Cmd
 **/
-func newCommand(model *Model, cmd string, data []et.Json) *Cmd {
+func newCommand(model *Model, cmd string, items []et.Json) *Cmd {
 	result := &Cmd{
-		where:    newWhere(),
-		Command:  cmd,
-		Data:     data,
-		Before:   []et.Json{},
-		After:    []et.Json{},
-		Returns:  et.Json{},
-		db:       model.db,
-		from:     model,
-		result:   []et.Json{},
-		columns:  []string{},
-		atributs: []string{},
+		where:         newWhere(),
+		Command:       cmd,
+		Data:          []et.Json{},
+		Keys:          []et.Json{},
+		Before:        []et.Json{},
+		After:         []et.Json{},
+		Returns:       et.Json{},
+		db:            model.db,
+		from:          model,
+		result:        []et.Json{},
+		beforeInserts: model.BeforeInserts,
+		beforeUpdates: model.BeforeUpdates,
+		beforeDeletes: model.BeforeDeletes,
+		afterInserts:  model.AfterInserts,
+		afterUpdates:  model.AfterUpdates,
+		afterDeletes:  model.AfterDeletes,
+		beforeInsert:  model.beforeInsert,
+		beforeUpdate:  model.beforeUpdate,
+		beforeDelete:  model.beforeDelete,
+		afterInsert:   model.afterInsert,
+		afterUpdate:   model.afterUpdate,
+		afterDelete:   model.afterDelete,
 	}
-	for _, v := range model.beforeInsert {
-		result.BeforeInsert(v)
-	}
-	for _, v := range model.beforeUpdate {
-		result.BeforeUpdate(v)
-	}
-	for _, v := range model.beforeDelete {
-		result.BeforeDelete(v)
-	}
-	for _, v := range model.afterInsert {
-		result.AfterInsert(v)
-	}
-	for _, v := range model.afterUpdate {
-		result.AfterUpdate(v)
-	}
-	for _, v := range model.afterDelete {
-		result.AfterDelete(v)
+	result.useAtribs = model.SourceField != "" && !model.IsLocked
+	for _, item := range items {
+		data := et.Json{}
+		keys := et.Json{}
+		for k, v := range item {
+			_, ok := model.GetColumn(k)
+			if !ok && !result.useAtribs {
+				data[k] = et.Json{
+					"type":  "atrib",
+					"value": v,
+				}
+			}
+
+			if !ok {
+				continue
+			}
+
+			data[k] = et.Json{
+				"type":  "column",
+				"value": v,
+			}
+
+			if slices.Contains(model.PrimaryKeys, k) {
+				keys[k] = v
+			}
+		}
+		result.Data = append(result.Data, data)
+		result.Keys = append(result.Keys, keys)
 	}
 
 	return result
