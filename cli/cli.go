@@ -20,11 +20,11 @@ var (
 )
 
 type Cli struct {
-	pidFile    string       `json:"-"`
-	socketPath string       `json:"-"`
-	logFile    string       `json:"-"`
-	dataDir    string       `json:"-"`
-	listener   net.Listener `json:"-"`
+	pidFile      string       `json:"-"`
+	socketPath   string       `json:"-"`
+	logFile      string       `json:"-"`
+	dataDir      string       `json:"-"`
+	unixListener net.Listener `json:"-"`
 }
 
 /**
@@ -110,7 +110,7 @@ func (s *Cli) runServer() {
 		logs.Log(PackageName, "Error starting server:", err)
 		return
 	}
-	s.listener = l
+	s.unixListener = l
 	defer l.Close()
 
 	logs.Log(PackageName, "Server started in:", s.socketPath)
@@ -121,7 +121,7 @@ func (s *Cli) runServer() {
 
 	go func() {
 		for {
-			conn, err := s.listener.Accept()
+			conn, err := s.unixListener.Accept()
 			if err != nil {
 				continue
 			}
@@ -137,8 +137,8 @@ func (s *Cli) runServer() {
 * stop
 **/
 func (s *Cli) stop() {
-	if s.listener != nil {
-		s.listener.Close() // esto desbloquea Accept()
+	if s.unixListener != nil {
+		s.unixListener.Close() // esto desbloquea Accept()
 	}
 	os.Remove(s.socketPath)
 	os.Remove(s.pidFile)
