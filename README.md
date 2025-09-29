@@ -273,7 +273,12 @@ gofmt -w . && go run --race ./cmd
 gofmt -w . && go run ./cmd
 gofmt -w . && go run ./cmd/cli run --daemon
 gofmt -w . && go run ./cmd/cli ps
+gofmt -w . && go run ./cmd/cli send ping
+gofmt -w . && go run ./cmd/cli send status
+gofmt -w . && go run ./cmd/cli send status --tcp
+gofmt -w . && go run ./cmd/cli send foo
 gofmt -w . && go run ./cmd/cli stop
+
 
 
 grep -fl jdb

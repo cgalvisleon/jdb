@@ -11,4 +11,6 @@ const (
 	CMD_STOP_SHORT   = "Stop the daemon"
 	CMD_PS           = "ps"
 	CMD_PS_SHORT     = "Show active daemon processes"
+	CMD_SEND         = "send"
+	CMD_SEND_SHORT   = "Send a message to the daemon"
 )

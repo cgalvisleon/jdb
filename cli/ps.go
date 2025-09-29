@@ -13,7 +13,7 @@ var psCmd = &cobra.Command{
 	Use:   CMD_PS,
 	Short: CMD_PS_SHORT,
 	Run: func(cmd *cobra.Command, args []string) {
-		d := &Cli{pidFile: "/tmp/jdb.pid"}
+		d := &Cli{pidFile: pidFile}
 		if pid, alive := d.checkExistingDaemon(); alive {
 			logs.Logf(PackageName, "✅ Daemon activo con PID %d\n", pid)
 		} else {

@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/cgalvisleon/et/envar"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/logs"
 )
@@ -16,16 +17,48 @@ import (
 var (
 	PackageName = "jdb"
 	cli         *Cli
+	pidFile     string = "/tmp/jdb.pid"
+	socketPath  string = "/tmp/jdb.sock"
+	logFile     string = "/tmp/jdb.log"
 )
 
+type CommandHandler func(args string) string
+
 type Cli struct {
-	pidFile      string       `json:"-"`
-	socketPath   string       `json:"-"`
-	logFile      string       `json:"-"`
-	dataDir      string       `json:"-"`
-	tcpAddr      string       `json:"-"`
-	unixListener net.Listener `json:"-"`
-	tcpListener  net.Listener `json:"-"`
+	pidFile      string                    `json:"-"`
+	socketPath   string                    `json:"-"`
+	logFile      string                    `json:"-"`
+	dataDir      string                    `json:"-"`
+	tcpAddr      string                    `json:"-"`
+	unixListener net.Listener              `json:"-"`
+	tcpListener  net.Listener              `json:"-"`
+	commands     map[string]CommandHandler `json:"-"`
+}
+
+/**
+* newCli
+* @return *Cli
+**/
+func newCli() *Cli {
+	return &Cli{
+		pidFile:    pidFile,
+		socketPath: socketPath,
+		logFile:    logFile,
+		dataDir:    envar.GetStr("JDB_DATA", "./data"),
+		tcpAddr:    envar.GetStr("JDB_PORT", ":8010"),
+		commands:   make(map[string]CommandHandler),
+	}
+}
+
+/**
+* RegisterCommand
+* @param name string, handler CommandHandler
+**/
+func (d *Cli) RegisterCommand(name string, handler CommandHandler) {
+	if d.commands == nil {
+		d.commands = make(map[string]CommandHandler)
+	}
+	d.commands[name] = handler
 }
 
 /**
@@ -144,33 +177,9 @@ func (d *Cli) acceptLoop(l net.Listener, proto string) {
 	for {
 		conn, err := l.Accept()
 		if err != nil {
-			return // listener cerrado
+			return
 		}
 		go d.handleConnection(conn, proto)
-	}
-}
-
-/**
-* handleConnection
-**/
-func (s *Cli) handleConnection(c net.Conn, proto string) {
-	defer c.Close()
-	buf := make([]byte, 1024)
-	n, err := c.Read(buf)
-	if err != nil {
-		return
-	}
-
-	cmd := string(buf[:n])
-	logs.Logf(PackageName, "[%s] Mensaje recibido: %s\n", proto, cmd)
-
-	switch cmd {
-	case "ping":
-		c.Write([]byte("pong\n"))
-	case "status":
-		c.Write([]byte("Daemon activo 🚀\n"))
-	default:
-		c.Write([]byte("Comando no reconocido\n"))
 	}
 }
 

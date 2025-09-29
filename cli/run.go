@@ -3,7 +3,6 @@ package cli
 import (
 	"os"
 
-	"github.com/cgalvisleon/et/envar"
 	"github.com/cgalvisleon/et/logs"
 	"github.com/spf13/cobra"
 )
@@ -19,14 +18,7 @@ var runCmd = &cobra.Command{
 	Use:   CMD_RUN,
 	Short: CMD_RUN_SHORT,
 	Run: func(cmd *cobra.Command, args []string) {
-		cli = &Cli{
-			pidFile:    "/tmp/jdb.pid",
-			socketPath: "/tmp/jdb.sock",
-			logFile:    "/tmp/jdb.log",
-			dataDir:    envar.GetStr("JDB_DATA", "./data"),
-			tcpAddr:    envar.GetStr("JDB_PORT", ":8010"),
-		}
-
+		cli = newCli()
 		if pid, alive := cli.checkExistingDaemon(); alive {
 			logs.Logf(PackageName, "⚠️ Ya existe un daemon con PID %d\n", pid)
 			return
