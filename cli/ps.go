@@ -5,11 +5,16 @@ import (
 	"github.com/spf13/cobra"
 )
 
+func init() {
+	rootCmd.AddCommand(psCmd)
+}
+
 var psCmd = &cobra.Command{
 	Use:   CMD_PS,
 	Short: CMD_PS_SHORT,
 	Run: func(cmd *cobra.Command, args []string) {
-		if pid, alive := cli.checkExistingDaemon(); alive {
+		d := &Cli{pidFile: "/tmp/jdb.pid"}
+		if pid, alive := d.checkExistingDaemon(); alive {
 			logs.Logf(PackageName, "✅ Daemon activo con PID %d\n", pid)
 		} else {
 			logs.Logf(PackageName, "❌ No hay daemon activo")

@@ -9,7 +9,6 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/cgalvisleon/et/envar"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/logs"
 )
@@ -24,7 +23,9 @@ type Cli struct {
 	socketPath   string       `json:"-"`
 	logFile      string       `json:"-"`
 	dataDir      string       `json:"-"`
+	tcpAddr      string       `json:"-"`
 	unixListener net.Listener `json:"-"`
+	tcpListener  net.Listener `json:"-"`
 }
 
 /**
@@ -100,37 +101,77 @@ func (s *Cli) startDaemon() {
 * runServer
 **/
 func (s *Cli) runServer() {
-	// Limpia socket si ya existe
-	if _, err := os.Stat(s.socketPath); err == nil {
-		os.Remove(s.socketPath)
+	// --- Unix socket ---
+	if s.socketPath != "" {
+		if _, err := os.Stat(s.socketPath); err == nil {
+			os.Remove(s.socketPath)
+		}
+		l, err := net.Listen("unix", s.socketPath)
+		if err != nil {
+			logs.Log(PackageName, "Error starting unix server:", err)
+			return
+		}
+		s.unixListener = l
+		logs.Logf(PackageName, "Unix server started in: %s", s.socketPath)
+		go s.acceptLoop(s.unixListener, "unix")
 	}
 
-	l, err := net.Listen("unix", s.socketPath)
-	if err != nil {
-		logs.Log(PackageName, "Error starting server:", err)
-		return
+	// --- TCP socket ---
+	if s.tcpAddr != "" {
+		l, err := net.Listen("tcp", s.tcpAddr)
+		if err != nil {
+			logs.Log(PackageName, "Error starting tcp server:", err)
+			return
+		}
+		s.tcpListener = l
+		logs.Logf(PackageName, "TCP server started in: %s", s.tcpAddr)
+		go s.acceptLoop(s.tcpListener, "tcp")
 	}
-	s.unixListener = l
-	defer l.Close()
 
-	logs.Log(PackageName, "Server started in:", s.socketPath)
-
-	// Captura señales
+	// Manejo de señales para detener
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
-
-	go func() {
-		for {
-			conn, err := s.unixListener.Accept()
-			if err != nil {
-				continue
-			}
-			go s.handleConnection(conn)
-		}
-	}()
-
 	<-sigs
 	s.stop()
+}
+
+/**
+* acceptLoop
+* @param l net.Listener
+* @param proto string
+**/
+func (d *Cli) acceptLoop(l net.Listener, proto string) {
+	for {
+		conn, err := l.Accept()
+		if err != nil {
+			return // listener cerrado
+		}
+		go d.handleConnection(conn, proto)
+	}
+}
+
+/**
+* handleConnection
+**/
+func (s *Cli) handleConnection(c net.Conn, proto string) {
+	defer c.Close()
+	buf := make([]byte, 1024)
+	n, err := c.Read(buf)
+	if err != nil {
+		return
+	}
+
+	cmd := string(buf[:n])
+	logs.Logf(PackageName, "[%s] Mensaje recibido: %s\n", proto, cmd)
+
+	switch cmd {
+	case "ping":
+		c.Write([]byte("pong\n"))
+	case "status":
+		c.Write([]byte("Daemon activo 🚀\n"))
+	default:
+		c.Write([]byte("Comando no reconocido\n"))
+	}
 }
 
 /**
@@ -138,11 +179,21 @@ func (s *Cli) runServer() {
 **/
 func (s *Cli) stop() {
 	if s.unixListener != nil {
-		s.unixListener.Close() // esto desbloquea Accept()
+		s.unixListener.Close()
+		os.Remove(s.socketPath)
 	}
-	os.Remove(s.socketPath)
+	if s.tcpListener != nil {
+		s.tcpListener.Close()
+	}
 	os.Remove(s.pidFile)
 	logs.Logf(PackageName, "Server stopped.")
+}
+
+/**
+* savePID
+**/
+func (s *Cli) savePID() error {
+	return os.WriteFile(s.pidFile, []byte(fmt.Sprintf("%d", os.Getpid())), 0644)
 }
 
 /**
@@ -165,34 +216,4 @@ func (s *Cli) checkExistingDaemon() (int, bool) {
 	// Proceso muerto → limpiar pid file
 	os.Remove(s.pidFile)
 	return 0, false
-}
-
-/**
-* handleConnection
-**/
-func (s *Cli) handleConnection(c net.Conn) {
-	defer c.Close()
-
-	buf := make([]byte, 1024)
-	n, _ := c.Read(buf)
-	cmd := string(buf[:n])
-
-	switch cmd {
-	case "status":
-		c.Write([]byte("✅ Server running\n"))
-	case "stop":
-		c.Write([]byte("⛔ Stopping server\n"))
-		os.Exit(0)
-	default:
-		c.Write([]byte("❓ Command not recognized\n"))
-	}
-}
-
-func init() {
-	cli = &Cli{
-		pidFile:    "/tmp/jdb.pid",
-		socketPath: "/tmp/jdb.sock",
-		logFile:    "/tmp/jdb.log",
-		dataDir:    envar.GetStr("JDB_DATA", "./data"),
-	}
 }

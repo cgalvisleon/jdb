@@ -1,26 +1,29 @@
 package cli
 
 import (
-	"net"
+	"os"
+	"syscall"
 
 	"github.com/cgalvisleon/et/logs"
 	"github.com/spf13/cobra"
 )
 
+func init() {
+	rootCmd.AddCommand(stopCmd)
+}
+
 var stopCmd = &cobra.Command{
 	Use:   CMD_STOP,
 	Short: CMD_STOP_SHORT,
 	Run: func(cmd *cobra.Command, args []string) {
-		conn, err := net.Dial("unix", cli.socketPath)
-		if err != nil {
-			logs.Log(PackageName, "No se pudo conectar al servidor:", err)
+		d := &Cli{pidFile: "/tmp/jdb.pid"}
+		pid, alive := d.checkExistingDaemon()
+		if !alive {
+			logs.Logf(PackageName, "❌ No hay daemon activo")
 			return
 		}
-		defer conn.Close()
-
-		conn.Write([]byte("stop"))
-		buf := make([]byte, 1024)
-		n, _ := conn.Read(buf)
-		logs.Log(PackageName, string(buf[:n]))
+		syscall.Kill(pid, syscall.SIGTERM)
+		os.Remove(d.pidFile)
+		logs.Logf(PackageName, "Daemon detenido con PID %d", pid)
 	},
 }
