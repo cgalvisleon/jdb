@@ -16,8 +16,8 @@ func (s *Cmd) queryTx(tx *Tx) (et.Items, error) {
 		return et.Items{}, fmt.Errorf(MSG_DATABASE_REQUIRED)
 	}
 
-	err := s.validate()
-	if err != nil {
+	s.setTx(tx)
+	if err := s.before(); err != nil {
 		return et.Items{}, err
 	}
 
@@ -26,7 +26,33 @@ func (s *Cmd) queryTx(tx *Tx) (et.Items, error) {
 		return et.Items{}, err
 	}
 
+	if err := s.after(); err != nil {
+		return et.Items{}, err
+	}
+
 	return result, nil
+}
+
+/**
+* ExecTx
+* @param tx *Tx
+* @return (et.Items, error)
+**/
+func (s *Cmd) ExecTx(tx *Tx) (et.Items, error) {
+	result, err := s.queryTx(tx)
+	if err != nil {
+		return et.Items{}, err
+	}
+
+	return result, nil
+}
+
+/**
+* Exec
+* @return (et.Items, error)
+**/
+func (s *Cmd) Exec() (et.Items, error) {
+	return s.ExecTx(nil)
 }
 
 /**
@@ -34,12 +60,12 @@ func (s *Cmd) queryTx(tx *Tx) (et.Items, error) {
 * @return (et.Item, error)
 **/
 func (s *Cmd) OneTx(tx *Tx) (et.Item, error) {
-	items, err := s.queryTx(tx)
+	result, err := s.ExecTx(tx)
 	if err != nil {
 		return et.Item{}, err
 	}
 
-	return items.First(), nil
+	return result.First(), nil
 }
 
 /**

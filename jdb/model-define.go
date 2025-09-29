@@ -240,38 +240,6 @@ func (s *Model) defineForeignKeys(params []et.Json) error {
 			return fmt.Errorf("on_update must be cascade")
 		}
 
-		model, err := s.db.getOrCreateModel(schema, name)
-		if err != nil {
-			return err
-		}
-
-		for key, val := range columns {
-			pk, ok := model.GetColumn(val.(string))
-			if !ok {
-				return fmt.Errorf("column %s not found in %s", val, model.Name)
-			}
-
-			err := s.defineColumn(key, et.Json{
-				"type": pk.String("type"),
-			})
-			if err != nil {
-				return err
-			}
-
-			if !utility.ValidStr(onDelete, 0, []string{}) {
-				continue
-			}
-
-			if !utility.ValidStr(onUpdate, 0, []string{}) {
-				continue
-			}
-
-			err = s.defineIndices(key)
-			if err != nil {
-				return err
-			}
-		}
-
 		s.ForeignKeys = append(s.ForeignKeys, et.Json{
 			"schema": schema,
 			"name":   name,

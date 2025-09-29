@@ -23,7 +23,7 @@ var runCmd = &cobra.Command{
 			return
 		}
 
-		// cli.runServer()
+		cli.runServer()
 	},
 }
 

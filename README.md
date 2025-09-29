@@ -271,7 +271,9 @@ user.EventsUpdate = append(user.EventsUpdate, func(model *jdb.Model, before, aft
 ```bash
 gofmt -w . && go run --race ./cmd
 gofmt -w . && go run ./cmd
-gofmt -w . && go run ./cmd/cli
+gofmt -w . && go run ./cmd/cli run --daemon
+gofmt -w . && go run ./cmd/cli stop
+gofmt -w . && go run ./cmd/cli ps
 
 grep -fl jdb
 ps aux | grep jdb

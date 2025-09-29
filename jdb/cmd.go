@@ -3,7 +3,6 @@ package jdb
 import (
 	"encoding/json"
 	"fmt"
-	"slices"
 
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/utility"
@@ -28,11 +27,15 @@ var (
 type Cmd struct {
 	*where
 	Command       string           `json:"command"`
-	Data          []et.Json        `json:"data"`
-	Keys          []et.Json        `json:"keys"`
-	Before        []et.Json        `json:"before"`
-	After         []et.Json        `json:"after"`
+	Items         []et.Json        `json:"items"`
+	Data          et.Json          `json:"data"`
+	Keys          et.Json          `json:"keys"`
+	Before        et.Json          `json:"before"`
+	After         et.Json          `json:"after"`
+	Result        et.Json          `json:"result"`
+	Results       []et.Json        `json:"results"`
 	Returns       et.Json          `json:"return"`
+	Atribs        et.Json          `json:"atrib"`
 	SQL           string           `json:"sql"`
 	db            *Database        `json:"-"`
 	tx            *Tx              `json:"-"`
@@ -63,10 +66,13 @@ func newCommand(model *Model, cmd string, items []et.Json) *Cmd {
 	result := &Cmd{
 		where:         newWhere(),
 		Command:       cmd,
-		Data:          []et.Json{},
-		Keys:          []et.Json{},
-		Before:        []et.Json{},
-		After:         []et.Json{},
+		Items:         items,
+		Data:          et.Json{},
+		Keys:          et.Json{},
+		Before:        et.Json{},
+		After:         et.Json{},
+		Result:        et.Json{},
+		Results:       []et.Json{},
 		Returns:       et.Json{},
 		db:            model.db,
 		from:          model,
@@ -85,34 +91,6 @@ func newCommand(model *Model, cmd string, items []et.Json) *Cmd {
 		afterDelete:   model.afterDelete,
 	}
 	result.useAtribs = model.SourceField != "" && !model.IsLocked
-	for _, item := range items {
-		data := et.Json{}
-		keys := et.Json{}
-		for k, v := range item {
-			_, ok := model.GetColumn(k)
-			if !ok && !result.useAtribs {
-				data[k] = et.Json{
-					"type":  "atrib",
-					"value": v,
-				}
-			}
-
-			if !ok {
-				continue
-			}
-
-			data[k] = et.Json{
-				"type":  "column",
-				"value": v,
-			}
-
-			if slices.Contains(model.PrimaryKeys, k) {
-				keys[k] = v
-			}
-		}
-		result.Data = append(result.Data, data)
-		result.Keys = append(result.Keys, keys)
-	}
 
 	return result
 }
@@ -146,6 +124,16 @@ func (s *Cmd) Debug() *Cmd {
 }
 
 /**
+* setTx
+* @param tx *Tx
+* @return *Ql
+**/
+func (s *Cmd) setTx(tx *Tx) *Cmd {
+	s.tx = tx
+	return s
+}
+
+/**
 * command
 * @param cmd string, param et.Json
 * @return (*Cmd, error)
@@ -161,17 +149,12 @@ func command(cmd string, param et.Json) (*Cmd, error) {
 		return nil, err
 	}
 
-	eschema := param.String("schema")
-	if !utility.ValidStr(eschema, 0, []string{}) {
-		return nil, fmt.Errorf(MSG_SCHEMA_REQUIRED)
-	}
-
 	name := param.String("name")
 	if !utility.ValidStr(name, 0, []string{}) {
 		return nil, fmt.Errorf(MSG_NAME_REQUIRED)
 	}
 
-	model, err := db.getOrCreateModel(eschema, name)
+	model, err := db.getModel(name)
 	if err != nil {
 		return nil, err
 	}
@@ -190,9 +173,24 @@ func command(cmd string, param et.Json) (*Cmd, error) {
 * @return *Cmd
 **/
 func (s *Cmd) Return(fields ...string) *Cmd {
-	for _, field := range fields {
-		s.Returns[field] = true
+	if s.from == nil {
+		return s
 	}
+
+	for _, v := range fields {
+		_, ok := s.from.GetColumn(v)
+		if !ok && s.from.IsLocked {
+			continue
+		}
+
+		if !ok {
+			s.Atribs[v] = v
+			continue
+		}
+
+		s.Returns[v] = v
+	}
+
 	return s
 }
 

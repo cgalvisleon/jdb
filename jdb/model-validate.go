@@ -19,9 +19,7 @@ func (s *Model) validate() error {
 	s.defineColumn(KEY, et.Json{
 		"type": TypeKey,
 	})
-
 	s.definePrimaryKeys(KEY)
-
 	s.defineRecordField(RECORDID)
 
 	return nil

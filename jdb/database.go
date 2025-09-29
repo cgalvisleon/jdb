@@ -11,7 +11,7 @@ import (
 	"github.com/dop251/goja"
 )
 
-// var dbs map[string]*Database
+var dbs map[string]*Database
 
 func init() {
 	dbs = make(map[string]*Database)
@@ -276,10 +276,6 @@ func (s *Database) query(query *Ql) (et.Items, error) {
 * @return (et.Items, error)
 **/
 func (s *Database) command(command *Cmd) (et.Items, error) {
-	if err := command.validate(); err != nil {
-		return et.Items{}, err
-	}
-
 	sql, err := s.driver.Command(command)
 	if err != nil {
 		return et.Items{}, err
@@ -349,10 +345,6 @@ func (s *Database) Define(definition et.Json) (*Model, error) {
 	recordField := definition.String("record_field")
 	err = result.defineRecordField(recordField)
 	if err != nil {
-		return nil, err
-	}
-
-	if err := result.validate(); err != nil {
 		return nil, err
 	}
 
