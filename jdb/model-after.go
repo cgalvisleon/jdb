@@ -79,42 +79,42 @@ func (s *Model) afterDeleteDefault(tx *Tx, data et.Json) error {
 * @param fn DataFunction
 * @return *Command
 **/
-func (s *Model) AfterInsert(fn DataFunctionTx) *Model {
-	s.afterInsert = append(s.afterInsert, fn)
+func (s *Model) EventAfterInsert(fn DataFunctionTx) *Model {
+	s.eventAfterInsert = append(s.eventAfterInsert, fn)
 
 	return s
 }
 
 /**
-* AfterUpdate
+* EventAfterUpdate
 * @param fn DataFunctionTx
 * @return *Command
 **/
-func (s *Model) AfterUpdate(fn DataFunctionTx) *Model {
-	s.afterUpdate = append(s.afterUpdate, fn)
+func (s *Model) EventAfterUpdate(fn DataFunctionTx) *Model {
+	s.eventAfterUpdate = append(s.eventAfterUpdate, fn)
 
 	return s
 }
 
 /**
-* AfterDelete
+* EventAfterDelete
 * @param fn DataFunctionTx
 * @return *Command
 **/
-func (s *Model) AfterDelete(fn DataFunctionTx) *Model {
-	s.afterDelete = append(s.afterDelete, fn)
+func (s *Model) EventAfterDelete(fn DataFunctionTx) *Model {
+	s.eventAfterDelete = append(s.eventAfterDelete, fn)
 
 	return s
 }
 
 /**
-* AfterInsertOrUpdate
+* EventAfterInsertOrUpdate
 * @param fn DataFunctionTx
 * @return *Command
 **/
-func (s *Model) AfterInsertOrUpdate(fn DataFunctionTx) *Model {
-	s.afterInsert = append(s.afterInsert, fn)
-	s.afterUpdate = append(s.afterUpdate, fn)
+func (s *Model) EventAfterInsertOrUpdate(fn DataFunctionTx) *Model {
+	s.eventAfterInsert = append(s.eventAfterInsert, fn)
+	s.eventAfterUpdate = append(s.eventAfterUpdate, fn)
 
 	return s
 }

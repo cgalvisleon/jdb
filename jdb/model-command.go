@@ -8,7 +8,7 @@ import "github.com/cgalvisleon/et/et"
 * @return *Cmd
 **/
 func (s *Model) Insert(data et.Json) *Cmd {
-	return newCommand(s, TypeInsert, []et.Json{data})
+	return newCommand(s, CmdInsert, []et.Json{data})
 }
 
 /**
@@ -17,7 +17,7 @@ func (s *Model) Insert(data et.Json) *Cmd {
 * @return *Cmd
 **/
 func (s *Model) Update(data et.Json) *Cmd {
-	return newCommand(s, TypeUpdate, []et.Json{data})
+	return newCommand(s, CmdUpdate, []et.Json{data})
 }
 
 /**
@@ -25,8 +25,8 @@ func (s *Model) Update(data et.Json) *Cmd {
 * @param data et.Json
 * @return *Cmd
 **/
-func (s *Model) Delete(data et.Json) *Cmd {
-	return newCommand(s, TypeDelete, []et.Json{data})
+func (s *Model) Delete() *Cmd {
+	return newCommand(s, CmdDelete, []et.Json{})
 }
 
 /**
@@ -35,5 +35,5 @@ func (s *Model) Delete(data et.Json) *Cmd {
 * @return *Cmd
 **/
 func (s *Model) Upsert(data et.Json) *Cmd {
-	return newCommand(s, TypeUpsert, []et.Json{data})
+	return newCommand(s, CmdUpsert, []et.Json{data})
 }

@@ -8,7 +8,6 @@ import (
 	"github.com/cgalvisleon/et/envar"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/utility"
-	"github.com/dop251/goja"
 )
 
 const (
@@ -98,43 +97,42 @@ type DataFunctionTx func(tx *Tx, data et.Json) error
 type DataContext func(data et.Json)
 
 type Model struct {
-	Database      string            `json:"database"`
-	Schema        string            `json:"schema"`
-	Name          string            `json:"name"`
-	Table         string            `json:"table"`
-	Columns       []et.Json         `json:"columns"`
-	SourceField   string            `json:"source_field"`
-	RecordField   string            `json:"record_field"`
-	StatusField   string            `json:"status_field"`
-	Details       []et.Json         `json:"details"`
-	Masters       []et.Json         `json:"masters"`
-	Rollups       []et.Json         `json:"rollups"`   //SQL
-	Relations     []et.Json         `json:"relations"` //SQL
-	PrimaryKeys   []string          `json:"primary_keys"`
-	ForeignKeys   []et.Json         `json:"foreign_keys"`
-	Indices       []string          `json:"indices"`
-	Required      []string          `json:"required"`
-	BeforeInserts []string          `json:"before_inserts"`
-	BeforeUpdates []string          `json:"before_updates"`
-	BeforeDeletes []string          `json:"before_deletes"`
-	AfterInserts  []string          `json:"after_inserts"`
-	AfterUpdates  []string          `json:"after_updates"`
-	AfterDeletes  []string          `json:"after_deletes"`
-	IsLocked      bool              `json:"is_locked"`
-	Version       int               `json:"version"`
-	db            *Database         `json:"-"`
-	vm            *goja.Runtime     `json:"-"`
-	details       map[string]*Model `json:"-"`
-	masters       map[string]*Model `json:"-"`
-	isInit        bool              `json:"-"`
-	isCore        bool              `json:"-"`
-	isDebug       bool              `json:"-"`
-	beforeInsert  []DataFunctionTx  `json:"-"`
-	beforeUpdate  []DataFunctionTx  `json:"-"`
-	beforeDelete  []DataFunctionTx  `json:"-"`
-	afterInsert   []DataFunctionTx  `json:"-"`
-	afterUpdate   []DataFunctionTx  `json:"-"`
-	afterDelete   []DataFunctionTx  `json:"-"`
+	Database          string            `json:"database"`
+	Schema            string            `json:"schema"`
+	Name              string            `json:"name"`
+	Table             string            `json:"table"`
+	Columns           []et.Json         `json:"columns"`
+	SourceField       string            `json:"source_field"`
+	RecordField       string            `json:"record_field"`
+	StatusField       string            `json:"status_field"`
+	Details           []et.Json         `json:"details"`
+	Masters           []et.Json         `json:"masters"`
+	Rollups           []et.Json         `json:"rollups"`   //SQL
+	Relations         []et.Json         `json:"relations"` //SQL
+	PrimaryKeys       []string          `json:"primary_keys"`
+	ForeignKeys       []et.Json         `json:"foreign_keys"`
+	Indices           []string          `json:"indices"`
+	Required          []string          `json:"required"`
+	BeforeInserts     []string          `json:"before_inserts"`
+	BeforeUpdates     []string          `json:"before_updates"`
+	BeforeDeletes     []string          `json:"before_deletes"`
+	AfterInserts      []string          `json:"after_inserts"`
+	AfterUpdates      []string          `json:"after_updates"`
+	AfterDeletes      []string          `json:"after_deletes"`
+	IsLocked          bool              `json:"is_locked"`
+	Version           int               `json:"version"`
+	db                *Database         `json:"-"`
+	details           map[string]*Model `json:"-"`
+	masters           map[string]*Model `json:"-"`
+	isInit            bool              `json:"-"`
+	isCore            bool              `json:"-"`
+	isDebug           bool              `json:"-"`
+	eventBeforeInsert []DataFunctionTx  `json:"-"`
+	eventBeforeUpdate []DataFunctionTx  `json:"-"`
+	eventBeforeDelete []DataFunctionTx  `json:"-"`
+	eventAfterInsert  []DataFunctionTx  `json:"-"`
+	eventAfterUpdate  []DataFunctionTx  `json:"-"`
+	eventAfterDelete  []DataFunctionTx  `json:"-"`
 }
 
 /**
@@ -220,6 +218,38 @@ func (s *Model) save() error {
 }
 
 /**
+* prepare
+* @return error
+**/
+func (s *Model) prepare() error {
+	if len(s.Columns) != 0 {
+		return nil
+	}
+
+	err := s.defineSourceField(SOURCE)
+	if err != nil {
+		return err
+	}
+
+	s.defineColumn(KEY, et.Json{
+		"type": TypeKey,
+	})
+	s.definePrimaryKeys(KEY)
+	s.defineRecordField(RECORDID)
+
+	return nil
+}
+
+/**
+* GetColumnIndex
+* @param name string
+* @return int
+**/
+func (s *Model) getColumnIndex(name string) int {
+	return slices.IndexFunc(s.Columns, func(item et.Json) bool { return item.String("name") == name })
+}
+
+/**
 * ToJson
 * @return et.Json
 **/
@@ -236,15 +266,6 @@ func (s *Model) ToJson() et.Json {
 	}
 
 	return result
-}
-
-/**
-* GetColumnIndex
-* @param name string
-* @return int
-**/
-func (s *Model) getColumnIndex(name string) int {
-	return slices.IndexFunc(s.Columns, func(item et.Json) bool { return item.String("name") == name })
 }
 
 /**

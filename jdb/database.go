@@ -8,7 +8,6 @@ import (
 	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/utility"
-	"github.com/dop251/goja"
 )
 
 var dbs map[string]*Database
@@ -117,44 +116,43 @@ func (s *Database) getOrCreateModel(schema, name string) (*Model, error) {
 	result, ok := s.Models[name]
 	if !ok {
 		result = &Model{
-			Database:      s.Name,
-			Schema:        schema,
-			Name:          name,
-			Table:         "",
-			Columns:       []et.Json{},
-			SourceField:   "",
-			RecordField:   "",
-			Details:       []et.Json{},
-			Masters:       []et.Json{},
-			Rollups:       []et.Json{},
-			Relations:     []et.Json{},
-			PrimaryKeys:   []string{},
-			ForeignKeys:   []et.Json{},
-			Indices:       []string{},
-			Required:      []string{},
-			BeforeInserts: make([]string, 0),
-			BeforeUpdates: make([]string, 0),
-			BeforeDeletes: make([]string, 0),
-			AfterInserts:  make([]string, 0),
-			AfterUpdates:  make([]string, 0),
-			AfterDeletes:  make([]string, 0),
-			db:            s,
-			vm:            goja.New(),
-			details:       make(map[string]*Model),
-			masters:       make(map[string]*Model),
-			beforeInsert:  []DataFunctionTx{},
-			beforeUpdate:  []DataFunctionTx{},
-			beforeDelete:  []DataFunctionTx{},
-			afterInsert:   []DataFunctionTx{},
-			afterUpdate:   []DataFunctionTx{},
-			afterDelete:   []DataFunctionTx{},
+			Database:          s.Name,
+			Schema:            schema,
+			Name:              name,
+			Table:             "",
+			Columns:           []et.Json{},
+			SourceField:       "",
+			RecordField:       "",
+			Details:           []et.Json{},
+			Masters:           []et.Json{},
+			Rollups:           []et.Json{},
+			Relations:         []et.Json{},
+			PrimaryKeys:       []string{},
+			ForeignKeys:       []et.Json{},
+			Indices:           []string{},
+			Required:          []string{},
+			BeforeInserts:     make([]string, 0),
+			BeforeUpdates:     make([]string, 0),
+			BeforeDeletes:     make([]string, 0),
+			AfterInserts:      make([]string, 0),
+			AfterUpdates:      make([]string, 0),
+			AfterDeletes:      make([]string, 0),
+			db:                s,
+			details:           make(map[string]*Model),
+			masters:           make(map[string]*Model),
+			eventBeforeInsert: []DataFunctionTx{},
+			eventBeforeUpdate: []DataFunctionTx{},
+			eventBeforeDelete: []DataFunctionTx{},
+			eventAfterInsert:  []DataFunctionTx{},
+			eventAfterUpdate:  []DataFunctionTx{},
+			eventAfterDelete:  []DataFunctionTx{},
 		}
-		result.BeforeInsert(result.beforeInsertDefault)
-		result.BeforeUpdate(result.beforeUpdateDefault)
-		result.BeforeDelete(result.beforeDeleteDefault)
-		result.AfterInsert(result.afterInsertDefault)
-		result.AfterUpdate(result.afterUpdateDefault)
-		result.AfterDelete(result.afterDeleteDefault)
+		result.EventBeforeInsert(result.beforeInsertDefault)
+		result.EventBeforeUpdate(result.beforeUpdateDefault)
+		result.EventBeforeDelete(result.beforeDeleteDefault)
+		result.EventAfterInsert(result.afterInsertDefault)
+		result.EventAfterUpdate(result.afterUpdateDefault)
+		result.EventAfterDelete(result.afterDeleteDefault)
 		s.Models[name] = result
 	}
 
@@ -182,13 +180,12 @@ func (s *Database) getModel(name string) (*Model, error) {
 	}
 
 	result.db = s
-	result.vm = goja.New()
-	result.BeforeInsert(result.beforeInsertDefault)
-	result.BeforeUpdate(result.beforeUpdateDefault)
-	result.BeforeDelete(result.beforeDeleteDefault)
-	result.AfterInsert(result.afterInsertDefault)
-	result.AfterUpdate(result.afterUpdateDefault)
-	result.AfterDelete(result.afterDeleteDefault)
+	result.EventBeforeInsert(result.beforeInsertDefault)
+	result.EventBeforeUpdate(result.beforeUpdateDefault)
+	result.EventBeforeDelete(result.beforeDeleteDefault)
+	result.EventAfterInsert(result.afterInsertDefault)
+	result.EventAfterUpdate(result.afterUpdateDefault)
+	result.EventAfterDelete(result.afterDeleteDefault)
 	s.Models[name] = result
 
 	for _, item := range result.Details {
@@ -215,7 +212,7 @@ func (s *Database) getModel(name string) (*Model, error) {
 * @return error
 **/
 func (s *Database) init(model *Model) error {
-	if err := model.validate(); err != nil {
+	if err := model.prepare(); err != nil {
 		return err
 	}
 

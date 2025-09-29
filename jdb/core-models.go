@@ -84,12 +84,12 @@ func setModel(name string, version int, definition []byte) error {
 	}
 	_, err := models.
 		Upsert(data).
-		BeforeInsertOrUpdate(func(tx *Tx, data et.Json) error {
+		EventBeforeInsertOrUpdate(func(tx *Tx, data et.Json) error {
 			data.Set("created_at", now)
 			data.Set("updated_at", now)
 			return nil
 		}).
-		BeforeUpdate(func(tx *Tx, data et.Json) error {
+		EventBeforeUpdate(func(tx *Tx, data et.Json) error {
 			data.Set("updated_at", now)
 			return nil
 		}).
@@ -152,13 +152,8 @@ func deleteModel(name string) error {
 	}
 
 	_, err := models.
-		Delete(et.Json{
-			"where": et.Json{
-				"name": et.Json{
-					"eq": name,
-				},
-			},
-		}).
+		Delete().
+		Where(Eq("name", name)).
 		Exec()
 	if err != nil {
 		return err

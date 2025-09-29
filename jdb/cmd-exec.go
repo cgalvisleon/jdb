@@ -17,20 +17,19 @@ func (s *Cmd) queryTx(tx *Tx) (et.Items, error) {
 	}
 
 	s.setTx(tx)
-	if err := s.before(); err != nil {
-		return et.Items{}, err
+	s.vm.Set("model", s.From)
+	switch s.Command {
+	case CmdInsert:
+		return s.insertTx()
+	case CmdUpdate:
+		return s.updateTx()
+	case CmdDelete:
+		return s.deleteTx()
+	case CmdUpsert:
+		return s.upsertTx()
+	default:
+		return et.Items{}, fmt.Errorf("invalid command: %s", s.Command)
 	}
-
-	result, err := s.db.command(s)
-	if err != nil {
-		return et.Items{}, err
-	}
-
-	if err := s.after(); err != nil {
-		return et.Items{}, err
-	}
-
-	return result, nil
 }
 
 /**

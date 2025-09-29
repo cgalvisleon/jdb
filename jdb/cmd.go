@@ -3,88 +3,81 @@ package jdb
 import (
 	"encoding/json"
 	"fmt"
+	"slices"
 
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/utility"
+	"github.com/cgalvisleon/et/vm"
 )
 
 const (
-	TypeInsert = "insert"
-	TypeUpdate = "update"
-	TypeDelete = "delete"
-	TypeUpsert = "upsert"
+	CmdInsert = "insert"
+	CmdUpdate = "update"
+	CmdDelete = "delete"
+	CmdUpsert = "upsert"
 )
 
 var (
 	Commands map[string]bool = map[string]bool{
-		TypeInsert: true,
-		TypeUpdate: true,
-		TypeDelete: true,
-		TypeUpsert: true,
+		CmdInsert: true,
+		CmdUpdate: true,
+		CmdDelete: true,
+		CmdUpsert: true,
 	}
 )
 
 type Cmd struct {
 	*where
-	Command       string           `json:"command"`
-	Data          []et.Json        `json:"items"`
-	Columns       et.Json          `json:"columns"`
-	Atribs        et.Json          `json:"atrib"`
-	Keys          et.Json          `json:"keys"`
-	Before        et.Json          `json:"before"`
-	After         et.Json          `json:"after"`
-	Results       []et.Json        `json:"results"`
-	SQL           string           `json:"sql"`
-	db            *Database        `json:"-"`
-	tx            *Tx              `json:"-"`
-	from          *Model           `json:"-"`
-	result        []et.Json        `json:"-"`
-	isDebug       bool             `json:"-"`
-	useAtribs     bool             `json:"-"`
-	beforeInsert  []DataFunctionTx `json:"-"`
-	beforeUpdate  []DataFunctionTx `json:"-"`
-	beforeDelete  []DataFunctionTx `json:"-"`
-	afterInsert   []DataFunctionTx `json:"-"`
-	afterUpdate   []DataFunctionTx `json:"-"`
-	afterDelete   []DataFunctionTx `json:"-"`
-	beforeInserts []string         `json:"-"`
-	beforeUpdates []string         `json:"-"`
-	beforeDeletes []string         `json:"-"`
-	afterInserts  []string         `json:"-"`
-	afterUpdates  []string         `json:"-"`
-	afterDeletes  []string         `json:"-"`
+	Command           string           `json:"command"`
+	From              *Model           `json:"-"`
+	Data              []et.Json        `json:"data"`
+	Result            et.Items         `json:"result"`
+	SQL               string           `json:"sql"`
+	db                *Database        `json:"-"`
+	tx                *Tx              `json:"-"`
+	vm                *vm.Vm           `json:"-"`
+	isDebug           bool             `json:"-"`
+	useAtribs         bool             `json:"-"`
+	beforeInserts     []string         `json:"-"`
+	beforeUpdates     []string         `json:"-"`
+	beforeDeletes     []string         `json:"-"`
+	afterInserts      []string         `json:"-"`
+	afterUpdates      []string         `json:"-"`
+	afterDeletes      []string         `json:"-"`
+	eventBeforeInsert []DataFunctionTx `json:"-"`
+	eventBeforeUpdate []DataFunctionTx `json:"-"`
+	eventBeforeDelete []DataFunctionTx `json:"-"`
+	eventAfterInsert  []DataFunctionTx `json:"-"`
+	eventAfterUpdate  []DataFunctionTx `json:"-"`
+	eventAfterDelete  []DataFunctionTx `json:"-"`
 }
 
 /**
 * newCommand
-* @param model *Model, cmd string, data []et.Json
+* @param model *Model, cmd string, data et.Json
 * @return *Cmd
 **/
 func newCommand(model *Model, cmd string, data []et.Json) *Cmd {
 	result := &Cmd{
-		where:         newWhere(),
-		Command:       cmd,
-		Data:          data,
-		Columns:       et.Json{},
-		Atribs:        et.Json{},
-		Keys:          et.Json{},
-		Before:        et.Json{},
-		After:         et.Json{},
-		Results:       []et.Json{},
-		db:            model.db,
-		from:          model,
-		beforeInserts: model.BeforeInserts,
-		beforeUpdates: model.BeforeUpdates,
-		beforeDeletes: model.BeforeDeletes,
-		afterInserts:  model.AfterInserts,
-		afterUpdates:  model.AfterUpdates,
-		afterDeletes:  model.AfterDeletes,
-		beforeInsert:  model.beforeInsert,
-		beforeUpdate:  model.beforeUpdate,
-		beforeDelete:  model.beforeDelete,
-		afterInsert:   model.afterInsert,
-		afterUpdate:   model.afterUpdate,
-		afterDelete:   model.afterDelete,
+		where:             newWhere(),
+		Command:           cmd,
+		From:              model,
+		Data:              data,
+		Result:            et.Items{},
+		db:                model.db,
+		vm:                vm.NewVm(),
+		beforeInserts:     model.BeforeInserts,
+		beforeUpdates:     model.BeforeUpdates,
+		beforeDeletes:     model.BeforeDeletes,
+		afterInserts:      model.AfterInserts,
+		afterUpdates:      model.AfterUpdates,
+		afterDeletes:      model.AfterDeletes,
+		eventBeforeInsert: model.eventBeforeInsert,
+		eventBeforeUpdate: model.eventBeforeUpdate,
+		eventBeforeDelete: model.eventBeforeDelete,
+		eventAfterInsert:  model.eventAfterInsert,
+		eventAfterUpdate:  model.eventAfterUpdate,
+		eventAfterDelete:  model.eventAfterDelete,
 	}
 	result.useAtribs = model.SourceField != "" && !model.IsLocked
 
@@ -164,73 +157,97 @@ func command(cmd string, param et.Json) (*Cmd, error) {
 }
 
 /**
-* BeforeInsert
+* prepare
+* @return error
+**/
+func (s *Cmd) getKeys(data et.Json) []et.Json {
+	result := []et.Json{}
+	for k, v := range data {
+		_, ok := s.From.GetColumn(k)
+		if !ok {
+			continue
+		}
+
+		if slices.Contains(s.From.PrimaryKeys, k) {
+			result = append(result, et.Json{
+				k: et.Json{
+					"eq": v,
+				},
+			})
+		}
+	}
+
+	return result
+}
+
+/**
+* EventBeforeInsert
 * @param fn DataFunctionTx
 * @return *Cmd
 **/
-func (s *Cmd) BeforeInsert(fn DataFunctionTx) *Cmd {
-	s.beforeInsert = append(s.beforeInsert, fn)
+func (s *Cmd) EventBeforeInsert(fn DataFunctionTx) *Cmd {
+	s.eventBeforeInsert = append(s.eventBeforeInsert, fn)
 	return s
 }
 
 /**
-* BeforeUpdate
+* EventBeforeUpdate
 * @param fn DataFunctionTx
 * @return *Cmd
 **/
-func (s *Cmd) BeforeUpdate(fn DataFunctionTx) *Cmd {
-	s.beforeUpdate = append(s.beforeUpdate, fn)
+func (s *Cmd) EventBeforeUpdate(fn DataFunctionTx) *Cmd {
+	s.eventBeforeUpdate = append(s.eventBeforeUpdate, fn)
 	return s
 }
 
 /**
-* BeforeDelete
+* EventBeforeDelete
 * @param fn DataFunctionTx
 * @return *Cmd
 **/
-func (s *Cmd) BeforeDelete(fn DataFunctionTx) *Cmd {
-	s.beforeDelete = append(s.beforeDelete, fn)
+func (s *Cmd) EventBeforeDelete(fn DataFunctionTx) *Cmd {
+	s.eventBeforeDelete = append(s.eventBeforeDelete, fn)
 	return s
 }
 
 /**
-* AfterInsert
+* EventAfterInsert
 * @param fn DataFunctionTx
 * @return *Cmd
 **/
-func (s *Cmd) AfterInsert(fn DataFunctionTx) *Cmd {
-	s.afterInsert = append(s.afterInsert, fn)
+func (s *Cmd) EventAfterInsert(fn DataFunctionTx) *Cmd {
+	s.eventAfterInsert = append(s.eventAfterInsert, fn)
 	return s
 }
 
 /**
-* AfterUpdate
+* EventAfterUpdate
 * @param fn DataFunctionTx
 * @return *Cmd
 **/
-func (s *Cmd) AfterUpdate(fn DataFunctionTx) *Cmd {
-	s.afterUpdate = append(s.afterUpdate, fn)
+func (s *Cmd) EventAfterUpdate(fn DataFunctionTx) *Cmd {
+	s.eventAfterUpdate = append(s.eventAfterUpdate, fn)
 	return s
 }
 
 /**
-* AfterDelete
+* EventAfterDelete
 * @param fn DataFunctionTx
 * @return *Cmd
 **/
-func (s *Cmd) AfterDelete(fn DataFunctionTx) *Cmd {
-	s.afterDelete = append(s.afterDelete, fn)
+func (s *Cmd) EventAfterDelete(fn DataFunctionTx) *Cmd {
+	s.eventAfterDelete = append(s.eventAfterDelete, fn)
 	return s
 }
 
 /**
-* BeforeInsertOrUpdate
+* EventBeforeInsertOrUpdate
 * @param fn DataFunctionTx
 * @return *Cmd
 **/
-func (s *Cmd) BeforeInsertOrUpdate(fn DataFunctionTx) *Cmd {
-	s.beforeInsert = append(s.beforeInsert, fn)
-	s.beforeUpdate = append(s.beforeUpdate, fn)
+func (s *Cmd) EventBeforeInsertOrUpdate(fn DataFunctionTx) *Cmd {
+	s.eventBeforeInsert = append(s.eventBeforeInsert, fn)
+	s.eventBeforeUpdate = append(s.eventBeforeUpdate, fn)
 	return s
 }
 
@@ -240,7 +257,7 @@ func (s *Cmd) BeforeInsertOrUpdate(fn DataFunctionTx) *Cmd {
 * @return (*Cmd, error)
 **/
 func Insert(param et.Json) (*Cmd, error) {
-	return command(TypeInsert, param)
+	return command(CmdInsert, param)
 }
 
 /**
@@ -249,7 +266,7 @@ func Insert(param et.Json) (*Cmd, error) {
 * @return (*Cmd, error)
 **/
 func Update(param et.Json) (*Cmd, error) {
-	return command(TypeUpdate, param)
+	return command(CmdUpdate, param)
 }
 
 /**
@@ -258,7 +275,7 @@ func Update(param et.Json) (*Cmd, error) {
 * @return (*Cmd, error)
 **/
 func Delete(param et.Json) (*Cmd, error) {
-	return command(TypeDelete, param)
+	return command(CmdDelete, param)
 }
 
 /**
@@ -267,5 +284,5 @@ func Delete(param et.Json) (*Cmd, error) {
 * @return (*Cmd, error)
 **/
 func Upsert(param et.Json) (*Cmd, error) {
-	return command(TypeUpsert, param)
+	return command(CmdUpsert, param)
 }
