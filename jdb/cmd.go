@@ -27,15 +27,13 @@ var (
 type Cmd struct {
 	*where
 	Command       string           `json:"command"`
-	Items         []et.Json        `json:"items"`
-	Data          et.Json          `json:"data"`
+	Data          []et.Json        `json:"items"`
+	Columns       et.Json          `json:"columns"`
+	Atribs        et.Json          `json:"atrib"`
 	Keys          et.Json          `json:"keys"`
 	Before        et.Json          `json:"before"`
 	After         et.Json          `json:"after"`
-	Result        et.Json          `json:"result"`
 	Results       []et.Json        `json:"results"`
-	Returns       et.Json          `json:"return"`
-	Atribs        et.Json          `json:"atrib"`
 	SQL           string           `json:"sql"`
 	db            *Database        `json:"-"`
 	tx            *Tx              `json:"-"`
@@ -62,21 +60,19 @@ type Cmd struct {
 * @param model *Model, cmd string, data []et.Json
 * @return *Cmd
 **/
-func newCommand(model *Model, cmd string, items []et.Json) *Cmd {
+func newCommand(model *Model, cmd string, data []et.Json) *Cmd {
 	result := &Cmd{
 		where:         newWhere(),
 		Command:       cmd,
-		Items:         items,
-		Data:          et.Json{},
+		Data:          data,
+		Columns:       et.Json{},
+		Atribs:        et.Json{},
 		Keys:          et.Json{},
 		Before:        et.Json{},
 		After:         et.Json{},
-		Result:        et.Json{},
 		Results:       []et.Json{},
-		Returns:       et.Json{},
 		db:            model.db,
 		from:          model,
-		result:        []et.Json{},
 		beforeInserts: model.BeforeInserts,
 		beforeUpdates: model.BeforeUpdates,
 		beforeDeletes: model.BeforeDeletes,
@@ -165,33 +161,6 @@ func command(cmd string, param et.Json) (*Cmd, error) {
 	}
 
 	return newCommand(model, cmd, data), nil
-}
-
-/**
-* Return
-* @param fields ...string
-* @return *Cmd
-**/
-func (s *Cmd) Return(fields ...string) *Cmd {
-	if s.from == nil {
-		return s
-	}
-
-	for _, v := range fields {
-		_, ok := s.from.GetColumn(v)
-		if !ok && s.from.IsLocked {
-			continue
-		}
-
-		if !ok {
-			s.Atribs[v] = v
-			continue
-		}
-
-		s.Returns[v] = v
-	}
-
-	return s
 }
 
 /**

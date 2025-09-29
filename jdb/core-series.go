@@ -113,7 +113,6 @@ func GenSeries(kind, tag string) (string, error) {
 			data.Set("value", "value + 1")
 			return nil
 		}).
-		Return("value", "format").
 		One()
 	if err != nil {
 		return "", err

@@ -7,7 +7,7 @@ package jdb
 **/
 func (s *Ql) Where(cond Condition) *Ql {
 	s.where.Where(cond)
-	s.isJoin = false
+	s.useJoin = false
 	return s
 }
 
@@ -20,7 +20,7 @@ func (s *Ql) Where(cond Condition) *Ql {
 func (s *Ql) whereJoin(cond Condition, conector string) *Ql {
 	n := len(s.Joins) - 1
 	if n < 0 {
-		s.isJoin = false
+		s.useJoin = false
 		return s
 	}
 	on := s.Joins[n].ArrayJson("on")
@@ -45,7 +45,7 @@ func (s *Ql) whereJoin(cond Condition, conector string) *Ql {
 * @return *Cmd
 **/
 func (s *Ql) And(cond Condition) *Ql {
-	if !s.isJoin {
+	if !s.useJoin {
 		s.where.And(cond)
 		return s
 	}
@@ -60,7 +60,7 @@ func (s *Ql) And(cond Condition) *Ql {
 * @return *Cmd
 **/
 func (s *Ql) Or(cond Condition) *Ql {
-	if !s.isJoin {
+	if !s.useJoin {
 		s.where.Or(cond)
 		return s
 	}

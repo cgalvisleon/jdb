@@ -30,7 +30,7 @@ type Ql struct {
 	from        *Model                  `json:"-"`
 	tx          *Tx                     `json:"-"`
 	isDebug     bool                    `json:"-"`
-	isJoin      bool                    `json:"-"`
+	useJoin     bool                    `json:"-"`
 }
 
 /**
@@ -172,7 +172,7 @@ func (s *Ql) Join(to, as string, on Condition) *Ql {
 			on.ToJson(),
 		},
 	})
-	s.isJoin = true
+	s.useJoin = true
 
 	return s
 }
