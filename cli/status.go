@@ -7,13 +7,18 @@ import (
 	"github.com/spf13/cobra"
 )
 
+func init() {
+	rootCmd.AddCommand(statusCmd)
+}
+
 var statusCmd = &cobra.Command{
 	Use:   CMD_STATUS,
 	Short: CMD_STATUS_SHORT,
 	Run: func(cmd *cobra.Command, args []string) {
-		conn, err := net.Dial("unix", cli.socketPath)
+		d := &Cli{socketPath: socketPath}
+		conn, err := net.Dial("unix", d.socketPath)
 		if err != nil {
-			logs.Log(PackageName, "No se pudo conectar al servidor:", err)
+			logs.Logf(PackageName, "❌ No hay daemon activo")
 			return
 		}
 		defer conn.Close()

@@ -15,8 +15,7 @@ import (
 )
 
 var (
-	PackageName = "jdb"
-	cli         *Cli
+	PackageName        = "jdb"
 	pidFile     string = "/tmp/jdb.pid"
 	socketPath  string = "/tmp/jdb.sock"
 	logFile     string = "/tmp/jdb.log"
@@ -54,11 +53,12 @@ func newCli() *Cli {
 * RegisterCommand
 * @param name string, handler CommandHandler
 **/
-func (d *Cli) RegisterCommand(name string, handler CommandHandler) {
-	if d.commands == nil {
-		d.commands = make(map[string]CommandHandler)
+func RegisterCommand(name string, handler CommandHandler) {
+	if cli.commands == nil {
+		cli.commands = make(map[string]CommandHandler)
 	}
-	d.commands[name] = handler
+
+	cli.commands[name] = handler
 }
 
 /**

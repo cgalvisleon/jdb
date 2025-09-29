@@ -22,6 +22,7 @@ var stopCmd = &cobra.Command{
 			logs.Logf(PackageName, "❌ No hay daemon activo")
 			return
 		}
+
 		syscall.Kill(pid, syscall.SIGTERM)
 		os.Remove(d.pidFile)
 		logs.Logf(PackageName, "Daemon detenido con PID %d", pid)
