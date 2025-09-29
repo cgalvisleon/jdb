@@ -16,7 +16,7 @@ var stopCmd = &cobra.Command{
 	Use:   CMD_STOP,
 	Short: CMD_STOP_SHORT,
 	Run: func(cmd *cobra.Command, args []string) {
-		d := &Cli{pidFile: "/tmp/jdb.pid"}
+		d := &Cli{pidFile: pidFile}
 		pid, alive := d.checkExistingDaemon()
 		if !alive {
 			logs.Logf(PackageName, "❌ No hay daemon activo")

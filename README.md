@@ -277,6 +277,7 @@ gofmt -w . && go run ./cmd/cli send ping
 gofmt -w . && go run ./cmd/cli send status
 gofmt -w . && go run ./cmd/cli send status --tcp
 gofmt -w . && go run ./cmd/cli send foo
+gofmt -w . && go run ./cmd/cli send echo "hola mundo"
 gofmt -w . && go run ./cmd/cli stop
 
 

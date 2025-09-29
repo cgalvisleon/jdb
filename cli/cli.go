@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"net"
 	"os"
-	"os/exec"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	"github.com/cgalvisleon/et/envar"
@@ -94,43 +94,6 @@ func (s *Cli) ToJson() et.Json {
 }
 
 /**
-* startDaemon
-**/
-func (s *Cli) startDaemon() {
-	// Verifica si ya hay un pid file
-	if pid, alive := s.checkExistingDaemon(); alive {
-		logs.Logf(PackageName, "⚠️ Ya existe un daemon corriendo con PID %d\n", pid)
-		return
-	}
-
-	// Abre log file
-	f, err := os.OpenFile(s.logFile, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
-	if err != nil {
-		logs.Log(PackageName, "Error creating log:", err)
-		return
-	}
-
-	// Reejecuta binario en modo --child
-	cmd := exec.Command(os.Args[0], "run", "--child")
-	cmd.Stdout = f
-	cmd.Stderr = f
-	cmd.Stdin = nil
-
-	if err := cmd.Start(); err != nil {
-		logs.Log(PackageName, "Error starting daemon:", err)
-		return
-	}
-
-	// Guarda el PID en archivo
-	if err := os.WriteFile(s.pidFile, []byte(fmt.Sprintf("%d", cmd.Process.Pid)), 0644); err != nil {
-		fmt.Println("Error guardando pid file:", err)
-		return
-	}
-
-	logs.Logf(PackageName, "Daemon started, PID %d (logs in %s)", cmd.Process.Pid, s.logFile)
-}
-
-/**
 * runServer
 **/
 func (s *Cli) runServer() {
@@ -184,6 +147,36 @@ func (d *Cli) acceptLoop(l net.Listener, proto string) {
 }
 
 /**
+* handleConnection
+* @param c net.Conn, proto string
+**/
+func (s *Cli) handleConnection(c net.Conn, proto string) {
+	defer c.Close()
+	buf := make([]byte, 1024)
+	n, err := c.Read(buf)
+	if err != nil {
+		return
+	}
+
+	msg := strings.TrimSpace(string(buf[:n]))
+	logs.Logf(PackageName, "[%s] Mensaje recibido: %s", proto, msg)
+
+	parts := strings.SplitN(msg, " ", 2)
+	cmd := parts[0]
+	args := ""
+	if len(parts) > 1 {
+		args = parts[1]
+	}
+
+	if handler, ok := s.commands[cmd]; ok {
+		resp := handler(args)
+		c.Write([]byte(resp + "\n"))
+	} else {
+		c.Write([]byte("Comando no reconocido\n"))
+	}
+}
+
+/**
 * stop
 **/
 func (s *Cli) stop() {
@@ -191,9 +184,11 @@ func (s *Cli) stop() {
 		s.unixListener.Close()
 		os.Remove(s.socketPath)
 	}
+
 	if s.tcpListener != nil {
 		s.tcpListener.Close()
 	}
+
 	os.Remove(s.pidFile)
 	logs.Logf(PackageName, "Server stopped.")
 }
