@@ -3,7 +3,6 @@ package postgres
 import (
 	"database/sql"
 
-	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/jdb/jdb"
 )
 
@@ -127,7 +126,6 @@ func triggerRecords(db *sql.DB) error {
 	$$ LANGUAGE plpgsql;
 	`, jdb.RECORDID, jdb.SOURCE, jdb.FOR_DELETE)
 
-	console.Debug("trigger records:", sql)
 	_, err := db.Exec(sql)
 	if err != nil {
 		return err
