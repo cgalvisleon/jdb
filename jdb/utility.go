@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
-	"strconv"
 	"strings"
 	"time"
 
@@ -157,10 +156,10 @@ func SQLParse(sql string, args ...any) string {
 * @return any
 **/
 func Quote(val interface{}) any {
-	fmt := `'%s'`
+	format := `'%s'`
 	switch v := val.(type) {
 	case string:
-		return strconv.Quote(v)
+		return fmt.Sprintf(format, v)
 	case int:
 		return v
 	case float64:
@@ -176,22 +175,22 @@ func Quote(val interface{}) any {
 	case bool:
 		return v
 	case time.Time:
-		return strs.Format(fmt, v.Format("2006-01-02 15:04:05"))
+		return fmt.Sprintf(format, v.Format("2006-01-02 15:04:05"))
 	case et.Json:
-		return strs.Format(fmt, v.ToString())
+		return fmt.Sprintf(format, v.ToString())
 	case map[string]interface{}:
-		return strs.Format(fmt, et.Json(v).ToString())
+		return fmt.Sprintf(format, et.Json(v).ToString())
 	case []string, []et.Json, []interface{}, []map[string]interface{}:
 		bt, err := json.Marshal(v)
 		if err != nil {
 			logs.Errorf("Quote", "type:%v, value:%v, error marshalling array: %v", reflect.TypeOf(v), v, err)
-			return strs.Format(fmt, `[]`)
+			return strs.Format(format, `[]`)
 		}
-		return strs.Format(fmt, string(bt))
+		return fmt.Sprintf(format, string(bt))
 	case []uint8:
-		return strs.Format(fmt, string(v))
+		return fmt.Sprintf(format, string(v))
 	case nil:
-		return strs.Format(`%s`, "NULL")
+		return fmt.Sprintf(`%s`, "NULL")
 	default:
 		logs.Errorf("Quote", "type:%v, value:%v", reflect.TypeOf(v), v)
 		return val

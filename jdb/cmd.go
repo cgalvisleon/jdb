@@ -6,6 +6,7 @@ import (
 	"slices"
 
 	"github.com/cgalvisleon/et/et"
+	"github.com/cgalvisleon/et/strs"
 	"github.com/cgalvisleon/et/utility"
 	"github.com/cgalvisleon/et/vm"
 )
@@ -85,10 +86,10 @@ func newCommand(model *Model, cmd string, data []et.Json) *Cmd {
 }
 
 /**
-* toJson
+* ToJson
 * @return et.Json
 **/
-func (s *Cmd) toJson() et.Json {
+func (s *Cmd) ToJson() et.Json {
 	bt, err := json.Marshal(s)
 	if err != nil {
 		return et.Json{}
@@ -158,11 +159,13 @@ func command(cmd string, param et.Json) (*Cmd, error) {
 
 /**
 * prepare
-* @return error
+* @param data et.Json, as string
+* @return []et.Json
 **/
-func (s *Cmd) getKeys(data et.Json) []et.Json {
+func (s *Cmd) getKeys(data et.Json, as string) []et.Json {
 	result := []et.Json{}
 	for k, v := range data {
+		filed := strs.Append(as, k, ".")
 		_, ok := s.From.GetColumn(k)
 		if !ok {
 			continue
@@ -170,8 +173,8 @@ func (s *Cmd) getKeys(data et.Json) []et.Json {
 
 		if slices.Contains(s.From.PrimaryKeys, k) {
 			result = append(result, et.Json{
-				k: et.Json{
-					"eq": v,
+				filed: et.Json{
+					"eq": Quote(v),
 				},
 			})
 		}

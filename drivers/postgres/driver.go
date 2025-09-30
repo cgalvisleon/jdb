@@ -95,5 +95,14 @@ func (s *Postgres) Query(query *jdb.Ql) (string, error) {
 * @return (string, error)
 **/
 func (s *Postgres) Command(command *jdb.Cmd) (string, error) {
+	definition := command.ToJson()
+	sql, err := s.buildCommand(definition)
+	if err != nil {
+		return "", err
+	}
+
+	command.SQL = sql
+	console.Debug("command:\n\t", sql)
+
 	return command.SQL, nil
 }

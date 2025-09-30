@@ -8,7 +8,7 @@ import "github.com/cgalvisleon/et/et"
 **/
 func (s *Cmd) upsertTx() (et.Items, error) {
 	data := s.Data[0]
-	keys := s.getKeys(data)
+	keys := s.getKeys(data, "A")
 	exists, err := s.From.
 		Query(et.Json{
 			"where": keys,
@@ -20,8 +20,10 @@ func (s *Cmd) upsertTx() (et.Items, error) {
 	}
 
 	if exists {
+		s.Command = CmdUpdate
 		return s.updateTx()
 	}
 
+	s.Command = CmdInsert
 	return s.insertTx()
 }

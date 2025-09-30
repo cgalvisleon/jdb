@@ -279,7 +279,7 @@ func (s *Database) command(command *Cmd) (et.Items, error) {
 	}
 
 	if command.isDebug {
-		console.Debugf("command:%s", command.toJson().ToString())
+		console.Debugf("command:%s", command.ToJson().ToEscapeHTML())
 	}
 
 	result, err := s.QueryTx(command.tx, sql)

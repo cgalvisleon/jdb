@@ -93,7 +93,7 @@ func (s *Ql) Debug() *Ql {
 **/
 func (s *Ql) addFrom(model *Model, as string) *Ql {
 	s.from = model
-	s.Froms[model.Name] = as
+	s.Froms[model.Table] = as
 	s.SourceField = model.SourceField
 	return s
 }
