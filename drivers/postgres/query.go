@@ -14,7 +14,8 @@ import (
 * @param query *jdb.Ql
 * @return (string, error)
 **/
-func (s *Postgres) buildQuery(query et.Json) (string, error) {
+func (s *Postgres) buildQuery(ql *jdb.Ql) (string, error) {
+	query := ql.ToJson()
 	sql, err := s.buildSelect(query)
 	if err != nil {
 		return "", err
@@ -92,10 +93,10 @@ func (s *Postgres) buildQuery(query et.Json) (string, error) {
 	}
 
 	if query.Bool("exists") {
-		return fmt.Sprintf("SELECT EXISTS(%s)", sql), nil
+		return fmt.Sprintf("SELECT EXISTS(%s);", sql), nil
+	} else {
+		return fmt.Sprintf("%s;", sql), nil
 	}
-
-	return sql, nil
 }
 
 /**

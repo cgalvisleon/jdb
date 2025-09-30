@@ -12,10 +12,11 @@ import (
 
 /**
 * buildModel
-* @param definition et.Json
+* @param model *jdb.Model
 * @return (string, error)
 **/
-func (s *Postgres) buildModel(definition et.Json) (string, error) {
+func (s *Postgres) buildModel(model *jdb.Model) (string, error) {
+	definition := model.ToJson()
 	sql, err := s.buildSchema(definition)
 	if err != nil {
 		return "", err

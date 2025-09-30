@@ -62,8 +62,7 @@ func (s *Postgres) Load(model *jdb.Model) (string, error) {
 		return "", nil
 	}
 
-	definition := model.ToJson()
-	sql, err := s.buildModel(definition)
+	sql, err := s.buildModel(model)
 	if err != nil {
 		return "", err
 	}
@@ -73,20 +72,19 @@ func (s *Postgres) Load(model *jdb.Model) (string, error) {
 
 /**
 * Query
-* @param query *jdb.Ql
+* @param ql *jdb.Ql
 * @return (string, error)
 **/
-func (s *Postgres) Query(query *jdb.Ql) (string, error) {
-	defintion := query.ToJson()
-	sql, err := s.buildQuery(defintion)
+func (s *Postgres) Query(ql *jdb.Ql) (string, error) {
+	sql, err := s.buildQuery(ql)
 	if err != nil {
 		return "", err
 	}
 
-	query.SQL = sql
-	console.Debug("query:\n\t", sql)
+	ql.SQL = sql
+	console.Debug("query:\n", sql)
 
-	return query.SQL, nil
+	return ql.SQL, nil
 }
 
 /**
@@ -94,15 +92,14 @@ func (s *Postgres) Query(query *jdb.Ql) (string, error) {
 * @param command *jdb.Cmd
 * @return (string, error)
 **/
-func (s *Postgres) Command(command *jdb.Cmd) (string, error) {
-	definition := command.ToJson()
-	sql, err := s.buildCommand(definition)
+func (s *Postgres) Command(cmd *jdb.Cmd) (string, error) {
+	sql, err := s.buildCommand(cmd)
 	if err != nil {
 		return "", err
 	}
 
-	command.SQL = sql
-	console.Debug("command:\n\t", sql)
+	cmd.SQL = sql
+	console.Debug("command:\n", sql)
 
-	return command.SQL, nil
+	return cmd.SQL, nil
 }

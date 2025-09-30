@@ -3,6 +3,7 @@ package postgres
 import (
 	"database/sql"
 
+	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/jdb/jdb"
 )
 
@@ -24,7 +25,7 @@ func triggerRecords(db *sql.DB) error {
 		INSERT INTO core.tables (created_at, updated_at, table_schema, table_name, total)
 		VALUES (now(), now(), TG_TABLE_SCHEMA, TG_TABLE_NAME, 1)
 		ON CONFLICT (table_schema, table_name) DO UPDATE
-		SET total = total + 1,
+		SET total = core.tables.total + 1,
 				updated_at = now();
 
 		RETURN NEW;
@@ -35,7 +36,7 @@ func triggerRecords(db *sql.DB) error {
 	RETURNS TRIGGER AS $$	
 	BEGIN
 		UPDATE core.tables
-		SET total = total - 1,
+		SET total = core.tables.total - 1,
 				updated_at = now()
 		WHERE table_schema = TG_TABLE_SCHEMA
 		AND table_name = TG_TABLE_NAME;
@@ -72,17 +73,20 @@ func triggerRecords(db *sql.DB) error {
 	EXECUTE FUNCTION core.after_delete_tables();
 
 	CREATE OR REPLACE FUNCTION core.after_records()
-	RETURNS TRIGGER AS $$	
+	RETURNS TRIGGER AS $$
+	DECLARE
+		vnew JSONB;
+ 		vold JSONB;
 	BEGIN
-		new := to_jsonb(NEW);
-		old := to_jsonb(OLD);
+		vnew = to_jsonb(NEW);
+		vold = to_jsonb(OLD);
 
-		IF TD_OP = 'INSERT' AND new ? '$1' THEN
+		IF TG_OP = 'INSERT' AND (vnew ? '$1') THEN
 			INSERT INTO core.records (created_at, updated_at, table_schema, table_name, index)
 			VALUES (now(), now(), TG_TABLE_SCHEMA, TG_TABLE_NAME, NEW.index);
 		END IF;
 		
-		IF TD_OP = 'UPDATE' AND new ? '$1' THEN
+		IF TG_OP = 'UPDATE' AND (vnew ? '$1') THEN
 			UPDATE core.records
 			SET updated_at = now()
 			WHERE table_schema = TG_TABLE_SCHEMA
@@ -90,19 +94,19 @@ func triggerRecords(db *sql.DB) error {
 			AND index = NEW.index;
 		END IF;
 
-		IF TD_OP = 'UPDATE' AND new ? '$1' AND new ? '$2' AND new->>'$2' != old->>'$2' AND new->>'$2' == '$3' THEN
+		IF TG_OP = 'UPDATE' AND (vnew ? '$1') AND (vnew ? '$2') AND vnew->>'$2' != vold->>'$2' AND vnew->>'$2' = '$3' THEN
 			INSERT INTO core.recyclings (created_at, table_schema, table_name, index)
 			VALUES (now(), TG_TABLE_SCHEMA, TG_TABLE_NAME, NEW.index);
 		END IF;
 		
-		IF TD_OP = 'UPDATE' AND new ? '$1' AND new ? '$2' AND new->>'$2' != old->>'$2' AND new->>'$2' != '$3' THEN
+		IF TG_OP = 'UPDATE' AND (vnew ? '$1') AND (vnew ? '$2') AND vnew->>'$2' != vold->>'$2' AND vnew->>'$2' != '$3' THEN
 			DELETE FROM core.recyclings
 			WHERE table_schema = TG_TABLE_SCHEMA
 			AND table_name = TG_TABLE_NAME
 			AND index = NEW.index;
 		END IF;
 		
-		IF TD_OP = 'DELETE' AND new ? '$1' THEN
+		IF TG_OP = 'DELETE' AND (vold ? '$1') THEN
 			DELETE FROM core.records
 			WHERE table_schema = TG_TABLE_SCHEMA
 			AND table_name = TG_TABLE_NAME
@@ -114,11 +118,16 @@ func triggerRecords(db *sql.DB) error {
 			AND index = OLD.index;
 		END IF;
 
-		RETURN NEW;
+		IF TG_OP = 'DELETE' THEN
+      RETURN OLD;
+    ELSE
+      RETURN NEW;
+    END IF;
 	END;
 	$$ LANGUAGE plpgsql;
 	`, jdb.RECORDID, jdb.SOURCE, jdb.FOR_DELETE)
 
+	console.Debug("trigger records:", sql)
 	_, err := db.Exec(sql)
 	if err != nil {
 		return err

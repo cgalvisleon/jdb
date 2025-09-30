@@ -2,6 +2,7 @@ package jdb
 
 import (
 	"database/sql"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"reflect"
@@ -152,11 +153,11 @@ func SQLParse(sql string, args ...any) string {
 
 /**
 * Quote
-* @param val interface{}
+* @param val any
 * @return any
 **/
-func Quote(val interface{}) any {
-	format := `'%s'`
+func Quote(val any) any {
+	format := `'%v'`
 	switch v := val.(type) {
 	case string:
 		return fmt.Sprintf(format, v)
@@ -188,7 +189,8 @@ func Quote(val interface{}) any {
 		}
 		return fmt.Sprintf(format, string(bt))
 	case []uint8:
-		return fmt.Sprintf(format, string(v))
+		b := []byte(val.([]uint8))
+		return fmt.Sprintf("'\\x%s'", hex.EncodeToString(b))
 	case nil:
 		return fmt.Sprintf(`%s`, "NULL")
 	default:
