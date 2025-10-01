@@ -57,27 +57,33 @@ func tipoSQL(query string) string {
 * @param rows *sql.Rows
 * @return et.Items
 **/
-func RowsToItems(rows *sql.Rows) et.Items {
+func RowsToItems(rows *sql.Rows, hidden []string) et.Items {
 	var result = et.Items{Result: []et.Json{}}
+
+	append := func(item et.Json) {
+		for _, v := range hidden {
+			delete(item, v)
+		}
+		result.Add(item)
+	}
+
 	for rows.Next() {
 		var item et.Json
 		item.ScanRows(rows)
 
-		result.Ok = true
-		result.Count++
 		if len(item) == 1 {
 			for _, v := range item {
 				switch val := v.(type) {
 				case et.Json:
-					result.Result = append(result.Result, val)
+					append(val)
 				case map[string]interface{}:
-					result.Result = append(result.Result, et.Json(val))
+					append(et.Json(val))
 				default:
-					result.Result = append(result.Result, item)
+					append(item)
 				}
 			}
 		} else {
-			result.Result = append(result.Result, item)
+			append(item)
 		}
 	}
 

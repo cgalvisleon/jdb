@@ -32,6 +32,7 @@ type Cmd struct {
 	Command           string           `json:"command"`
 	From              *Model           `json:"from"`
 	Data              []et.Json        `json:"data"`
+	Hidden            []string         `json:"hidden"`
 	Result            et.Items         `json:"result"`
 	UseAtribs         bool             `json:"use_atribs"`
 	SQL               string           `json:"sql"`
@@ -64,6 +65,7 @@ func newCommand(model *Model, cmd string, data []et.Json) *Cmd {
 		Command:           cmd,
 		From:              model,
 		Data:              data,
+		Hidden:            []string{},
 		Result:            et.Items{},
 		db:                model.db,
 		vm:                vm.New(),
@@ -181,6 +183,16 @@ func (s *Cmd) getKeys(data et.Json, as string) []et.Json {
 	}
 
 	return result
+}
+
+/**
+* Hiddens
+* @param hidden []string
+* @return *Cmd
+**/
+func (s *Cmd) Hiddens(hidden []string) *Cmd {
+	s.Hidden = hidden
+	return s
 }
 
 /**

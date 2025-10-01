@@ -97,7 +97,7 @@ func (s *Postgres) existDatabase(db *sql.DB, name string) (bool, error) {
 	}
 	defer rows.Close()
 
-	items := jdb.RowsToItems(rows)
+	items := jdb.RowsToItems(rows, []string{})
 
 	if items.Count == 0 {
 		return false, nil

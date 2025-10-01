@@ -231,7 +231,7 @@ func (s *Database) init(model *Model) error {
 		console.Debugf("init:%s", model.ToJson().ToEscapeHTML())
 	}
 
-	_, err = s.Query(sql)
+	_, err = s.Query([]string{}, sql)
 	if err != nil {
 		return err
 	}
@@ -261,7 +261,7 @@ func (s *Database) query(query *Ql) (et.Items, error) {
 		console.Debugf("query:%s", query.ToJson().ToEscapeHTML())
 	}
 
-	result, err := s.QueryTx(query.tx, sql)
+	result, err := s.QueryTx(query.tx, query.Hidden, sql)
 	if err != nil {
 		return et.Items{}, err
 	}
@@ -271,20 +271,20 @@ func (s *Database) query(query *Ql) (et.Items, error) {
 
 /**
 * command
-* @param command *Cmd
+* @param cmd *Cmd
 * @return (et.Items, error)
 **/
-func (s *Database) command(command *Cmd) (et.Items, error) {
-	sql, err := s.driver.Command(command)
+func (s *Database) command(cmd *Cmd) (et.Items, error) {
+	sql, err := s.driver.Command(cmd)
 	if err != nil {
 		return et.Items{}, err
 	}
 
-	if command.isDebug {
-		console.Debugf("command:%s", command.ToJson().ToEscapeHTML())
+	if cmd.isDebug {
+		console.Debugf("command:%s", cmd.ToJson().ToEscapeHTML())
 	}
 
-	result, err := s.QueryTx(command.tx, sql)
+	result, err := s.QueryTx(cmd.tx, cmd.Hidden, sql)
 	if err != nil {
 		return et.Items{}, err
 	}

@@ -9,14 +9,15 @@ import (
 
 /**
 * querytx
-* @param db *sql.DB, tx *Tx, sql string, arg ...any
+* @param db *sql.DB, tx *Tx, hidden []string, sql string, arg ...any
 * @return *sql.Rows, error
 **/
-func querytx(db *Database, tx *Tx, sql string, arg ...any) (et.Items, error) {
-	sql = SQLParse(sql, arg...)
+func querytx(db *Database, tx *Tx, hidden []string, sql string, arg ...any) (et.Items, error) {
 	data := et.Json{
 		"db_name": db.Name,
 		"sql":     sql,
+		"args":    arg,
+		"hidden":  hidden,
 	}
 
 	if tx != nil {
@@ -43,7 +44,7 @@ func querytx(db *Database, tx *Tx, sql string, arg ...any) (et.Items, error) {
 			event.Publish(fmt.Sprintf("sql:%s", tp), data)
 		}
 
-		return RowsToItems(rows), nil
+		return RowsToItems(rows, hidden), nil
 	}
 
 	rows, err := db.Db.Query(sql, arg...)
@@ -54,23 +55,23 @@ func querytx(db *Database, tx *Tx, sql string, arg ...any) (et.Items, error) {
 
 	tp := tipoSQL(sql)
 	event.Publish(fmt.Sprintf("sql:%s", tp), data)
-	return RowsToItems(rows), nil
+	return RowsToItems(rows, hidden), nil
 }
 
 /**
 * QueryTx
-* @param tx *Tx, sql string, arg ...any
+* @param tx *Tx, hidden []string, sql string, arg ...any
 * @return et.Items, error
 **/
-func (s *Database) QueryTx(tx *Tx, sql string, arg ...any) (et.Items, error) {
-	return querytx(s, tx, sql, arg...)
+func (s *Database) QueryTx(tx *Tx, hidden []string, sql string, arg ...any) (et.Items, error) {
+	return querytx(s, tx, hidden, sql, arg...)
 }
 
 /**
 * Query
-* @param sql string, arg ...any
+* @param hidden []string, sql string, arg ...any
 * @return et.Items, error
 **/
-func (s *Database) Query(sql string, arg ...any) (et.Items, error) {
-	return querytx(s, nil, sql, arg...)
+func (s *Database) Query(hidden []string, sql string, arg ...any) (et.Items, error) {
+	return querytx(s, nil, hidden, sql, arg...)
 }

@@ -144,12 +144,12 @@ func (s *Ql) Select(fields ...string) *Ql {
 		} else if tp == TypeRelation {
 			s.Relations[v] = s.from.Relations[v]
 		} else if tp == TypeDetail {
-			detail := s.from.Details[v]
 			to := s.from.details[v]
 			if to == nil {
 				continue
 			}
 
+			detail := s.from.Details[v]
 			references := detail.Json("references")
 			columns := references.ArrayJson("columns")
 			as := string(rune(len(s.Joins) + 66))
@@ -157,7 +157,7 @@ func (s *Ql) Select(fields ...string) *Ql {
 			for _, fk := range columns {
 				for k, v := range fk {
 					if first {
-						s.Join(to.Table, as, Eq(fmt.Sprintf("A.%s", k), fmt.Sprintf("%s.%s", as, v)))
+						s.Join(to, as, Eq(fmt.Sprintf("A.%s", k), fmt.Sprintf("%s.%s", as, v)))
 						first = false
 						continue
 					}
@@ -172,25 +172,20 @@ func (s *Ql) Select(fields ...string) *Ql {
 
 /**
 * Join
-* @param to, as string, on Condition
+* @param to *Model, as string, on Condition
 * @return *Ql
 *
  */
-func (s *Ql) Join(to, as string, on Condition) *Ql {
+func (s *Ql) Join(to *Model, as string, on Condition) *Ql {
 	n := len(s.Froms)
 	if n == 0 {
-		return s
-	}
-
-	model, err := s.db.getModel(to)
-	if err != nil {
 		return s
 	}
 
 	n = len(s.Joins) + 1
 	s.Joins = append(s.Joins, et.Json{
 		"from": et.Json{
-			model.Table: as,
+			to.Table: as,
 		},
 		"on": []et.Json{
 			on.ToJson(),
