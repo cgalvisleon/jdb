@@ -53,7 +53,7 @@ func defineModel(db *Database) error {
 		},
 		"record_field": RECORDID,
 		"primary_keys": []string{"name"},
-		"indices":      []string{"version", RECORDID},
+		"indexes":      []string{"version", RECORDID},
 	})
 	if err != nil {
 		return err

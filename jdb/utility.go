@@ -85,29 +85,6 @@ func RowsToItems(rows *sql.Rows) et.Items {
 }
 
 /**
-* rowsToSourceItems
-* @param rows *sql.Rows, source string
-* @return et.Items
-**/
-func rowsToSourceItems(rows *sql.Rows, source string) et.Items {
-	var result = et.Items{Result: []et.Json{}}
-	for rows.Next() {
-		var item et.Json
-		item.ScanRows(rows)
-
-		result.Ok = true
-		result.Count++
-		if item[source] == nil {
-			result.Result = append(result.Result, item)
-		} else {
-			result.Result = append(result.Result, item.Json(source))
-		}
-	}
-
-	return result
-}
-
-/**
 * SQLUnQuote
 * @param sql string
 * @param args ...any

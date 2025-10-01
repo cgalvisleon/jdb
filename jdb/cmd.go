@@ -66,7 +66,7 @@ func newCommand(model *Model, cmd string, data []et.Json) *Cmd {
 		Data:              data,
 		Result:            et.Items{},
 		db:                model.db,
-		vm:                vm.NewVm(),
+		vm:                vm.New(),
 		beforeInserts:     model.BeforeInserts,
 		beforeUpdates:     model.BeforeUpdates,
 		beforeDeletes:     model.BeforeDeletes,

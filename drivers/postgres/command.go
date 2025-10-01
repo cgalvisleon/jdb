@@ -83,13 +83,13 @@ func (s *Postgres) buildUpdate(cmd *jdb.Cmd) (string, error) {
 	returning := fmt.Sprintf(`to_jsonb(%s.*) AS result`, table)
 	for k, v := range data {
 		val := fmt.Sprintf(`%v`, jdb.Quote(v))
-		_, ok := cmd.From.GetColumn(k)
-		if ok {
+		col, ok := cmd.From.GetColumn(k)
+		if ok && jdb.TypeColumn[col.String("type")] {
 			sets = strs.Append(sets, fmt.Sprintf(`%s = %s`, k, val), ", ")
 			continue
 		}
 
-		if cmd.UseAtribs {
+		if cmd.UseAtribs || jdb.TypeAtrib[col.String("type")] {
 			if len(atribs) == 0 {
 				atribs = cmd.From.SourceField
 				atribs = strs.Format("jsonb_set(%s, '{%s}', %v::jsonb, true)", atribs, k, val)

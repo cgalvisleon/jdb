@@ -77,6 +77,10 @@ var (
 		TypeGeometry: true,
 	}
 
+	TypeAtrib = map[string]bool{
+		TypeAtribute: true,
+	}
+
 	TypeColumnCalc = map[string]bool{
 		TypeCalc:     true,
 		TypeDetail:   true,
@@ -111,7 +115,7 @@ type Model struct {
 	Relations         []et.Json         `json:"relations"` //SQL
 	PrimaryKeys       []string          `json:"primary_keys"`
 	ForeignKeys       []et.Json         `json:"foreign_keys"`
-	Indices           []string          `json:"indices"`
+	Indexes           []string          `json:"indexes"`
 	Required          []string          `json:"required"`
 	BeforeInserts     []string          `json:"before_inserts"`
 	BeforeUpdates     []string          `json:"before_updates"`
@@ -226,16 +230,16 @@ func (s *Model) prepare() error {
 		return nil
 	}
 
-	err := s.defineSourceField(SOURCE)
+	err := s.DefineSourceField(SOURCE)
 	if err != nil {
 		return err
 	}
 
-	s.defineColumn(KEY, et.Json{
+	s.DefineColumn(KEY, et.Json{
 		"type": TypeKey,
 	})
-	s.definePrimaryKeys(KEY)
-	s.defineRecordField(RECORDID)
+	s.DefinePrimaryKeys(KEY)
+	s.DefineRecordField(RECORDID)
 
 	return nil
 }

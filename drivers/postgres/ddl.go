@@ -40,7 +40,7 @@ func (s *Postgres) buildModel(model *jdb.Model) (string, error) {
 		sql = strs.Append(sql, def, "\n\t")
 	}
 
-	def, err = s.buildIndices(definition)
+	def, err = s.buildIndexes(definition)
 	if err != nil {
 		return "", err
 	}
@@ -229,20 +229,20 @@ func (s *Postgres) buildForeignKeys(definition et.Json) (string, error) {
 }
 
 /**
-* buildIndices
+* buildIndexes
 * @param definition et.Json
 * @return (string, error)
 **/
-func (s *Postgres) buildIndices(definition et.Json) (string, error) {
-	indices := definition.ArrayStr("indices")
-	if len(indices) == 0 {
+func (s *Postgres) buildIndexes(definition et.Json) (string, error) {
+	indexes := definition.ArrayStr("indexes")
+	if len(indexes) == 0 {
 		return "", nil
 	}
 
 	table := definition.String("table")
 	name := definition.String("name")
 	result := ""
-	for _, v := range indices {
+	for _, v := range indexes {
 		def := fmt.Sprintf("%s_%s_idx", name, v)
 		def = fmt.Sprintf("CREATE INDEX IF NOT EXISTS %s ON %s(%s);", def, table, v)
 		result = strs.Append(result, def, "\n\t")

@@ -47,7 +47,7 @@ func defineRecords(db *Database) error {
 		},
 		"record_field": RECORDID,
 		"primary_keys": []string{"table_schema", "table_name", RECORDID},
-		"indices":      []string{"updated_at"},
+		"indexes":      []string{"updated_at"},
 	})
 	if err != nil {
 		return err

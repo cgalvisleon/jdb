@@ -55,7 +55,7 @@ func defineSeries(db *Database) error {
 		},
 		"record_field": RECORDID,
 		"primary_keys": []string{"kind", "tag"},
-		"indices":      []string{RECORDID},
+		"indexes":      []string{RECORDID},
 	})
 	if err != nil {
 		return err

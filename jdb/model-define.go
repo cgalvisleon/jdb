@@ -9,13 +9,13 @@ import (
 )
 
 /**
-* defineColumn
+* DefineColumn
 * @param name string, params et.Json
 * @return error
 **/
-func (s *Model) defineColumn(name string, params et.Json) error {
+func (s *Model) DefineColumn(name string, params et.Json) error {
 	if !utility.ValidStr(name, 0, []string{}) {
-		return fmt.Errorf(`%s (%s)`, MSG_NAME_REQUIRED, "defineColumn")
+		return fmt.Errorf(MSG_NAME_REQUIRED)
 	}
 
 	idx := s.getColumnIndex(name)
@@ -37,16 +37,16 @@ func (s *Model) defineColumn(name string, params et.Json) error {
 }
 
 /**
-* defineAtrib
+* DefineAtrib
 * @param name string, defaultValue interface{}
 * @return error
 **/
-func (s *Model) defineAtrib(name string, defaultValue interface{}) error {
+func (s *Model) DefineAtrib(name string, defaultValue interface{}) error {
 	if s.SourceField == "" {
-		s.defineSourceField(SOURCE)
+		s.DefineSourceField(SOURCE)
 	}
 
-	return s.defineColumn(name, et.Json{
+	return s.DefineColumn(name, et.Json{
 		"type":    TypeAtribute,
 		"default": defaultValue,
 	})
@@ -60,7 +60,7 @@ func (s *Model) defineAtrib(name string, defaultValue interface{}) error {
 func (s *Model) defineColumns(params []et.Json) error {
 	for _, param := range params {
 		name := param.String("name")
-		err := s.defineColumn(name, param)
+		err := s.DefineColumn(name, param)
 		if err != nil {
 			return err
 		}
@@ -70,11 +70,11 @@ func (s *Model) defineColumns(params []et.Json) error {
 }
 
 /**
-* definePrimaryKeys
+* DefinePrimaryKeys
 * @param names ...string
 * @return
 **/
-func (s *Model) definePrimaryKeys(names ...string) {
+func (s *Model) DefinePrimaryKeys(names ...string) {
 	for _, name := range names {
 		idx := slices.Index(s.PrimaryKeys, name)
 		if idx != -1 {
@@ -86,19 +86,19 @@ func (s *Model) definePrimaryKeys(names ...string) {
 			continue
 		}
 
-		s.defineRequired(name)
+		s.DefineRequired(name)
 		s.PrimaryKeys = append(s.PrimaryKeys, name)
 	}
 }
 
 /**
-* defineIndices
+* DefineIndexes
 * @param names ...string
 * @return error
 **/
-func (s *Model) defineIndices(names ...string) error {
+func (s *Model) DefineIndexes(names ...string) error {
 	for _, name := range names {
-		idx := slices.Index(s.Indices, name)
+		idx := slices.Index(s.Indexes, name)
 		if idx != -1 {
 			continue
 		}
@@ -108,18 +108,18 @@ func (s *Model) defineIndices(names ...string) error {
 			continue
 		}
 
-		s.Indices = append(s.Indices, name)
+		s.Indexes = append(s.Indexes, name)
 	}
 
 	return nil
 }
 
 /**
-* defineRequired
+* DefineRequired
 * @param names ...string
 * @return
 **/
-func (s *Model) defineRequired(names ...string) {
+func (s *Model) DefineRequired(names ...string) {
 	for _, name := range names {
 		idx := slices.Index(s.Required, name)
 		if idx != -1 {
@@ -136,79 +136,80 @@ func (s *Model) defineRequired(names ...string) {
 }
 
 /**
-* defineSourceField
+* DefineSourceField
 * @param name string
 * @return error
 **/
-func (s *Model) defineSourceField(name string) error {
+func (s *Model) DefineSourceField(name string) error {
 	if !utility.ValidStr(name, 0, []string{}) {
 		return nil
 	}
 
 	SOURCE = name
 	s.SourceField = name
-	err := s.defineColumn(name, et.Json{
+	err := s.DefineColumn(name, et.Json{
 		"type": TypeJson,
 	})
 	if err != nil {
 		return err
 	}
 
-	s.defineIndices(name)
+	s.DefineIndexes(name)
 	return nil
 }
 
 /**
-* defineRecordField
+* DefineRecordField
 * @param name string
 * @return error
 **/
-func (s *Model) defineRecordField(name string) error {
+func (s *Model) DefineRecordField(name string) error {
 	if !utility.ValidStr(name, 0, []string{}) {
 		return nil
 	}
 
+	RECORDID = name
 	s.RecordField = name
-	err := s.defineColumn(name, et.Json{
+	err := s.DefineColumn(name, et.Json{
 		"type": TypeKey,
 	})
 	if err != nil {
 		return err
 	}
 
-	s.defineIndices(name)
+	s.DefineIndexes(name)
 	return nil
 }
 
 /**
-* defineStatusField
+* DefineStatusField
 * @param name string
 * @return error
 **/
-func (s *Model) defineStatusField(name string) error {
+func (s *Model) DefineStatusField(name string) error {
 	if !utility.ValidStr(name, 0, []string{}) {
 		return nil
 	}
 
 	STATUS = name
 	s.StatusField = name
-	err := s.defineColumn(name, et.Json{
+	err := s.DefineColumn(name, et.Json{
 		"type": TypeJson,
 	})
 	if err != nil {
 		return err
 	}
 
-	s.defineIndices(name)
+	s.DefineIndexes(name)
 	return nil
 }
 
 /**
-* defineForeignKeys
+* DefineForeignKeys
 * @param params []et.Json
 * @return error
 **/
-func (s *Model) defineForeignKeys(params []et.Json) error {
+func (s *Model) DefineForeignKeys(params []et.Json) error {
 	for _, param := range params {
 		schema := param.String("schema")
 		if !utility.ValidStr(schema, 0, []string{}) {
@@ -255,11 +256,11 @@ func (s *Model) defineForeignKeys(params []et.Json) error {
 }
 
 /**
-* defineDetails
+* DefineDetails
 * @param params []et.Json
 * @return error
 **/
-func (s *Model) defineDetails(params []et.Json) error {
+func (s *Model) DefineDetails(params []et.Json) error {
 	for _, param := range params {
 		schema := param.String("schema")
 		if !utility.ValidStr(schema, 0, []string{}) {
@@ -289,7 +290,7 @@ func (s *Model) defineDetails(params []et.Json) error {
 			return err
 		}
 
-		err = detail.defineForeignKeys([]et.Json{
+		err = detail.DefineForeignKeys([]et.Json{
 			{
 				"schema": s.Schema,
 				"name":   s.Name,
@@ -313,7 +314,7 @@ func (s *Model) defineDetails(params []et.Json) error {
 			},
 		})
 
-		err = detail.defineColumn(s.Name, et.Json{
+		err = detail.DefineColumn(s.Name, et.Json{
 			"type": TypeMaster,
 		})
 		if err != nil {
@@ -325,7 +326,7 @@ func (s *Model) defineDetails(params []et.Json) error {
 			return err
 		}
 
-		err = s.defineColumn(name, et.Json{
+		err = s.DefineColumn(name, et.Json{
 			"type": TypeDetail,
 		})
 		if err != nil {

@@ -129,7 +129,7 @@ func (s *Database) getOrCreateModel(schema, name string) (*Model, error) {
 			Relations:         []et.Json{},
 			PrimaryKeys:       []string{},
 			ForeignKeys:       []et.Json{},
-			Indices:           []string{},
+			Indexes:           []string{},
 			Required:          []string{},
 			BeforeInserts:     make([]string, 0),
 			BeforeUpdates:     make([]string, 0),
@@ -312,7 +312,7 @@ func (s *Database) Define(definition et.Json) (*Model, error) {
 	}
 
 	result.Table = definition.String("table")
-	result.Indices = definition.ArrayStr("indices")
+	result.Indexes = definition.ArrayStr("indexes")
 	result.Required = definition.ArrayStr("required")
 	result.Version = definition.Int("version")
 
@@ -324,37 +324,43 @@ func (s *Database) Define(definition et.Json) (*Model, error) {
 
 	atribs := definition.Json("atribs")
 	for k, v := range atribs {
-		err := result.defineAtrib(k, v)
+		err := result.DefineAtrib(k, v)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	primaryKeys := definition.ArrayStr("primary_keys")
-	result.definePrimaryKeys(primaryKeys...)
+	result.DefinePrimaryKeys(primaryKeys...)
 
 	sourceField := definition.String("source_field")
-	err = result.defineSourceField(sourceField)
+	err = result.DefineSourceField(sourceField)
+	if err != nil {
+		return nil, err
+	}
+
+	statusField := definition.String("status_field")
+	err = result.DefineStatusField(statusField)
 	if err != nil {
 		return nil, err
 	}
 
 	recordField := definition.String("record_field")
-	err = result.defineRecordField(recordField)
+	err = result.DefineRecordField(recordField)
 	if err != nil {
 		return nil, err
 	}
 
 	details := definition.ArrayJson("details")
 	if len(details) > 0 {
-		err := result.defineDetails(details)
+		err := result.DefineDetails(details)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	required := definition.ArrayStr("required")
-	result.defineRequired(required...)
+	result.DefineRequired(required...)
 
 	debug := definition.Bool("debug")
 	result.isDebug = debug

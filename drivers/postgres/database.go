@@ -137,7 +137,7 @@ func (s *Postgres) createDatabase(db *sql.DB, name string) error {
 * @param db *sql.DB, name string
 * @return error
 **/
-func (s *Postgres) dropDatabase(db *sql.DB, name string) error {
+func (s *Postgres) DropDatabase(db *sql.DB, name string) error {
 	exist, err := s.existDatabase(db, name)
 	if err != nil {
 		return err
