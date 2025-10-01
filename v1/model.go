@@ -19,6 +19,7 @@ const (
 	TypeGeometry = jdb.TypeGeometry
 	TypeAtribute = jdb.TypeAtribute
 	TypeCalc     = jdb.TypeCalc
+	TypeVm       = jdb.TypeVm
 	TypeDetail   = jdb.TypeDetail
 	TypeMaster   = jdb.TypeMaster
 	TypeRollup   = jdb.TypeRollup
@@ -84,4 +85,13 @@ func (s *Model) DefineColumn(name string, columnType string) error {
 	return s.Model.DefineColumn(name, et.Json{
 		"type": columnType,
 	})
+}
+
+/**
+* DefineColumnCalc
+* @param name string, fn jdb.DataContext
+* @return error
+**/
+func (s *Model) DefineColumnCalc(name string, fn jdb.DataContext) error {
+	return s.Model.DefineColumnCalc(name, fn)
 }

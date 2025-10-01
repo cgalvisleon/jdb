@@ -2,35 +2,37 @@ package jdb
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/cgalvisleon/et/et"
 )
 
 type Ql struct {
 	*where
-	Database    string                  `json:"database"`
-	SourceField string                  `json:"source_field"`
-	Froms       et.Json                 `json:"from"`
-	Selects     et.Json                 `json:"selects"`
-	Atribs      et.Json                 `json:"atribs"`
-	Hidden      []string                `json:"hidden"`
-	Calls       et.Json                 `json:"calls"`
-	Rollups     et.Json                 `json:"rollups"`
-	Relations   et.Json                 `json:"relations"`
-	Joins       []et.Json               `json:"joins"`
-	GroupBy     []string                `json:"group_by"`
-	Havings     []et.Json               `json:"having"`
-	OrderBy     et.Json                 `json:"order_by"`
-	Limits      et.Json                 `json:"limit"`
-	Exists      bool                    `json:"exists"`
-	Count       bool                    `json:"count"`
-	SQL         string                  `json:"sql"`
-	calls       map[string]*DataContext `json:"-"`
-	db          *Database               `json:"-"`
-	from        *Model                  `json:"-"`
-	tx          *Tx                     `json:"-"`
-	isDebug     bool                    `json:"-"`
-	useJoin     bool                    `json:"-"`
+	Database    string                 `json:"database"`
+	SourceField string                 `json:"source_field"`
+	Froms       et.Json                `json:"from"`
+	Selects     et.Json                `json:"selects"`
+	Atribs      et.Json                `json:"atribs"`
+	Hidden      []string               `json:"hidden"`
+	Calcs       map[string]DataContext `json:"-"`
+	Vms         map[string]string      `json:"vms"`
+	Rollups     et.Json                `json:"rollups"`
+	Relations   et.Json                `json:"relations"`
+	Joins       []et.Json              `json:"joins"`
+	GroupBy     []string               `json:"group_by"`
+	Havings     []et.Json              `json:"having"`
+	OrderBy     et.Json                `json:"order_by"`
+	Limits      et.Json                `json:"limit"`
+	Exists      bool                   `json:"exists"`
+	Count       bool                   `json:"count"`
+	UseAtribs   bool                   `json:"use_atribs"`
+	SQL         string                 `json:"sql"`
+	db          *Database              `json:"-"`
+	from        *Model                 `json:"-"`
+	tx          *Tx                    `json:"-"`
+	isDebug     bool                   `json:"-"`
+	useJoin     bool                   `json:"-"`
 }
 
 /**
@@ -47,14 +49,13 @@ func newQl(db *Database) *Ql {
 		Hidden:    []string{},
 		Rollups:   et.Json{},
 		Relations: et.Json{},
-		Calls:     et.Json{},
+		Calcs:     make(map[string]DataContext),
 		Joins:     make([]et.Json, 0),
 		GroupBy:   []string{},
 		Havings:   make([]et.Json, 0),
 		OrderBy:   et.Json{},
 		Limits:    et.Json{},
 		db:        db,
-		calls:     make(map[string]*DataContext),
 	}
 }
 
@@ -86,6 +87,8 @@ func (s *Ql) Debug() *Ql {
 	return s
 }
 
+func (s *Ql) as()
+
 /**
 * addFrom
 * @param model *Model, as string
@@ -95,6 +98,7 @@ func (s *Ql) addFrom(model *Model, as string) *Ql {
 	s.from = model
 	s.Froms[model.Table] = as
 	s.SourceField = model.SourceField
+	s.UseAtribs = s.SourceField != ""
 	return s
 }
 
@@ -119,27 +123,47 @@ func (s *Ql) Select(fields ...string) *Ql {
 	}
 
 	for _, v := range fields {
-		column, ok := s.from.GetColumn(v)
-		if !ok && s.from.IsLocked {
+		col, ok := s.from.GetColumn(v)
+		tp := col.String("type")
+		if ok && TypeColumn[tp] {
+			s.Selects[v] = v
 			continue
 		}
 
-		if !ok {
+		if s.UseAtribs || TypeAtrib[tp] {
 			s.Atribs[v] = v
 			continue
 		}
 
-		tp := column.String("type")
 		if tp == TypeCalc {
-			s.Calls[v] = column
+			s.Calcs[v] = s.from.Calcs[v]
+		} else if tp == TypeVm {
+			s.Vms[v] = s.from.Vms[v]
 		} else if tp == TypeRollup {
-			s.Rollups[v] = column
+			s.Rollups[v] = s.from.Rollups[v]
 		} else if tp == TypeRelation {
-			s.Relations[v] = column
+			s.Relations[v] = s.from.Relations[v]
 		} else if tp == TypeDetail {
-			s.Relations[v] = column
-		} else {
-			s.Selects[v] = v
+			detail := s.from.Details[v]
+			to := s.from.details[v]
+			if to == nil {
+				continue
+			}
+
+			references := detail.Json("references")
+			columns := references.ArrayJson("columns")
+			as := string(rune(len(s.Joins) + 66))
+			first := true
+			for _, fk := range columns {
+				for k, v := range fk {
+					if first {
+						s.Join(to.Table, as, Eq(fmt.Sprintf("A.%s", k), fmt.Sprintf("%s.%s", as, v)))
+						first = false
+						continue
+					}
+					s.And(Eq(fmt.Sprintf("A.%s", k), fmt.Sprintf("%s.%s", as, v)))
+				}
+			}
 		}
 	}
 

@@ -13,7 +13,6 @@ func (s *Ql) setQuery(query et.Json) *Ql {
 		setAtribs(query.Json("atribs")).
 		setRollup(query.Json("rollups")).
 		setRelation(query.Json("relations")).
-		setCall(query.Json("calls")).
 		setJoin(query.ArrayJson("joins")).
 		setWhere(query.ArrayJson("where")).
 		setOrderBy(query.Json("order_by")).
@@ -71,16 +70,6 @@ func (s *Ql) setRollup(rollups et.Json) *Ql {
 **/
 func (s *Ql) setRelation(relations et.Json) *Ql {
 	s.Relations = relations
-	return s
-}
-
-/**
-* setCall
-* @param calls et.Json
-* @return *Ql
-**/
-func (s *Ql) setCall(calls et.Json) *Ql {
-	s.Calls = calls
 	return s
 }
 

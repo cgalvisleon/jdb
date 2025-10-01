@@ -24,6 +24,7 @@ const (
 	TypeGeometry = "geometry"
 	TypeAtribute = "atribute"
 	TypeCalc     = "calc"
+	TypeVm       = "vm"
 	TypeDetail   = "detail"
 	TypeMaster   = "master"
 	TypeRollup   = "rollup"
@@ -57,6 +58,7 @@ var (
 		TypeGeometry: true,
 		TypeAtribute: true,
 		TypeCalc:     true,
+		TypeVm:       true,
 		TypeDetail:   true,
 		TypeMaster:   true,
 		TypeRollup:   true,
@@ -83,6 +85,7 @@ var (
 
 	TypeColumnCalc = map[string]bool{
 		TypeCalc:     true,
+		TypeVm:       true,
 		TypeDetail:   true,
 		TypeMaster:   true,
 		TypeRollup:   true,
@@ -97,46 +100,47 @@ var (
 )
 
 type DataFunctionTx func(tx *Tx, data et.Json) error
-
 type DataContext func(data et.Json)
 
 type Model struct {
-	Database          string            `json:"database"`
-	Schema            string            `json:"schema"`
-	Name              string            `json:"name"`
-	Table             string            `json:"table"`
-	Columns           []et.Json         `json:"columns"`
-	SourceField       string            `json:"source_field"`
-	RecordField       string            `json:"record_field"`
-	StatusField       string            `json:"status_field"`
-	Details           []et.Json         `json:"details"`
-	Masters           []et.Json         `json:"masters"`
-	Rollups           []et.Json         `json:"rollups"`   //SQL
-	Relations         []et.Json         `json:"relations"` //SQL
-	PrimaryKeys       []string          `json:"primary_keys"`
-	ForeignKeys       []et.Json         `json:"foreign_keys"`
-	Indexes           []string          `json:"indexes"`
-	Required          []string          `json:"required"`
-	BeforeInserts     []string          `json:"before_inserts"`
-	BeforeUpdates     []string          `json:"before_updates"`
-	BeforeDeletes     []string          `json:"before_deletes"`
-	AfterInserts      []string          `json:"after_inserts"`
-	AfterUpdates      []string          `json:"after_updates"`
-	AfterDeletes      []string          `json:"after_deletes"`
-	IsLocked          bool              `json:"is_locked"`
-	Version           int               `json:"version"`
-	db                *Database         `json:"-"`
-	details           map[string]*Model `json:"-"`
-	masters           map[string]*Model `json:"-"`
-	isInit            bool              `json:"-"`
-	isCore            bool              `json:"-"`
-	isDebug           bool              `json:"-"`
-	eventBeforeInsert []DataFunctionTx  `json:"-"`
-	eventBeforeUpdate []DataFunctionTx  `json:"-"`
-	eventBeforeDelete []DataFunctionTx  `json:"-"`
-	eventAfterInsert  []DataFunctionTx  `json:"-"`
-	eventAfterUpdate  []DataFunctionTx  `json:"-"`
-	eventAfterDelete  []DataFunctionTx  `json:"-"`
+	Database          string                 `json:"database"`
+	Schema            string                 `json:"schema"`
+	Name              string                 `json:"name"`
+	Table             string                 `json:"table"`
+	Columns           []et.Json              `json:"columns"`
+	SourceField       string                 `json:"source_field"`
+	RecordField       string                 `json:"record_field"`
+	StatusField       string                 `json:"status_field"`
+	Details           map[string]et.Json     `json:"details"`
+	Masters           map[string]et.Json     `json:"masters"`
+	Calcs             map[string]DataContext `json:"-"`
+	Vms               map[string]string      `json:"-"`
+	Rollups           map[string]et.Json     `json:"rollups"`
+	Relations         map[string]et.Json     `json:"relations"`
+	PrimaryKeys       []string               `json:"primary_keys"`
+	ForeignKeys       []et.Json              `json:"foreign_keys"`
+	Indexes           []string               `json:"indexes"`
+	Required          []string               `json:"required"`
+	BeforeInserts     []string               `json:"before_inserts"`
+	BeforeUpdates     []string               `json:"before_updates"`
+	BeforeDeletes     []string               `json:"before_deletes"`
+	AfterInserts      []string               `json:"after_inserts"`
+	AfterUpdates      []string               `json:"after_updates"`
+	AfterDeletes      []string               `json:"after_deletes"`
+	IsLocked          bool                   `json:"is_locked"`
+	Version           int                    `json:"version"`
+	db                *Database              `json:"-"`
+	details           map[string]*Model      `json:"-"`
+	masters           map[string]*Model      `json:"-"`
+	isInit            bool                   `json:"-"`
+	isCore            bool                   `json:"-"`
+	isDebug           bool                   `json:"-"`
+	eventBeforeInsert []DataFunctionTx       `json:"-"`
+	eventBeforeUpdate []DataFunctionTx       `json:"-"`
+	eventBeforeDelete []DataFunctionTx       `json:"-"`
+	eventAfterInsert  []DataFunctionTx       `json:"-"`
+	eventAfterUpdate  []DataFunctionTx       `json:"-"`
+	eventAfterDelete  []DataFunctionTx       `json:"-"`
 }
 
 /**

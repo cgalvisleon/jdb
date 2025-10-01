@@ -306,13 +306,13 @@ func (s *Model) DefineDetails(params []et.Json) error {
 		}
 
 		detail.masters[s.Name] = s
-		detail.Masters = append(detail.Masters, et.Json{
+		detail.Masters[s.Name] = et.Json{
 			"schema": s.Schema,
 			"name":   s.Name,
 			"references": et.Json{
 				"columns": columns,
 			},
-		})
+		}
 
 		err = detail.DefineColumn(s.Name, et.Json{
 			"type": TypeMaster,
@@ -334,8 +334,42 @@ func (s *Model) DefineDetails(params []et.Json) error {
 		}
 
 		s.details[name] = detail
-		s.Details = append(s.Details, param)
+		s.Details[name] = param
 	}
 
+	return nil
+}
+
+/**
+* DefineColumnCalc
+* @param name string, fn DataContext
+* @return error
+**/
+func (s *Model) DefineColumnCalc(name string, fn DataContext) error {
+	err := s.DefineColumn(name, et.Json{
+		"type": TypeCalc,
+	})
+	if err != nil {
+		return err
+	}
+
+	s.Calcs[name] = fn
+	return nil
+}
+
+/**
+* DefineColumnRollup
+* @param name string, script string
+* @return error
+**/
+func (s *Model) DefineColumnVm(name string, script string) error {
+	err := s.DefineColumn(name, et.Json{
+		"type": TypeVm,
+	})
+	if err != nil {
+		return err
+	}
+
+	s.Vms[name] = script
 	return nil
 }
