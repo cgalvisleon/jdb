@@ -213,7 +213,7 @@ func (s *Model) DefineForeignKeys(params []et.Json) error {
 	for _, param := range params {
 		schema := param.String("schema")
 		if !utility.ValidStr(schema, 0, []string{}) {
-			return fmt.Errorf("schema is required")
+			return fmt.Errorf(MSG_ATRIB_REQUIRED, "schema")
 		}
 
 		name := param.String("name")
@@ -223,12 +223,12 @@ func (s *Model) DefineForeignKeys(params []et.Json) error {
 
 		references := param.Json("references")
 		if references.IsEmpty() {
-			return fmt.Errorf("references is required")
+			return fmt.Errorf(MSG_ATRIB_REQUIRED, "references")
 		}
 
 		columns := references.Json("columns")
 		if columns.IsEmpty() {
-			return fmt.Errorf("columns is required")
+			return fmt.Errorf(MSG_ATRIB_REQUIRED, "columns")
 		}
 
 		onDelete := references.String("on_delete")
@@ -263,22 +263,22 @@ func (s *Model) DefineForeignKeys(params []et.Json) error {
 func (s *Model) DefineDetails(param et.Json) (*Model, error) {
 	schema := param.String("schema")
 	if !utility.ValidStr(schema, 0, []string{}) {
-		return nil, fmt.Errorf("schema is required")
+		return nil, fmt.Errorf(MSG_ATRIB_REQUIRED, "schema")
 	}
 
 	name := param.String("name")
 	if !utility.ValidStr(name, 0, []string{}) {
-		return nil, fmt.Errorf("name is required")
+		return nil, fmt.Errorf(MSG_ATRIB_REQUIRED, "name")
 	}
 
 	references := param.Json("references")
 	if references.IsEmpty() {
-		return nil, fmt.Errorf("references is required")
+		return nil, fmt.Errorf(MSG_ATRIB_REQUIRED, "references")
 	}
 
 	columns := references.ArrayJson("columns")
 	if len(columns) == 0 {
-		return nil, fmt.Errorf("columns is required in references")
+		return nil, fmt.Errorf(MSG_ATRIB_REQUIRED, "columns")
 	}
 
 	onDelete := references.String("on_delete")
@@ -304,7 +304,6 @@ func (s *Model) DefineDetails(param et.Json) (*Model, error) {
 		return nil, err
 	}
 
-	detail.masters[s.Name] = s
 	detail.Masters[s.Name] = et.Json{
 		"schema": s.Schema,
 		"name":   s.Name,
@@ -338,6 +337,87 @@ func (s *Model) DefineDetails(param et.Json) (*Model, error) {
 }
 
 /**
+* defineRollup
+* @param params et.Json
+* @return error
+**/
+func (s *Model) defineRollup(params et.Json) error {
+	name := params.String("name")
+	if !utility.ValidStr(name, 0, []string{}) {
+		return fmt.Errorf(MSG_ATRIB_REQUIRED, "name")
+	}
+
+	from := params.String("from")
+	if !utility.ValidStr(from, 0, []string{}) {
+		return fmt.Errorf(MSG_ATRIB_REQUIRED, "from")
+	}
+
+	model, err := s.GetModel(from)
+	if err != nil {
+		return err
+	}
+
+	as := "A"
+	selectsOrigin := params.Json("selects")
+	if selectsOrigin.IsEmpty() {
+		return fmt.Errorf(MSG_ATRIB_REQUIRED, "selects")
+	}
+
+	selects := et.Json{}
+	for k, v := range selectsOrigin {
+		selects[fmt.Sprintf("%s.%s", as, k)] = v
+	}
+
+	fks := params.Json("fks")
+	if fks.IsEmpty() {
+		return fmt.Errorf(MSG_ATRIB_REQUIRED, "fks")
+	}
+
+	s.Rollups[name] = et.Json{
+		"from": et.Json{
+			model.Table: as,
+		},
+		"selects": selects,
+		"fks":     fks,
+	}
+	return nil
+}
+
+/**
+* DefineRollups
+* @param params et.Json
+* @return error
+**/
+func (s *Model) DefineRollups(params []et.Json) error {
+	for _, param := range params {
+		err := s.defineRollup(param)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+/**
+* DefineRollup
+* @param name string, from string, fks et.Json, selects et.Json
+* @return error
+**/
+func (s *Model) DefineRollup(name, from string, fks, selects et.Json) error {
+	err := s.defineRollup(et.Json{
+		"name":    name,
+		"from":    from,
+		"selects": selects,
+		"fks":     fks,
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+/**
 * DefineCalc
 * @param name string, fn DataContext
 * @return error
@@ -355,7 +435,7 @@ func (s *Model) DefineCalc(name string, fn DataContext) error {
 }
 
 /**
-* DefineColumnRollup
+* DefineColumnVm
 * @param name string, script string
 * @return error
 **/
@@ -395,6 +475,7 @@ func (s *Model) DefineDetail(name string, fks map[string]string, version int) (*
 		})
 	}
 
+	name = fmt.Sprintf("%s_%s", s.Name, name)
 	result, err := s.DefineDetails(et.Json{
 		"schema":  s.Schema,
 		"name":    name,
@@ -481,17 +562,17 @@ func (s *Model) DefineModel() *Model {
 }
 
 /**
-* DefineProjectModel
+* DefineTenantModel
 * @return *Model
 **/
-func (s *Model) DefineProjectModel() *Model {
+func (s *Model) DefineTenantModel() *Model {
 	s.DefineCreatedAtField()
 	s.DefineUpdatedAtField()
 	s.DefineStatusField()
 	s.DefinePrimaryKeyField()
-	s.DefineColumn(PROJECT_ID, TypeKey)
+	s.DefineColumn(TENANT_ID, TypeKey)
 	s.DefineSourceField()
 	s.DefineRecordField()
-	s.DefineIndexes(PROJECT_ID)
+	s.DefineIndexes(TENANT_ID)
 	return s
 }

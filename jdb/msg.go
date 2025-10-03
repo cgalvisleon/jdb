@@ -15,4 +15,5 @@ const (
 	MSG_RECORDS_NOT_DEFINED = "records not defined"
 	MSG_RECORD_NOT_FOUND    = "record %s not found"
 	MSG_FIELD_NOT_FOUND     = "field not found"
+	MSG_ATRIB_REQUIRED      = "atrib is required - %s"
 )

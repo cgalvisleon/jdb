@@ -33,23 +33,21 @@ const (
 )
 
 var (
-	SOURCE      = "source"
-	KEY         = "id"
-	RECORDID    = "index"
-	STATUS      = "status"
-	ACTIVE      = "active"
-	ARCHIVED    = "archived"
-	CANCELLED   = "cancelled"
-	OF_SYSTEM   = "of_system"
-	FOR_DELETE  = "for_delete"
-	PENDING     = "pending"
-	APPROVED    = "approved"
-	REJECTED    = "rejected"
-	CREATED_AT  = "created_at"
-	UPDATED_AT  = "updated_at"
-	TEAM_ID     = "team_id"
-	PROJECT_ID  = "project_id"
-	CUSTOMER_ID = "customer_id"
+	SOURCE     = "source"
+	KEY        = "id"
+	RECORDID   = "index"
+	STATUS     = "status"
+	ACTIVE     = "active"
+	ARCHIVED   = "archived"
+	CANCELLED  = "cancelled"
+	OF_SYSTEM  = "of_system"
+	FOR_DELETE = "for_delete"
+	PENDING    = "pending"
+	APPROVED   = "approved"
+	REJECTED   = "rejected"
+	CREATED_AT = "created_at"
+	UPDATED_AT = "updated_at"
+	TENANT_ID  = "tenant_id"
 
 	TypeData = map[string]bool{
 		TypeInt:      true,
@@ -138,7 +136,6 @@ type Model struct {
 	Version       int                    `json:"version"`
 	db            *DB                    `json:"-"`
 	details       map[string]*Model      `json:"-"`
-	masters       map[string]*Model      `json:"-"`
 	isInit        bool                   `json:"-"`
 	isCore        bool                   `json:"-"`
 	isDebug       bool                   `json:"-"`

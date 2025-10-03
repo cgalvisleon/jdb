@@ -141,7 +141,6 @@ func (s *DB) getOrCreateModel(schema, name string) (*Model, error) {
 			AfterDeletes:  make([]string, 0),
 			db:            s,
 			details:       make(map[string]*Model),
-			masters:       make(map[string]*Model),
 			beforeInserts: []DataFunctionTx{},
 			beforeUpdates: []DataFunctionTx{},
 			beforeDeletes: []DataFunctionTx{},
@@ -202,7 +201,6 @@ func (s *DB) getModel(name string) (*Model, error) {
 		}
 
 		result.details[name] = detail
-		detail.masters[result.Name] = result
 	}
 
 	return result, nil

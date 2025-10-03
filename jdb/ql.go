@@ -142,8 +142,8 @@ func (s *Ql) Select(fields ...string) *Ql {
 		} else if tp == TypeRelation {
 			s.Relations[v] = s.from.Relations[v]
 		} else if tp == TypeDetail {
-			to := s.from.details[v]
-			if to == nil {
+			to, err := s.db.GetModel(v)
+			if err != nil {
 				continue
 			}
 

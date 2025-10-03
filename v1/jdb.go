@@ -46,7 +46,7 @@ var (
 	REJECTED       = jdb.REJECTED
 	CREATED_AT     = jdb.CREATED_AT
 	UPDATED_AT     = jdb.UPDATED_AT
-	TEAM_ID        = jdb.TEAM_ID
+	TENANT_ID      = jdb.TENANT_ID
 	TypeData       = jdb.TypeData
 	TypeColumn     = jdb.TypeColumn
 	TypeAtrib      = jdb.TypeAtrib
@@ -58,7 +58,7 @@ var (
 	ErrDuplicate   = jdb.ErrDuplicate
 )
 
-type DB = jdb.Database
+type DB = jdb.DB
 type Model = jdb.Model
 type Tx = jdb.Tx
 type Condition = jdb.Condition
@@ -67,10 +67,10 @@ type Cmd = jdb.Cmd
 
 /**
 * NewModel
-* @param db *jdb.Database, schema, name string, version int
+* @param db *jdb.DB, schema, name string, version int
 * @return (*Model, error)
 **/
-func NewModel(db *jdb.Database, schema, name string, version int) (*Model, error) {
+func NewModel(db *jdb.DB, schema, name string, version int) (*Model, error) {
 	result, err := db.Define(et.Json{
 		"schema":  schema,
 		"name":    name,
@@ -87,26 +87,26 @@ func NewModel(db *jdb.Database, schema, name string, version int) (*Model, error
 /**
 * ConnectTo
 * @param name, driver string, userCore bool, params et.Json
-* @return (*jdb.Database, error)
+* @return (*jdb.DB, error)
 **/
-func ConnectTo(name, driver string, userCore bool, params et.Json) (*jdb.Database, error) {
+func ConnectTo(name, driver string, userCore bool, params et.Json) (*jdb.DB, error) {
 	return jdb.ConnectTo(name, driver, userCore, params)
 }
 
 /**
 * LoadTo
 * @param name string
-* @return (*jdb.Database, error)
+* @return (*jdb.DB, error)
 **/
-func LoadTo(name string) (*jdb.Database, error) {
+func LoadTo(name string) (*jdb.DB, error) {
 	return jdb.LoadTo(name)
 }
 
 /**
 * Load
-* @return (*jdb.Database, error)
+* @return (*jdb.DB, error)
 **/
-func Load() (*jdb.Database, error) {
+func Load() (*jdb.DB, error) {
 	return jdb.Load()
 }
 
