@@ -10,7 +10,7 @@ import (
 **/
 func (s *Cmd) insertTx() (et.Items, error) {
 	for _, data := range s.Data {
-		for _, definition := range s.beforeInserts {
+		for _, definition := range s.BeforeInserts {
 			s.vm.Set("data", data)
 			_, err := s.vm.Run(definition)
 			if err != nil {
@@ -18,7 +18,7 @@ func (s *Cmd) insertTx() (et.Items, error) {
 			}
 		}
 
-		for _, fn := range s.eventBeforeInsert {
+		for _, fn := range s.beforeInserts {
 			err := fn(s.tx, data)
 			if err != nil {
 				return et.Items{}, err
@@ -36,7 +36,7 @@ func (s *Cmd) insertTx() (et.Items, error) {
 			return result, nil
 		}
 
-		for _, definition := range s.afterInserts {
+		for _, definition := range s.AfterInserts {
 			s.vm.Set("data", data)
 			_, err := s.vm.Run(definition)
 			if err != nil {
@@ -44,7 +44,7 @@ func (s *Cmd) insertTx() (et.Items, error) {
 			}
 		}
 
-		for _, fn := range s.eventAfterInsert {
+		for _, fn := range s.afterInserts {
 			err := fn(s.tx, data)
 			if err != nil {
 				return et.Items{}, err

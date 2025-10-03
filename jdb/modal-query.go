@@ -34,3 +34,14 @@ func (s *Model) Where(cond Condition) *Ql {
 	result.addFrom(s, "A")
 	return result.Where(cond)
 }
+
+/**
+* Join
+* @param to *Model, as string, on Condition
+* @return *Ql
+**/
+func (s *Model) Join(to *Model, as string, on Condition) *Ql {
+	result := newQl(s.db)
+	result.addFrom(s, "A")
+	return result.Join(to, as, on)
+}

@@ -7,6 +7,7 @@ import (
 
 	"github.com/cgalvisleon/et/envar"
 	"github.com/cgalvisleon/et/et"
+	"github.com/cgalvisleon/et/reg"
 	"github.com/cgalvisleon/et/utility"
 )
 
@@ -32,19 +33,24 @@ const (
 )
 
 var (
-	SOURCE     = "source"
-	KEY        = "id"
-	RECORDID   = "index"
-	STATUS     = "status"
-	ACTIVE     = "active"
-	ARCHIVED   = "archived"
-	CANCELLED  = "cancelled"
-	OF_SYSTEM  = "of_system"
-	FOR_DELETE = "for_delete"
-	PENDING    = "pending"
-	APPROVED   = "approved"
-	REJECTED   = "rejected"
-	TypeData   = map[string]bool{
+	SOURCE      = "source"
+	KEY         = "id"
+	RECORDID    = "index"
+	STATUS      = "status"
+	ACTIVE      = "active"
+	ARCHIVED    = "archived"
+	CANCELLED   = "cancelled"
+	OF_SYSTEM   = "of_system"
+	FOR_DELETE  = "for_delete"
+	PENDING     = "pending"
+	APPROVED    = "approved"
+	REJECTED    = "rejected"
+	CREATED_AT  = "created_at"
+	UPDATED_AT  = "updated_at"
+	TEAM_ID     = "team_id"
+	CUSTOMER_ID = "customer_id"
+
+	TypeData = map[string]bool{
 		TypeInt:      true,
 		TypeFloat:    true,
 		TypeKey:      true,
@@ -103,44 +109,44 @@ type DataFunctionTx func(tx *Tx, data et.Json) error
 type DataContext func(data et.Json)
 
 type Model struct {
-	Database          string                 `json:"database"`
-	Schema            string                 `json:"schema"`
-	Name              string                 `json:"name"`
-	Table             string                 `json:"table"`
-	Columns           []et.Json              `json:"columns"`
-	SourceField       string                 `json:"source_field"`
-	RecordField       string                 `json:"record_field"`
-	StatusField       string                 `json:"status_field"`
-	Details           map[string]et.Json     `json:"details"`
-	Masters           map[string]et.Json     `json:"masters"`
-	Calcs             map[string]DataContext `json:"-"`
-	Vms               map[string]string      `json:"-"`
-	Rollups           map[string]et.Json     `json:"rollups"`
-	Relations         map[string]et.Json     `json:"relations"`
-	PrimaryKeys       []string               `json:"primary_keys"`
-	ForeignKeys       []et.Json              `json:"foreign_keys"`
-	Indexes           []string               `json:"indexes"`
-	Required          []string               `json:"required"`
-	BeforeInserts     []string               `json:"before_inserts"`
-	BeforeUpdates     []string               `json:"before_updates"`
-	BeforeDeletes     []string               `json:"before_deletes"`
-	AfterInserts      []string               `json:"after_inserts"`
-	AfterUpdates      []string               `json:"after_updates"`
-	AfterDeletes      []string               `json:"after_deletes"`
-	IsLocked          bool                   `json:"is_locked"`
-	Version           int                    `json:"version"`
-	db                *Database              `json:"-"`
-	details           map[string]*Model      `json:"-"`
-	masters           map[string]*Model      `json:"-"`
-	isInit            bool                   `json:"-"`
-	isCore            bool                   `json:"-"`
-	isDebug           bool                   `json:"-"`
-	eventBeforeInsert []DataFunctionTx       `json:"-"`
-	eventBeforeUpdate []DataFunctionTx       `json:"-"`
-	eventBeforeDelete []DataFunctionTx       `json:"-"`
-	eventAfterInsert  []DataFunctionTx       `json:"-"`
-	eventAfterUpdate  []DataFunctionTx       `json:"-"`
-	eventAfterDelete  []DataFunctionTx       `json:"-"`
+	Database      string                 `json:"database"`
+	Schema        string                 `json:"schema"`
+	Name          string                 `json:"name"`
+	Table         string                 `json:"table"`
+	Columns       []et.Json              `json:"columns"`
+	SourceField   string                 `json:"source_field"`
+	RecordField   string                 `json:"record_field"`
+	StatusField   string                 `json:"status_field"`
+	Details       map[string]et.Json     `json:"details"`
+	Masters       map[string]et.Json     `json:"masters"`
+	Calcs         map[string]DataContext `json:"-"`
+	Vms           map[string]string      `json:"-"`
+	Rollups       map[string]et.Json     `json:"rollups"`
+	Relations     map[string]et.Json     `json:"relations"`
+	PrimaryKeys   []string               `json:"primary_keys"`
+	ForeignKeys   []et.Json              `json:"foreign_keys"`
+	Indexes       []string               `json:"indexes"`
+	Required      []string               `json:"required"`
+	BeforeInserts []string               `json:"before_inserts"`
+	BeforeUpdates []string               `json:"before_updates"`
+	BeforeDeletes []string               `json:"before_deletes"`
+	AfterInserts  []string               `json:"after_inserts"`
+	AfterUpdates  []string               `json:"after_updates"`
+	AfterDeletes  []string               `json:"after_deletes"`
+	IsLocked      bool                   `json:"is_locked"`
+	Version       int                    `json:"version"`
+	db            *Database              `json:"-"`
+	details       map[string]*Model      `json:"-"`
+	masters       map[string]*Model      `json:"-"`
+	isInit        bool                   `json:"-"`
+	isCore        bool                   `json:"-"`
+	isDebug       bool                   `json:"-"`
+	beforeInserts []DataFunctionTx       `json:"-"`
+	beforeUpdates []DataFunctionTx       `json:"-"`
+	beforeDeletes []DataFunctionTx       `json:"-"`
+	afterInserts  []DataFunctionTx       `json:"-"`
+	afterUpdates  []DataFunctionTx       `json:"-"`
+	afterDeletes  []DataFunctionTx       `json:"-"`
 }
 
 /**
@@ -234,16 +240,21 @@ func (s *Model) prepare() error {
 		return nil
 	}
 
-	err := s.DefineSourceField(SOURCE)
+	s.defineColumn("created_at", et.Json{
+		"type": TypeDateTime,
+	})
+	s.defineColumn("updated_at", et.Json{
+		"type": TypeDateTime,
+	})
+	err := s.DefineSetSourceField(SOURCE)
 	if err != nil {
 		return err
 	}
-
-	s.DefineColumn(KEY, et.Json{
+	s.defineColumn(KEY, et.Json{
 		"type": TypeKey,
 	})
 	s.DefinePrimaryKeys(KEY)
-	s.DefineRecordField(RECORDID)
+	s.DefineSetRecordField(RECORDID)
 
 	return nil
 }
@@ -348,6 +359,19 @@ func (s *Model) Init() error {
 	}
 
 	return nil
+}
+
+/**
+* GetId
+* @param id string
+* @return string
+**/
+func (s *Model) GetId(id string) string {
+	if !map[string]bool{"": true, "*": true, "new": true}[id] {
+		return id
+	}
+
+	return reg.GetULID(s.Name)
 }
 
 /**

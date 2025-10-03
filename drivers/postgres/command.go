@@ -93,7 +93,7 @@ func (s *Postgres) buildUpdate(cmd *jdb.Cmd) (string, error) {
 
 		if cmd.UseAtribs || jdb.TypeAtrib[tp] {
 			if len(atribs) == 0 {
-				atribs = cmd.From.SourceField
+				atribs = fmt.Sprintf("COALESCE(%s, '{}')", cmd.From.SourceField)
 				atribs = strs.Format("jsonb_set(%s, '{%s}', %v::jsonb, true)", atribs, k, val)
 			} else {
 				atribs = strs.Format("jsonb_set(\n%s, \n'{%s}', %v::jsonb, true)", atribs, k, val)

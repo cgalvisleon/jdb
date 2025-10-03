@@ -95,3 +95,13 @@ func Select(query et.Json) (*Ql, error) {
 
 	return db.Select(query)
 }
+
+/**
+* From
+* @param model *Model
+* @return *Ql
+**/
+func From(model *Model) *Ql {
+	db := model.db
+	return db.From(model)
+}

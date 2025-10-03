@@ -18,7 +18,7 @@ func (s *Cmd) updateTx() (et.Items, error) {
 			data[k] = v
 		}
 
-		for _, definition := range s.beforeUpdates {
+		for _, definition := range s.BeforeUpdates {
 			s.vm.Set("data", data)
 			_, err := s.vm.Run(definition)
 			if err != nil {
@@ -26,7 +26,7 @@ func (s *Cmd) updateTx() (et.Items, error) {
 			}
 		}
 
-		for _, fn := range s.eventBeforeUpdate {
+		for _, fn := range s.beforeUpdates {
 			err := fn(s.tx, data)
 			if err != nil {
 				return et.Items{}, err
@@ -44,7 +44,7 @@ func (s *Cmd) updateTx() (et.Items, error) {
 			return result, nil
 		}
 
-		for _, definition := range s.afterUpdates {
+		for _, definition := range s.AfterUpdates {
 			s.vm.Set("data", data)
 			_, err := s.vm.Run(definition)
 			if err != nil {
@@ -52,7 +52,7 @@ func (s *Cmd) updateTx() (et.Items, error) {
 			}
 		}
 
-		for _, fn := range s.eventAfterUpdate {
+		for _, fn := range s.afterUpdates {
 			err := fn(s.tx, data)
 			if err != nil {
 				return et.Items{}, err

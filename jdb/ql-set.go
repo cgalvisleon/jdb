@@ -15,6 +15,7 @@ func (s *Ql) setQuery(query et.Json) *Ql {
 		setRelation(query.Json("relations")).
 		setJoin(query.ArrayJson("joins")).
 		setWhere(query.ArrayJson("where")).
+		setHiddens(query.ArrayStr("hidden")).
 		setOrderBy(query.Json("order_by")).
 		setGroupBy(query.ArrayStr("group_by")).
 		setHaving(query.ArrayJson("having")).
@@ -94,12 +95,22 @@ func (s *Ql) setWhere(where []et.Json) *Ql {
 }
 
 /**
+* setHiddens
+* @param hiddens []string
+* @return *Ql
+**/
+func (s *Ql) setHiddens(hiddens []string) *Ql {
+	s.Hiddens = hiddens
+	return s
+}
+
+/**
 * setOrderBy
 * @param orderBy et.Json
 * @return *Ql
 **/
 func (s *Ql) setOrderBy(orderBy et.Json) *Ql {
-	s.OrderBy = orderBy
+	s.OrdersBy = orderBy
 	return s
 }
 

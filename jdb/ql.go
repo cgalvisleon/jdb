@@ -14,7 +14,7 @@ type Ql struct {
 	Froms       et.Json                `json:"from"`
 	Selects     et.Json                `json:"selects"`
 	Atribs      et.Json                `json:"atribs"`
-	Hidden      []string               `json:"hidden"`
+	Hiddens     []string               `json:"hidden"`
 	Calcs       map[string]DataContext `json:"-"`
 	Vms         map[string]string      `json:"vms"`
 	Rollups     et.Json                `json:"rollups"`
@@ -22,7 +22,7 @@ type Ql struct {
 	Joins       []et.Json              `json:"joins"`
 	GroupBy     []string               `json:"group_by"`
 	Havings     []et.Json              `json:"having"`
-	OrderBy     et.Json                `json:"order_by"`
+	OrdersBy    et.Json                `json:"order_by"`
 	Limits      et.Json                `json:"limit"`
 	Exists      bool                   `json:"exists"`
 	Count       bool                   `json:"count"`
@@ -46,14 +46,14 @@ func newQl(db *Database) *Ql {
 		Froms:     et.Json{},
 		Selects:   et.Json{},
 		Atribs:    et.Json{},
-		Hidden:    []string{},
+		Hiddens:   []string{},
 		Rollups:   et.Json{},
 		Relations: et.Json{},
 		Calcs:     make(map[string]DataContext),
 		Joins:     make([]et.Json, 0),
 		GroupBy:   []string{},
 		Havings:   make([]et.Json, 0),
-		OrderBy:   et.Json{},
+		OrdersBy:  et.Json{},
 		Limits:    et.Json{},
 		db:        db,
 	}
@@ -86,8 +86,6 @@ func (s *Ql) Debug() *Ql {
 	s.isDebug = true
 	return s
 }
-
-func (s *Ql) as()
 
 /**
 * addFrom
@@ -228,10 +226,49 @@ func (s *Ql) Having(having ...Condition) *Ql {
 **/
 func (s *Ql) Order(asc bool, fields ...string) *Ql {
 	if asc {
-		s.OrderBy["asc"] = fields
+		s.OrdersBy["asc"] = fields
 	} else {
-		s.OrderBy["desc"] = fields
+		s.OrdersBy["desc"] = fields
 	}
 
 	return s
+}
+
+/**
+* OrderBy
+* @param fields ...string
+* @return *Ql
+**/
+func (s *Ql) OrderBy(fields ...string) *Ql {
+	s.OrdersBy["asc"] = fields
+	return s
+}
+
+/**
+* Hidden
+* @param hiddens ...string
+* @return *Ql
+**/
+func (s *Ql) Hidden(hiddens ...string) *Ql {
+	s.Hiddens = hiddens
+	return s
+}
+
+/**
+* QueryTx
+* @param tx *Tx, query et.Json
+* @return et.Items, error
+**/
+func (s *Ql) QueryTx(tx *Tx, query et.Json) (et.Items, error) {
+	s.setQuery(query)
+	return s.queryTx(tx)
+}
+
+/**
+* Query
+* @param query et.Json
+* @return et.Items, error
+**/
+func (s *Ql) Query(query et.Json) (et.Items, error) {
+	return s.QueryTx(nil, query)
 }

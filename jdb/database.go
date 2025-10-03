@@ -116,45 +116,45 @@ func (s *Database) getOrCreateModel(schema, name string) (*Model, error) {
 	result, ok := s.Models[name]
 	if !ok {
 		result = &Model{
-			Database:          s.Name,
-			Schema:            schema,
-			Name:              name,
-			Table:             "",
-			Columns:           []et.Json{},
-			SourceField:       "",
-			RecordField:       "",
-			Details:           make(map[string]et.Json),
-			Masters:           make(map[string]et.Json),
-			Calcs:             make(map[string]DataContext),
-			Vms:               make(map[string]string),
-			Rollups:           make(map[string]et.Json),
-			Relations:         make(map[string]et.Json),
-			PrimaryKeys:       []string{},
-			ForeignKeys:       []et.Json{},
-			Indexes:           []string{},
-			Required:          []string{},
-			BeforeInserts:     make([]string, 0),
-			BeforeUpdates:     make([]string, 0),
-			BeforeDeletes:     make([]string, 0),
-			AfterInserts:      make([]string, 0),
-			AfterUpdates:      make([]string, 0),
-			AfterDeletes:      make([]string, 0),
-			db:                s,
-			details:           make(map[string]*Model),
-			masters:           make(map[string]*Model),
-			eventBeforeInsert: []DataFunctionTx{},
-			eventBeforeUpdate: []DataFunctionTx{},
-			eventBeforeDelete: []DataFunctionTx{},
-			eventAfterInsert:  []DataFunctionTx{},
-			eventAfterUpdate:  []DataFunctionTx{},
-			eventAfterDelete:  []DataFunctionTx{},
+			Database:      s.Name,
+			Schema:        schema,
+			Name:          name,
+			Table:         "",
+			Columns:       []et.Json{},
+			SourceField:   "",
+			RecordField:   "",
+			Details:       make(map[string]et.Json),
+			Masters:       make(map[string]et.Json),
+			Calcs:         make(map[string]DataContext),
+			Vms:           make(map[string]string),
+			Rollups:       make(map[string]et.Json),
+			Relations:     make(map[string]et.Json),
+			PrimaryKeys:   []string{},
+			ForeignKeys:   []et.Json{},
+			Indexes:       []string{},
+			Required:      []string{},
+			BeforeInserts: make([]string, 0),
+			BeforeUpdates: make([]string, 0),
+			BeforeDeletes: make([]string, 0),
+			AfterInserts:  make([]string, 0),
+			AfterUpdates:  make([]string, 0),
+			AfterDeletes:  make([]string, 0),
+			db:            s,
+			details:       make(map[string]*Model),
+			masters:       make(map[string]*Model),
+			beforeInserts: []DataFunctionTx{},
+			beforeUpdates: []DataFunctionTx{},
+			beforeDeletes: []DataFunctionTx{},
+			afterInserts:  []DataFunctionTx{},
+			afterUpdates:  []DataFunctionTx{},
+			afterDeletes:  []DataFunctionTx{},
 		}
-		result.EventBeforeInsert(result.beforeInsertDefault)
-		result.EventBeforeUpdate(result.beforeUpdateDefault)
-		result.EventBeforeDelete(result.beforeDeleteDefault)
-		result.EventAfterInsert(result.afterInsertDefault)
-		result.EventAfterUpdate(result.afterUpdateDefault)
-		result.EventAfterDelete(result.afterDeleteDefault)
+		result.BeforeInsert(result.beforeInsertDefault)
+		result.BeforeUpdate(result.beforeUpdateDefault)
+		result.BeforeDelete(result.beforeDeleteDefault)
+		result.AfterInsert(result.afterInsertDefault)
+		result.AfterUpdate(result.afterUpdateDefault)
+		result.AfterDelete(result.afterDeleteDefault)
 		s.Models[name] = result
 	}
 
@@ -182,12 +182,12 @@ func (s *Database) getModel(name string) (*Model, error) {
 	}
 
 	result.db = s
-	result.EventBeforeInsert(result.beforeInsertDefault)
-	result.EventBeforeUpdate(result.beforeUpdateDefault)
-	result.EventBeforeDelete(result.beforeDeleteDefault)
-	result.EventAfterInsert(result.afterInsertDefault)
-	result.EventAfterUpdate(result.afterUpdateDefault)
-	result.EventAfterDelete(result.afterDeleteDefault)
+	result.BeforeInsert(result.beforeInsertDefault)
+	result.BeforeUpdate(result.beforeUpdateDefault)
+	result.BeforeDelete(result.beforeDeleteDefault)
+	result.AfterInsert(result.afterInsertDefault)
+	result.AfterUpdate(result.afterUpdateDefault)
+	result.AfterDelete(result.afterDeleteDefault)
 	s.Models[name] = result
 
 	for _, item := range result.Details {
@@ -261,7 +261,7 @@ func (s *Database) query(query *Ql) (et.Items, error) {
 		console.Debugf("query:%s", query.ToJson().ToEscapeHTML())
 	}
 
-	result, err := s.QueryTx(query.tx, query.Hidden, sql)
+	result, err := s.QueryTx(query.tx, query.Hiddens, sql)
 	if err != nil {
 		return et.Items{}, err
 	}
@@ -284,7 +284,7 @@ func (s *Database) command(cmd *Cmd) (et.Items, error) {
 		console.Debugf("command:%s", cmd.ToJson().ToEscapeHTML())
 	}
 
-	result, err := s.QueryTx(cmd.tx, cmd.Hidden, sql)
+	result, err := s.QueryTx(cmd.tx, cmd.Hiddens, sql)
 	if err != nil {
 		return et.Items{}, err
 	}
@@ -336,26 +336,26 @@ func (s *Database) Define(definition et.Json) (*Model, error) {
 	result.DefinePrimaryKeys(primaryKeys...)
 
 	sourceField := definition.String("source_field")
-	err = result.DefineSourceField(sourceField)
+	err = result.DefineSetSourceField(sourceField)
 	if err != nil {
 		return nil, err
 	}
 
 	statusField := definition.String("status_field")
-	err = result.DefineStatusField(statusField)
+	err = result.DefineSetStatusField(statusField)
 	if err != nil {
 		return nil, err
 	}
 
 	recordField := definition.String("record_field")
-	err = result.DefineRecordField(recordField)
+	err = result.DefineSetRecordField(recordField)
 	if err != nil {
 		return nil, err
 	}
 
 	details := definition.ArrayJson("details")
-	if len(details) > 0 {
-		err := result.DefineDetails(details)
+	for _, detail := range details {
+		_, err := result.DefineDetails(detail)
 		if err != nil {
 			return nil, err
 		}
@@ -388,15 +388,11 @@ func (s *Database) Select(query et.Json) (*Ql, error) {
 
 /**
 * From
+* @param model *Model
 * @return *Ql
 **/
-func (s *Database) From(name string) *Ql {
+func (s *Database) From(model *Model) *Ql {
 	result := newQl(s)
-	model, err := s.getModel(name)
-	if err != nil {
-		return result
-	}
-
 	result.addFrom(model, "A")
 	return result
 }

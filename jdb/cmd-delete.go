@@ -14,7 +14,7 @@ func (s *Cmd) deleteTx() (et.Items, error) {
 	}
 
 	for _, data := range current.Result {
-		for _, definition := range s.beforeDeletes {
+		for _, definition := range s.BeforeDeletes {
 			s.vm.Set("data", data)
 			_, err := s.vm.Run(definition)
 			if err != nil {
@@ -22,7 +22,7 @@ func (s *Cmd) deleteTx() (et.Items, error) {
 			}
 		}
 
-		for _, fn := range s.eventBeforeDelete {
+		for _, fn := range s.beforeDeletes {
 			err := fn(s.tx, data)
 			if err != nil {
 				return et.Items{}, err
@@ -40,7 +40,7 @@ func (s *Cmd) deleteTx() (et.Items, error) {
 			return result, nil
 		}
 
-		for _, definition := range s.afterDeletes {
+		for _, definition := range s.AfterDeletes {
 			s.vm.Set("data", data)
 			_, err := s.vm.Run(definition)
 			if err != nil {
@@ -48,7 +48,7 @@ func (s *Cmd) deleteTx() (et.Items, error) {
 			}
 		}
 
-		for _, fn := range s.eventAfterDelete {
+		for _, fn := range s.afterDeletes {
 			err := fn(s.tx, data)
 			if err != nil {
 				return et.Items{}, err

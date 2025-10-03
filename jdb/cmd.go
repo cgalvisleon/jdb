@@ -29,29 +29,29 @@ var (
 
 type Cmd struct {
 	*where
-	Command           string           `json:"command"`
-	From              *Model           `json:"from"`
-	Data              []et.Json        `json:"data"`
-	Hidden            []string         `json:"hidden"`
-	Result            et.Items         `json:"result"`
-	UseAtribs         bool             `json:"use_atribs"`
-	SQL               string           `json:"sql"`
-	db                *Database        `json:"-"`
-	tx                *Tx              `json:"-"`
-	vm                *vm.Vm           `json:"-"`
-	isDebug           bool             `json:"-"`
-	beforeInserts     []string         `json:"-"`
-	beforeUpdates     []string         `json:"-"`
-	beforeDeletes     []string         `json:"-"`
-	afterInserts      []string         `json:"-"`
-	afterUpdates      []string         `json:"-"`
-	afterDeletes      []string         `json:"-"`
-	eventBeforeInsert []DataFunctionTx `json:"-"`
-	eventBeforeUpdate []DataFunctionTx `json:"-"`
-	eventBeforeDelete []DataFunctionTx `json:"-"`
-	eventAfterInsert  []DataFunctionTx `json:"-"`
-	eventAfterUpdate  []DataFunctionTx `json:"-"`
-	eventAfterDelete  []DataFunctionTx `json:"-"`
+	Command       string           `json:"command"`
+	From          *Model           `json:"from"`
+	Data          []et.Json        `json:"data"`
+	Hiddens       []string         `json:"hidden"`
+	Result        et.Items         `json:"result"`
+	UseAtribs     bool             `json:"use_atribs"`
+	SQL           string           `json:"sql"`
+	db            *Database        `json:"-"`
+	tx            *Tx              `json:"-"`
+	vm            *vm.Vm           `json:"-"`
+	isDebug       bool             `json:"-"`
+	BeforeInserts []string         `json:"-"`
+	BeforeUpdates []string         `json:"-"`
+	BeforeDeletes []string         `json:"-"`
+	AfterInserts  []string         `json:"-"`
+	AfterUpdates  []string         `json:"-"`
+	AfterDeletes  []string         `json:"-"`
+	beforeInserts []DataFunctionTx `json:"-"`
+	beforeUpdates []DataFunctionTx `json:"-"`
+	beforeDeletes []DataFunctionTx `json:"-"`
+	afterInserts  []DataFunctionTx `json:"-"`
+	afterUpdates  []DataFunctionTx `json:"-"`
+	afterDeletes  []DataFunctionTx `json:"-"`
 }
 
 /**
@@ -61,26 +61,26 @@ type Cmd struct {
 **/
 func newCommand(model *Model, cmd string, data []et.Json) *Cmd {
 	result := &Cmd{
-		where:             newWhere(),
-		Command:           cmd,
-		From:              model,
-		Data:              data,
-		Hidden:            []string{},
-		Result:            et.Items{},
-		db:                model.db,
-		vm:                vm.New(),
-		beforeInserts:     model.BeforeInserts,
-		beforeUpdates:     model.BeforeUpdates,
-		beforeDeletes:     model.BeforeDeletes,
-		afterInserts:      model.AfterInserts,
-		afterUpdates:      model.AfterUpdates,
-		afterDeletes:      model.AfterDeletes,
-		eventBeforeInsert: model.eventBeforeInsert,
-		eventBeforeUpdate: model.eventBeforeUpdate,
-		eventBeforeDelete: model.eventBeforeDelete,
-		eventAfterInsert:  model.eventAfterInsert,
-		eventAfterUpdate:  model.eventAfterUpdate,
-		eventAfterDelete:  model.eventAfterDelete,
+		where:         newWhere(),
+		Command:       cmd,
+		From:          model,
+		Data:          data,
+		Hiddens:       []string{},
+		Result:        et.Items{},
+		db:            model.db,
+		vm:            vm.New(),
+		BeforeInserts: model.BeforeInserts,
+		BeforeUpdates: model.BeforeUpdates,
+		BeforeDeletes: model.BeforeDeletes,
+		AfterInserts:  model.AfterInserts,
+		AfterUpdates:  model.AfterUpdates,
+		AfterDeletes:  model.AfterDeletes,
+		beforeInserts: model.beforeInserts,
+		beforeUpdates: model.beforeUpdates,
+		beforeDeletes: model.beforeDeletes,
+		afterInserts:  model.afterInserts,
+		afterUpdates:  model.afterUpdates,
+		afterDeletes:  model.afterDeletes,
 	}
 	result.UseAtribs = model.SourceField != "" && !model.IsLocked
 
@@ -186,83 +186,94 @@ func (s *Cmd) getKeys(data et.Json, as string) []et.Json {
 }
 
 /**
-* Hiddens
-* @param hidden []string
+* Hidden
+* @param hiddens ...string
 * @return *Cmd
 **/
-func (s *Cmd) Hiddens(hidden []string) *Cmd {
-	s.Hidden = hidden
+func (s *Cmd) Hidden(hiddens ...string) *Cmd {
+	s.Hiddens = hiddens
 	return s
 }
 
 /**
-* EventBeforeInsert
+* BeforeInsert
 * @param fn DataFunctionTx
 * @return *Cmd
 **/
-func (s *Cmd) EventBeforeInsert(fn DataFunctionTx) *Cmd {
-	s.eventBeforeInsert = append(s.eventBeforeInsert, fn)
+func (s *Cmd) BeforeInsert(fn DataFunctionTx) *Cmd {
+	s.beforeInserts = append(s.beforeInserts, fn)
 	return s
 }
 
 /**
-* EventBeforeUpdate
+* BeforeUpdate
 * @param fn DataFunctionTx
 * @return *Cmd
 **/
-func (s *Cmd) EventBeforeUpdate(fn DataFunctionTx) *Cmd {
-	s.eventBeforeUpdate = append(s.eventBeforeUpdate, fn)
+func (s *Cmd) BeforeUpdate(fn DataFunctionTx) *Cmd {
+	s.beforeUpdates = append(s.beforeUpdates, fn)
 	return s
 }
 
 /**
-* EventBeforeDelete
+* BeforeDelete
 * @param fn DataFunctionTx
 * @return *Cmd
 **/
-func (s *Cmd) EventBeforeDelete(fn DataFunctionTx) *Cmd {
-	s.eventBeforeDelete = append(s.eventBeforeDelete, fn)
+func (s *Cmd) BeforeDelete(fn DataFunctionTx) *Cmd {
+	s.beforeDeletes = append(s.beforeDeletes, fn)
 	return s
 }
 
 /**
-* EventAfterInsert
+* AfterInsert
 * @param fn DataFunctionTx
 * @return *Cmd
 **/
-func (s *Cmd) EventAfterInsert(fn DataFunctionTx) *Cmd {
-	s.eventAfterInsert = append(s.eventAfterInsert, fn)
+func (s *Cmd) AfterInsert(fn DataFunctionTx) *Cmd {
+	s.afterInserts = append(s.afterInserts, fn)
 	return s
 }
 
 /**
-* EventAfterUpdate
+* AfterUpdate
 * @param fn DataFunctionTx
 * @return *Cmd
 **/
-func (s *Cmd) EventAfterUpdate(fn DataFunctionTx) *Cmd {
-	s.eventAfterUpdate = append(s.eventAfterUpdate, fn)
+func (s *Cmd) AfterUpdate(fn DataFunctionTx) *Cmd {
+	s.afterUpdates = append(s.afterUpdates, fn)
 	return s
 }
 
 /**
-* EventAfterDelete
+* AfterDelete
 * @param fn DataFunctionTx
 * @return *Cmd
 **/
-func (s *Cmd) EventAfterDelete(fn DataFunctionTx) *Cmd {
-	s.eventAfterDelete = append(s.eventAfterDelete, fn)
+func (s *Cmd) AfterDelete(fn DataFunctionTx) *Cmd {
+	s.afterDeletes = append(s.afterDeletes, fn)
 	return s
 }
 
 /**
-* EventBeforeInsertOrUpdate
+* BeforeInsertOrUpdate
 * @param fn DataFunctionTx
 * @return *Cmd
 **/
-func (s *Cmd) EventBeforeInsertOrUpdate(fn DataFunctionTx) *Cmd {
-	s.eventBeforeInsert = append(s.eventBeforeInsert, fn)
-	s.eventBeforeUpdate = append(s.eventBeforeUpdate, fn)
+func (s *Cmd) BeforeInsertOrUpdate(fn DataFunctionTx) *Cmd {
+	s.beforeInserts = append(s.beforeInserts, fn)
+	s.beforeUpdates = append(s.beforeUpdates, fn)
+	return s
+}
+
+/**
+* AfterInsertOrUpdate
+* @param fn DataFunctionTx
+* @return *Cmd
+**/
+func (s *Cmd) AfterInsertOrUpdate(fn DataFunctionTx) *Cmd {
+	s.afterInserts = append(s.afterInserts, fn)
+	s.afterUpdates = append(s.afterUpdates, fn)
 	return s
 }
 

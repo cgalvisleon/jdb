@@ -9,11 +9,11 @@ import (
 )
 
 /**
-* DefineColumn
+* defineColumn
 * @param name string, params et.Json
 * @return error
 **/
-func (s *Model) DefineColumn(name string, params et.Json) error {
+func (s *Model) defineColumn(name string, params et.Json) error {
 	if !utility.ValidStr(name, 0, []string{}) {
 		return fmt.Errorf(MSG_NAME_REQUIRED)
 	}
@@ -43,10 +43,10 @@ func (s *Model) DefineColumn(name string, params et.Json) error {
 **/
 func (s *Model) DefineAtrib(name string, defaultValue interface{}) error {
 	if s.SourceField == "" {
-		s.DefineSourceField(SOURCE)
+		s.DefineSetSourceField(SOURCE)
 	}
 
-	return s.DefineColumn(name, et.Json{
+	return s.defineColumn(name, et.Json{
 		"type":    TypeAtribute,
 		"default": defaultValue,
 	})
@@ -60,7 +60,7 @@ func (s *Model) DefineAtrib(name string, defaultValue interface{}) error {
 func (s *Model) defineColumns(params []et.Json) error {
 	for _, param := range params {
 		name := param.String("name")
-		err := s.DefineColumn(name, param)
+		err := s.defineColumn(name, param)
 		if err != nil {
 			return err
 		}
@@ -136,18 +136,18 @@ func (s *Model) DefineRequired(names ...string) {
 }
 
 /**
-* DefineSourceField
+* DefineSetSourceField
 * @param name string
 * @return error
 **/
-func (s *Model) DefineSourceField(name string) error {
+func (s *Model) DefineSetSourceField(name string) error {
 	if !utility.ValidStr(name, 0, []string{}) {
 		return nil
 	}
 
 	SOURCE = name
 	s.SourceField = name
-	err := s.DefineColumn(name, et.Json{
+	err := s.defineColumn(name, et.Json{
 		"type": TypeJson,
 	})
 	if err != nil {
@@ -159,18 +159,18 @@ func (s *Model) DefineSourceField(name string) error {
 }
 
 /**
-* DefineRecordField
+* DefineSetRecordField
 * @param name string
 * @return error
 **/
-func (s *Model) DefineRecordField(name string) error {
+func (s *Model) DefineSetRecordField(name string) error {
 	if !utility.ValidStr(name, 0, []string{}) {
 		return nil
 	}
 
 	RECORDID = name
 	s.RecordField = name
-	err := s.DefineColumn(name, et.Json{
+	err := s.defineColumn(name, et.Json{
 		"type": TypeKey,
 	})
 	if err != nil {
@@ -182,18 +182,18 @@ func (s *Model) DefineRecordField(name string) error {
 }
 
 /**
-* DefineStatusField
+* DefineSetStatusField
 * @param name string
 * @return error
 **/
-func (s *Model) DefineStatusField(name string) error {
+func (s *Model) DefineSetStatusField(name string) error {
 	if !utility.ValidStr(name, 0, []string{}) {
 		return nil
 	}
 
 	STATUS = name
 	s.StatusField = name
-	err := s.DefineColumn(name, et.Json{
+	err := s.defineColumn(name, et.Json{
 		"type": TypeJson,
 	})
 	if err != nil {
@@ -257,96 +257,93 @@ func (s *Model) DefineForeignKeys(params []et.Json) error {
 
 /**
 * DefineDetails
-* @param params []et.Json
-* @return error
+* @param param et.Json
+* @return (*Model, error)
 **/
-func (s *Model) DefineDetails(params []et.Json) error {
-	for _, param := range params {
-		schema := param.String("schema")
-		if !utility.ValidStr(schema, 0, []string{}) {
-			return fmt.Errorf("schema is required")
-		}
+func (s *Model) DefineDetails(param et.Json) (*Model, error) {
+	schema := param.String("schema")
+	if !utility.ValidStr(schema, 0, []string{}) {
+		return nil, fmt.Errorf("schema is required")
+	}
 
-		name := param.String("name")
-		if !utility.ValidStr(name, 0, []string{}) {
-			return fmt.Errorf("name is required")
-		}
+	name := param.String("name")
+	if !utility.ValidStr(name, 0, []string{}) {
+		return nil, fmt.Errorf("name is required")
+	}
 
-		references := param.Json("references")
-		if references.IsEmpty() {
-			return fmt.Errorf("references is required")
-		}
+	references := param.Json("references")
+	if references.IsEmpty() {
+		return nil, fmt.Errorf("references is required")
+	}
 
-		columns := references.ArrayJson("columns")
-		if len(columns) == 0 {
-			return fmt.Errorf("columns is required in references")
-		}
+	columns := references.ArrayJson("columns")
+	if len(columns) == 0 {
+		return nil, fmt.Errorf("columns is required in references")
+	}
 
-		onDelete := references.String("on_delete")
-		onUpdate := references.String("on_update")
+	onDelete := references.String("on_delete")
+	onUpdate := references.String("on_update")
 
-		detail, err := s.db.getOrCreateModel(schema, name)
-		if err != nil {
-			return err
-		}
+	detail, err := s.db.getOrCreateModel(schema, name)
+	if err != nil {
+		return nil, err
+	}
 
-		err = detail.DefineForeignKeys([]et.Json{
-			{
-				"schema": s.Schema,
-				"name":   s.Name,
-				"references": et.Json{
-					"columns":   columns,
-					"on_delete": onDelete,
-					"on_update": onUpdate,
-				},
-			},
-		})
-		if err != nil {
-			return err
-		}
-
-		detail.masters[s.Name] = s
-		detail.Masters[s.Name] = et.Json{
+	err = detail.DefineForeignKeys([]et.Json{
+		{
 			"schema": s.Schema,
 			"name":   s.Name,
 			"references": et.Json{
-				"columns": columns,
+				"columns":   columns,
+				"on_delete": onDelete,
+				"on_update": onUpdate,
 			},
-		}
-
-		err = detail.DefineColumn(s.Name, et.Json{
-			"type": TypeMaster,
-		})
-		if err != nil {
-			return err
-		}
-
-		err = detail.defineColumns(columns)
-		if err != nil {
-			return err
-		}
-
-		err = s.DefineColumn(name, et.Json{
-			"type": TypeDetail,
-		})
-		if err != nil {
-			return err
-		}
-
-		s.details[name] = detail
-		s.Details[name] = param
+		},
+	})
+	if err != nil {
+		return nil, err
 	}
 
-	return nil
+	detail.masters[s.Name] = s
+	detail.Masters[s.Name] = et.Json{
+		"schema": s.Schema,
+		"name":   s.Name,
+		"references": et.Json{
+			"columns": columns,
+		},
+	}
+
+	err = detail.defineColumn(s.Name, et.Json{
+		"type": TypeMaster,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	err = detail.defineColumns(columns)
+	if err != nil {
+		return nil, err
+	}
+
+	err = s.defineColumn(name, et.Json{
+		"type": TypeDetail,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	s.details[name] = detail
+	s.Details[name] = param
+	return detail, nil
 }
 
 /**
-* DefineColumnCalc
+* DefineCalc
 * @param name string, fn DataContext
 * @return error
 **/
-func (s *Model) DefineColumnCalc(name string, fn DataContext) error {
-	err := s.DefineColumn(name, et.Json{
+func (s *Model) DefineCalc(name string, fn DataContext) error {
+	err := s.defineColumn(name, et.Json{
 		"type": TypeCalc,
 	})
 	if err != nil {
@@ -363,7 +360,7 @@ func (s *Model) DefineColumnCalc(name string, fn DataContext) error {
 * @return error
 **/
 func (s *Model) DefineColumnVm(name string, script string) error {
-	err := s.DefineColumn(name, et.Json{
+	err := s.defineColumn(name, et.Json{
 		"type": TypeVm,
 	})
 	if err != nil {
@@ -372,4 +369,118 @@ func (s *Model) DefineColumnVm(name string, script string) error {
 
 	s.Vms[name] = script
 	return nil
+}
+
+/**
+* DefineColumn
+* @param name string, columnType string
+* @return error
+**/
+func (s *Model) DefineColumn(name string, columnType string) error {
+	return s.defineColumn(name, et.Json{
+		"type": columnType,
+	})
+}
+
+/**
+* DefineDetail
+* @param name string, fks map[string]string, version int
+* @return (*Model, error)
+**/
+func (s *Model) DefineDetail(name string, fks map[string]string, version int) (*Model, error) {
+	columns := make([]et.Json, 0)
+	for k, v := range fks {
+		columns = append(columns, et.Json{
+			k: v,
+		})
+	}
+
+	result, err := s.DefineDetails(et.Json{
+		"schema":  s.Schema,
+		"name":    name,
+		"version": version,
+		"references": et.Json{
+			"columns":   columns,
+			"on_delete": "cascade",
+			"on_update": "cascade",
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+/**
+* DefineCreatedAtField
+* @return *Model
+**/
+func (s *Model) DefineCreatedAtField() *Model {
+	s.DefineColumn("created_at", TypeDateTime)
+	return s
+}
+
+/**
+* DefineUpdatedAtField
+* @return *Model
+**/
+func (s *Model) DefineUpdatedAtField() *Model {
+	s.DefineColumn("updated_at", TypeDateTime)
+	return s
+}
+
+/**
+* DefinePrimaryKeyField
+* @return *Model
+**/
+func (s *Model) DefinePrimaryKeyField() *Model {
+	s.DefinePrimaryKeys(KEY)
+	return s
+}
+
+/**
+* DefineSourceField
+* @return *Model
+**/
+func (s *Model) DefineSourceField() *Model {
+	s.DefineSetSourceField(SOURCE)
+	return s
+}
+
+/**
+* DefineRecordField
+* @return *Model
+**/
+func (s *Model) DefineRecordField() *Model {
+	s.DefineSetRecordField(RECORDID)
+	return s
+}
+
+/**
+* DefineModel
+* @return *Model
+**/
+func (s *Model) DefineModel() *Model {
+	s.DefineCreatedAtField()
+	s.DefineUpdatedAtField()
+	s.DefinePrimaryKeyField()
+	s.DefineSourceField()
+	s.DefineRecordField()
+	return s
+}
+
+/**
+* DefineProjectModel
+* @return *Model
+**/
+func (s *Model) DefineProjectModel() *Model {
+	s.DefineCreatedAtField()
+	s.DefineUpdatedAtField()
+	s.DefinePrimaryKeyField()
+	s.DefineColumn("project_id", TypeKey)
+	s.DefineSourceField()
+	s.DefineRecordField()
+	s.DefineIndexes("project_id")
+	return s
 }

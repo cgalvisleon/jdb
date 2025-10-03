@@ -50,42 +50,42 @@ func (s *Model) beforeDeleteDefault(tx *Tx, data et.Json) error {
 }
 
 /**
-* EventBeforeInsert
+* BeforeInsert
 * @param fn DataFunction
 **/
-func (s *Model) EventBeforeInsert(fn DataFunctionTx) *Model {
-	s.eventBeforeInsert = append(s.eventBeforeInsert, fn)
+func (s *Model) BeforeInsert(fn DataFunctionTx) *Model {
+	s.beforeInserts = append(s.beforeInserts, fn)
 
 	return s
 }
 
 /**
-* EventBeforeUpdate
+* BeforeUpdate
 * @param fn DataFunction
 **/
-func (s *Model) EventBeforeUpdate(fn DataFunctionTx) *Model {
-	s.eventBeforeUpdate = append(s.eventBeforeUpdate, fn)
+func (s *Model) BeforeUpdate(fn DataFunctionTx) *Model {
+	s.beforeUpdates = append(s.beforeUpdates, fn)
 
 	return s
 }
 
 /**
-* EventBeforeDelete
+* BeforeDelete
 * @param fn DataFunction
 **/
-func (s *Model) EventBeforeDelete(fn DataFunctionTx) *Model {
-	s.eventBeforeDelete = append(s.eventBeforeDelete, fn)
+func (s *Model) BeforeDelete(fn DataFunctionTx) *Model {
+	s.beforeDeletes = append(s.beforeDeletes, fn)
 
 	return s
 }
 
 /**
-* EventBeforeInsertOrUpdate
+* BeforeInsertOrUpdate
 * @param fn DataFunction
 **/
-func (s *Model) EventBeforeInsertOrUpdate(fn DataFunctionTx) *Model {
-	s.eventBeforeInsert = append(s.eventBeforeInsert, fn)
-	s.eventBeforeUpdate = append(s.eventBeforeUpdate, fn)
+func (s *Model) BeforeInsertOrUpdate(fn DataFunctionTx) *Model {
+	s.beforeInserts = append(s.beforeInserts, fn)
+	s.beforeUpdates = append(s.beforeUpdates, fn)
 
 	return s
 }

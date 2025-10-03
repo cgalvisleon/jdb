@@ -5,6 +5,80 @@ import (
 	jdb "github.com/cgalvisleon/jdb/jdb"
 )
 
+const (
+	TypeInt      = jdb.TypeInt
+	TypeFloat    = jdb.TypeFloat
+	TypeKey      = jdb.TypeKey
+	TypeText     = jdb.TypeText
+	TypeMemo     = jdb.TypeMemo
+	TypeDateTime = jdb.TypeDateTime
+	TypeBoolean  = jdb.TypeBoolean
+	TypeJson     = jdb.TypeJson
+	TypeIndex    = jdb.TypeIndex
+	TypeBytes    = jdb.TypeBytes
+	TypeGeometry = jdb.TypeGeometry
+	TypeAtribute = jdb.TypeAtribute
+	TypeCalc     = jdb.TypeCalc
+	TypeVm       = jdb.TypeVm
+	TypeDetail   = jdb.TypeDetail
+	TypeMaster   = jdb.TypeMaster
+	TypeRollup   = jdb.TypeRollup
+	TypeRelation = jdb.TypeRelation
+)
+
+var (
+	SOURCE         = jdb.SOURCE
+	KEY            = jdb.KEY
+	RECORDID       = jdb.RECORDID
+	STATUS         = jdb.STATUS
+	ACTIVE         = jdb.ACTIVE
+	ARCHIVED       = jdb.ARCHIVED
+	CANCELLED      = jdb.CANCELLED
+	OF_SYSTEM      = jdb.OF_SYSTEM
+	FOR_DELETE     = jdb.FOR_DELETE
+	PENDING        = jdb.PENDING
+	APPROVED       = jdb.APPROVED
+	REJECTED       = jdb.REJECTED
+	CREATED_AT     = jdb.CREATED_AT
+	UPDATED_AT     = jdb.UPDATED_AT
+	TEAM_ID        = jdb.TEAM_ID
+	TypeData       = jdb.TypeData
+	TypeColumn     = jdb.TypeColumn
+	TypeAtrib      = jdb.TypeAtrib
+	TypeColumnCalc = jdb.TypeColumnCalc
+	ErrNotInserted = jdb.ErrNotInserted
+	ErrNotUpdated  = jdb.ErrNotUpdated
+	ErrNotFound    = jdb.ErrNotFound
+	ErrNotUpserted = jdb.ErrNotUpserted
+	ErrDuplicate   = jdb.ErrDuplicate
+)
+
+type DB = jdb.Database
+type Model = jdb.Model
+type Tx = jdb.Tx
+type Condition = jdb.Condition
+type Ql = jdb.Ql
+type Cmd = jdb.Cmd
+
+/**
+* NewModel
+* @param db *jdb.Database, schema, name string, version int
+* @return (*Model, error)
+**/
+func NewModel(db *jdb.Database, schema, name string, version int) (*Model, error) {
+	result, err := db.Define(et.Json{
+		"schema":  schema,
+		"name":    name,
+		"version": version,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
 /**
 * ConnectTo
 * @param name, driver string, userCore bool, params et.Json
@@ -50,6 +124,15 @@ func Select(query et.Json) (*jdb.Ql, error) {
 }
 
 /**
+* From
+* @param model *Model
+* @return *Ql
+**/
+func From(model *Model) *jdb.Ql {
+	return jdb.From(model)
+}
+
+/**
 * Insert
 * @param param et.Json
 * @return (*jdb.Cmd, error)
@@ -83,148 +166,4 @@ func Delete(param et.Json) (*jdb.Cmd, error) {
 **/
 func Upsert(param et.Json) (*jdb.Cmd, error) {
 	return jdb.Upsert(param)
-}
-
-/**
-* Eq
-* @param field string, value interface{}
-* @return jdb.Condition
-**/
-func Eq(field string, value interface{}) jdb.Condition {
-	return jdb.Eq(field, value)
-}
-
-/**
-* Neg
-* @param field string, value interface{}
-* @return jdb.Condition
-**/
-func Neg(field string, value interface{}) jdb.Condition {
-	return jdb.Neg(field, value)
-}
-
-/**
-* Less
-* @param field string, value interface{}
-* @return jdb.Condition
-**/
-func Less(field string, value interface{}) jdb.Condition {
-	return jdb.Less(field, value)
-}
-
-/**
-* LessEq
-* @param field string, value interface{}
-* @return jdb.Condition
-**/
-func LessEq(field string, value interface{}) jdb.Condition {
-	return jdb.LessEq(field, value)
-}
-
-/**
-* More
-* @param field string, value interface{}
-* @return jdb.Condition
-**/
-func More(field string, value interface{}) jdb.Condition {
-	return jdb.More(field, value)
-}
-
-/**
-* MoreEq
-* @param field string, value interface{}
-* @return jdb.Condition
-**/
-func MoreEq(field string, value interface{}) jdb.Condition {
-	return jdb.MoreEq(field, value)
-}
-
-/**
-* Like
-* @param field string, value interface{}
-* @return jdb.Condition
-**/
-func Like(field string, value interface{}) jdb.Condition {
-	return jdb.Like(field, value)
-}
-
-/**
-* Ilike
-* @param field string, value interface{}
-* @return jdb.Condition
-**/
-func Ilike(field string, value interface{}) jdb.Condition {
-	return jdb.Ilike(field, value)
-}
-
-/**
-* In
-* @param field string, value interface{}
-* @return jdb.Condition
-**/
-func In(field string, value interface{}) jdb.Condition {
-	return jdb.In(field, value)
-}
-
-/**
-* NotIn
-* @param field string, value interface{}
-* @return jdb.Condition
-**/
-func NotIn(field string, value interface{}) jdb.Condition {
-	return jdb.NotIn(field, value)
-}
-
-/**
-* Is
-* @param field string, value interface{}
-* @return jdb.Condition
-**/
-func Is(field string, value interface{}) jdb.Condition {
-	return jdb.Is(field, value)
-}
-
-/**
-* IsNot
-* @param field string, value interface{}
-* @return jdb.Condition
-**/
-func IsNot(field string, value interface{}) jdb.Condition {
-	return jdb.IsNot(field, value)
-}
-
-/**
-* Null
-* @param field string
-* @return jdb.Condition
-**/
-func Null(field string) jdb.Condition {
-	return jdb.Null(field)
-}
-
-/**
-* NotNull
-* @param field string
-* @return jdb.Condition
-**/
-func NotNull(field string) jdb.Condition {
-	return jdb.NotNull(field)
-}
-
-/**
-* Between
-* @param field string, value []interface{}
-* @return jdb.Condition
-**/
-func Between(field string, value []interface{}) jdb.Condition {
-	return jdb.Between(field, value)
-}
-
-/**
-* NotBetween
-* @param field string, value []interface{}
-* @return jdb.Condition
-**/
-func NotBetween(field string, value []interface{}) jdb.Condition {
-	return jdb.NotBetween(field, value)
 }
