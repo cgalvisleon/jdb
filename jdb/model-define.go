@@ -458,12 +458,22 @@ func (s *Model) DefineRecordField() *Model {
 }
 
 /**
+* DefineStatusField
+* @return *Model
+**/
+func (s *Model) DefineStatusField() *Model {
+	s.DefineSetStatusField(STATUS)
+	return s
+}
+
+/**
 * DefineModel
 * @return *Model
 **/
 func (s *Model) DefineModel() *Model {
 	s.DefineCreatedAtField()
 	s.DefineUpdatedAtField()
+	s.DefineStatusField()
 	s.DefinePrimaryKeyField()
 	s.DefineSourceField()
 	s.DefineRecordField()
@@ -477,10 +487,11 @@ func (s *Model) DefineModel() *Model {
 func (s *Model) DefineProjectModel() *Model {
 	s.DefineCreatedAtField()
 	s.DefineUpdatedAtField()
+	s.DefineStatusField()
 	s.DefinePrimaryKeyField()
-	s.DefineColumn("project_id", TypeKey)
+	s.DefineColumn(PROJECT_ID, TypeKey)
 	s.DefineSourceField()
 	s.DefineRecordField()
-	s.DefineIndexes("project_id")
+	s.DefineIndexes(PROJECT_ID)
 	return s
 }

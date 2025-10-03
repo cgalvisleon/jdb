@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/cgalvisleon/et/et"
-	"github.com/cgalvisleon/et/utility"
 )
 
 type Connection struct {
@@ -15,6 +14,39 @@ type Connection struct {
 	Password string `json:"password"`
 	App      string `json:"app"`
 	Version  int    `json:"version"`
+}
+
+/**
+* ToJson
+* @return et.Json
+**/
+func (s *Connection) ToJson() et.Json {
+	return et.Json{
+		"database": s.Database,
+		"host":     s.Host,
+		"port":     s.Port,
+		"username": s.Username,
+		"password": s.Password,
+		"app":      s.App,
+		"version":  s.Version,
+	}
+}
+
+/**
+* load
+* @param params et.Json
+* @return error
+**/
+func (s *Connection) Load(params et.Json) error {
+	s.Database = params.Str("database")
+	s.Host = params.Str("host")
+	s.Port = params.Int("port")
+	s.Username = params.Str("username")
+	s.Password = params.Str("password")
+	s.App = params.Str("app")
+	s.Version = params.Int("version")
+
+	return s.validate()
 }
 
 /**
@@ -38,50 +70,6 @@ func (s *Connection) chain() (string, error) {
 	result := fmt.Sprintf(`%s://%s:%s@%s:%d/%s?sslmode=disable&application_name=%s`, driver, s.Username, s.Password, s.Host, s.Port, s.Database, s.App)
 
 	return result, nil
-}
-
-/**
-* load
-* @param params et.Json
-* @return error
-**/
-func (s *Connection) load(params et.Json) error {
-	database := params.Str("database")
-	if utility.ValidStr(database, 0, []string{}) {
-		s.Database = database
-	}
-
-	host := params.Str("host")
-	if utility.ValidStr(host, 0, []string{}) {
-		s.Host = host
-	}
-
-	port := params.Int("port")
-	if port != 0 {
-		s.Port = port
-	}
-
-	username := params.Str("username")
-	if utility.ValidStr(username, 0, []string{}) {
-		s.Username = username
-	}
-
-	password := params.Str("password")
-	if utility.ValidStr(password, 0, []string{}) {
-		s.Password = password
-	}
-
-	app := params.Str("app")
-	if utility.ValidStr(app, 0, []string{}) {
-		s.App = app
-	}
-
-	version := params.Int("version")
-	if version != 0 {
-		s.Version = version
-	}
-
-	return s.validate()
 }
 
 /**

@@ -10,10 +10,10 @@ var series *Model
 
 /**
 * defineSeries
-* @param db *Database
+* @param db *DB
 * @return error
 **/
-func defineSeries(db *Database) error {
+func defineSeries(db *DB) error {
 	if series != nil {
 		return nil
 	}

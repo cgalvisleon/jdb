@@ -1,10 +1,11 @@
 package postgres
 
 import (
+	"database/sql"
 	"fmt"
 
-	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/envar"
+	"github.com/cgalvisleon/et/logs"
 	"github.com/cgalvisleon/jdb/jdb"
 )
 
@@ -15,17 +16,17 @@ func init() {
 }
 
 type Postgres struct {
-	name       string        `json:"-"`
-	database   *jdb.Database `json:"-"`
-	connection *Connection   `json:"-"`
+	name       string      `json:"-"`
+	database   *jdb.DB     `json:"-"`
+	connection *Connection `json:"-"`
 }
 
 /**
 * newDriver
-* @param database *jdb.Database
+* @param database *jdb.DB
 * @return jdb.Driver
 **/
-func newDriver(database *jdb.Database) jdb.Driver {
+func newDriver(database *jdb.DB) jdb.Driver {
 	result := &Postgres{
 		database: database,
 		name:     database.Name,
@@ -40,9 +41,62 @@ func newDriver(database *jdb.Database) jdb.Driver {
 		},
 	}
 
-	result.connection.load(result.database.Connection)
+	result.connection.Load(result.database.Connection)
 
 	return result
+}
+
+/**
+* Connect
+* @param connection jdb.ConnectParams
+* @return *sql.DB, error
+**/
+func (s *Postgres) Connect(database *jdb.DB) (*sql.DB, error) {
+	s.database = database
+	s.name = database.Name
+
+	defaultChain, err := s.connection.defaultChain()
+	if err != nil {
+		return nil, err
+	}
+
+	db, err := s.connectTo(defaultChain)
+	if err != nil {
+		return nil, err
+	}
+
+	err = s.createDatabase(db, database.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	if db != nil {
+		err := db.Close()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	s.connection.Database = database.Name
+	chain, err := s.connection.chain()
+	if err != nil {
+		return nil, err
+	}
+
+	db, err = s.connectTo(chain)
+	if err != nil {
+		return nil, err
+	}
+
+	if database.UseCore {
+		if err := triggerRecords(db); err != nil {
+			return nil, err
+		}
+	}
+
+	logs.Logf(driver, `Connected to %s:%s`, s.connection.Host, s.connection.Database)
+
+	return db, nil
 }
 
 /**
@@ -82,7 +136,7 @@ func (s *Postgres) Query(ql *jdb.Ql) (string, error) {
 	}
 
 	ql.SQL = sql
-	console.Debug("query:\n", sql)
+	logs.Debug("query:\n", sql)
 
 	return ql.SQL, nil
 }
@@ -99,7 +153,7 @@ func (s *Postgres) Command(cmd *jdb.Cmd) (string, error) {
 	}
 
 	cmd.SQL = sql
-	console.Debug("command:\n", sql)
+	logs.Debug("command:\n", sql)
 
 	return cmd.SQL, nil
 }

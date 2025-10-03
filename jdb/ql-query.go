@@ -166,7 +166,8 @@ func (s *Ql) One() (et.Item, error) {
 * @return et.Items, error
 **/
 func (s *Ql) RowsTx(tx *Tx, val int) (et.Items, error) {
-	return s.LimitTx(tx, 1, val)
+	page := s.Limits.Int("page")
+	return s.LimitTx(tx, page, val)
 }
 
 /**

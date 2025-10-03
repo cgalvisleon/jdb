@@ -10,10 +10,10 @@ var records *Model
 
 /**
 * defineRecords
-* @param db *Database
+* @param db *DB
 * @return error
 **/
-func defineRecords(db *Database) error {
+func defineRecords(db *DB) error {
 	if records != nil {
 		return nil
 	}

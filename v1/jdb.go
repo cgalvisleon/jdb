@@ -6,24 +6,29 @@ import (
 )
 
 const (
-	TypeInt      = jdb.TypeInt
-	TypeFloat    = jdb.TypeFloat
-	TypeKey      = jdb.TypeKey
-	TypeText     = jdb.TypeText
-	TypeMemo     = jdb.TypeMemo
-	TypeDateTime = jdb.TypeDateTime
-	TypeBoolean  = jdb.TypeBoolean
-	TypeJson     = jdb.TypeJson
-	TypeIndex    = jdb.TypeIndex
-	TypeBytes    = jdb.TypeBytes
-	TypeGeometry = jdb.TypeGeometry
-	TypeAtribute = jdb.TypeAtribute
-	TypeCalc     = jdb.TypeCalc
-	TypeVm       = jdb.TypeVm
-	TypeDetail   = jdb.TypeDetail
-	TypeMaster   = jdb.TypeMaster
-	TypeRollup   = jdb.TypeRollup
-	TypeRelation = jdb.TypeRelation
+	TypeInt        = jdb.TypeInt
+	TypeFloat      = jdb.TypeFloat
+	TypeKey        = jdb.TypeKey
+	TypeText       = jdb.TypeText
+	TypeMemo       = jdb.TypeMemo
+	TypeDateTime   = jdb.TypeDateTime
+	TypeBoolean    = jdb.TypeBoolean
+	TypeJson       = jdb.TypeJson
+	TypeIndex      = jdb.TypeIndex
+	TypeBytes      = jdb.TypeBytes
+	TypeGeometry   = jdb.TypeGeometry
+	TypeAtribute   = jdb.TypeAtribute
+	TypeCalc       = jdb.TypeCalc
+	TypeVm         = jdb.TypeVm
+	TypeDetail     = jdb.TypeDetail
+	TypeMaster     = jdb.TypeMaster
+	TypeRollup     = jdb.TypeRollup
+	TypeRelation   = jdb.TypeRelation
+	DriverPostgres = jdb.DriverPostgres
+	DriverMysql    = jdb.DriverMysql
+	DriverSqlite   = jdb.DriverSqlite
+	DriverMssql    = jdb.DriverMssql
+	DriverOracle   = jdb.DriverOracle
 )
 
 var (

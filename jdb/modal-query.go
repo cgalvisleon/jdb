@@ -45,3 +45,13 @@ func (s *Model) Join(to *Model, as string, on Condition) *Ql {
 	result.addFrom(s, "A")
 	return result.Join(to, as, on)
 }
+
+/**
+* Counted
+* @return int, error
+**/
+func (s *Model) Counted() (int, error) {
+	result := newQl(s.db)
+	result.addFrom(s, "A")
+	return result.Counted()
+}

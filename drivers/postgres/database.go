@@ -4,63 +4,10 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/cgalvisleon/et/console"
+	"github.com/cgalvisleon/et/logs"
 	"github.com/cgalvisleon/jdb/jdb"
 	_ "github.com/lib/pq"
 )
-
-/**
-* Connect
-* @param connection jdb.ConnectParams
-* @return *sql.DB, error
-**/
-func (s *Postgres) Connect(database *jdb.Database) (*sql.DB, error) {
-	s.database = database
-	s.name = database.Name
-
-	defaultChain, err := s.connection.defaultChain()
-	if err != nil {
-		return nil, err
-	}
-
-	db, err := s.connectTo(defaultChain)
-	if err != nil {
-		return nil, err
-	}
-
-	err = s.createDatabase(db, database.Name)
-	if err != nil {
-		return nil, err
-	}
-
-	if db != nil {
-		err := db.Close()
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	s.connection.Database = database.Name
-	chain, err := s.connection.chain()
-	if err != nil {
-		return nil, err
-	}
-
-	db, err = s.connectTo(chain)
-	if err != nil {
-		return nil, err
-	}
-
-	if database.UseCore {
-		if err := triggerRecords(db); err != nil {
-			return nil, err
-		}
-	}
-
-	console.Logf(driver, `Connected to %s:%s`, s.connection.Host, s.connection.Database)
-
-	return db, nil
-}
 
 /**
 * connectTo
@@ -127,7 +74,7 @@ func (s *Postgres) createDatabase(db *sql.DB, name string) error {
 		return err
 	}
 
-	console.Logf(driver, `Database %s created`, name)
+	logs.Logf(driver, `Database %s created`, name)
 
 	return nil
 }
@@ -153,7 +100,7 @@ func (s *Postgres) DropDatabase(db *sql.DB, name string) error {
 		return err
 	}
 
-	console.Logf(driver, `Database %s droped`, name)
+	logs.Logf(driver, `Database %s droped`, name)
 
 	return nil
 }

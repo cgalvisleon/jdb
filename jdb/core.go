@@ -4,7 +4,7 @@ package jdb
 * initCore
 * @return error
 **/
-func initCore(db *Database) error {
+func initCore(db *DB) error {
 	if err := defineModel(db); err != nil {
 		return err
 	}

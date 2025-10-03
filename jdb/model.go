@@ -48,6 +48,7 @@ var (
 	CREATED_AT  = "created_at"
 	UPDATED_AT  = "updated_at"
 	TEAM_ID     = "team_id"
+	PROJECT_ID  = "project_id"
 	CUSTOMER_ID = "customer_id"
 
 	TypeData = map[string]bool{
@@ -135,7 +136,7 @@ type Model struct {
 	AfterDeletes  []string               `json:"after_deletes"`
 	IsLocked      bool                   `json:"is_locked"`
 	Version       int                    `json:"version"`
-	db            *Database              `json:"-"`
+	db            *DB                    `json:"-"`
 	details       map[string]*Model      `json:"-"`
 	masters       map[string]*Model      `json:"-"`
 	isInit        bool                   `json:"-"`

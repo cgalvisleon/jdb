@@ -3,8 +3,8 @@ package postgres
 import (
 	"fmt"
 
-	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
+	"github.com/cgalvisleon/et/logs"
 	"github.com/cgalvisleon/et/strs"
 	"github.com/cgalvisleon/et/utility"
 	"github.com/cgalvisleon/jdb/jdb"
@@ -210,7 +210,7 @@ func (s *Postgres) buildForeignKeys(definition et.Json) (string, error) {
 		return "", nil
 	}
 
-	console.Debug(foreignKeys)
+	logs.Debug(foreignKeys)
 
 	// table := definition.String("table")
 	// name := definition.String("name")

@@ -3,8 +3,8 @@ package postgres
 import (
 	"fmt"
 
-	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
+	"github.com/cgalvisleon/et/logs"
 	"github.com/cgalvisleon/et/strs"
 	"github.com/cgalvisleon/jdb/jdb"
 )
@@ -15,7 +15,7 @@ import (
 * @return (string, error)
 **/
 func (s *Postgres) buildCommand(cmd *jdb.Cmd) (string, error) {
-	console.Debug("command:", cmd.ToJson().ToString())
+	logs.Debug("command:", cmd.ToJson().ToString())
 	command := cmd.Command
 	if !jdb.Commands[command] {
 		return "", fmt.Errorf("command %s no soportado", command)

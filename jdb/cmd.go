@@ -36,7 +36,7 @@ type Cmd struct {
 	Result        et.Items         `json:"result"`
 	UseAtribs     bool             `json:"use_atribs"`
 	SQL           string           `json:"sql"`
-	db            *Database        `json:"-"`
+	db            *DB              `json:"-"`
 	tx            *Tx              `json:"-"`
 	vm            *vm.Vm           `json:"-"`
 	isDebug       bool             `json:"-"`

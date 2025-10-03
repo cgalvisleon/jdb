@@ -10,21 +10,21 @@ import (
 
 /**
 * ConnectTo
-* @param name, driver string, userCore bool, params et.Json
-* @return (*Database, error)
+* @param name, driver string, userCore bool, params Connection
+* @return (*DB, error)
 **/
-func ConnectTo(name, driver string, userCore bool, params et.Json) (*Database, error) {
+func ConnectTo(name, driver string, userCore bool, params et.Json) (*DB, error) {
 	return getDatabase(name, driver, userCore, params)
 }
 
 /**
 * LoadTo
 * @param name string
-* @return (*Database, error)
+* @return (*DB, error)
 **/
-func LoadTo(name string) (*Database, error) {
+func LoadTo(name string) (*DB, error) {
 	driver := envar.GetStr("DB_DRIVER", "postgres")
-	return getDatabase(name, driver, true, et.Json{
+	params := et.Json{
 		"database": name,
 		"host":     envar.GetStr("DB_HOST", "localhost"),
 		"port":     envar.GetInt("DB_PORT", 5432),
@@ -32,14 +32,16 @@ func LoadTo(name string) (*Database, error) {
 		"password": envar.GetStr("DB_PASSWORD", "test"),
 		"app":      envar.GetStr("DB_APP", "test"),
 		"version":  envar.GetInt("DB_VERSION", 15),
-	})
+	}
+
+	return getDatabase(name, driver, true, params)
 }
 
 /**
 * Load
-* @return (*Database, error)
+* @return (*DB, error)
 **/
-func Load() (*Database, error) {
+func Load() (*DB, error) {
 	name := envar.GetStr("DB_NAME", "josephine")
 	return LoadTo(name)
 }
@@ -47,9 +49,9 @@ func Load() (*Database, error) {
 /**
 * GetDatabase
 * @param name string
-* @return (*Database, error)
+* @return (*DB, error)
 **/
-func GetDatabase(name string) (*Database, error) {
+func GetDatabase(name string) (*DB, error) {
 	result, ok := dbs[name]
 	if !ok {
 		return nil, fmt.Errorf(MSG_DATABASE_NOT_FOUND, name)

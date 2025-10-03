@@ -5,18 +5,18 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/et"
+	"github.com/cgalvisleon/et/logs"
 	"github.com/cgalvisleon/et/utility"
 )
 
-var dbs map[string]*Database
+var dbs map[string]*DB
 
 func init() {
-	dbs = make(map[string]*Database)
+	dbs = make(map[string]*DB)
 }
 
-type Database struct {
+type DB struct {
 	Name       string            `json:"name"`
 	Models     map[string]*Model `json:"models"`
 	UseCore    bool              `json:"use_core"`
@@ -29,7 +29,7 @@ type Database struct {
 * ToJson
 * @return et.Json
 **/
-func (s *Database) ToJson() et.Json {
+func (s *DB) ToJson() et.Json {
 	bt, err := json.Marshal(s)
 	if err != nil {
 		return et.Json{}
@@ -45,18 +45,18 @@ func (s *Database) ToJson() et.Json {
 }
 
 /**
-* GetDatabase
-* @param name, driver string, userCore bool, params et.Json
-* @return (*Database, error)
+* getDatabase
+* @param name, driver string, userCore bool, params Connection
+* @return (*DB, error)
 **/
-func getDatabase(name, driver string, userCore bool, params et.Json) (*Database, error) {
+func getDatabase(name, driver string, userCore bool, params et.Json) (*DB, error) {
 	result, ok := dbs[name]
 	if !ok {
 		if _, ok := drivers[driver]; !ok {
 			return nil, fmt.Errorf(MSG_DRIVER_NOT_FOUND, driver)
 		}
 
-		result = &Database{
+		result = &DB{
 			Name:       name,
 			Models:     make(map[string]*Model),
 			UseCore:    userCore,
@@ -78,7 +78,7 @@ func getDatabase(name, driver string, userCore bool, params et.Json) (*Database,
 * load
 * @return error
 **/
-func (s *Database) load() error {
+func (s *DB) load() error {
 	if s.driver == nil {
 		return fmt.Errorf(MSG_DRIVER_REQUIRED)
 	}
@@ -92,7 +92,7 @@ func (s *Database) load() error {
 	if s.UseCore {
 		err := initCore(s)
 		if err != nil {
-			console.Panic(err)
+			logs.Panic(err)
 		}
 	}
 
@@ -104,7 +104,7 @@ func (s *Database) load() error {
 * @param schema, name string
 * @return (*Model, error)
 **/
-func (s *Database) getOrCreateModel(schema, name string) (*Model, error) {
+func (s *DB) getOrCreateModel(schema, name string) (*Model, error) {
 	if !utility.ValidStr(schema, 0, []string{}) {
 		return nil, fmt.Errorf(MSG_SCHEMA_REQUIRED)
 	}
@@ -166,7 +166,7 @@ func (s *Database) getOrCreateModel(schema, name string) (*Model, error) {
 * @param name string
 * @return (*Model, error)
 **/
-func (s *Database) getModel(name string) (*Model, error) {
+func (s *DB) getModel(name string) (*Model, error) {
 	result, ok := s.Models[name]
 	if ok {
 		return result, nil
@@ -213,7 +213,7 @@ func (s *Database) getModel(name string) (*Model, error) {
 * @param model *Model
 * @return error
 **/
-func (s *Database) init(model *Model) error {
+func (s *DB) init(model *Model) error {
 	if err := model.prepare(); err != nil {
 		return err
 	}
@@ -228,7 +228,7 @@ func (s *Database) init(model *Model) error {
 	}
 
 	if model.isDebug {
-		console.Debugf("init:%s", model.ToJson().ToEscapeHTML())
+		logs.Debugf("init:%s", model.ToJson().ToEscapeHTML())
 	}
 
 	_, err = s.Query([]string{}, sql)
@@ -251,14 +251,14 @@ func (s *Database) init(model *Model) error {
 * @param query *Ql
 * @return (et.Items, error)
 **/
-func (s *Database) query(query *Ql) (et.Items, error) {
+func (s *DB) query(query *Ql) (et.Items, error) {
 	sql, err := s.driver.Query(query)
 	if err != nil {
 		return et.Items{}, err
 	}
 
 	if query.isDebug {
-		console.Debugf("query:%s", query.ToJson().ToEscapeHTML())
+		logs.Debugf("query:%s", query.ToJson().ToEscapeHTML())
 	}
 
 	result, err := s.QueryTx(query.tx, query.Hiddens, sql)
@@ -274,14 +274,14 @@ func (s *Database) query(query *Ql) (et.Items, error) {
 * @param cmd *Cmd
 * @return (et.Items, error)
 **/
-func (s *Database) command(cmd *Cmd) (et.Items, error) {
+func (s *DB) command(cmd *Cmd) (et.Items, error) {
 	sql, err := s.driver.Command(cmd)
 	if err != nil {
 		return et.Items{}, err
 	}
 
 	if cmd.isDebug {
-		console.Debugf("command:%s", cmd.ToJson().ToEscapeHTML())
+		logs.Debugf("command:%s", cmd.ToJson().ToEscapeHTML())
 	}
 
 	result, err := s.QueryTx(cmd.tx, cmd.Hiddens, sql)
@@ -297,7 +297,7 @@ func (s *Database) command(cmd *Cmd) (et.Items, error) {
 * @param definition et.Json
 * @return (*Model, error)
 **/
-func (s *Database) Define(definition et.Json) (*Model, error) {
+func (s *DB) Define(definition et.Json) (*Model, error) {
 	schema := definition.String("schema")
 	if !utility.ValidStr(schema, 0, []string{}) {
 		return nil, fmt.Errorf(MSG_SCHEMA_REQUIRED)
@@ -375,7 +375,7 @@ func (s *Database) Define(definition et.Json) (*Model, error) {
 * @param query et.Json
 * @return (*Ql, error)
 **/
-func (s *Database) Select(query et.Json) (*Ql, error) {
+func (s *DB) Select(query et.Json) (*Ql, error) {
 	result := newQl(s)
 	from := query.Json("from")
 	if from.IsEmpty() {
@@ -391,7 +391,7 @@ func (s *Database) Select(query et.Json) (*Ql, error) {
 * @param model *Model
 * @return *Ql
 **/
-func (s *Database) From(model *Model) *Ql {
+func (s *DB) From(model *Model) *Ql {
 	result := newQl(s)
 	result.addFrom(model, "A")
 	return result
@@ -402,6 +402,6 @@ func (s *Database) From(model *Model) *Ql {
 * @param name string
 * @return (*Model, error)
 **/
-func (s *Database) GetModel(name string) (*Model, error) {
+func (s *DB) GetModel(name string) (*Model, error) {
 	return s.getModel(name)
 }

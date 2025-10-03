@@ -12,7 +12,7 @@ import (
 * @param db *sql.DB, tx *Tx, hidden []string, sql string, arg ...any
 * @return *sql.Rows, error
 **/
-func querytx(db *Database, tx *Tx, hidden []string, sql string, arg ...any) (et.Items, error) {
+func querytx(db *DB, tx *Tx, hidden []string, sql string, arg ...any) (et.Items, error) {
 	data := et.Json{
 		"db_name": db.Name,
 		"sql":     sql,
@@ -63,7 +63,7 @@ func querytx(db *Database, tx *Tx, hidden []string, sql string, arg ...any) (et.
 * @param tx *Tx, hidden []string, sql string, arg ...any
 * @return et.Items, error
 **/
-func (s *Database) QueryTx(tx *Tx, hidden []string, sql string, arg ...any) (et.Items, error) {
+func (s *DB) QueryTx(tx *Tx, hidden []string, sql string, arg ...any) (et.Items, error) {
 	return querytx(s, tx, hidden, sql, arg...)
 }
 
@@ -72,6 +72,6 @@ func (s *Database) QueryTx(tx *Tx, hidden []string, sql string, arg ...any) (et.
 * @param hidden []string, sql string, arg ...any
 * @return et.Items, error
 **/
-func (s *Database) Query(hidden []string, sql string, arg ...any) (et.Items, error) {
+func (s *DB) Query(hidden []string, sql string, arg ...any) (et.Items, error) {
 	return querytx(s, nil, hidden, sql, arg...)
 }

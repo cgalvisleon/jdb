@@ -28,7 +28,7 @@ type Ql struct {
 	Count       bool                   `json:"count"`
 	UseAtribs   bool                   `json:"use_atribs"`
 	SQL         string                 `json:"sql"`
-	db          *Database              `json:"-"`
+	db          *DB                    `json:"-"`
 	from        *Model                 `json:"-"`
 	tx          *Tx                    `json:"-"`
 	isDebug     bool                   `json:"-"`
@@ -39,7 +39,7 @@ type Ql struct {
 * NewQl
 * @return *Ql
 **/
-func newQl(db *Database) *Ql {
+func newQl(db *DB) *Ql {
 	return &Ql{
 		where:     newWhere(),
 		Database:  db.Name,
@@ -241,6 +241,26 @@ func (s *Ql) Order(asc bool, fields ...string) *Ql {
 **/
 func (s *Ql) OrderBy(fields ...string) *Ql {
 	s.OrdersBy["asc"] = fields
+	return s
+}
+
+/**
+* OrderDesc
+* @param fields ...string
+* @return *Ql
+**/
+func (s *Ql) OrderDesc(fields ...string) *Ql {
+	s.OrdersBy["desc"] = fields
+	return s
+}
+
+/**
+* Page
+* @param page int
+* @return *Ql
+**/
+func (s *Ql) Page(page int) *Ql {
+	s.Limits["page"] = page
 	return s
 }
 

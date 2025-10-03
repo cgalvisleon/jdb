@@ -12,10 +12,10 @@ var models *Model
 
 /**
 * defineModel
-* @param db *Database
+* @param db *DB
 * @return error
 **/
-func defineModel(db *Database) error {
+func defineModel(db *DB) error {
 	if models != nil {
 		return nil
 	}

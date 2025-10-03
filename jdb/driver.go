@@ -13,18 +13,18 @@ const (
 )
 
 type Driver interface {
-	Connect(db *Database) (*sql.DB, error)
+	Connect(db *DB) (*sql.DB, error)
 	Load(model *Model) (string, error)
 	Query(query *Ql) (string, error)
 	Command(command *Cmd) (string, error)
 }
 
-var drivers map[string]func(db *Database) Driver
+var drivers map[string]func(db *DB) Driver
 
 func init() {
-	drivers = make(map[string]func(db *Database) Driver)
+	drivers = make(map[string]func(db *DB) Driver)
 }
 
-func Register(name string, driver func(db *Database) Driver) {
+func Register(name string, driver func(db *DB) Driver) {
 	drivers[name] = driver
 }

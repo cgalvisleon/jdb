@@ -2,8 +2,8 @@ package main
 
 import (
 	"github.com/cgalvisleon/et/cache"
-	"github.com/cgalvisleon/et/console"
 	"github.com/cgalvisleon/et/event"
+	"github.com/cgalvisleon/et/logs"
 	"github.com/cgalvisleon/et/reg"
 	_ "github.com/cgalvisleon/jdb/drivers/postgres"
 	jdb "github.com/cgalvisleon/jdb/v1"
@@ -12,27 +12,27 @@ import (
 func main() {
 	err := cache.Load()
 	if err != nil {
-		console.Panic(err)
+		logs.Panic(err)
 	}
 
 	err = event.Load()
 	if err != nil {
-		console.Panic(err)
+		logs.Panic(err)
 	}
 
 	db, err := jdb.LoadTo("josephine")
 	if err != nil {
-		console.Panic(err)
+		logs.Panic(err)
 	}
 
 	id := reg.GenULIDI("users")
-	console.Debug("id:", id)
+	logs.Debug("id:", id)
 
-	console.Debug("db:", db.ToJson().ToString())
+	logs.Debug("db:", db.ToJson().ToString())
 
 	// model := db.Models["users"]
 	// if model == nil {
-	// 	console.Panic(fmt.Errorf("model not found"))
+	// 	logs.Panic(fmt.Errorf("model not found"))
 	// }
 
 	// result, err := model.Where(jdb.Eq("_id", "USERA00000001")).
@@ -43,10 +43,10 @@ func main() {
 	// 	Order(true, "A._id", "A.caption").
 	// 	Limit(1, 10)
 	// if err != nil {
-	// 	console.Panic(err)
+	// 	logs.Panic(err)
 	// }
 
-	// console.Debug("result:", result.ToString())
+	// logs.Debug("result:", result.ToString())
 
 	// users, err := db.Query(`SELECT json_build_object(
 	// 	'_id', _id,
@@ -54,10 +54,10 @@ func main() {
 	// 	'name', caption
 	// ) AS result FROM js_core.users`)
 	// if err != nil {
-	// 	console.Panic(err)
+	// 	logs.Panic(err)
 	// }
 
-	// console.Debug("users:", users.ToString())
+	// logs.Debug("users:", users.ToString())
 
 	// model, err := db.Define(et.Json{
 	// 	"schema":  "projects",
@@ -104,12 +104,12 @@ func main() {
 	// 	"debug":    true,
 	// })
 	// if err != nil {
-	// 	console.Panic(err)
+	// 	logs.Panic(err)
 	// }
 
 	// err = model.Init()
 	// if err != nil {
-	// 	console.Panic(err)
+	// 	logs.Panic(err)
 	// }
 
 	// query, err := db.Select(et.Json{
@@ -181,15 +181,15 @@ func main() {
 	// 	},
 	// })
 	// if err != nil {
-	// 	console.Panic(err)
+	// 	logs.Panic(err)
 	// }
 
-	// console.Debug("query:", query.ToJson().ToString())
+	// logs.Debug("query:", query.ToJson().ToString())
 
 	// result, err := query.All()
 	// if err != nil {
-	// console.Panic(err)
+	// logs.Panic(err)
 	// }
 
-	// console.Debug("exists:", result.ToString())
+	// logs.Debug("exists:", result.ToString())
 }
