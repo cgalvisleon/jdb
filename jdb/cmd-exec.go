@@ -20,13 +20,13 @@ func (s *Cmd) queryTx(tx *Tx) (et.Items, error) {
 	s.vm.Set("model", s.From)
 	switch s.Command {
 	case CmdInsert:
-		return s.insertTx()
+		return s.insert()
 	case CmdUpdate:
-		return s.updateTx()
+		return s.update()
 	case CmdDelete:
-		return s.deleteTx()
+		return s.delete()
 	case CmdUpsert:
-		return s.upsertTx()
+		return s.upsert()
 	default:
 		return et.Items{}, fmt.Errorf("invalid command: %s", s.Command)
 	}

@@ -267,6 +267,14 @@ func (s *Model) getColumnIndex(name string) int {
 }
 
 /**
+* UseAtribs
+* @return bool
+**/
+func (s *Model) UseAtribs() bool {
+	return s.SourceField != "" && !s.IsLocked
+}
+
+/**
 * ToJson
 * @return et.Json
 **/

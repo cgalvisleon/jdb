@@ -7,10 +7,26 @@ import (
 	"github.com/cgalvisleon/et/strs"
 )
 
+type Field struct {
+	Value string `json:"value"`
+}
+
+/**
+* F
+* @param val string
+* @return *Field
+**/
+func F(val string) *Field {
+	return &Field{
+		Value: val,
+	}
+}
+
 type Condition struct {
-	Field string      `json:"field"`
-	Op    string      `json:"op"`
-	Value interface{} `json:"value"`
+	Field    string      `json:"field"`
+	Op       string      `json:"op"`
+	Value    interface{} `json:"value"`
+	UseAtrib bool        `json:"use_atribs"`
 }
 
 /**
@@ -26,16 +42,32 @@ func (s *Condition) ToJson() et.Json {
 }
 
 /**
+* condition
+* @param field string, value interface{}, op string
+* @return *Condition
+**/
+func condition(field string, value interface{}, op string) *Condition {
+	switch v := value.(type) {
+	case *Field:
+		value = v.Value
+	default:
+		value = Quote(value)
+	}
+
+	return &Condition{
+		Field: field,
+		Op:    op,
+		Value: value,
+	}
+}
+
+/**
 * Eq
 * @param field string, value interface{}
 * @return Condition
 **/
-func Eq(field string, value interface{}) Condition {
-	return Condition{
-		Field: field,
-		Op:    "eq",
-		Value: value,
-	}
+func Eq(field string, value interface{}) *Condition {
+	return condition(field, value, "eq")
 }
 
 /**
@@ -43,12 +75,8 @@ func Eq(field string, value interface{}) Condition {
 * @param field string, value interface{}
 * @return Condition
 **/
-func Neg(field string, value interface{}) Condition {
-	return Condition{
-		Field: field,
-		Op:    "ne",
-		Value: value,
-	}
+func Neg(field string, value interface{}) *Condition {
+	return condition(field, value, "ne")
 }
 
 /**
@@ -56,12 +84,8 @@ func Neg(field string, value interface{}) Condition {
 * @param field string, value interface{}
 * @return Condition
 **/
-func Less(field string, value interface{}) Condition {
-	return Condition{
-		Field: field,
-		Op:    "less",
-		Value: value,
-	}
+func Less(field string, value interface{}) *Condition {
+	return condition(field, value, "less")
 }
 
 /**
@@ -69,12 +93,8 @@ func Less(field string, value interface{}) Condition {
 * @param field string, value interface{}
 * @return Condition
 **/
-func LessEq(field string, value interface{}) Condition {
-	return Condition{
-		Field: field,
-		Op:    "less_eq",
-		Value: value,
-	}
+func LessEq(field string, value interface{}) *Condition {
+	return condition(field, value, "less_eq")
 }
 
 /**
@@ -82,12 +102,8 @@ func LessEq(field string, value interface{}) Condition {
 * @param field string, value interface{}
 * @return Condition
 **/
-func More(field string, value interface{}) Condition {
-	return Condition{
-		Field: field,
-		Op:    "more",
-		Value: value,
-	}
+func More(field string, value interface{}) *Condition {
+	return condition(field, value, "more")
 }
 
 /**
@@ -95,12 +111,8 @@ func More(field string, value interface{}) Condition {
 * @param field string, value interface{}
 * @return Condition
 **/
-func MoreEq(field string, value interface{}) Condition {
-	return Condition{
-		Field: field,
-		Op:    "more_eq",
-		Value: value,
-	}
+func MoreEq(field string, value interface{}) *Condition {
+	return condition(field, value, "more_eq")
 }
 
 /**
@@ -108,12 +120,8 @@ func MoreEq(field string, value interface{}) Condition {
 * @param field string, value interface{}
 * @return Condition
 **/
-func Like(field string, value interface{}) Condition {
-	return Condition{
-		Field: field,
-		Op:    "like",
-		Value: value,
-	}
+func Like(field string, value interface{}) *Condition {
+	return condition(field, value, "like")
 }
 
 /**
@@ -121,12 +129,8 @@ func Like(field string, value interface{}) Condition {
 * @param field string, value interface{}
 * @return Condition
 **/
-func Ilike(field string, value interface{}) Condition {
-	return Condition{
-		Field: field,
-		Op:    "ilike",
-		Value: value,
-	}
+func Ilike(field string, value interface{}) *Condition {
+	return condition(field, value, "ilike")
 }
 
 /**
@@ -134,12 +138,8 @@ func Ilike(field string, value interface{}) Condition {
 * @param field string, value interface{}
 * @return Condition
 **/
-func In(field string, value interface{}) Condition {
-	return Condition{
-		Field: field,
-		Op:    "in",
-		Value: value,
-	}
+func In(field string, value interface{}) *Condition {
+	return condition(field, value, "in")
 }
 
 /**
@@ -147,12 +147,8 @@ func In(field string, value interface{}) Condition {
 * @param field string, value interface{}
 * @return Condition
 **/
-func NotIn(field string, value interface{}) Condition {
-	return Condition{
-		Field: field,
-		Op:    "not_in",
-		Value: value,
-	}
+func NotIn(field string, value interface{}) *Condition {
+	return condition(field, value, "not_in")
 }
 
 /**
@@ -160,12 +156,8 @@ func NotIn(field string, value interface{}) Condition {
 * @param field string, value interface{}
 * @return Condition
 **/
-func Is(field string, value interface{}) Condition {
-	return Condition{
-		Field: field,
-		Op:    "is",
-		Value: value,
-	}
+func Is(field string, value interface{}) *Condition {
+	return condition(field, value, "is")
 }
 
 /**
@@ -173,12 +165,8 @@ func Is(field string, value interface{}) Condition {
 * @param field string, value interface{}
 * @return Condition
 **/
-func IsNot(field string, value interface{}) Condition {
-	return Condition{
-		Field: field,
-		Op:    "is_not",
-		Value: value,
-	}
+func IsNot(field string, value interface{}) *Condition {
+	return condition(field, value, "is_not")
 }
 
 /**
@@ -186,11 +174,8 @@ func IsNot(field string, value interface{}) Condition {
 * @param field string
 * @return Condition
 **/
-func Null(field string) Condition {
-	return Condition{
-		Field: field,
-		Op:    "null",
-	}
+func Null(field string) *Condition {
+	return condition(field, nil, "null")
 }
 
 /**
@@ -198,11 +183,8 @@ func Null(field string) Condition {
 * @param field string
 * @return Condition
 **/
-func NotNull(field string) Condition {
-	return Condition{
-		Field: field,
-		Op:    "not_null",
-	}
+func NotNull(field string) *Condition {
+	return condition(field, nil, "not_null")
 }
 
 /**
@@ -210,12 +192,8 @@ func NotNull(field string) Condition {
 * @param field string, value []interface{}
 * @return Condition
 **/
-func Between(field string, value []interface{}) Condition {
-	return Condition{
-		Field: field,
-		Op:    "between",
-		Value: value,
-	}
+func Between(field string, value []interface{}) *Condition {
+	return condition(field, value, "between")
 }
 
 /**
@@ -223,18 +201,19 @@ func Between(field string, value []interface{}) Condition {
 * @param field string, value []interface{}
 * @return Condition
 **/
-func NotBetween(field string, value []interface{}) Condition {
-	return Condition{
-		Field: field,
-		Op:    "not_between",
-		Value: value,
-	}
+func NotBetween(field string, value []interface{}) *Condition {
+	return condition(field, value, "not_between")
 }
 
 type where struct {
 	Wheres []et.Json `json:"where"`
+	From   *Model    `json:"from"`
 }
 
+/**
+* newWhere
+* @return *where
+**/
 func newWhere() *where {
 	return &where{
 		Wheres: []et.Json{},
@@ -246,7 +225,15 @@ func newWhere() *where {
 * @param cond Condition
 * @return *where
 **/
-func (s *where) where(cond Condition, conector string) *where {
+func (s *where) where(cond *Condition, conector string) *where {
+	if s.From != nil {
+		f := cond.Field
+		_, ok := s.From.GetColumn(f)
+		if !ok && s.From.UseAtribs() {
+			cond.UseAtrib = true
+		}
+	}
+
 	if len(s.Wheres) == 0 {
 		s.Wheres = append(s.Wheres, et.Json{
 			cond.Field: et.Json{
@@ -283,7 +270,7 @@ func (s *where) where(cond Condition, conector string) *where {
 * @param cond Condition
 * @return *where
 **/
-func (s *where) Where(cond Condition) *where {
+func (s *where) Where(cond *Condition) *where {
 	return s.where(cond, "and")
 }
 
@@ -292,7 +279,7 @@ func (s *where) Where(cond Condition) *where {
 * @param cond Condition
 * @return *where
 **/
-func (s *where) And(cond Condition) *where {
+func (s *where) And(cond *Condition) *where {
 	return s.where(cond, "and")
 }
 
@@ -301,6 +288,6 @@ func (s *where) And(cond Condition) *where {
 * @param cond Condition
 * @return *where
 **/
-func (s *where) Or(cond Condition) *where {
+func (s *where) Or(cond *Condition) *where {
 	return s.where(cond, "or")
 }

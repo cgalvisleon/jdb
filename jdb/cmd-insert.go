@@ -5,10 +5,10 @@ import (
 )
 
 /**
-* insertTx
+* insert
 * @return error
 **/
-func (s *Cmd) insertTx() (et.Items, error) {
+func (s *Cmd) insert() (et.Items, error) {
 	for _, data := range s.Data {
 		for _, definition := range s.BeforeInserts {
 			s.vm.Set("data", data)

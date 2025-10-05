@@ -55,12 +55,12 @@ func (s *Postgres) buildInsert(cmd *jdb.Cmd) (string, error) {
 			continue
 		}
 
-		if cmd.UseAtribs || jdb.TypeAtrib[tp] {
+		if cmd.From.UseAtribs() || jdb.TypeAtrib[tp] {
 			atribs[k] = val
 		}
 	}
 
-	if cmd.UseAtribs {
+	if cmd.From.UseAtribs() {
 		into = strs.Append(into, cmd.From.SourceField, ", ")
 		values = strs.Append(values, fmt.Sprintf(`'%v'::jsonb`, atribs.ToString()), ", ")
 		returning = fmt.Sprintf("to_jsonb(A) - '%s'", cmd.From.SourceField)
@@ -91,7 +91,7 @@ func (s *Postgres) buildUpdate(cmd *jdb.Cmd) (string, error) {
 			continue
 		}
 
-		if cmd.UseAtribs || jdb.TypeAtrib[tp] {
+		if cmd.From.UseAtribs() || jdb.TypeAtrib[tp] {
 			if len(atribs) == 0 {
 				atribs = fmt.Sprintf("COALESCE(%s, '{}')", cmd.From.SourceField)
 				atribs = strs.Format("jsonb_set(%s, '{%s}', %v::jsonb, true)", atribs, k, val)
@@ -101,7 +101,7 @@ func (s *Postgres) buildUpdate(cmd *jdb.Cmd) (string, error) {
 		}
 	}
 
-	if cmd.UseAtribs {
+	if cmd.From.UseAtribs() {
 		sets = strs.Append(sets, fmt.Sprintf(`%s = %s`, cmd.From.SourceField, atribs), ", ")
 	}
 

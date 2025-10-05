@@ -30,11 +30,9 @@ var (
 type Cmd struct {
 	*where
 	Command       string           `json:"command"`
-	From          *Model           `json:"from"`
 	Data          []et.Json        `json:"data"`
 	Hiddens       []string         `json:"hidden"`
 	Result        et.Items         `json:"result"`
-	UseAtribs     bool             `json:"use_atribs"`
 	SQL           string           `json:"sql"`
 	db            *DB              `json:"-"`
 	tx            *Tx              `json:"-"`
@@ -63,7 +61,6 @@ func newCommand(model *Model, cmd string, data []et.Json) *Cmd {
 	result := &Cmd{
 		where:         newWhere(),
 		Command:       cmd,
-		From:          model,
 		Data:          data,
 		Hiddens:       []string{},
 		Result:        et.Items{},
@@ -82,7 +79,7 @@ func newCommand(model *Model, cmd string, data []et.Json) *Cmd {
 		afterUpdates:  model.afterUpdates,
 		afterDeletes:  model.afterDeletes,
 	}
-	result.UseAtribs = model.SourceField != "" && !model.IsLocked
+	result.From = model
 
 	return result
 }

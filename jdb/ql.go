@@ -26,10 +26,8 @@ type Ql struct {
 	Limits      et.Json                `json:"limit"`
 	Exists      bool                   `json:"exists"`
 	Count       bool                   `json:"count"`
-	UseAtribs   bool                   `json:"use_atribs"`
 	SQL         string                 `json:"sql"`
 	db          *DB                    `json:"-"`
-	from        *Model                 `json:"-"`
 	tx          *Tx                    `json:"-"`
 	isDebug     bool                   `json:"-"`
 	useJoin     bool                   `json:"-"`
@@ -93,10 +91,9 @@ func (s *Ql) Debug() *Ql {
 * @return *Ql
 **/
 func (s *Ql) addFrom(model *Model, as string) *Ql {
-	s.from = model
+	s.From = model
 	s.Froms[model.Table] = as
 	s.SourceField = model.SourceField
-	s.UseAtribs = s.SourceField != ""
 	return s
 }
 
@@ -116,38 +113,38 @@ func (s *Ql) setTx(tx *Tx) *Ql {
 * @return *Ql
 **/
 func (s *Ql) Select(fields ...string) *Ql {
-	if s.from == nil {
+	if s.From == nil {
 		return s
 	}
 
 	for _, v := range fields {
-		col, ok := s.from.GetColumn(v)
+		col, ok := s.From.GetColumn(v)
 		tp := col.String("type")
 		if ok && TypeColumn[tp] {
 			s.Selects[v] = v
 			continue
 		}
 
-		if s.UseAtribs || TypeAtrib[tp] {
+		if s.From.UseAtribs() || TypeAtrib[tp] {
 			s.Atribs[v] = v
 			continue
 		}
 
 		if tp == TypeCalc {
-			s.Calcs[v] = s.from.Calcs[v]
+			s.Calcs[v] = s.From.Calcs[v]
 		} else if tp == TypeVm {
-			s.Vms[v] = s.from.Vms[v]
+			s.Vms[v] = s.From.Vms[v]
 		} else if tp == TypeRollup {
-			s.Rollups[v] = s.from.Rollups[v]
+			s.Rollups[v] = s.From.Rollups[v]
 		} else if tp == TypeRelation {
-			s.Relations[v] = s.from.Relations[v]
+			s.Relations[v] = s.From.Relations[v]
 		} else if tp == TypeDetail {
 			to, err := s.db.GetModel(v)
 			if err != nil {
 				continue
 			}
 
-			detail := s.from.Details[v]
+			detail := s.From.Details[v]
 			references := detail.Json("references")
 			columns := references.ArrayJson("columns")
 			as := string(rune(len(s.Joins) + 66))
@@ -174,7 +171,7 @@ func (s *Ql) Select(fields ...string) *Ql {
 * @return *Ql
 *
  */
-func (s *Ql) Join(to *Model, as string, on Condition) *Ql {
+func (s *Ql) Join(to *Model, as string, on *Condition) *Ql {
 	n := len(s.Froms)
 	if n == 0 {
 		return s

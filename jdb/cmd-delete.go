@@ -2,7 +2,11 @@ package jdb
 
 import "github.com/cgalvisleon/et/et"
 
-func (s *Cmd) deleteTx() (et.Items, error) {
+/**
+* delete
+* @return (et.Items, error)
+**/
+func (s *Cmd) delete() (et.Items, error) {
 	current, err := s.From.
 		Query(et.Json{
 			"where": s.Wheres,

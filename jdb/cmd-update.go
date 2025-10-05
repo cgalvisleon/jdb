@@ -2,7 +2,11 @@ package jdb
 
 import "github.com/cgalvisleon/et/et"
 
-func (s *Cmd) updateTx() (et.Items, error) {
+/**
+* update
+* @return (et.Items, error)
+**/
+func (s *Cmd) update() (et.Items, error) {
 	current, err := s.From.
 		Query(et.Json{
 			"where": s.Wheres,

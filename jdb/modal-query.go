@@ -29,7 +29,7 @@ func (s *Model) Select(fields ...string) *Ql {
 * @param cond Condition
 * @return *Ql
 **/
-func (s *Model) Where(cond Condition) *Ql {
+func (s *Model) Where(cond *Condition) *Ql {
 	result := newQl(s.db)
 	result.addFrom(s, "A")
 	return result.Where(cond)
@@ -40,7 +40,7 @@ func (s *Model) Where(cond Condition) *Ql {
 * @param to *Model, as string, on Condition
 * @return *Ql
 **/
-func (s *Model) Join(to *Model, as string, on Condition) *Ql {
+func (s *Model) Join(to *Model, as string, on *Condition) *Ql {
 	result := newQl(s.db)
 	result.addFrom(s, "A")
 	return result.Join(to, as, on)

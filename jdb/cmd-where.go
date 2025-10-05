@@ -5,7 +5,7 @@ package jdb
 * @param cond Condition
 * @return *Cmd
 **/
-func (s *Cmd) Where(cond Condition) *Cmd {
+func (s *Cmd) Where(cond *Condition) *Cmd {
 	s.where.Where(cond)
 	return s
 }
@@ -15,7 +15,7 @@ func (s *Cmd) Where(cond Condition) *Cmd {
 * @param cond Condition
 * @return *Cmd
 **/
-func (s *Cmd) And(cond Condition) *Cmd {
+func (s *Cmd) And(cond *Condition) *Cmd {
 	s.where.And(cond)
 	return s
 }
@@ -25,7 +25,7 @@ func (s *Cmd) And(cond Condition) *Cmd {
 * @param cond Condition
 * @return *Cmd
 **/
-func (s *Cmd) Or(cond Condition) *Cmd {
+func (s *Cmd) Or(cond *Condition) *Cmd {
 	s.where.Or(cond)
 	return s
 }

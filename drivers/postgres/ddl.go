@@ -244,7 +244,11 @@ func (s *Postgres) buildIndexes(definition et.Json) (string, error) {
 	result := ""
 	for _, v := range indexes {
 		def := fmt.Sprintf("%s_%s_idx", name, v)
-		def = fmt.Sprintf("CREATE INDEX IF NOT EXISTS %s ON %s(%s);", def, table, v)
+		if v == jdb.SOURCE {
+			def = fmt.Sprintf("CREATE INDEX IF NOT EXISTS %s ON %s USING GIN (%s);", def, table, v)
+		} else {
+			def = fmt.Sprintf("CREATE INDEX IF NOT EXISTS %s ON %s(%s);", def, table, v)
+		}
 		result = strs.Append(result, def, "\n\t")
 	}
 

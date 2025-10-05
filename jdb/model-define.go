@@ -1,6 +1,7 @@
 package jdb
 
 import (
+	"errors"
 	"fmt"
 	"slices"
 
@@ -28,11 +29,20 @@ func (s *Model) defineColumn(name string, params et.Json) error {
 		return fmt.Errorf(MSG_TYPE_REQUIRED)
 	}
 
-	s.Columns = append(s.Columns, et.Json{
+	def := et.Json{
 		"name":    name,
 		"type":    typeData,
 		"default": params.String("default"),
-	})
+	}
+	if s.RecordField != "" {
+		idx = s.getColumnIndex(s.RecordField)
+		if idx != -1 {
+			s.Columns = append(s.Columns[:idx], append([]et.Json{def}, s.Columns[idx:]...)...)
+			return nil
+		}
+	}
+
+	s.Columns = append(s.Columns, def)
 	return nil
 }
 
@@ -205,135 +215,29 @@ func (s *Model) DefineSetStatusField(name string) error {
 }
 
 /**
-* DefineForeignKeys
-* @param params []et.Json
+* DefineForeignKey
+* @param to *Model, fks []et.Json, onDelete string, onUpdate string
 * @return error
 **/
-func (s *Model) DefineForeignKeys(params []et.Json) error {
-	for _, param := range params {
-		schema := param.String("schema")
-		if !utility.ValidStr(schema, 0, []string{}) {
-			return fmt.Errorf(MSG_ATRIB_REQUIRED, "schema")
-		}
-
-		name := param.String("name")
-		if !utility.ValidStr(name, 0, []string{}) {
-			return fmt.Errorf("name is required")
-		}
-
-		references := param.Json("references")
-		if references.IsEmpty() {
-			return fmt.Errorf(MSG_ATRIB_REQUIRED, "references")
-		}
-
-		columns := references.Json("columns")
-		if columns.IsEmpty() {
-			return fmt.Errorf(MSG_ATRIB_REQUIRED, "columns")
-		}
-
-		onDelete := references.String("on_delete")
-		if utility.ValidStr(onDelete, 0, []string{}) && onDelete != "cascade" {
-			return fmt.Errorf("on_delete must be cascade")
-		}
-
-		onUpdate := references.String("on_update")
-		if utility.ValidStr(onUpdate, 0, []string{}) && onUpdate != "cascade" {
-			return fmt.Errorf("on_update must be cascade")
-		}
-
-		s.ForeignKeys = append(s.ForeignKeys, et.Json{
-			"schema": schema,
-			"name":   name,
-			"references": et.Json{
-				"columns":   columns,
-				"on_delete": onDelete,
-				"on_update": onUpdate,
-			},
-		})
+func (s *Model) DefineForeignKey(to *Model, fks []et.Json, onDelete string, onUpdate string) error {
+	if utility.ValidStr(onDelete, 0, []string{}) && onDelete != "cascade" {
+		return fmt.Errorf("on_delete must be cascade")
 	}
 
-	return nil
-}
-
-/**
-* DefineDetails
-* @param param et.Json
-* @return (*Model, error)
-**/
-func (s *Model) DefineDetails(param et.Json) (*Model, error) {
-	schema := param.String("schema")
-	if !utility.ValidStr(schema, 0, []string{}) {
-		return nil, fmt.Errorf(MSG_ATRIB_REQUIRED, "schema")
+	if utility.ValidStr(onUpdate, 0, []string{}) && onUpdate != "cascade" {
+		return fmt.Errorf("on_update must be cascade")
 	}
 
-	name := param.String("name")
-	if !utility.ValidStr(name, 0, []string{}) {
-		return nil, fmt.Errorf(MSG_ATRIB_REQUIRED, "name")
-	}
-
-	references := param.Json("references")
-	if references.IsEmpty() {
-		return nil, fmt.Errorf(MSG_ATRIB_REQUIRED, "references")
-	}
-
-	columns := references.ArrayJson("columns")
-	if len(columns) == 0 {
-		return nil, fmt.Errorf(MSG_ATRIB_REQUIRED, "columns")
-	}
-
-	onDelete := references.String("on_delete")
-	onUpdate := references.String("on_update")
-
-	detail, err := s.db.getOrCreateModel(schema, name)
-	if err != nil {
-		return nil, err
-	}
-
-	err = detail.DefineForeignKeys([]et.Json{
-		{
-			"schema": s.Schema,
-			"name":   s.Name,
-			"references": et.Json{
-				"columns":   columns,
-				"on_delete": onDelete,
-				"on_update": onUpdate,
-			},
-		},
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	detail.Masters[s.Name] = et.Json{
-		"schema": s.Schema,
-		"name":   s.Name,
+	s.ForeignKeys = append(s.ForeignKeys, et.Json{
+		"schema": to.Schema,
+		"name":   to.Name,
 		"references": et.Json{
-			"columns": columns,
+			"columns":   fks,
+			"on_delete": onDelete,
+			"on_update": onUpdate,
 		},
-	}
-
-	err = detail.defineColumn(s.Name, et.Json{
-		"type": TypeMaster,
 	})
-	if err != nil {
-		return nil, err
-	}
-
-	err = detail.defineColumns(columns)
-	if err != nil {
-		return nil, err
-	}
-
-	err = s.defineColumn(name, et.Json{
-		"type": TypeDetail,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	s.details[name] = detail
-	s.Details[name] = param
-	return detail, nil
+	return nil
 }
 
 /**
@@ -381,6 +285,17 @@ func (s *Model) defineRollup(params et.Json) error {
 		"fks":     fks,
 	}
 	return nil
+}
+
+/**
+* DefineColumn
+* @param name string, columnType string
+* @return error
+**/
+func (s *Model) DefineColumn(name string, columnType string) error {
+	return s.defineColumn(name, et.Json{
+		"type": columnType,
+	})
 }
 
 /**
@@ -452,44 +367,48 @@ func (s *Model) DefineColumnVm(name string, script string) error {
 }
 
 /**
-* DefineColumn
-* @param name string, columnType string
-* @return error
-**/
-func (s *Model) DefineColumn(name string, columnType string) error {
-	return s.defineColumn(name, et.Json{
-		"type": columnType,
-	})
-}
-
-/**
 * DefineDetail
-* @param name string, fks map[string]string, version int
+* @param name string, fks []et.Json, version int
 * @return (*Model, error)
 **/
-func (s *Model) DefineDetail(name string, fks map[string]string, version int) (*Model, error) {
-	columns := make([]et.Json, 0)
-	for k, v := range fks {
-		columns = append(columns, et.Json{
-			k: v,
-		})
+func (s *Model) DefineDetail(name string, fks []et.Json, version int) (*Model, error) {
+	name = fmt.Sprintf("%s_%s", s.Name, name)
+	result, err := s.GetModel(name)
+	if err == nil {
+		return result, nil
 	}
 
-	name = fmt.Sprintf("%s_%s", s.Name, name)
-	result, err := s.DefineDetails(et.Json{
+	if !errors.Is(err, ErrModelNotFound) {
+		return nil, err
+	}
+
+	result, err = s.db.Define(et.Json{
 		"schema":  s.Schema,
 		"name":    name,
 		"version": version,
-		"references": et.Json{
-			"columns":   columns,
-			"on_delete": "cascade",
-			"on_update": "cascade",
-		},
 	})
 	if err != nil {
 		return nil, err
 	}
 
+	for _, fk := range fks {
+		for f := range fk {
+			result.defineColumn(f, et.Json{
+				"type": TypeKey,
+			})
+		}
+	}
+
+	err = result.DefineForeignKey(s, fks, "cascade", "cascade")
+	if err != nil {
+		return nil, err
+	}
+
+	s.defineColumn(name, et.Json{
+		"type": TypeDetail,
+	})
+	s.details[name] = result
+	s.Details[name] = result.ToJson()
 	return result, nil
 }
 
@@ -516,6 +435,7 @@ func (s *Model) DefineUpdatedAtField() *Model {
 * @return *Model
 **/
 func (s *Model) DefinePrimaryKeyField() *Model {
+	s.DefineColumn(KEY, TypeKey)
 	s.DefinePrimaryKeys(KEY)
 	return s
 }

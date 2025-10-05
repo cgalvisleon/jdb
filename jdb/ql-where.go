@@ -5,7 +5,7 @@ package jdb
 * @param cond Condition
 * @return *Cmd
 **/
-func (s *Ql) Where(cond Condition) *Ql {
+func (s *Ql) Where(cond *Condition) *Ql {
 	s.where.Where(cond)
 	s.useJoin = false
 	return s
@@ -17,7 +17,7 @@ func (s *Ql) Where(cond Condition) *Ql {
 * @param conector string
 * @return *Cmd
 **/
-func (s *Ql) whereJoin(cond Condition, conector string) *Ql {
+func (s *Ql) whereJoin(cond *Condition, conector string) *Ql {
 	n := len(s.Joins) - 1
 	if n < 0 {
 		s.useJoin = false
@@ -44,7 +44,7 @@ func (s *Ql) whereJoin(cond Condition, conector string) *Ql {
 * @param cond Condition
 * @return *Cmd
 **/
-func (s *Ql) And(cond Condition) *Ql {
+func (s *Ql) And(cond *Condition) *Ql {
 	if !s.useJoin {
 		s.where.And(cond)
 		return s
@@ -59,7 +59,7 @@ func (s *Ql) And(cond Condition) *Ql {
 * @param cond Condition
 * @return *Cmd
 **/
-func (s *Ql) Or(cond Condition) *Ql {
+func (s *Ql) Or(cond *Condition) *Ql {
 	if !s.useJoin {
 		s.where.Or(cond)
 		return s

@@ -177,7 +177,7 @@ func (s *DB) getModel(name string) (*Model, error) {
 	}
 
 	if result == nil {
-		return nil, fmt.Errorf(MSG_MODEL_NOT_FOUND, name)
+		return nil, ErrModelNotFound
 	}
 
 	result.db = s
@@ -353,7 +353,18 @@ func (s *DB) Define(definition et.Json) (*Model, error) {
 
 	details := definition.ArrayJson("details")
 	for _, detail := range details {
-		_, err := result.DefineDetails(detail)
+		detailName := detail.String("name")
+		if !utility.ValidStr(detailName, 0, []string{}) {
+			continue
+		}
+
+		fks := detail.ArrayJson("fks")
+		if len(fks) == 0 {
+			continue
+		}
+
+		version := detail.Int("version")
+		_, err := result.DefineDetail(detailName, fks, version)
 		if err != nil {
 			return nil, err
 		}

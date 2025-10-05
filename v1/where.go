@@ -7,7 +7,7 @@ import jdb "github.com/cgalvisleon/jdb/jdb"
 * @param field string, value interface{}
 * @return jdb.Condition
 **/
-func Eq(field string, value interface{}) jdb.Condition {
+func Eq(field string, value interface{}) *jdb.Condition {
 	return jdb.Eq(field, value)
 }
 
@@ -16,7 +16,7 @@ func Eq(field string, value interface{}) jdb.Condition {
 * @param field string, value interface{}
 * @return jdb.Condition
 **/
-func Neg(field string, value interface{}) jdb.Condition {
+func Neg(field string, value interface{}) *jdb.Condition {
 	return jdb.Neg(field, value)
 }
 
@@ -25,7 +25,7 @@ func Neg(field string, value interface{}) jdb.Condition {
 * @param field string, value interface{}
 * @return jdb.Condition
 **/
-func Less(field string, value interface{}) jdb.Condition {
+func Less(field string, value interface{}) *jdb.Condition {
 	return jdb.Less(field, value)
 }
 
@@ -34,7 +34,7 @@ func Less(field string, value interface{}) jdb.Condition {
 * @param field string, value interface{}
 * @return jdb.Condition
 **/
-func LessEq(field string, value interface{}) jdb.Condition {
+func LessEq(field string, value interface{}) *jdb.Condition {
 	return jdb.LessEq(field, value)
 }
 
@@ -43,7 +43,7 @@ func LessEq(field string, value interface{}) jdb.Condition {
 * @param field string, value interface{}
 * @return jdb.Condition
 **/
-func More(field string, value interface{}) jdb.Condition {
+func More(field string, value interface{}) *jdb.Condition {
 	return jdb.More(field, value)
 }
 
@@ -52,7 +52,7 @@ func More(field string, value interface{}) jdb.Condition {
 * @param field string, value interface{}
 * @return jdb.Condition
 **/
-func MoreEq(field string, value interface{}) jdb.Condition {
+func MoreEq(field string, value interface{}) *jdb.Condition {
 	return jdb.MoreEq(field, value)
 }
 
@@ -61,7 +61,7 @@ func MoreEq(field string, value interface{}) jdb.Condition {
 * @param field string, value interface{}
 * @return jdb.Condition
 **/
-func Like(field string, value interface{}) jdb.Condition {
+func Like(field string, value interface{}) *jdb.Condition {
 	return jdb.Like(field, value)
 }
 
@@ -70,7 +70,7 @@ func Like(field string, value interface{}) jdb.Condition {
 * @param field string, value interface{}
 * @return jdb.Condition
 **/
-func Ilike(field string, value interface{}) jdb.Condition {
+func Ilike(field string, value interface{}) *jdb.Condition {
 	return jdb.Ilike(field, value)
 }
 
@@ -79,7 +79,7 @@ func Ilike(field string, value interface{}) jdb.Condition {
 * @param field string, value interface{}
 * @return jdb.Condition
 **/
-func In(field string, value interface{}) jdb.Condition {
+func In(field string, value interface{}) *jdb.Condition {
 	return jdb.In(field, value)
 }
 
@@ -88,7 +88,7 @@ func In(field string, value interface{}) jdb.Condition {
 * @param field string, value interface{}
 * @return jdb.Condition
 **/
-func NotIn(field string, value interface{}) jdb.Condition {
+func NotIn(field string, value interface{}) *jdb.Condition {
 	return jdb.NotIn(field, value)
 }
 
@@ -97,7 +97,7 @@ func NotIn(field string, value interface{}) jdb.Condition {
 * @param field string, value interface{}
 * @return jdb.Condition
 **/
-func Is(field string, value interface{}) jdb.Condition {
+func Is(field string, value interface{}) *jdb.Condition {
 	return jdb.Is(field, value)
 }
 
@@ -106,7 +106,7 @@ func Is(field string, value interface{}) jdb.Condition {
 * @param field string, value interface{}
 * @return jdb.Condition
 **/
-func IsNot(field string, value interface{}) jdb.Condition {
+func IsNot(field string, value interface{}) *jdb.Condition {
 	return jdb.IsNot(field, value)
 }
 
@@ -115,7 +115,7 @@ func IsNot(field string, value interface{}) jdb.Condition {
 * @param field string
 * @return jdb.Condition
 **/
-func Null(field string) jdb.Condition {
+func Null(field string) *jdb.Condition {
 	return jdb.Null(field)
 }
 
@@ -124,7 +124,7 @@ func Null(field string) jdb.Condition {
 * @param field string
 * @return jdb.Condition
 **/
-func NotNull(field string) jdb.Condition {
+func NotNull(field string) *jdb.Condition {
 	return jdb.NotNull(field)
 }
 
@@ -133,7 +133,7 @@ func NotNull(field string) jdb.Condition {
 * @param field string, value []interface{}
 * @return jdb.Condition
 **/
-func Between(field string, value []interface{}) jdb.Condition {
+func Between(field string, value []interface{}) *jdb.Condition {
 	return jdb.Between(field, value)
 }
 
@@ -142,6 +142,6 @@ func Between(field string, value []interface{}) jdb.Condition {
 * @param field string, value []interface{}
 * @return jdb.Condition
 **/
-func NotBetween(field string, value []interface{}) jdb.Condition {
+func NotBetween(field string, value []interface{}) *jdb.Condition {
 	return jdb.NotBetween(field, value)
 }

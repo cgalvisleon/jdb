@@ -2,7 +2,6 @@ package jdb
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/timezone"
@@ -109,17 +108,11 @@ func setModel(name string, version int, definition []byte) error {
 **/
 func loadModel(name string, v any) error {
 	if models == nil {
-		return fmt.Errorf(MSG_MODEL_NOT_FOUND, name)
+		return ErrModelNotFound
 	}
 
 	items, err := models.
-		Query(et.Json{
-			"where": et.Json{
-				"name": et.Json{
-					"eq": name,
-				},
-			},
-		}).
+		Where(Eq("A.name", name)).
 		One()
 	if err != nil {
 		return err
