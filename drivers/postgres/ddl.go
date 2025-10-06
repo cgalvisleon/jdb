@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/cgalvisleon/et/et"
-	"github.com/cgalvisleon/et/logs"
 	"github.com/cgalvisleon/et/strs"
 	"github.com/cgalvisleon/et/utility"
 	"github.com/cgalvisleon/jdb/jdb"
@@ -28,16 +27,16 @@ func (s *Postgres) buildModel(model *jdb.Model) (string, error) {
 	}
 
 	if def != "" {
-		sql = strs.Append(sql, def, "\n\t")
+		sql = strs.Append(sql, def, "\n")
 	}
 
-	def, err = s.buildForeignKeys(definition)
+	def, err = s.buildForeignKeys(model, definition)
 	if err != nil {
 		return "", err
 	}
 
 	if def != "" {
-		sql = strs.Append(sql, def, "\n\t")
+		sql = strs.Append(sql, def, "\n")
 	}
 
 	def, err = s.buildIndexes(definition)
@@ -46,7 +45,7 @@ func (s *Postgres) buildModel(model *jdb.Model) (string, error) {
 	}
 
 	if def != "" {
-		sql = strs.Append(sql, def, "\n\t")
+		sql = strs.Append(sql, def, "\n")
 	}
 
 	def, err = s.buildTriggerBeforeInsert(definition)
@@ -55,7 +54,7 @@ func (s *Postgres) buildModel(model *jdb.Model) (string, error) {
 	}
 
 	if def != "" {
-		sql = strs.Append(sql, def, "\n\t")
+		sql = strs.Append(sql, def, "\n")
 	}
 
 	return sql, nil
@@ -201,31 +200,44 @@ func (s *Postgres) buildPrimaryKeys(definition et.Json) (string, error) {
 
 /**
 * buildForeignKeys
-* @param definition et.Json
+* @param mode *jdb.Model, definition et.Json
 * @return (string, error)
 **/
-func (s *Postgres) buildForeignKeys(definition et.Json) (string, error) {
+func (s *Postgres) buildForeignKeys(mode *jdb.Model, definition et.Json) (string, error) {
+	result := ""
 	foreignKeys := definition.ArrayJson("foreign_keys")
 	if len(foreignKeys) == 0 {
 		return "", nil
 	}
 
-	logs.Debug(foreignKeys)
+	for _, foreignKey := range foreignKeys {
+		schema := foreignKey.String("schema")
+		name := foreignKey.String("name")
+		to := fmt.Sprintf("%s.%s", schema, name)
+		references := foreignKey.Json("references")
+		columns := references.ArrayJson("columns")
+		fks := ""
+		ks := ""
+		for _, fk := range columns {
+			for k, v := range fk {
+				fks = strs.Append(fks, fmt.Sprintf("%s", k), ", ")
+				ks = strs.Append(ks, fmt.Sprintf("%s", v), ", ")
+			}
+		}
+		def := fmt.Sprintf("ALTER TABLE IF EXISTS %s ADD CONSTRAINT fk_%s_%s FOREIGN KEY(%s) REFERENCES %s(%s)", mode.Table, mode.Name, name, fks, to, ks)
+		onDelete := references.String("on_delete")
+		onUpdate := references.String("on_update")
+		if onDelete != "" {
+			def = strs.Append(def, fmt.Sprintf("ON DELETE %s", onDelete), " ")
+		}
+		if onUpdate != "" {
+			def = strs.Append(def, fmt.Sprintf("ON UPDATE %s", onUpdate), " ")
+		}
+		def += ";"
+		result = strs.Append(result, def, "\n")
+	}
 
-	// table := definition.String("table")
-	// name := definition.String("name")
-	// for _, v := range foreignKeys {
-	// 	references := v.Json("references")
-	// 	columns := references.ArrayJson("columns")
-	// 	onDelete := references.String("on_delete")
-	// 	onUpdate := references.String("on_update")
-
-	// 	columns = strs.Append(columns, v.String("name"), ", ")
-	// }
-
-	// result := fmt.Sprintf("ALTER TABLE IF EXISTS %s ADD CONSTRAINT %s_fk FOREIGN KEY (%s) REFERENCES %s(%s);", table, name, columns)
-
-	return "", nil
+	return result, nil
 }
 
 /**
@@ -243,13 +255,13 @@ func (s *Postgres) buildIndexes(definition et.Json) (string, error) {
 	name := definition.String("name")
 	result := ""
 	for _, v := range indexes {
-		def := fmt.Sprintf("%s_%s_idx", name, v)
+		def := fmt.Sprintf("idx_%s_%s", name, v)
 		if v == jdb.SOURCE {
 			def = fmt.Sprintf("CREATE INDEX IF NOT EXISTS %s ON %s USING GIN (%s);", def, table, v)
 		} else {
 			def = fmt.Sprintf("CREATE INDEX IF NOT EXISTS %s ON %s(%s);", def, table, v)
 		}
-		result = strs.Append(result, def, "\n\t")
+		result = strs.Append(result, def, "\n")
 	}
 
 	return result, nil

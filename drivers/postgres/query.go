@@ -28,7 +28,7 @@ func (s *Postgres) buildQuery(ql *jdb.Ql) (string, error) {
 	}
 
 	def = fmt.Sprintf("FROM %s", def)
-	sql = strs.Append(sql, def, "\n\t")
+	sql = strs.Append(sql, def, "\n")
 	def, err = s.buildJoins(query)
 	if err != nil {
 		return "", err
@@ -36,7 +36,7 @@ func (s *Postgres) buildQuery(ql *jdb.Ql) (string, error) {
 
 	if def != "" {
 		def = fmt.Sprintf("JOIN %s", def)
-		sql = strs.Append(sql, def, "\n\t")
+		sql = strs.Append(sql, def, "\n")
 	}
 
 	where := query.ArrayJson("where")
@@ -48,7 +48,7 @@ func (s *Postgres) buildQuery(ql *jdb.Ql) (string, error) {
 
 		if def != "" {
 			def = fmt.Sprintf("WHERE %s", def)
-			sql = strs.Append(sql, def, "\n\t")
+			sql = strs.Append(sql, def, "\n")
 		}
 	}
 
@@ -59,7 +59,7 @@ func (s *Postgres) buildQuery(ql *jdb.Ql) (string, error) {
 
 	if def != "" {
 		def = fmt.Sprintf("GROUP BY %s", def)
-		sql = strs.Append(sql, def, "\n\t")
+		sql = strs.Append(sql, def, "\n")
 	}
 
 	def, err = s.buildHaving(query)
@@ -69,7 +69,7 @@ func (s *Postgres) buildQuery(ql *jdb.Ql) (string, error) {
 
 	if def != "" {
 		def = fmt.Sprintf("HAVING %s", def)
-		sql = strs.Append(sql, def, "\n\t")
+		sql = strs.Append(sql, def, "\n")
 	}
 
 	def, err = s.buildOrderBy(query)
@@ -79,7 +79,7 @@ func (s *Postgres) buildQuery(ql *jdb.Ql) (string, error) {
 
 	if def != "" {
 		def = fmt.Sprintf("ORDER BY %s", def)
-		sql = strs.Append(sql, def, "\n\t")
+		sql = strs.Append(sql, def, "\n")
 	}
 
 	def, err = s.buildLimit(query)
@@ -89,7 +89,7 @@ func (s *Postgres) buildQuery(ql *jdb.Ql) (string, error) {
 
 	if def != "" {
 		def = fmt.Sprintf("LIMIT %s", def)
-		sql = strs.Append(sql, def, "\n\t")
+		sql = strs.Append(sql, def, "\n")
 	}
 
 	if query.Bool("exists") {

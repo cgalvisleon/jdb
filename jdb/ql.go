@@ -3,6 +3,7 @@ package jdb
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/cgalvisleon/et/et"
 )
@@ -117,7 +118,24 @@ func (s *Ql) Select(fields ...string) *Ql {
 		return s
 	}
 
+	isDotInMiddle := func(s string) bool {
+		if s == "" {
+			return false
+		}
+		dot := strings.Index(s, ".")
+		if dot <= 0 || dot == len(s)-1 {
+			return false
+		}
+		return strings.LastIndex(s, ".") == dot // asegura que hay solo un punto
+	}
+
 	for _, v := range fields {
+		if isDotInMiddle(v) {
+			as := strings.Split(v, ".")[1]
+			s.Selects[v] = as
+			continue
+		}
+
 		col, ok := s.From.GetColumn(v)
 		tp := col.String("type")
 		if ok && TypeColumn[tp] {

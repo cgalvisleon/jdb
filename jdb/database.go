@@ -180,18 +180,25 @@ func (s *DB) getModel(name string) (*Model, error) {
 		return nil, ErrModelNotFound
 	}
 
+	result.Calcs = make(map[string]DataContext)
 	result.db = s
+	result.details = make(map[string]*Model)
+	result.beforeInserts = []DataFunctionTx{}
+	result.beforeUpdates = []DataFunctionTx{}
+	result.beforeDeletes = []DataFunctionTx{}
+	result.afterInserts = []DataFunctionTx{}
+	result.afterUpdates = []DataFunctionTx{}
+	result.afterDeletes = []DataFunctionTx{}
 	result.BeforeInsert(result.beforeInsertDefault)
 	result.BeforeUpdate(result.beforeUpdateDefault)
 	result.BeforeDelete(result.beforeDeleteDefault)
 	result.AfterInsert(result.afterInsertDefault)
 	result.AfterUpdate(result.afterUpdateDefault)
 	result.AfterDelete(result.afterDeleteDefault)
-	s.Models[name] = result
 
-	for _, item := range result.Details {
-		name := item.String("name")
-		detail, err := s.getModel(name)
+	for _, defDetail := range result.Details {
+		detailName := defDetail.String("name")
+		detail, err := s.getModel(detailName)
 		if err != nil {
 			continue
 		}
@@ -202,6 +209,7 @@ func (s *DB) getModel(name string) (*Model, error) {
 
 		result.details[name] = detail
 	}
+	s.Models[name] = result
 
 	return result, nil
 }

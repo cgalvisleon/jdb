@@ -119,7 +119,7 @@ type Model struct {
 	Details       map[string]et.Json     `json:"details"`
 	Masters       map[string]et.Json     `json:"masters"`
 	Calcs         map[string]DataContext `json:"-"`
-	Vms           map[string]string      `json:"-"`
+	Vms           map[string]string      `json:"vms"`
 	Rollups       map[string]et.Json     `json:"rollups"`
 	Relations     map[string]et.Json     `json:"relations"`
 	PrimaryKeys   []string               `json:"primary_keys"`

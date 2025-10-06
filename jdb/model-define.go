@@ -372,6 +372,7 @@ func (s *Model) DefineColumnVm(name string, script string) error {
 * @return (*Model, error)
 **/
 func (s *Model) DefineDetail(name string, fks []et.Json, version int) (*Model, error) {
+	colName := name
 	name = fmt.Sprintf("%s_%s", s.Name, name)
 	result, err := s.GetModel(name)
 	if err == nil {
@@ -404,11 +405,12 @@ func (s *Model) DefineDetail(name string, fks []et.Json, version int) (*Model, e
 		return nil, err
 	}
 
-	s.defineColumn(name, et.Json{
+	s.defineColumn(colName, et.Json{
 		"type": TypeDetail,
 	})
-	s.details[name] = result
-	s.Details[name] = result.ToJson()
+	s.details[colName] = result
+	s.Details[colName] = result.ToJson()
+	s.save()
 	return result, nil
 }
 
