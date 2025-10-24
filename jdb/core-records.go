@@ -66,7 +66,7 @@ func defineRecords(db *DB) error {
 * @param id string
 * @return et.Item, error
 **/
-func GetRecord(id string) (et.Item, error) {
+func GetRecordById(id string) (et.Item, error) {
 	if records == nil {
 		return et.Item{}, fmt.Errorf(MSG_RECORDS_NOT_DEFINED)
 	}
@@ -83,10 +83,10 @@ func GetRecord(id string) (et.Item, error) {
 	}
 
 	name := result.Str("name")
-	model, err := records.GetModel(name)
+	model, err := GetModel(records.Database, name)
 	if err != nil {
 		return et.Item{}, err
 	}
 
-	return model.GetRecord(id)
+	return model.GetRecordById(id)
 }

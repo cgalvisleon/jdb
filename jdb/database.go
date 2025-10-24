@@ -393,7 +393,7 @@ func (s *DB) Define(definition et.Json) (*Model, error) {
 * @return (*Ql, error)
 **/
 func (s *DB) Select(query et.Json) (*Ql, error) {
-	result := newQl(s)
+	result := newQl(nil, "")
 	from := query.Json("from")
 	if from.IsEmpty() {
 		return nil, fmt.Errorf(MSG_FROM_REQUIRED)
@@ -405,12 +405,11 @@ func (s *DB) Select(query et.Json) (*Ql, error) {
 
 /**
 * From
-* @param model *Model
+* @param model *Model, as string
 * @return *Ql
 **/
-func (s *DB) From(model *Model) *Ql {
-	result := newQl(s)
-	result.addFrom(model, "A")
+func (s *DB) From(model *Model, as string) *Ql {
+	result := newQl(model, as)
 	result.IsDebug = model.IsDebug
 	return result
 }

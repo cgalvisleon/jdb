@@ -100,10 +100,10 @@ func Select(query et.Json) (*Ql, error) {
 
 /**
 * From
-* @param model *Model
+* @param model *Model, as string
 * @return *Ql
 **/
-func From(model *Model) *Ql {
+func From(model *Model, as string) *Ql {
 	db := model.db
-	return db.From(model)
+	return db.From(model, as)
 }

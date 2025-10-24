@@ -37,10 +37,10 @@ type Ql struct {
 * NewQl
 * @return *Ql
 **/
-func newQl(db *DB) *Ql {
-	return &Ql{
-		where:     newWhere(),
-		Database:  db.Name,
+func newQl(model *Model, as string) *Ql {
+	result := &Ql{
+		where:     newWhere(model, as),
+		Database:  model.Database,
 		Froms:     et.Json{},
 		Selects:   et.Json{},
 		Atribs:    et.Json{},
@@ -53,8 +53,14 @@ func newQl(db *DB) *Ql {
 		Havings:   make([]et.Json, 0),
 		OrdersBy:  et.Json{},
 		Limits:    et.Json{},
-		db:        db,
+		db:        model.db,
 	}
+
+	if model != nil {
+		result.addFrom(model, as)
+	}
+
+	return result
 }
 
 /**
@@ -92,6 +98,7 @@ func (s *Ql) Debug() *Ql {
 **/
 func (s *Ql) addFrom(model *Model, as string) *Ql {
 	s.From = model
+	s.As = as
 	s.Froms[model.Table] = as
 	if s.SourceField == "" {
 		s.SourceField = model.SourceField
@@ -111,92 +118,6 @@ func (s *Ql) addFrom(model *Model, as string) *Ql {
 **/
 func (s *Ql) setTx(tx *Tx) *Ql {
 	s.tx = tx
-	return s
-}
-
-/**
-* Join
-* @param to *Model, as string, on Condition
-* @return *Ql
-*
- */
-func (s *Ql) Join(to *Model, as string, on *Condition) *Ql {
-	n := len(s.Froms)
-	if n == 0 {
-		return s
-	}
-
-	n = len(s.Joins) + 1
-	s.Joins = append(s.Joins, et.Json{
-		"from": et.Json{
-			to.Table: as,
-		},
-		"on": []et.Json{
-			on.ToJson(),
-		},
-	})
-	s.useJoin = true
-
-	return s
-}
-
-/**
-* Group
-* @param fields ...string
-* @return *Ql
-**/
-func (s *Ql) Group(fields ...string) *Ql {
-	s.GroupBy = append(s.GroupBy, fields...)
-	return s
-}
-
-/**
-* Having
-* @param having et.Json
-* @return *Ql
-**/
-func (s *Ql) Having(having ...Condition) *Ql {
-	havings := make([]et.Json, 0)
-	for _, v := range having {
-		havings = append(havings, v.ToJson())
-	}
-
-	s.Havings = havings
-	return s
-}
-
-/**
-* Order
-* @param asc bool, fields ...string
-* @return *Ql
-**/
-func (s *Ql) Order(asc bool, fields ...string) *Ql {
-	if asc {
-		s.OrdersBy["asc"] = fields
-	} else {
-		s.OrdersBy["desc"] = fields
-	}
-
-	return s
-}
-
-/**
-* OrderBy
-* @param fields ...string
-* @return *Ql
-**/
-func (s *Ql) OrderBy(fields ...string) *Ql {
-	s.OrdersBy["asc"] = fields
-	return s
-}
-
-/**
-* OrderDesc
-* @param fields ...string
-* @return *Ql
-**/
-func (s *Ql) OrderDesc(fields ...string) *Ql {
-	s.OrdersBy["desc"] = fields
 	return s
 }
 

@@ -1,6 +1,7 @@
 package jdb
 
 import (
+	"database/sql"
 	"fmt"
 
 	"github.com/cgalvisleon/et/et"
@@ -9,23 +10,26 @@ import (
 
 /**
 * querytx
-* @param db *sql.DB, tx *Tx, sql string, arg ...any
+* @param db *sql.DB, tx *Tx, query string, arg ...any
 * @return *sql.Rows, error
 **/
-func querytx(db *DB, tx *Tx, sql string, arg ...any) (et.Items, error) {
+func querytx(db *DB, tx *Tx, query string, arg ...any) (et.Items, error) {
 	data := et.Json{
 		"db_name": db.Name,
-		"sql":     sql,
+		"query":   query,
 		"args":    arg,
 	}
 
+	var err error
+	var rows *sql.Rows
+	defer rows.Close()
 	if tx != nil {
-		err := tx.Begin(db.Db)
+		err = tx.Begin(db.Db)
 		if err != nil {
 			return et.Items{}, err
 		}
 
-		rows, err := tx.Tx.Query(sql, arg...)
+		rows, err = tx.Tx.Query(query, arg...)
 		if err != nil {
 			errRollback := tx.Rollback()
 			if errRollback != nil {
@@ -36,23 +40,14 @@ func querytx(db *DB, tx *Tx, sql string, arg ...any) (et.Items, error) {
 
 			return et.Items{}, err
 		}
-		defer rows.Close()
-
-		if tx.Committed {
-			tp := tipoSQL(sql)
-			event.Publish(fmt.Sprintf("sql:%s", tp), data)
+	} else {
+		rows, err = db.Db.Query(query, arg...)
+		if err != nil {
+			return et.Items{}, err
 		}
-
-		return RowsToItems(rows), nil
 	}
 
-	rows, err := db.Db.Query(sql, arg...)
-	if err != nil {
-		return et.Items{}, err
-	}
-	defer rows.Close()
-
-	tp := tipoSQL(sql)
+	tp := tipoSQL(query)
 	event.Publish(fmt.Sprintf("sql:%s", tp), data)
 	return RowsToItems(rows), nil
 }

@@ -1,7 +1,6 @@
 package jdb
 
 import (
-	"errors"
 	"fmt"
 	"slices"
 
@@ -84,7 +83,7 @@ func (s *Model) defineRollup(params et.Json) error {
 		return fmt.Errorf(MSG_ATRIB_REQUIRED, "from")
 	}
 
-	model, err := s.GetModel(from)
+	model, err := GetModel(s.Database, from)
 	if err != nil {
 		return err
 	}
@@ -391,16 +390,12 @@ func (s *Model) DefineColumnVm(name string, script string) error {
 func (s *Model) DefineDetail(name string, fks []et.Json, version int) (*Model, error) {
 	colName := name
 	name = fmt.Sprintf("%s_%s", s.Name, name)
-	result, err := s.GetModel(name)
-	if err == nil {
+	result, _ := GetModel(s.Database, name)
+	if result != nil {
 		return result, nil
 	}
 
-	if !errors.Is(err, ErrModelNotFound) {
-		return nil, err
-	}
-
-	result, err = s.db.Define(et.Json{
+	result, err := s.db.Define(et.Json{
 		"schema":  s.Schema,
 		"name":    name,
 		"version": version,

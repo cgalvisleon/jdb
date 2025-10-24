@@ -1,6 +1,7 @@
 package jdb
 
 import (
+	"fmt"
 	"slices"
 
 	"github.com/cgalvisleon/et/et"
@@ -23,10 +24,9 @@ func F(val string) *Field {
 }
 
 type Condition struct {
-	Field    string      `json:"field"`
-	Op       string      `json:"op"`
-	Value    interface{} `json:"value"`
-	UseAtrib bool        `json:"use_atribs"`
+	Field string      `json:"field"`
+	Op    string      `json:"op"`
+	Value interface{} `json:"value"`
 }
 
 /**
@@ -208,15 +208,19 @@ func NotBetween(field string, value []interface{}) *Condition {
 type where struct {
 	Wheres []et.Json `json:"where"`
 	From   *Model    `json:"from"`
+	As     string    `json:"as"`
 }
 
 /**
 * newWhere
+* @param model *Model, as string
 * @return *where
 **/
-func newWhere() *where {
+func newWhere(model *Model, as string) *where {
 	return &where{
 		Wheres: []et.Json{},
+		From:   model,
+		As:     as,
 	}
 }
 
@@ -228,9 +232,24 @@ func newWhere() *where {
 func (s *where) where(cond *Condition, conector string) *where {
 	if s.From != nil {
 		f := cond.Field
-		_, ok := s.From.GetColumn(f)
-		if !ok && s.From.UseAtribs() {
-			cond.UseAtrib = true
+		col, ok := s.From.GetColumn(f)
+		if !ok {
+			if s.From.UseAtribs() {
+				f = GetFieldName(f)
+				cond.Field = fmt.Sprintf("%s:%s", s.From.SourceField, f)
+				cond.Field = strs.Append(s.As, cond.Field, ".")
+			}
+		} else {
+			tp := col.String("type")
+			if TypeColumn[tp] {
+				cond.Field = f
+				cond.Field = strs.Append(s.As, cond.Field, ".")
+			}
+			if TypeAtrib[tp] {
+				f = GetFieldName(f)
+				cond.Field = fmt.Sprintf("%s:%s", s.From.SourceField, f)
+				cond.Field = strs.Append(s.As, cond.Field, ".")
+			}
 		}
 	}
 

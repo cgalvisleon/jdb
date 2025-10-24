@@ -178,3 +178,31 @@ func Quote(val any) any {
 		return val
 	}
 }
+
+/**
+* GetFieldName
+* @param s string
+* @return string
+**/
+func GetFieldName(s string) string {
+	result := s
+	if strings.Contains(s, ".") {
+		parts := strings.Split(s, ".")
+		result = parts[len(parts)-1]
+	}
+	return result
+}
+
+/**
+* GetAtribName
+* @param s string
+* @return string
+**/
+func GetAtribName(s string) string {
+	result := GetFieldName(s)
+	if strings.Contains(result, ":") {
+		parts := strings.Split(result, ":")
+		result = parts[len(parts)-1]
+	}
+	return result
+}

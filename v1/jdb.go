@@ -130,11 +130,11 @@ func Select(query et.Json) (*jdb.Ql, error) {
 
 /**
 * From
-* @param model *Model
+* @param model *Model, as string
 * @return *Ql
 **/
-func From(model *Model) *jdb.Ql {
-	return jdb.From(model)
+func From(model *Model, as string) *jdb.Ql {
+	return jdb.From(model, as)
 }
 
 /**

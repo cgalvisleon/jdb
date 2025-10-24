@@ -58,7 +58,7 @@ type Cmd struct {
 **/
 func newCommand(model *Model, cmd string, data []et.Json) *Cmd {
 	result := &Cmd{
-		where:         newWhere(),
+		where:         newWhere(model, ""),
 		Command:       cmd,
 		Data:          data,
 		Result:        et.Items{},

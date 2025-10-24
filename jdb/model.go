@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"slices"
+	"strings"
 
 	"github.com/cgalvisleon/et/envar"
 	"github.com/cgalvisleon/et/et"
@@ -300,6 +301,14 @@ func (s *Model) ToJson() et.Json {
 * @return (et.Json, bool)
 **/
 func (s *Model) GetColumn(name string) (et.Json, bool) {
+	spPeriod := strings.Split(name, ".")
+	if len(spPeriod) > 1 {
+		spColon := strings.Split(spPeriod[1], ":")
+		if len(spColon) > 1 {
+			return et.Json{}, false
+		}
+		name = spPeriod[1]
+	}
 	idx := s.getColumnIndex(name)
 	if idx == -1 {
 		return et.Json{}, false
@@ -383,20 +392,11 @@ func (s *Model) GetId(id string) string {
 }
 
 /**
-* GetModel
-* @param name string
-* @return (*Model, error)
-**/
-func (s *Model) GetModel(name string) (*Model, error) {
-	return s.db.GetModel(name)
-}
-
-/**
-* GetRecord
+* GetRecordById
 * @param id string
 * @return (et.Item, error)
 **/
-func (s *Model) GetRecord(id string) (et.Item, error) {
+func (s *Model) GetRecordById(id string) (et.Item, error) {
 	result, err := s.
 		Where(Eq(RECORDID, id)).
 		One()
