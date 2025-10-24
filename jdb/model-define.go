@@ -29,10 +29,12 @@ func (s *Model) defineColumn(name string, params et.Json) error {
 		return fmt.Errorf(MSG_TYPE_REQUIRED)
 	}
 
+	hidden := params.Bool("hidden")
 	def := et.Json{
 		"name":    name,
 		"type":    typeData,
 		"default": params.String("default"),
+		"hidden":  hidden,
 	}
 	if s.RecordField != "" {
 		idx = s.getColumnIndex(s.RecordField)
@@ -43,23 +45,10 @@ func (s *Model) defineColumn(name string, params et.Json) error {
 	}
 
 	s.Columns = append(s.Columns, def)
-	return nil
-}
-
-/**
-* DefineAtrib
-* @param name string, defaultValue interface{}
-* @return error
-**/
-func (s *Model) DefineAtrib(name string, defaultValue interface{}) error {
-	if s.SourceField == "" {
-		s.DefineSetSourceField(SOURCE)
+	if hidden {
+		s.Hidden = append(s.Hidden, name)
 	}
-
-	return s.defineColumn(name, et.Json{
-		"type":    TypeAtribute,
-		"default": defaultValue,
-	})
+	return nil
 }
 
 /**
@@ -77,6 +66,69 @@ func (s *Model) defineColumns(params []et.Json) error {
 	}
 
 	return nil
+}
+
+/**
+* defineRollup
+* @param params et.Json
+* @return error
+**/
+func (s *Model) defineRollup(params et.Json) error {
+	name := params.String("name")
+	if !utility.ValidStr(name, 0, []string{}) {
+		return fmt.Errorf(MSG_ATRIB_REQUIRED, "name")
+	}
+
+	from := params.String("from")
+	if !utility.ValidStr(from, 0, []string{}) {
+		return fmt.Errorf(MSG_ATRIB_REQUIRED, "from")
+	}
+
+	model, err := s.GetModel(from)
+	if err != nil {
+		return err
+	}
+
+	as := "A"
+	selectsOrigin := params.Json("selects")
+	if selectsOrigin.IsEmpty() {
+		return fmt.Errorf(MSG_ATRIB_REQUIRED, "selects")
+	}
+
+	selects := et.Json{}
+	for k, v := range selectsOrigin {
+		selects[fmt.Sprintf("%s.%s", as, k)] = v
+	}
+
+	fks := params.Json("fks")
+	if fks.IsEmpty() {
+		return fmt.Errorf(MSG_ATRIB_REQUIRED, "fks")
+	}
+
+	s.Rollups[name] = et.Json{
+		"from": et.Json{
+			model.Table: as,
+		},
+		"selects": selects,
+		"fks":     fks,
+	}
+	return nil
+}
+
+/**
+* DefineAtrib
+* @param name string, defaultValue interface{}
+* @return error
+**/
+func (s *Model) DefineAtrib(name string, defaultValue interface{}) error {
+	if s.SourceField == "" {
+		s.DefineSetSourceField(SOURCE)
+	}
+
+	return s.defineColumn(name, et.Json{
+		"type":    TypeAtribute,
+		"default": defaultValue,
+	})
 }
 
 /**
@@ -108,13 +160,13 @@ func (s *Model) DefinePrimaryKeys(names ...string) {
 **/
 func (s *Model) DefineIndexes(names ...string) error {
 	for _, name := range names {
-		idx := slices.Index(s.Indexes, name)
-		if idx != -1 {
+		idx := s.getColumnIndex(name)
+		if idx == -1 {
 			continue
 		}
 
-		idx = s.getColumnIndex(name)
-		if idx == -1 {
+		idx = slices.Index(s.Indexes, name)
+		if idx != -1 {
 			continue
 		}
 
@@ -131,17 +183,29 @@ func (s *Model) DefineIndexes(names ...string) error {
 **/
 func (s *Model) DefineRequired(names ...string) {
 	for _, name := range names {
-		idx := slices.Index(s.Required, name)
-		if idx != -1 {
-			continue
-		}
-
-		idx = s.getColumnIndex(name)
+		idx := s.getColumnIndex(name)
 		if idx == -1 {
 			continue
 		}
 
 		s.Required = append(s.Required, name)
+	}
+}
+
+/**
+* DefineHidden
+* @param names ...string
+* @return
+**/
+func (s *Model) DefineHidden(names ...string) {
+	for _, name := range names {
+		idx := s.getColumnIndex(name)
+		if idx == -1 {
+			continue
+		}
+
+		s.Columns[idx].Set("hidden", true)
+		s.Hidden = append(s.Hidden, name)
 	}
 }
 
@@ -204,7 +268,7 @@ func (s *Model) DefineSetStatusField(name string) error {
 	STATUS = name
 	s.StatusField = name
 	err := s.defineColumn(name, et.Json{
-		"type": TypeJson,
+		"type": TypeText,
 	})
 	if err != nil {
 		return err
@@ -237,53 +301,6 @@ func (s *Model) DefineForeignKey(to *Model, fks []et.Json, onDelete string, onUp
 			"on_update": onUpdate,
 		},
 	})
-	return nil
-}
-
-/**
-* defineRollup
-* @param params et.Json
-* @return error
-**/
-func (s *Model) defineRollup(params et.Json) error {
-	name := params.String("name")
-	if !utility.ValidStr(name, 0, []string{}) {
-		return fmt.Errorf(MSG_ATRIB_REQUIRED, "name")
-	}
-
-	from := params.String("from")
-	if !utility.ValidStr(from, 0, []string{}) {
-		return fmt.Errorf(MSG_ATRIB_REQUIRED, "from")
-	}
-
-	model, err := s.GetModel(from)
-	if err != nil {
-		return err
-	}
-
-	as := "A"
-	selectsOrigin := params.Json("selects")
-	if selectsOrigin.IsEmpty() {
-		return fmt.Errorf(MSG_ATRIB_REQUIRED, "selects")
-	}
-
-	selects := et.Json{}
-	for k, v := range selectsOrigin {
-		selects[fmt.Sprintf("%s.%s", as, k)] = v
-	}
-
-	fks := params.Json("fks")
-	if fks.IsEmpty() {
-		return fmt.Errorf(MSG_ATRIB_REQUIRED, "fks")
-	}
-
-	s.Rollups[name] = et.Json{
-		"from": et.Json{
-			model.Table: as,
-		},
-		"selects": selects,
-		"fks":     fks,
-	}
 	return nil
 }
 

@@ -57,13 +57,10 @@ func tipoSQL(query string) string {
 * @param rows *sql.Rows
 * @return et.Items
 **/
-func RowsToItems(rows *sql.Rows, hidden []string) et.Items {
+func RowsToItems(rows *sql.Rows) et.Items {
 	var result = et.Items{Result: []et.Json{}}
 
 	append := func(item et.Json) {
-		for _, v := range hidden {
-			delete(item, v)
-		}
 		result.Add(item)
 	}
 

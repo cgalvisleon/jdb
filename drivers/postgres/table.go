@@ -23,7 +23,7 @@ func (s *Postgres) existTable(db *sql.DB, schema, name string) (bool, error) {
 	}
 	defer rows.Close()
 
-	items := jdb.RowsToItems(rows, []string{})
+	items := jdb.RowsToItems(rows)
 
 	if items.Count == 0 {
 		return false, nil

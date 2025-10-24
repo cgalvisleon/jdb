@@ -49,15 +49,15 @@ func triggerRecords(db *sql.DB) error {
 	updated_at TIMESTAMP,
 	table_schema VARCHAR(250),
 	table_name VARCHAR(250),
-	index VARCHAR(80),
-	CONSTRAINT pk_records PRIMARY KEY (table_schema, table_name, index));
+	$1 VARCHAR(80),
+	CONSTRAINT pk_records PRIMARY KEY (table_schema, table_name, $1));
 
 	CREATE TABLE IF NOT EXISTS core.recyclings (
 	created_at TIMESTAMP,
 	table_schema VARCHAR(250),
 	table_name VARCHAR(250),
-	index VARCHAR(80),
-	CONSTRAINT pk_recyclings PRIMARY KEY (table_schema, table_name, index));
+	$1 VARCHAR(80),
+	CONSTRAINT pk_recyclings PRIMARY KEY (table_schema, table_name, $1));
 
 	DROP TRIGGER IF EXISTS RECORDS_SET ON core.records CASCADE;
 	CREATE TRIGGER RECORDS_SET
@@ -81,8 +81,8 @@ func triggerRecords(db *sql.DB) error {
 		vold = to_jsonb(OLD);
 
 		IF TG_OP = 'INSERT' AND (vnew ? '$1') THEN
-			INSERT INTO core.records (created_at, updated_at, table_schema, table_name, index)
-			VALUES (now(), now(), TG_TABLE_SCHEMA, TG_TABLE_NAME, NEW.index);
+			INSERT INTO core.records (created_at, updated_at, table_schema, table_name, $1)
+			VALUES (now(), now(), TG_TABLE_SCHEMA, TG_TABLE_NAME, NEW.$1);
 		END IF;
 		
 		IF TG_OP = 'UPDATE' AND (vnew ? '$1') THEN
@@ -90,31 +90,31 @@ func triggerRecords(db *sql.DB) error {
 			SET updated_at = now()
 			WHERE table_schema = TG_TABLE_SCHEMA
 			AND table_name = TG_TABLE_NAME
-			AND index = NEW.index;
+			AND $1 = NEW.$1;
 		END IF;
 
 		IF TG_OP = 'UPDATE' AND (vnew ? '$1') AND (vnew ? '$2') AND vnew->>'$2' != vold->>'$2' AND vnew->>'$2' = '$3' THEN
-			INSERT INTO core.recyclings (created_at, table_schema, table_name, index)
-			VALUES (now(), TG_TABLE_SCHEMA, TG_TABLE_NAME, NEW.index);
+			INSERT INTO core.recyclings (created_at, table_schema, table_name, $1)
+			VALUES (now(), TG_TABLE_SCHEMA, TG_TABLE_NAME, NEW.$1);
 		END IF;
 		
 		IF TG_OP = 'UPDATE' AND (vnew ? '$1') AND (vnew ? '$2') AND vnew->>'$2' != vold->>'$2' AND vnew->>'$2' != '$3' THEN
 			DELETE FROM core.recyclings
 			WHERE table_schema = TG_TABLE_SCHEMA
 			AND table_name = TG_TABLE_NAME
-			AND index = NEW.index;
+			AND $1 = NEW.$1;
 		END IF;
 		
 		IF TG_OP = 'DELETE' AND (vold ? '$1') THEN
 			DELETE FROM core.records
 			WHERE table_schema = TG_TABLE_SCHEMA
 			AND table_name = TG_TABLE_NAME
-			AND index = OLD.index;
+			AND $1 = OLD.$1;
 
 			DELETE FROM core.recyclings
 			WHERE table_schema = TG_TABLE_SCHEMA
 			AND table_name = TG_TABLE_NAME
-			AND index = OLD.index;
+			AND $1 = OLD.$1;
 		END IF;
 
 		IF TG_OP = 'DELETE' THEN

@@ -8,8 +8,7 @@ import "github.com/cgalvisleon/et/et"
 * @return *Ql
 **/
 func (s *Model) Query(query et.Json) *Ql {
-	result := newQl(s.db)
-	result.addFrom(s, "A")
+	result := s.db.From(s)
 	return result.setQuery(query)
 }
 
@@ -19,8 +18,7 @@ func (s *Model) Query(query et.Json) *Ql {
 * @return *Ql
 **/
 func (s *Model) Select(fields ...string) *Ql {
-	result := newQl(s.db)
-	result.addFrom(s, "A")
+	result := s.db.From(s)
 	return result.Select(fields...)
 }
 
@@ -30,8 +28,7 @@ func (s *Model) Select(fields ...string) *Ql {
 * @return *Ql
 **/
 func (s *Model) Where(cond *Condition) *Ql {
-	result := newQl(s.db)
-	result.addFrom(s, "A")
+	result := s.db.From(s)
 	return result.Where(cond)
 }
 
@@ -41,8 +38,7 @@ func (s *Model) Where(cond *Condition) *Ql {
 * @return *Ql
 **/
 func (s *Model) Join(to *Model, as string, on *Condition) *Ql {
-	result := newQl(s.db)
-	result.addFrom(s, "A")
+	result := s.db.From(s)
 	return result.Join(to, as, on)
 }
 
@@ -51,7 +47,6 @@ func (s *Model) Join(to *Model, as string, on *Condition) *Ql {
 * @return int, error
 **/
 func (s *Model) Counted() (int, error) {
-	result := newQl(s.db)
-	result.addFrom(s, "A")
+	result := s.db.From(s)
 	return result.Counted()
 }

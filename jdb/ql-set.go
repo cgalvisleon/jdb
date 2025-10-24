@@ -30,7 +30,7 @@ func (s *Ql) setQuery(query et.Json) *Ql {
 * @return *Ql
 **/
 func (s *Ql) setDebug(debug bool) *Ql {
-	s.isDebug = debug
+	s.IsDebug = debug
 	return s
 }
 

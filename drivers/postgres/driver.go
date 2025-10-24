@@ -136,7 +136,9 @@ func (s *Postgres) Query(ql *jdb.Ql) (string, error) {
 	}
 
 	ql.SQL = sql
-	logs.Debug("query:\n", sql)
+	if ql.IsDebug {
+		logs.Debug("query:\n", sql)
+	}
 
 	return ql.SQL, nil
 }
@@ -153,7 +155,9 @@ func (s *Postgres) Command(cmd *jdb.Cmd) (string, error) {
 	}
 
 	cmd.SQL = sql
-	logs.Debug("command:\n", sql)
+	if cmd.IsDebug {
+		logs.Debug("command:\n", sql)
+	}
 
 	return cmd.SQL, nil
 }

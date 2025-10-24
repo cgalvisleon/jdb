@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/cgalvisleon/et/et"
-	"github.com/cgalvisleon/et/logs"
 	"github.com/cgalvisleon/et/strs"
 	"github.com/cgalvisleon/jdb/jdb"
 )
@@ -15,7 +14,6 @@ import (
 * @return (string, error)
 **/
 func (s *Postgres) buildCommand(cmd *jdb.Cmd) (string, error) {
-	logs.Debug("command:", cmd.ToJson().ToString())
 	command := cmd.Command
 	if !jdb.Commands[command] {
 		return "", fmt.Errorf("command %s no soportado", command)
@@ -46,24 +44,24 @@ func (s *Postgres) buildInsert(cmd *jdb.Cmd) (string, error) {
 	atribs := et.Json{}
 	returning := fmt.Sprintf(`to_jsonb(%s.*) AS result`, table)
 	for k, v := range data {
-		val := fmt.Sprintf(`%v`, jdb.Quote(v))
 		col, ok := cmd.From.GetColumn(k)
 		tp := col.String("type")
 		if ok && jdb.TypeColumn[tp] {
+			val := fmt.Sprintf(`%v`, jdb.Quote(v))
 			into = strs.Append(into, k, ", ")
 			values = strs.Append(values, val, ", ")
 			continue
 		}
 
 		if cmd.From.UseAtribs() || jdb.TypeAtrib[tp] {
-			atribs[k] = val
+			atribs[k] = v
 		}
 	}
 
 	if cmd.From.UseAtribs() {
 		into = strs.Append(into, cmd.From.SourceField, ", ")
 		values = strs.Append(values, fmt.Sprintf(`'%v'::jsonb`, atribs.ToString()), ", ")
-		returning = fmt.Sprintf("to_jsonb(A) - '%s'", cmd.From.SourceField)
+		returning = fmt.Sprintf("to_jsonb(%s.*) - '%s' AS result", table, cmd.From.SourceField)
 	}
 
 	sql := fmt.Sprintf("INSERT INTO %s(%s)\nVALUES(%s)\nRETURNING %s;", table, into, values, returning)
@@ -103,6 +101,7 @@ func (s *Postgres) buildUpdate(cmd *jdb.Cmd) (string, error) {
 
 	if cmd.From.UseAtribs() {
 		sets = strs.Append(sets, fmt.Sprintf(`%s = %s`, cmd.From.SourceField, atribs), ", ")
+		returning = fmt.Sprintf("to_jsonb(%s.*) - '%s' AS result", table, cmd.From.SourceField)
 	}
 
 	definition := cmd.ToJson()
@@ -141,6 +140,10 @@ func (s *Postgres) buildDelete(cmd *jdb.Cmd) (string, error) {
 		}
 
 		where = def
+	}
+
+	if cmd.From.UseAtribs() {
+		returning = fmt.Sprintf("to_jsonb(%s.*) - '%s' AS result", table, cmd.From.SourceField)
 	}
 
 	sql := fmt.Sprintf(`DELETE FROM %s`, table)

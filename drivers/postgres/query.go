@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/cgalvisleon/et/envar"
 	"github.com/cgalvisleon/et/et"
@@ -133,7 +134,9 @@ func (s *Postgres) buildSelect(query et.Json) (string, error) {
 
 		selects := query.Json("selects")
 		if selects.IsEmpty() {
-			def := fmt.Sprintf("to_jsonb(A) - '%s'", sourceField)
+			hidden := query.ArrayStr("hidden")
+			hidden = append(hidden, sourceField)
+			def := fmt.Sprintf("to_jsonb(A) - ARRAY[%s]", strings.Join(hidden, ", "))
 			result = strs.Append(result, def, "||")
 		} else {
 			sel := ""
@@ -153,7 +156,12 @@ func (s *Postgres) buildSelect(query et.Json) (string, error) {
 
 	selects := query.Json("selects")
 	if selects.IsEmpty() {
-		result += "*"
+		hidden := query.ArrayStr("hidden")
+		if len(hidden) > 0 {
+			result += fmt.Sprintf("to_jsonb(A) - ARRAY[%s]", strings.Join(hidden, ", "))
+		} else {
+			result += "A.*"
+		}
 	} else {
 		for k := range selects {
 			v := selects.String(k)

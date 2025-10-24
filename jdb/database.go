@@ -233,11 +233,11 @@ func (s *DB) init(model *Model) error {
 		return nil
 	}
 
-	if model.isDebug {
+	if model.IsDebug {
 		logs.Debugf("init:%s", model.ToJson().ToEscapeHTML())
 	}
 
-	_, err = s.Query([]string{}, sql)
+	_, err = s.Query(sql)
 	if err != nil {
 		return err
 	}
@@ -263,11 +263,11 @@ func (s *DB) query(query *Ql) (et.Items, error) {
 		return et.Items{}, err
 	}
 
-	if query.isDebug {
+	if query.IsDebug {
 		logs.Debugf("query:%s", query.ToJson().ToEscapeHTML())
 	}
 
-	result, err := s.QueryTx(query.tx, query.Hiddens, sql)
+	result, err := s.QueryTx(query.tx, sql)
 	if err != nil {
 		return et.Items{}, err
 	}
@@ -286,11 +286,11 @@ func (s *DB) command(cmd *Cmd) (et.Items, error) {
 		return et.Items{}, err
 	}
 
-	if cmd.isDebug {
+	if cmd.IsDebug {
 		logs.Debugf("command:%s", cmd.ToJson().ToEscapeHTML())
 	}
 
-	result, err := s.QueryTx(cmd.tx, cmd.Hiddens, sql)
+	result, err := s.QueryTx(cmd.tx, sql)
 	if err != nil {
 		return et.Items{}, err
 	}
@@ -382,7 +382,7 @@ func (s *DB) Define(definition et.Json) (*Model, error) {
 	result.DefineRequired(required...)
 
 	debug := definition.Bool("debug")
-	result.isDebug = debug
+	result.IsDebug = debug
 
 	return result, nil
 }
@@ -411,6 +411,7 @@ func (s *DB) Select(query et.Json) (*Ql, error) {
 func (s *DB) From(model *Model) *Ql {
 	result := newQl(s)
 	result.addFrom(model, "A")
+	result.IsDebug = model.IsDebug
 	return result
 }
 

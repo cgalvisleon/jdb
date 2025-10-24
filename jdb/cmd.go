@@ -31,13 +31,12 @@ type Cmd struct {
 	*where
 	Command       string           `json:"command"`
 	Data          []et.Json        `json:"data"`
-	Hiddens       []string         `json:"hidden"`
 	Result        et.Items         `json:"result"`
 	SQL           string           `json:"sql"`
 	db            *DB              `json:"-"`
 	tx            *Tx              `json:"-"`
 	vm            *vm.Vm           `json:"-"`
-	isDebug       bool             `json:"-"`
+	IsDebug       bool             `json:"-"`
 	BeforeInserts []string         `json:"-"`
 	BeforeUpdates []string         `json:"-"`
 	BeforeDeletes []string         `json:"-"`
@@ -62,7 +61,6 @@ func newCommand(model *Model, cmd string, data []et.Json) *Cmd {
 		where:         newWhere(),
 		Command:       cmd,
 		Data:          data,
-		Hiddens:       []string{},
 		Result:        et.Items{},
 		db:            model.db,
 		vm:            vm.New(),
@@ -108,7 +106,7 @@ func (s *Cmd) ToJson() et.Json {
 * @return *Cmd
 **/
 func (s *Cmd) Debug() *Cmd {
-	s.isDebug = true
+	s.IsDebug = true
 	return s
 }
 
@@ -180,16 +178,6 @@ func (s *Cmd) getKeys(data et.Json, as string) []et.Json {
 	}
 
 	return result
-}
-
-/**
-* Hidden
-* @param hiddens ...string
-* @return *Cmd
-**/
-func (s *Cmd) Hidden(hiddens ...string) *Cmd {
-	s.Hiddens = hiddens
-	return s
 }
 
 /**

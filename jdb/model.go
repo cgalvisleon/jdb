@@ -35,7 +35,7 @@ const (
 var (
 	SOURCE     = "source"
 	KEY        = "id"
-	RECORDID   = "index"
+	RECORDID   = "idx"
 	STATUS     = "status"
 	ACTIVE     = "active"
 	ARCHIVED   = "archived"
@@ -113,6 +113,7 @@ type Model struct {
 	Name          string                 `json:"name"`
 	Table         string                 `json:"table"`
 	Columns       []et.Json              `json:"columns"`
+	Hidden        []string               `json:"hidden"`
 	SourceField   string                 `json:"source_field"`
 	RecordField   string                 `json:"record_field"`
 	StatusField   string                 `json:"status_field"`
@@ -138,7 +139,7 @@ type Model struct {
 	details       map[string]*Model      `json:"-"`
 	isInit        bool                   `json:"-"`
 	isCore        bool                   `json:"-"`
-	isDebug       bool                   `json:"-"`
+	IsDebug       bool                   `json:"-"`
 	beforeInserts []DataFunctionTx       `json:"-"`
 	beforeUpdates []DataFunctionTx       `json:"-"`
 	beforeDeletes []DataFunctionTx       `json:"-"`
@@ -338,8 +339,9 @@ func (s *Model) Unlock() {
 * Debug
 * @return
 **/
-func (s *Model) Debug() {
-	s.isDebug = true
+func (s *Model) Debug() *Model {
+	s.IsDebug = true
+	return s
 }
 
 /**
@@ -357,7 +359,7 @@ func (s *Model) Init() error {
 	}
 
 	for _, m := range s.details {
-		m.isDebug = s.isDebug
+		m.IsDebug = s.IsDebug
 		err := m.Init()
 		if err != nil {
 			return err
@@ -377,7 +379,7 @@ func (s *Model) GetId(id string) string {
 		return id
 	}
 
-	return reg.GetULID(s.Name)
+	return reg.GenULIDI(s.Name)
 }
 
 /**
