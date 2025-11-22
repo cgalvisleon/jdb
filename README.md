@@ -46,7 +46,7 @@ go get github.com/cgalvisleon/jdb
 ### Dependencias
 
 ```bash
-go get github.com/cgalvisleon/et@v0.1.18
+go get github.com/cgalvisleon/et@v1.0.10
 ```
 
 ### Dependencias Principales

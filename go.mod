@@ -2,7 +2,10 @@ module github.com/cgalvisleon/jdb
 
 go 1.23.0
 
-require github.com/cgalvisleon/et v0.1.18
+require (
+	github.com/cgalvisleon/et v1.0.10
+	github.com/cgalvisleon/workflow v0.0.1
+)
 
 require (
 	github.com/dlclark/regexp2 v1.11.4 // indirect
@@ -19,7 +22,7 @@ require (
 	github.com/bwmarrin/snowflake v0.3.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
-	github.com/dop251/goja v0.0.0-20250630131328-58d95d85e994
+	github.com/dop251/goja v0.0.0-20250630131328-58d95d85e994 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/joho/godotenv v1.5.1 // indirect
 	github.com/klauspost/compress v1.18.0 // indirect

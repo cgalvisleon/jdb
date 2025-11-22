@@ -8,7 +8,7 @@ import (
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/strs"
 	"github.com/cgalvisleon/et/utility"
-	"github.com/cgalvisleon/et/vm"
+	"github.com/cgalvisleon/workflow/vm"
 )
 
 const (
