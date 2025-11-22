@@ -17,7 +17,6 @@ func (s *Cmd) queryTx(tx *Tx) (et.Items, error) {
 	}
 
 	s.setTx(tx)
-	s.vm.Set("model", s.From)
 	switch s.Command {
 	case CmdInsert:
 		return s.insert()

@@ -22,14 +22,6 @@ func (s *Cmd) update() (et.Items, error) {
 			data[k] = v
 		}
 
-		for _, definition := range s.BeforeUpdates {
-			s.vm.Set("data", data)
-			_, err := s.vm.Run(definition)
-			if err != nil {
-				return et.Items{}, err
-			}
-		}
-
 		for _, fn := range s.beforeUpdates {
 			err := fn(s.tx, data)
 			if err != nil {
@@ -46,14 +38,6 @@ func (s *Cmd) update() (et.Items, error) {
 		s.Result.Add(data)
 		if !result.Ok {
 			return result, nil
-		}
-
-		for _, definition := range s.AfterUpdates {
-			s.vm.Set("data", data)
-			_, err := s.vm.Run(definition)
-			if err != nil {
-				return et.Items{}, err
-			}
 		}
 
 		for _, fn := range s.afterUpdates {

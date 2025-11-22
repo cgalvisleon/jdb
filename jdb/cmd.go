@@ -8,7 +8,6 @@ import (
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/strs"
 	"github.com/cgalvisleon/et/utility"
-	"github.com/cgalvisleon/workflow/vm"
 )
 
 const (
@@ -35,14 +34,7 @@ type Cmd struct {
 	SQL           string           `json:"sql"`
 	db            *DB              `json:"-"`
 	tx            *Tx              `json:"-"`
-	vm            *vm.Vm           `json:"-"`
 	IsDebug       bool             `json:"-"`
-	BeforeInserts []string         `json:"-"`
-	BeforeUpdates []string         `json:"-"`
-	BeforeDeletes []string         `json:"-"`
-	AfterInserts  []string         `json:"-"`
-	AfterUpdates  []string         `json:"-"`
-	AfterDeletes  []string         `json:"-"`
 	beforeInserts []DataFunctionTx `json:"-"`
 	beforeUpdates []DataFunctionTx `json:"-"`
 	beforeDeletes []DataFunctionTx `json:"-"`
@@ -63,13 +55,6 @@ func newCommand(model *Model, cmd string, data []et.Json) *Cmd {
 		Data:          data,
 		Result:        et.Items{},
 		db:            model.db,
-		vm:            vm.New(),
-		BeforeInserts: model.BeforeInserts,
-		BeforeUpdates: model.BeforeUpdates,
-		BeforeDeletes: model.BeforeDeletes,
-		AfterInserts:  model.AfterInserts,
-		AfterUpdates:  model.AfterUpdates,
-		AfterDeletes:  model.AfterDeletes,
 		beforeInserts: model.beforeInserts,
 		beforeUpdates: model.beforeUpdates,
 		beforeDeletes: model.beforeDeletes,

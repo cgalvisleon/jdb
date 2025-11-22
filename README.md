@@ -40,7 +40,7 @@ JDB es una librería de Go que proporciona una interfaz unificada y simplificada
 ## 📦 Instalación
 
 ```bash
-go get github.com/cgalvisleon/jdb
+go get github.com/cgalvisleon/jdb@v0.1.21
 ```
 
 ### Dependencias

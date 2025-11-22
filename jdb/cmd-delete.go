@@ -18,14 +18,6 @@ func (s *Cmd) delete() (et.Items, error) {
 	}
 
 	for _, data := range current.Result {
-		for _, definition := range s.BeforeDeletes {
-			s.vm.Set("data", data)
-			_, err := s.vm.Run(definition)
-			if err != nil {
-				return et.Items{}, err
-			}
-		}
-
 		for _, fn := range s.beforeDeletes {
 			err := fn(s.tx, data)
 			if err != nil {
@@ -42,14 +34,6 @@ func (s *Cmd) delete() (et.Items, error) {
 		s.Result.Add(data)
 		if !result.Ok {
 			return result, nil
-		}
-
-		for _, definition := range s.AfterDeletes {
-			s.vm.Set("data", data)
-			_, err := s.vm.Run(definition)
-			if err != nil {
-				return et.Items{}, err
-			}
 		}
 
 		for _, fn := range s.afterDeletes {
