@@ -19,7 +19,6 @@ const (
 	TypeGeometry   = jdb.TypeGeometry
 	TypeAtribute   = jdb.TypeAtribute
 	TypeCalc       = jdb.TypeCalc
-	TypeVm         = jdb.TypeVm
 	TypeDetail     = jdb.TypeDetail
 	TypeMaster     = jdb.TypeMaster
 	TypeRollup     = jdb.TypeRollup
@@ -122,9 +121,18 @@ func Define(definition et.Json) (*jdb.Model, error) {
 /**
 * Select
 * @param query et.Json
-* @return (*jdb.Ql, error)
+* @return *jdb.Ql, error
 **/
 func Select(query et.Json) (*jdb.Ql, error) {
+	return jdb.Select(query)
+}
+
+/**
+* Query
+* @param query et.Json
+* @return *jdb.Ql, error
+**/
+func Query(query et.Json) (*jdb.Ql, error) {
 	return jdb.Select(query)
 }
 

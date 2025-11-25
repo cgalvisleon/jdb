@@ -10,29 +10,11 @@ import (
 )
 
 /**
-* connectTo
-* @param chain string
-* @return *sql.DB, error
-**/
-func (s *Postgres) connectTo(chain string) (*sql.DB, error) {
-	db, err := sql.Open(driver, chain)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := db.Ping(); err != nil {
-		return nil, err
-	}
-
-	return db, nil
-}
-
-/**
 * existDatabase
 * @param db *DB, name string
 * @return bool, error
 **/
-func (s *Postgres) existDatabase(db *sql.DB, name string) (bool, error) {
+func existDatabase(db *sql.DB, name string) (bool, error) {
 	sql := `
 	SELECT EXISTS(
 	SELECT 1
@@ -58,8 +40,8 @@ func (s *Postgres) existDatabase(db *sql.DB, name string) (bool, error) {
 * @param db *sql.DB, name string
 * @return error
 **/
-func (s *Postgres) createDatabase(db *sql.DB, name string) error {
-	exist, err := s.existDatabase(db, name)
+func (s *Postgres) CreateDatabase(db *sql.DB, name string) error {
+	exist, err := existDatabase(db, name)
 	if err != nil {
 		return err
 	}
@@ -85,7 +67,7 @@ func (s *Postgres) createDatabase(db *sql.DB, name string) error {
 * @return error
 **/
 func (s *Postgres) DropDatabase(db *sql.DB, name string) error {
-	exist, err := s.existDatabase(db, name)
+	exist, err := existDatabase(db, name)
 	if err != nil {
 		return err
 	}

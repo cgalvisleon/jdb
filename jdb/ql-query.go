@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/cgalvisleon/et/envar"
 	"github.com/cgalvisleon/et/et"
 )
 
@@ -83,11 +84,15 @@ func (s *Ql) All() (et.Items, error) {
 }
 
 /**
-* Page
-* @param page, rows int
-* @return *Ql
+* LimitTx
+* @param tx *Tx, page, rows int
+* @return et.Items, error
 **/
 func (s *Ql) LimitTx(tx *Tx, page, rows int) (items et.Items, err error) {
+	maxRows := envar.GetInt("MAX_ROWS", 1000)
+	if rows > maxRows {
+		rows = maxRows
+	}
 	s.Limits["page"] = page
 	s.Limits["rows"] = rows
 	return s.queryTx(tx)
@@ -96,7 +101,7 @@ func (s *Ql) LimitTx(tx *Tx, page, rows int) (items et.Items, err error) {
 /**
 * Limit
 * @param page, rows int
-* @return *Ql
+* @return et.Items, error
 **/
 func (s *Ql) Limit(page, rows int) (items et.Items, err error) {
 	return s.LimitTx(nil, page, rows)

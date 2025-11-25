@@ -115,19 +115,157 @@ func (s *Model) defineRollup(params et.Json) error {
 }
 
 /**
+* DefineColumn
+* @param name string, columnType string
+* @return error
+**/
+func (s *Model) DefineColumn(name string, columnType string) error {
+	return s.defineColumn(name, et.Json{
+		"type": columnType,
+	})
+}
+
+/**
+* DefineSourceField
+* @param name string
+* @return error
+**/
+func (s *Model) DefineSourceField(name string) error {
+	if !utility.ValidStr(name, 0, []string{}) {
+		return nil
+	}
+
+	s.SourceField = name
+	err := s.defineColumn(name, et.Json{
+		"type": TypeJson,
+	})
+	if err != nil {
+		return err
+	}
+
+	s.DefineIndexes(name)
+	return nil
+}
+
+/**
+* DefineRecordField
+* @param name string
+* @return error
+**/
+func (s *Model) DefineRecordField(name string) error {
+	if !utility.ValidStr(name, 0, []string{}) {
+		return nil
+	}
+
+	s.RecordField = name
+	err := s.defineColumn(name, et.Json{
+		"type": TypeKey,
+	})
+	if err != nil {
+		return err
+	}
+
+	s.DefineIndexes(name)
+	return nil
+}
+
+/**
+* DefineStatusField
+* @param name string
+* @return error
+**/
+func (s *Model) DefineStatusField(name string) error {
+	if !utility.ValidStr(name, 0, []string{}) {
+		return nil
+	}
+
+	s.StatusField = name
+	err := s.defineColumn(name, et.Json{
+		"type": TypeText,
+	})
+	if err != nil {
+		return err
+	}
+
+	s.DefineIndexes(name)
+	return nil
+}
+
+/**
+* DefineStatusFieldDefault
+* @return error
+**/
+func (s *Model) DefineStatusFieldDefault() error {
+	return s.DefineStatusField(STATUS)
+}
+
+/**
+* DefineRecordFieldDefault
+* @return error
+**/
+func (s *Model) DefineRecordFieldDefault() error {
+	return s.DefineRecordField(RECORDID)
+}
+
+/**
+* DefineSourceFieldDefault
+* @return error
+**/
+func (s *Model) DefineSourceFieldDefault() error {
+	return s.DefineSourceField(SOURCE)
+}
+
+/**
 * DefineAtrib
 * @param name string, defaultValue interface{}
 * @return error
 **/
 func (s *Model) DefineAtrib(name string, defaultValue interface{}) error {
 	if s.SourceField == "" {
-		s.DefineSetSourceField(SOURCE)
+		s.DefineSourceField(SOURCE)
 	}
 
 	return s.defineColumn(name, et.Json{
 		"type":    TypeAtribute,
 		"default": defaultValue,
 	})
+}
+
+/**
+* DefineRequired
+* @param names ...string
+* @return
+**/
+func (s *Model) DefineRequired(names ...string) {
+	for _, name := range names {
+		idx := s.getColumnIndex(name)
+		if idx == -1 {
+			continue
+		}
+
+		s.Required = append(s.Required, name)
+	}
+}
+
+/**
+* DefineUniqueIndex
+* @param names ...string
+* @return
+**/
+func (s *Model) DefineUniqueIndex(names ...string) {
+	for _, name := range names {
+		idx := slices.Index(s.UniqueIndexes, name)
+		if idx != -1 {
+			continue
+		}
+
+		idx = s.getColumnIndex(name)
+		if idx == -1 {
+			continue
+		}
+
+		s.UniqueIndexes = append(s.UniqueIndexes, name)
+	}
 }
 
 /**
@@ -150,131 +288,6 @@ func (s *Model) DefinePrimaryKeys(names ...string) {
 		s.DefineRequired(name)
 		s.PrimaryKeys = append(s.PrimaryKeys, name)
 	}
-}
-
-/**
-* DefineIndexes
-* @param names ...string
-* @return error
-**/
-func (s *Model) DefineIndexes(names ...string) error {
-	for _, name := range names {
-		idx := s.getColumnIndex(name)
-		if idx == -1 {
-			continue
-		}
-
-		idx = slices.Index(s.Indexes, name)
-		if idx != -1 {
-			continue
-		}
-
-		s.Indexes = append(s.Indexes, name)
-	}
-
-	return nil
-}
-
-/**
-* DefineRequired
-* @param names ...string
-* @return
-**/
-func (s *Model) DefineRequired(names ...string) {
-	for _, name := range names {
-		idx := s.getColumnIndex(name)
-		if idx == -1 {
-			continue
-		}
-
-		s.Required = append(s.Required, name)
-	}
-}
-
-/**
-* DefineHidden
-* @param names ...string
-* @return
-**/
-func (s *Model) DefineHidden(names ...string) {
-	for _, name := range names {
-		idx := s.getColumnIndex(name)
-		if idx == -1 {
-			continue
-		}
-
-		s.Columns[idx].Set("hidden", true)
-		s.Hidden = append(s.Hidden, name)
-	}
-}
-
-/**
-* DefineSetSourceField
-* @param name string
-* @return error
-**/
-func (s *Model) DefineSetSourceField(name string) error {
-	if !utility.ValidStr(name, 0, []string{}) {
-		return nil
-	}
-
-	SOURCE = name
-	s.SourceField = name
-	err := s.defineColumn(name, et.Json{
-		"type": TypeJson,
-	})
-	if err != nil {
-		return err
-	}
-
-	s.DefineIndexes(name)
-	return nil
-}
-
-/**
-* DefineSetRecordField
-* @param name string
-* @return error
-**/
-func (s *Model) DefineSetRecordField(name string) error {
-	if !utility.ValidStr(name, 0, []string{}) {
-		return nil
-	}
-
-	RECORDID = name
-	s.RecordField = name
-	err := s.defineColumn(name, et.Json{
-		"type": TypeKey,
-	})
-	if err != nil {
-		return err
-	}
-
-	s.DefineIndexes(name)
-	return nil
-}
-
-/**
-* DefineSetStatusField
-* @param name string
-* @return error
-**/
-func (s *Model) DefineSetStatusField(name string) error {
-	if !utility.ValidStr(name, 0, []string{}) {
-		return nil
-	}
-
-	STATUS = name
-	s.StatusField = name
-	err := s.defineColumn(name, et.Json{
-		"type": TypeText,
-	})
-	if err != nil {
-		return err
-	}
-
-	s.DefineIndexes(name)
-	return nil
 }
 
 /**
@@ -304,14 +317,43 @@ func (s *Model) DefineForeignKey(to *Model, fks []et.Json, onDelete string, onUp
 }
 
 /**
-* DefineColumn
-* @param name string, columnType string
+* DefineIndexes
+* @param names ...string
 * @return error
 **/
-func (s *Model) DefineColumn(name string, columnType string) error {
-	return s.defineColumn(name, et.Json{
-		"type": columnType,
-	})
+func (s *Model) DefineIndexes(names ...string) error {
+	for _, name := range names {
+		idx := s.getColumnIndex(name)
+		if idx == -1 {
+			continue
+		}
+
+		idx = slices.Index(s.Indexes, name)
+		if idx != -1 {
+			continue
+		}
+
+		s.Indexes = append(s.Indexes, name)
+	}
+
+	return nil
+}
+
+/**
+* DefineHidden
+* @param names ...string
+* @return
+**/
+func (s *Model) DefineHidden(names ...string) {
+	for _, name := range names {
+		idx := s.getColumnIndex(name)
+		if idx == -1 {
+			continue
+		}
+
+		s.Columns[idx].Set("hidden", true)
+		s.Hidden = append(s.Hidden, name)
+	}
 }
 
 /**
@@ -362,23 +404,6 @@ func (s *Model) DefineCalc(name string, fn DataContext) error {
 	}
 
 	s.Calcs[name] = fn
-	return nil
-}
-
-/**
-* DefineColumnVm
-* @param name string, script string
-* @return error
-**/
-func (s *Model) DefineColumnVm(name string, script string) error {
-	err := s.defineColumn(name, et.Json{
-		"type": TypeVm,
-	})
-	if err != nil {
-		return err
-	}
-
-	s.Vms[name] = script
 	return nil
 }
 
@@ -455,43 +480,16 @@ func (s *Model) DefinePrimaryKeyField() *Model {
 }
 
 /**
-* DefineSourceField
-* @return *Model
-**/
-func (s *Model) DefineSourceField() *Model {
-	s.DefineSetSourceField(SOURCE)
-	return s
-}
-
-/**
-* DefineRecordField
-* @return *Model
-**/
-func (s *Model) DefineRecordField() *Model {
-	s.DefineSetRecordField(RECORDID)
-	return s
-}
-
-/**
-* DefineStatusField
-* @return *Model
-**/
-func (s *Model) DefineStatusField() *Model {
-	s.DefineSetStatusField(STATUS)
-	return s
-}
-
-/**
 * DefineModel
 * @return *Model
 **/
 func (s *Model) DefineModel() *Model {
 	s.DefineCreatedAtField()
 	s.DefineUpdatedAtField()
-	s.DefineStatusField()
+	s.DefineStatusFieldDefault()
 	s.DefinePrimaryKeyField()
-	s.DefineSourceField()
-	s.DefineRecordField()
+	s.DefineSourceFieldDefault()
+	s.DefineRecordFieldDefault()
 	return s
 }
 
@@ -499,14 +497,14 @@ func (s *Model) DefineModel() *Model {
 * DefineTenantModel
 * @return *Model
 **/
-func (s *Model) DefineTenantModel() *Model {
+func (s *Model) DefineProjectModel() *Model {
 	s.DefineCreatedAtField()
 	s.DefineUpdatedAtField()
-	s.DefineStatusField()
+	s.DefineStatusFieldDefault()
 	s.DefinePrimaryKeyField()
-	s.DefineColumn(TENANT_ID, TypeKey)
-	s.DefineSourceField()
-	s.DefineRecordField()
-	s.DefineIndexes(TENANT_ID)
+	s.DefineColumn(PROJECT_ID, TypeKey)
+	s.DefineSourceFieldDefault()
+	s.DefineRecordFieldDefault()
+	s.DefineIndexes(PROJECT_ID)
 	return s
 }

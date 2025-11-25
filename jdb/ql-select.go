@@ -47,8 +47,6 @@ func (s *Ql) Select(fields ...string) *Ql {
 
 		if tp == TypeCalc {
 			s.Calcs[v] = s.From.Calcs[v]
-		} else if tp == TypeVm {
-			s.Vms[v] = s.From.Vms[v]
 		} else if tp == TypeRollup {
 			s.Rollups[v] = s.From.Rollups[v]
 		} else if tp == TypeRelation {

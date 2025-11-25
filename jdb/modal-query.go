@@ -9,7 +9,8 @@ import "github.com/cgalvisleon/et/et"
 **/
 func (s *Model) Query(query et.Json) *Ql {
 	result := s.db.From(s, "A")
-	return result.setQuery(query)
+	result.setQuery(query)
+	return result
 }
 
 /**

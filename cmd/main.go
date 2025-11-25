@@ -25,7 +25,7 @@ func main() {
 		logs.Panic(err)
 	}
 
-	id := reg.GenULIDI("users")
+	id := reg.GenULID("users")
 	logs.Debug("id:", id)
 
 	logs.Debug("db:", db.ToJson().ToString())

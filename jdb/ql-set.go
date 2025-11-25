@@ -20,7 +20,6 @@ func (s *Ql) setQuery(query et.Json) *Ql {
 		setGroupBy(query.ArrayStr("group_by")).
 		setHaving(query.ArrayJson("having")).
 		setLimit(query.Json("limit"))
-
 	return s
 }
 
@@ -137,9 +136,18 @@ func (s *Ql) setHaving(having []et.Json) *Ql {
 /**
 * setLimit
 * @param limits et.Json
-* @return *Ql
 **/
 func (s *Ql) setLimit(limits et.Json) *Ql {
 	s.Limits = limits
 	return s
+}
+
+/**
+* Result executes the query and returns the result
+* @return et.Items, error
+**/
+func (s *Ql) Result() (et.Items, error) {
+	page := s.Limits.ValInt(1, "page")
+	rows := s.Limits.ValInt(1000, "rows")
+	return s.Limit(page, rows)
 }

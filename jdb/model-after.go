@@ -15,13 +15,6 @@ import (
 func (s *Model) afterInsertDefault(tx *Tx, data et.Json) error {
 	if s.RecordField != "" {
 		id := data.String(s.RecordField)
-		event.Publish(id, et.Json{
-			"database": s.Database,
-			"model":    s.Name,
-			"action":   "insert",
-			RECORDID:   id,
-			"data":     data,
-		})
 		key := fmt.Sprintf("%s:%s", s.Database, s.Name)
 		event.Publish(key, et.Json{
 			"database": s.Database,
@@ -47,13 +40,6 @@ func (s *Model) afterInsertDefault(tx *Tx, data et.Json) error {
 func (s *Model) afterUpdateDefault(tx *Tx, data et.Json) error {
 	if s.RecordField != "" {
 		id := data.String(s.RecordField)
-		event.Publish(id, et.Json{
-			"database": s.Database,
-			"model":    s.Name,
-			"action":   "update",
-			RECORDID:   id,
-			"data":     data,
-		})
 		key := fmt.Sprintf("%s:%s", s.Database, s.Name)
 		event.Publish(key, et.Json{
 			"database": s.Database,
@@ -79,13 +65,6 @@ func (s *Model) afterUpdateDefault(tx *Tx, data et.Json) error {
 func (s *Model) afterDeleteDefault(tx *Tx, data et.Json) error {
 	if s.RecordField != "" {
 		id := data.String(s.RecordField)
-		event.Publish(id, et.Json{
-			"database": s.Database,
-			"model":    s.Name,
-			"action":   "delete",
-			RECORDID:   id,
-			"data":     data,
-		})
 		key := fmt.Sprintf("%s:%s", s.Database, s.Name)
 		event.Publish(key, et.Json{
 			"database": s.Database,

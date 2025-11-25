@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"database/sql"
 	"fmt"
 
 	"github.com/cgalvisleon/et/et"
@@ -99,4 +100,22 @@ func (s *Connection) validate() error {
 	}
 
 	return nil
+}
+
+/**
+* connectTo
+* @param chain string
+* @return *sql.DB, error
+**/
+func connectTo(chain string) (*sql.DB, error) {
+	db, err := sql.Open(driver, chain)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := db.Ping(); err != nil {
+		return nil, err
+	}
+
+	return db, nil
 }

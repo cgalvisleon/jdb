@@ -48,6 +48,15 @@ func (s *Postgres) buildModel(model *jdb.Model) (string, error) {
 		sql = strs.Append(sql, def, "\n")
 	}
 
+	def, err = s.buildUniqueIndex(definition)
+	if err != nil {
+		return "", err
+	}
+
+	if def != "" {
+		sql = strs.Append(sql, def, "\n")
+	}
+
 	def, err = s.buildTriggerBeforeInsert(definition)
 	if err != nil {
 		return "", err
@@ -261,6 +270,29 @@ func (s *Postgres) buildIndexes(definition et.Json) (string, error) {
 		} else {
 			def = fmt.Sprintf("CREATE INDEX IF NOT EXISTS %s ON %s(%s);", def, table, v)
 		}
+		result = strs.Append(result, def, "\n")
+	}
+
+	return result, nil
+}
+
+/**
+* buildUniqueIndex
+* @param definition et.Json
+* @return (string, error)
+**/
+func (s *Postgres) buildUniqueIndex(definition et.Json) (string, error) {
+	uniqueIndexes := definition.ArrayStr("unique_indexes")
+	if len(uniqueIndexes) == 0 {
+		return "", nil
+	}
+
+	table := definition.String("table")
+	name := definition.String("name")
+	result := ""
+	for _, v := range uniqueIndexes {
+		def := fmt.Sprintf("idx_%s_%s", name, v)
+		def = fmt.Sprintf("CREATE UNIQUE INDEX IF NOT EXISTS %s ON %s(%s);", def, table, v)
 		result = strs.Append(result, def, "\n")
 	}
 

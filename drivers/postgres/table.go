@@ -11,7 +11,7 @@ import (
 * @param db *sql.DB, schema, name string
 * @return bool, error
 **/
-func (s *Postgres) existTable(db *sql.DB, schema, name string) (bool, error) {
+func existTable(db *sql.DB, schema, name string) (bool, error) {
 	rows, err := db.Query(`
 	SELECT EXISTS(
 		SELECT 1

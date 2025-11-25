@@ -2,7 +2,9 @@ package postgres
 
 import (
 	"database/sql"
+	"fmt"
 
+	"github.com/cgalvisleon/et/logs"
 	"github.com/cgalvisleon/jdb/jdb"
 )
 
@@ -29,4 +31,56 @@ func existSchema(db *sql.DB, name string) (bool, error) {
 	}
 
 	return items.Bool(0, "exists"), nil
+}
+
+/**
+* CreateSchema
+* @param db *sql.DB, name string
+* @return error
+**/
+func (s *Postgres) CreateSchema(db *sql.DB, name string) error {
+	exist, err := existSchema(db, name)
+	if err != nil {
+		return err
+	}
+
+	if exist {
+		return nil
+	}
+
+	sql := fmt.Sprintf(`CREATE SCHEMA %s;`, name)
+	_, err = db.Exec(sql)
+	if err != nil {
+		return err
+	}
+
+	logs.Logf(driver, `Schema %s created`, name)
+
+	return nil
+}
+
+/**
+* DropSchema
+* @param db *sql.DB, name string
+* @return error
+**/
+func (s *Postgres) DropSchema(db *sql.DB, name string) error {
+	exist, err := existSchema(db, name)
+	if err != nil {
+		return err
+	}
+
+	if !exist {
+		return nil
+	}
+
+	sql := fmt.Sprintf(`DROP SCHEMA %s;`, name)
+	_, err = db.Exec(sql)
+	if err != nil {
+		return err
+	}
+
+	logs.Logf(driver, `Schema %s droped`, name)
+
+	return nil
 }

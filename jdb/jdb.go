@@ -95,7 +95,7 @@ func Select(query et.Json) (*Ql, error) {
 		return nil, err
 	}
 
-	return db.Select(query)
+	return db.Select(query), nil
 }
 
 /**
@@ -106,4 +106,18 @@ func Select(query et.Json) (*Ql, error) {
 func From(model *Model, as string) *Ql {
 	db := model.db
 	return db.From(model, as)
+}
+
+/**
+* Query
+* @param database, sql string, args ...interface{}
+* @return (et.Items, error)
+**/
+func Query(database, sql string, args ...interface{}) (et.Items, error) {
+	db, err := GetDatabase(database)
+	if err != nil {
+		return et.Items{}, err
+	}
+
+	return db.Query(sql, args...)
 }

@@ -1,6 +1,8 @@
 package jdb
 
 import (
+	"fmt"
+
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/reg"
 )
@@ -12,8 +14,15 @@ import (
 **/
 func (s *Model) beforeInsertDefault(tx *Tx, data et.Json) error {
 	if s.RecordField != "" {
-		id := reg.GenULIDI(s.Name)
+		id := data.Str(s.RecordField)
+		id = reg.TagULID(s.Name, id)
 		data.Set(s.RecordField, id)
+	}
+
+	for _, required := range s.Required {
+		if data.Str(required) == "" {
+			return fmt.Errorf(MSG_FIELD_REQUIRED, required)
+		}
 	}
 
 	if s.isCore {

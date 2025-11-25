@@ -126,19 +126,13 @@ func (s *DB) getOrCreateModel(schema, name string) (*Model, error) {
 			Details:       make(map[string]et.Json),
 			Masters:       make(map[string]et.Json),
 			Calcs:         make(map[string]DataContext),
-			Vms:           make(map[string]string),
 			Rollups:       make(map[string]et.Json),
 			Relations:     make(map[string]et.Json),
+			UniqueIndexes: []string{},
 			PrimaryKeys:   []string{},
 			ForeignKeys:   []et.Json{},
 			Indexes:       []string{},
 			Required:      []string{},
-			BeforeInserts: make([]string, 0),
-			BeforeUpdates: make([]string, 0),
-			BeforeDeletes: make([]string, 0),
-			AfterInserts:  make([]string, 0),
-			AfterUpdates:  make([]string, 0),
-			AfterDeletes:  make([]string, 0),
 			db:            s,
 			details:       make(map[string]*Model),
 			beforeInserts: []DataFunctionTx{},
@@ -321,6 +315,7 @@ func (s *DB) Define(definition et.Json) (*Model, error) {
 
 	result.Table = definition.String("table")
 	result.Indexes = definition.ArrayStr("indexes")
+	result.UniqueIndexes = definition.ArrayStr("unique_indexes")
 	result.Required = definition.ArrayStr("required")
 	result.Version = definition.Int("version")
 
@@ -342,19 +337,19 @@ func (s *DB) Define(definition et.Json) (*Model, error) {
 	result.DefinePrimaryKeys(primaryKeys...)
 
 	sourceField := definition.String("source_field")
-	err = result.DefineSetSourceField(sourceField)
+	err = result.DefineSourceField(sourceField)
 	if err != nil {
 		return nil, err
 	}
 
 	statusField := definition.String("status_field")
-	err = result.DefineSetStatusField(statusField)
+	err = result.DefineStatusField(statusField)
 	if err != nil {
 		return nil, err
 	}
 
 	recordField := definition.String("record_field")
-	err = result.DefineSetRecordField(recordField)
+	err = result.DefineRecordField(recordField)
 	if err != nil {
 		return nil, err
 	}
@@ -390,17 +385,17 @@ func (s *DB) Define(definition et.Json) (*Model, error) {
 /**
 * Select
 * @param query et.Json
-* @return (*Ql, error)
+* @return *Ql
 **/
-func (s *DB) Select(query et.Json) (*Ql, error) {
+func (s *DB) Select(query et.Json) *Ql {
 	result := newQl(nil, "")
 	from := query.Json("from")
 	if from.IsEmpty() {
-		return nil, fmt.Errorf(MSG_FROM_REQUIRED)
+		logs.Panicf(MSG_FROM_REQUIRED)
 	}
 	result.Froms = from
 
-	return result.setQuery(query), nil
+	return result.setQuery(query)
 }
 
 /**
