@@ -11,19 +11,19 @@ func (s *Cmd) update() (et.Items, error) {
 		Query(et.Json{
 			"where": s.Wheres,
 		}).
-		Debug().
 		All()
 	if err != nil {
 		return et.Items{}, err
 	}
 
-	for _, data := range current.Result {
+	for _, old := range current.Result {
+		new := old.Clone()
 		for k, v := range s.Data[0] {
-			data[k] = v
+			new[k] = v
 		}
 
 		for _, fn := range s.beforeUpdates {
-			err := fn(s.tx, data)
+			err := fn(s.tx, old, new)
 			if err != nil {
 				return et.Items{}, err
 			}
@@ -34,14 +34,15 @@ func (s *Cmd) update() (et.Items, error) {
 			return et.Items{}, err
 		}
 
-		data := result.First().Result
-		s.Result.Add(data)
 		if !result.Ok {
-			return result, nil
+			continue
 		}
 
+		new = result.First().Result
+		s.Result.Add(new)
+
 		for _, fn := range s.afterUpdates {
-			err := fn(s.tx, data)
+			err := fn(s.tx, old, new)
 			if err != nil {
 				return et.Items{}, err
 			}

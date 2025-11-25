@@ -7,23 +7,51 @@ import (
 	"github.com/cgalvisleon/et/event"
 )
 
-/**
-* afterInsertDefault
-* @param tx *Tx, data et.Json
-* @return error
-**/
-func (s *Model) afterInsertDefault(tx *Tx, data et.Json) error {
-	if s.RecordField != "" {
-		id := data.String(s.RecordField)
-		key := fmt.Sprintf("%s:%s", s.Database, s.Name)
+func (s *Model) publish(action string, data et.Json) {
+	key := s.GetKey(data)
+	recordId := data.String(s.RecordField)
+	if key != "" {
 		event.Publish(key, et.Json{
 			"database": s.Database,
 			"model":    s.Name,
-			"action":   "insert",
-			RECORDID:   id,
+			"action":   action,
+			KEY:        key,
+			RECORDID:   recordId,
 			"data":     data,
 		})
 	}
+
+	if recordId != "" {
+		event.Publish(key, et.Json{
+			"database": s.Database,
+			"model":    s.Name,
+			"action":   action,
+			KEY:        key,
+			RECORDID:   recordId,
+			"data":     data,
+		})
+	}
+
+	channel := fmt.Sprintf("%s:%s", s.Database, s.Name)
+	if channel != "" {
+		event.Publish(channel, et.Json{
+			"database": s.Database,
+			"model":    s.Name,
+			"action":   action,
+			KEY:        key,
+			RECORDID:   recordId,
+			"data":     data,
+		})
+	}
+}
+
+/**
+* afterInsertDefault
+* @param tx *Tx, old, new et.Json
+* @return error
+**/
+func (s *Model) afterInsertDefault(tx *Tx, old, new et.Json) error {
+	s.publish("insert", new)
 
 	if s.isCore {
 		return nil
@@ -37,18 +65,8 @@ func (s *Model) afterInsertDefault(tx *Tx, data et.Json) error {
 * @param tx *Tx, data et.Json
 * @return error
 **/
-func (s *Model) afterUpdateDefault(tx *Tx, data et.Json) error {
-	if s.RecordField != "" {
-		id := data.String(s.RecordField)
-		key := fmt.Sprintf("%s:%s", s.Database, s.Name)
-		event.Publish(key, et.Json{
-			"database": s.Database,
-			"model":    s.Name,
-			"action":   "update",
-			RECORDID:   id,
-			"data":     data,
-		})
-	}
+func (s *Model) afterUpdateDefault(tx *Tx, old, new et.Json) error {
+	s.publish("update", new)
 
 	if s.isCore {
 		return nil
@@ -62,18 +80,8 @@ func (s *Model) afterUpdateDefault(tx *Tx, data et.Json) error {
 * @param tx *Tx, data et.Json
 * @return error
 **/
-func (s *Model) afterDeleteDefault(tx *Tx, data et.Json) error {
-	if s.RecordField != "" {
-		id := data.String(s.RecordField)
-		key := fmt.Sprintf("%s:%s", s.Database, s.Name)
-		event.Publish(key, et.Json{
-			"database": s.Database,
-			"model":    s.Name,
-			"action":   "delete",
-			RECORDID:   id,
-			"data":     data,
-		})
-	}
+func (s *Model) afterDeleteDefault(tx *Tx, old, new et.Json) error {
+	s.publish("delete", new)
 
 	if s.isCore {
 		return nil

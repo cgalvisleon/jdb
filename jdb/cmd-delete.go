@@ -11,15 +11,14 @@ func (s *Cmd) delete() (et.Items, error) {
 		Query(et.Json{
 			"where": s.Wheres,
 		}).
-		Debug().
 		All()
 	if err != nil {
 		return et.Items{}, err
 	}
 
-	for _, data := range current.Result {
+	for _, old := range current.Result {
 		for _, fn := range s.beforeDeletes {
-			err := fn(s.tx, data)
+			err := fn(s.tx, old, et.Json{})
 			if err != nil {
 				return et.Items{}, err
 			}
@@ -30,14 +29,15 @@ func (s *Cmd) delete() (et.Items, error) {
 			return et.Items{}, err
 		}
 
-		data := result.First().Result
-		s.Result.Add(data)
 		if !result.Ok {
-			return result, nil
+			continue
 		}
 
+		old = result.First().Result
+		s.Result.Add(old)
+
 		for _, fn := range s.afterDeletes {
-			err := fn(s.tx, data)
+			err := fn(s.tx, old, et.Json{})
 			if err != nil {
 				return et.Items{}, err
 			}

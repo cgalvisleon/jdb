@@ -224,7 +224,6 @@ func querytx(db *DB, tx *Tx, query string, arg ...any) (et.Items, error) {
 
 	var err error
 	var rows *sql.Rows
-	defer rows.Close()
 	if tx != nil {
 		err = tx.Begin(db.Db)
 		if err != nil {
@@ -233,10 +232,11 @@ func querytx(db *DB, tx *Tx, query string, arg ...any) (et.Items, error) {
 
 		rows, err = tx.Tx.Query(query, arg...)
 		if err != nil {
+			err = fmt.Errorf(`%s: %w`, query, err)
+			data["error"] = err.Error()
+			event.Publish(EVENT_SQL_ERROR, data)
 			errRollback := tx.Rollback()
 			if errRollback != nil {
-				data["error"] = err.Error()
-				event.Publish(EVENT_SQL_ERROR, data)
 				err = fmt.Errorf("error on rollback: %w: %s", errRollback, err)
 			}
 
@@ -245,13 +245,18 @@ func querytx(db *DB, tx *Tx, query string, arg ...any) (et.Items, error) {
 	} else {
 		rows, err = db.Db.Query(query, arg...)
 		if err != nil {
+			err = fmt.Errorf(`%s: %w`, query, err)
+			data["error"] = err.Error()
+			event.Publish(EVENT_SQL_ERROR, data)
 			return et.Items{}, err
 		}
 	}
 
 	tp := tipoSQL(query)
 	event.Publish(fmt.Sprintf("sql:%s", tp), data)
-	return RowsToItems(rows), nil
+	defer rows.Close()
+	result := RowsToItems(rows)
+	return result, nil
 }
 
 /**

@@ -16,7 +16,6 @@ type Ql struct {
 	Atribs      et.Json                `json:"atribs"`
 	Hiddens     []string               `json:"hidden"`
 	Calcs       map[string]DataContext `json:"-"`
-	Vms         map[string]string      `json:"vms"`
 	Rollups     et.Json                `json:"rollups"`
 	Relations   et.Json                `json:"relations"`
 	Joins       []et.Json              `json:"joins"`

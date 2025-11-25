@@ -104,13 +104,13 @@ func GenSeries(kind, tag string) (string, error) {
 			"kind": kind,
 			"tag":  tag,
 		}).
-		BeforeInsert(func(tx *Tx, data et.Json) error {
-			data.Set("format", "%08d")
-			data.Set("value", 1)
+		BeforeInsert(func(tx *Tx, old, new et.Json) error {
+			new.Set("format", "%08d")
+			new.Set("value", 1)
 			return nil
 		}).
-		BeforeUpdate(func(tx *Tx, data et.Json) error {
-			data.Set("value", "value + 1")
+		BeforeUpdate(func(tx *Tx, old, new et.Json) error {
+			new.Set("value", "value + 1")
 			return nil
 		}).
 		One()

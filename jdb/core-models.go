@@ -84,12 +84,12 @@ func setModel(name string, version int, definition []byte) error {
 	}
 	_, err := models.
 		Upsert(data).
-		BeforeInsertOrUpdate(func(tx *Tx, data et.Json) error {
-			data.Set("created_at", now)
-			data.Set("updated_at", now)
+		BeforeInsertOrUpdate(func(tx *Tx, old, new et.Json) error {
+			new.Set("created_at", now)
+			new.Set("updated_at", now)
 			return nil
 		}).
-		BeforeUpdate(func(tx *Tx, data et.Json) error {
+		BeforeUpdate(func(tx *Tx, old, new et.Json) error {
 			data.Set("updated_at", now)
 			return nil
 		}).

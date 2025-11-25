@@ -9,9 +9,9 @@ import (
 * @return error
 **/
 func (s *Cmd) insert() (et.Items, error) {
-	for _, data := range s.Data {
+	for _, new := range s.Data {
 		for _, fn := range s.beforeInserts {
-			err := fn(s.tx, data)
+			err := fn(s.tx, et.Json{}, new)
 			if err != nil {
 				return et.Items{}, err
 			}
@@ -22,14 +22,15 @@ func (s *Cmd) insert() (et.Items, error) {
 			return et.Items{}, err
 		}
 
-		data := result.First().Result
-		s.Result.Add(data)
 		if !result.Ok {
-			return result, nil
+			continue
 		}
 
+		new = result.First().Result
+		s.Result.Add(new)
+
 		for _, fn := range s.afterInserts {
-			err := fn(s.tx, data)
+			err := fn(s.tx, et.Json{}, new)
 			if err != nil {
 				return et.Items{}, err
 			}

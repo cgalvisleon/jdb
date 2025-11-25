@@ -367,7 +367,8 @@ func (s *DB) Define(definition et.Json) (*Model, error) {
 		}
 
 		version := detail.Int("version")
-		_, err := result.DefineDetail(detailName, fks, version)
+		onCascade := detail.Bool("on_cascade")
+		_, err := result.DefineDetailCascade(detailName, fks, version, onCascade)
 		if err != nil {
 			return nil, err
 		}

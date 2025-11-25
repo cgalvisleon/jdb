@@ -94,7 +94,7 @@ func (s *Postgres) Connect(database *jdb.DB) (*sql.DB, error) {
 		}
 	}
 
-	logs.Logf(driver, `Connected to %s:%s`, s.connection.Host, s.connection.Database)
+	logs.Logf(driver, `Connected to %s:%s:%d`, s.connection.Host, s.connection.Database, s.connection.Port)
 
 	return db, nil
 }

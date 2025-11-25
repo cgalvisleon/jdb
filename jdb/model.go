@@ -9,6 +9,7 @@ import (
 	"github.com/cgalvisleon/et/envar"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/reg"
+	"github.com/cgalvisleon/et/strs"
 	"github.com/cgalvisleon/et/utility"
 )
 
@@ -103,7 +104,7 @@ var (
 	ErrDuplicate   = fmt.Errorf("record duplicate")
 )
 
-type DataFunctionTx func(tx *Tx, data et.Json) error
+type DataFunctionTx func(tx *Tx, old, new et.Json) error
 type DataContext func(data et.Json)
 
 type Model struct {
@@ -387,4 +388,19 @@ func (s *Model) GetRecordById(id string) (et.Item, error) {
 	}
 
 	return result, nil
+}
+
+/**
+* GetKey
+* @param data et.Json
+* @return string
+**/
+func (s *Model) GetKey(data et.Json) string {
+	result := ""
+	for _, col := range s.PrimaryKeys {
+		value := data.Str(col)
+		result = strs.Append(result, value, ":")
+	}
+
+	return result
 }

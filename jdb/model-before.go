@@ -9,18 +9,18 @@ import (
 
 /**
 * beforeInsertDefault
-* @param tx *Tx, data et.Json
+* @param tx *Tx, old, new et.Json
 * @return error
 **/
-func (s *Model) beforeInsertDefault(tx *Tx, data et.Json) error {
+func (s *Model) beforeInsertDefault(tx *Tx, old, new et.Json) error {
 	if s.RecordField != "" {
-		id := data.Str(s.RecordField)
+		id := new.Str(s.RecordField)
 		id = reg.TagULID(s.Name, id)
-		data.Set(s.RecordField, id)
+		new.Set(s.RecordField, id)
 	}
 
 	for _, required := range s.Required {
-		if data.Str(required) == "" {
+		if new.Str(required) == "" {
 			return fmt.Errorf(MSG_FIELD_REQUIRED, required)
 		}
 	}
@@ -34,10 +34,10 @@ func (s *Model) beforeInsertDefault(tx *Tx, data et.Json) error {
 
 /**
 * beforeUpdateDefault
-* @param tx *Tx, data et.Json
+* @param tx *Tx, old, new et.Json
 * @return error
 **/
-func (s *Model) beforeUpdateDefault(tx *Tx, data et.Json) error {
+func (s *Model) beforeUpdateDefault(tx *Tx, old, new et.Json) error {
 	if s.isCore {
 		return nil
 	}
@@ -47,10 +47,10 @@ func (s *Model) beforeUpdateDefault(tx *Tx, data et.Json) error {
 
 /**
 * beforeDeleteDefault
-* @param tx *Tx, data et.Json
+* @param tx *Tx, old, new et.Json
 * @return error
 **/
-func (s *Model) beforeDeleteDefault(tx *Tx, data et.Json) error {
+func (s *Model) beforeDeleteDefault(tx *Tx, old, new et.Json) error {
 	if s.isCore {
 		return nil
 	}

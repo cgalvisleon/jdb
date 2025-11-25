@@ -408,11 +408,11 @@ func (s *Model) DefineCalc(name string, fn DataContext) error {
 }
 
 /**
-* DefineDetail
-* @param name string, fks []et.Json, version int
+* DefineDetailCascade
+* @param name string, fks []et.Json, version int, onCascade bool
 * @return (*Model, error)
 **/
-func (s *Model) DefineDetail(name string, fks []et.Json, version int) (*Model, error) {
+func (s *Model) DefineDetailCascade(name string, fks []et.Json, version int, onCascade bool) (*Model, error) {
 	colName := name
 	name = fmt.Sprintf("%s_%s", s.Name, name)
 	result, _ := GetModel(s.Database, name)
@@ -434,12 +434,17 @@ func (s *Model) DefineDetail(name string, fks []et.Json, version int) (*Model, e
 			result.defineColumn(f, et.Json{
 				"type": TypeKey,
 			})
+			if !onCascade {
+				result.DefineIndexes(f)
+			}
 		}
 	}
 
-	err = result.DefineForeignKey(s, fks, "cascade", "cascade")
-	if err != nil {
-		return nil, err
+	if onCascade {
+		err = result.DefineForeignKey(s, fks, "cascade", "cascade")
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	s.defineColumn(colName, et.Json{
@@ -449,6 +454,15 @@ func (s *Model) DefineDetail(name string, fks []et.Json, version int) (*Model, e
 	s.Details[colName] = result.ToJson()
 	s.save()
 	return result, nil
+}
+
+/**
+* DefineDetail
+* @param name string, fks []et.Json, version int
+* @return (*Model, error)
+**/
+func (s *Model) DefineDetail(name string, fks []et.Json, version int) (*Model, error) {
+	return s.DefineDetailCascade(name, fks, version, false)
 }
 
 /**
