@@ -13,7 +13,7 @@ import (
 * @param cmd *jdb.Cmd
 * @return (string, error)
 **/
-func (s *Postgres) buildCommand(cmd *jdb.Cmd) (string, error) {
+func (s *Driver) buildCommand(cmd *jdb.Cmd) (string, error) {
 	command := cmd.Command
 	if !jdb.Commands[command] {
 		return "", fmt.Errorf("command %s no soportado", command)
@@ -36,7 +36,7 @@ func (s *Postgres) buildCommand(cmd *jdb.Cmd) (string, error) {
 * @param cmd *jdb.Cmd
 * @return (string, error)
 **/
-func (s *Postgres) buildInsert(cmd *jdb.Cmd) (string, error) {
+func (s *Driver) buildInsert(cmd *jdb.Cmd) (string, error) {
 	table := cmd.From.Table
 	data := cmd.Data[0]
 	into := ""
@@ -73,7 +73,7 @@ func (s *Postgres) buildInsert(cmd *jdb.Cmd) (string, error) {
 * @param cmd *jdb.Cmd
 * @return (string, error)
 **/
-func (s *Postgres) buildUpdate(cmd *jdb.Cmd) (string, error) {
+func (s *Driver) buildUpdate(cmd *jdb.Cmd) (string, error) {
 	table := cmd.From.Table
 	data := cmd.Data[0]
 	sets := ""
@@ -126,7 +126,7 @@ func (s *Postgres) buildUpdate(cmd *jdb.Cmd) (string, error) {
 * @param cmd *jdb.Cmd
 * @return (string, error)
 **/
-func (s *Postgres) buildDelete(cmd *jdb.Cmd) (string, error) {
+func (s *Driver) buildDelete(cmd *jdb.Cmd) (string, error) {
 	table := cmd.From.Table
 	where := ""
 	returning := fmt.Sprintf(`to_jsonb(%s.*) AS result`, table)

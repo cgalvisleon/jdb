@@ -1,4 +1,4 @@
-package jdb
+package sqlite
 
 import (
 	"database/sql"

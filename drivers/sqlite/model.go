@@ -1,4 +1,4 @@
-package jdb
+package sqlite
 
 import "github.com/cgalvisleon/jdb/jdb"
 

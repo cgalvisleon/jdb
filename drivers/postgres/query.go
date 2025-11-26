@@ -15,7 +15,7 @@ import (
 * @param query *jdb.Ql
 * @return (string, error)
 **/
-func (s *Postgres) buildQuery(ql *jdb.Ql) (string, error) {
+func (s *Driver) buildQuery(ql *jdb.Ql) (string, error) {
 	query := ql.ToJson()
 	sql, err := s.buildSelect(query)
 	if err != nil {
@@ -105,7 +105,7 @@ func (s *Postgres) buildQuery(ql *jdb.Ql) (string, error) {
 * @param query et.Json
 * @return (string, error)
 **/
-func (s *Postgres) buildSelect(query et.Json) (string, error) {
+func (s *Driver) buildSelect(query et.Json) (string, error) {
 	result := ""
 
 	if query.Bool("exists") {
@@ -182,7 +182,7 @@ func (s *Postgres) buildSelect(query et.Json) (string, error) {
 * @param query et.Json
 * @return (string, error)
 **/
-func (s *Postgres) buildFrom(query et.Json) (string, error) {
+func (s *Driver) buildFrom(query et.Json) (string, error) {
 	froms := query.Json("from")
 	if froms.IsEmpty() {
 		return "", fmt.Errorf(jdb.MSG_FROM_REQUIRED)
@@ -207,7 +207,7 @@ func (s *Postgres) buildFrom(query et.Json) (string, error) {
 * @param query et.Json
 * @return (string, error)
 **/
-func (s *Postgres) buildJoins(query et.Json) (string, error) {
+func (s *Driver) buildJoins(query et.Json) (string, error) {
 	joins := query.ArrayJson("joins")
 	if len(joins) == 0 {
 		return "", nil
@@ -242,7 +242,7 @@ func (s *Postgres) buildJoins(query et.Json) (string, error) {
 * @param wheres []et.Json
 * @return (string, error)
 **/
-func (s *Postgres) buildWhere(wheres []et.Json) (string, error) {
+func (s *Driver) buildWhere(wheres []et.Json) (string, error) {
 	condition := func(condition et.Json) string {
 		for k, v := range condition {
 			switch k {
@@ -341,7 +341,7 @@ func (s *Postgres) buildWhere(wheres []et.Json) (string, error) {
 * @param query et.Json
 * @return (string, error)
 **/
-func (s *Postgres) buildGroupBy(query et.Json) (string, error) {
+func (s *Driver) buildGroupBy(query et.Json) (string, error) {
 	groupBy := query.ArrayStr("group_by")
 	if len(groupBy) == 0 {
 		return "", nil
@@ -361,7 +361,7 @@ func (s *Postgres) buildGroupBy(query et.Json) (string, error) {
 * @param query et.Json
 * @return (string, error)
 **/
-func (s *Postgres) buildHaving(query et.Json) (string, error) {
+func (s *Driver) buildHaving(query et.Json) (string, error) {
 	having := query.ArrayJson("having")
 	if len(having) == 0 {
 		return "", nil
@@ -380,7 +380,7 @@ func (s *Postgres) buildHaving(query et.Json) (string, error) {
 * @param query et.Json
 * @return (string, error)
 **/
-func (s *Postgres) buildOrderBy(query et.Json) (string, error) {
+func (s *Driver) buildOrderBy(query et.Json) (string, error) {
 	orderBy := query.Json("order_by")
 	if orderBy.IsEmpty() {
 		return "", nil
@@ -415,7 +415,7 @@ func (s *Postgres) buildOrderBy(query et.Json) (string, error) {
 * @param query et.Json
 * @return (string, error)
 **/
-func (s *Postgres) buildLimit(query et.Json) (string, error) {
+func (s *Driver) buildLimit(query et.Json) (string, error) {
 	limit := query.Json("limit")
 	if limit.IsEmpty() {
 		return "", nil

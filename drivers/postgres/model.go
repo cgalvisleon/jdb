@@ -14,7 +14,7 @@ import (
 * @param model *jdb.Model
 * @return (string, error)
 **/
-func (s *Postgres) buildModel(model *jdb.Model) (string, error) {
+func (s *Driver) buildModel(model *jdb.Model) (string, error) {
 	definition := model.ToJson()
 	sql, err := s.buildSchema(definition)
 	if err != nil {
@@ -74,7 +74,7 @@ func (s *Postgres) buildModel(model *jdb.Model) (string, error) {
 * @param definition et.Json
 * @return (string, error)
 **/
-func (s *Postgres) buildSchema(definition et.Json) (string, error) {
+func (s *Driver) buildSchema(definition et.Json) (string, error) {
 	schema := definition.String("schema")
 	if !utility.ValidStr(schema, 0, []string{}) {
 		return "", fmt.Errorf(jdb.MSG_SCHEMA_REQUIRED)
@@ -97,7 +97,7 @@ func (s *Postgres) buildSchema(definition et.Json) (string, error) {
 * @param definition et.Json
 * @return (string, error)
 **/
-func (s *Postgres) buildTable(definition et.Json) (string, error) {
+func (s *Driver) buildTable(definition et.Json) (string, error) {
 	getType := func(tp string) string {
 		switch tp {
 		case "int":
@@ -190,7 +190,7 @@ func (s *Postgres) buildTable(definition et.Json) (string, error) {
 * @param definition et.Json
 * @return (string, error)
 **/
-func (s *Postgres) buildPrimaryKeys(definition et.Json) (string, error) {
+func (s *Driver) buildPrimaryKeys(definition et.Json) (string, error) {
 	primaryKeys := definition.ArrayStr("primary_keys")
 	if len(primaryKeys) == 0 {
 		return "", nil
@@ -212,7 +212,7 @@ func (s *Postgres) buildPrimaryKeys(definition et.Json) (string, error) {
 * @param mode *jdb.Model, definition et.Json
 * @return (string, error)
 **/
-func (s *Postgres) buildForeignKeys(mode *jdb.Model, definition et.Json) (string, error) {
+func (s *Driver) buildForeignKeys(mode *jdb.Model, definition et.Json) (string, error) {
 	result := ""
 	foreignKeys := definition.ArrayJson("foreign_keys")
 	if len(foreignKeys) == 0 {
@@ -254,7 +254,7 @@ func (s *Postgres) buildForeignKeys(mode *jdb.Model, definition et.Json) (string
 * @param definition et.Json
 * @return (string, error)
 **/
-func (s *Postgres) buildIndexes(definition et.Json) (string, error) {
+func (s *Driver) buildIndexes(definition et.Json) (string, error) {
 	indexes := definition.ArrayStr("indexes")
 	if len(indexes) == 0 {
 		return "", nil
@@ -281,7 +281,7 @@ func (s *Postgres) buildIndexes(definition et.Json) (string, error) {
 * @param definition et.Json
 * @return (string, error)
 **/
-func (s *Postgres) buildUniqueIndex(definition et.Json) (string, error) {
+func (s *Driver) buildUniqueIndex(definition et.Json) (string, error) {
 	uniqueIndexes := definition.ArrayStr("unique_indexes")
 	if len(uniqueIndexes) == 0 {
 		return "", nil
@@ -304,7 +304,7 @@ func (s *Postgres) buildUniqueIndex(definition et.Json) (string, error) {
 * @param definition et.Json
 * @return (string, error)
 **/
-func (s *Postgres) buildTriggerBeforeInsert(definition et.Json) (string, error) {
+func (s *Driver) buildTriggerBeforeInsert(definition et.Json) (string, error) {
 	recordField := definition.String("record_field")
 	if recordField == "" {
 		return "", nil
@@ -332,6 +332,6 @@ func (s *Postgres) buildTriggerBeforeInsert(definition et.Json) (string, error) 
 * @param model *jdb.Model
 * @return (string, error)
 **/
-func (s *Postgres) mutateModel(model *jdb.Model) (string, error) {
+func (s *Driver) mutateModel(model *jdb.Model) (string, error) {
 	return "", nil
 }
