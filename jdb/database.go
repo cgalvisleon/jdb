@@ -241,7 +241,7 @@ func (s *DB) init(model *Model) error {
 		return err
 	}
 
-	model.SetInit()
+	model.isInit = true
 
 	return nil
 }
@@ -368,7 +368,7 @@ func (s *DB) Define(definition et.Json) (*Model, error) {
 
 		version := detail.Int("version")
 		onCascade := detail.Bool("on_cascade")
-		_, err := result.DefineDetailCascade(detailName, fks, version, onCascade)
+		_, err := result.defineDetail(detailName, fks, version, onCascade)
 		if err != nil {
 			return nil, err
 		}

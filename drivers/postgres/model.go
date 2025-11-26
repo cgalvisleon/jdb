@@ -80,7 +80,7 @@ func (s *Postgres) buildSchema(definition et.Json) (string, error) {
 		return "", fmt.Errorf(jdb.MSG_SCHEMA_REQUIRED)
 	}
 
-	exist, err := existSchema(s.database.Db, schema)
+	exist, err := ExistSchema(s.database.Db, schema)
 	if err != nil {
 		return "", err
 	}
@@ -325,4 +325,13 @@ func (s *Postgres) buildTriggerBeforeInsert(definition et.Json) (string, error) 
 	`, table, table)
 
 	return result, nil
+}
+
+/**
+* mutateModel
+* @param model *jdb.Model
+* @return (string, error)
+**/
+func (s *Postgres) mutateModel(model *jdb.Model) (string, error) {
+	return "", nil
 }

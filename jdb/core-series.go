@@ -126,6 +126,31 @@ func GenSeries(kind, tag string) (string, error) {
 }
 
 /**
+* InitSeries
+* @param kind, tag, format string
+* @return error
+**/
+func InitSeries(kind, tag, format string) error {
+	if series == nil {
+		return fmt.Errorf(MSG_SERIES_NOT_DEFINED)
+	}
+
+	_, err := series.
+		Insert(et.Json{
+			"kind":   kind,
+			"tag":    tag,
+			"format": format,
+			"value":  0,
+		}).
+		Exec()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+/**
 * SetSeries
 * @param kind, tag, format string
 * @return error

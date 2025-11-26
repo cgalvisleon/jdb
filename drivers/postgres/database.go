@@ -10,11 +10,11 @@ import (
 )
 
 /**
-* existDatabase
+* ExistDatabase
 * @param db *DB, name string
 * @return bool, error
 **/
-func existDatabase(db *sql.DB, name string) (bool, error) {
+func ExistDatabase(db *sql.DB, name string) (bool, error) {
 	sql := `
 	SELECT EXISTS(
 	SELECT 1
@@ -36,12 +36,12 @@ func existDatabase(db *sql.DB, name string) (bool, error) {
 }
 
 /**
-* createDatabase
+* CreateDatabase
 * @param db *sql.DB, name string
 * @return error
 **/
-func (s *Postgres) CreateDatabase(db *sql.DB, name string) error {
-	exist, err := existDatabase(db, name)
+func CreateDatabase(db *sql.DB, name string) error {
+	exist, err := ExistDatabase(db, name)
 	if err != nil {
 		return err
 	}
@@ -62,22 +62,13 @@ func (s *Postgres) CreateDatabase(db *sql.DB, name string) error {
 }
 
 /**
-* dropDatabase
+* DropDatabase
 * @param db *sql.DB, name string
 * @return error
 **/
-func (s *Postgres) DropDatabase(db *sql.DB, name string) error {
-	exist, err := existDatabase(db, name)
-	if err != nil {
-		return err
-	}
-
-	if !exist {
-		return nil
-	}
-
+func DropDatabase(db *sql.DB, name string) error {
 	sql := fmt.Sprintf(`DROP DATABASE %s;`, name)
-	_, err = db.Exec(sql)
+	_, err := db.Exec(sql)
 	if err != nil {
 		return err
 	}

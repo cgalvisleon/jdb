@@ -155,3 +155,23 @@ func deleteModel(name string) error {
 
 	return nil
 }
+
+func versionModel(name string, current int) int {
+	if models == nil {
+		return current
+	}
+
+	items, err := models.
+		Select("version").
+		Where(Eq("name", name)).
+		One()
+	if err != nil {
+		return current
+	}
+
+	if !items.Ok {
+		return current
+	}
+
+	return items.ValInt(current, "version")
+}

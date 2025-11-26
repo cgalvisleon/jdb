@@ -1,4 +1,4 @@
-package postgres
+package jdb
 
 import (
 	"database/sql"
@@ -9,13 +9,13 @@ import (
 	"github.com/cgalvisleon/jdb/jdb"
 )
 
-var driver = "postgres"
+var driver = "jdb"
 
 func init() {
 	jdb.Register(driver, newDriver)
 }
 
-type Postgres struct {
+type Jdb struct {
 	name       string      `json:"-"`
 	database   *jdb.DB     `json:"-"`
 	connection *Connection `json:"-"`
@@ -27,7 +27,7 @@ type Postgres struct {
 * @return jdb.Driver
 **/
 func newDriver(database *jdb.DB) jdb.Driver {
-	result := &Postgres{
+	result := &Jdb{
 		database: database,
 		name:     database.Name,
 		connection: &Connection{
@@ -51,7 +51,7 @@ func newDriver(database *jdb.DB) jdb.Driver {
 * @param connection jdb.ConnectParams
 * @return *sql.DB, error
 **/
-func (s *Postgres) Connect(database *jdb.DB) (*sql.DB, error) {
+func (s *Jdb) Connect(database *jdb.DB) (*sql.DB, error) {
 	s.database = database
 	s.name = database.Name
 
@@ -104,7 +104,7 @@ func (s *Postgres) Connect(database *jdb.DB) (*sql.DB, error) {
 * @param model *Model
 * @return (string, error)
 **/
-func (s *Postgres) Load(model *jdb.Model) (string, error) {
+func (s *Jdb) Load(model *jdb.Model) (string, error) {
 	model.Table = fmt.Sprintf("%s.%s", model.Schema, model.Name)
 	exists, err := ExistTable(s.database.Db, model.Schema, model.Name)
 	if err != nil {
@@ -127,7 +127,7 @@ func (s *Postgres) Load(model *jdb.Model) (string, error) {
 * @param ql *jdb.Ql
 * @return (string, error)
 **/
-func (s *Postgres) Query(ql *jdb.Ql) (string, error) {
+func (s *Jdb) Query(ql *jdb.Ql) (string, error) {
 	sql, err := s.buildQuery(ql)
 	if err != nil {
 		return "", err
@@ -146,7 +146,7 @@ func (s *Postgres) Query(ql *jdb.Ql) (string, error) {
 * @param command *jdb.Cmd
 * @return (string, error)
 **/
-func (s *Postgres) Command(cmd *jdb.Cmd) (string, error) {
+func (s *Jdb) Command(cmd *jdb.Cmd) (string, error) {
 	sql, err := s.buildCommand(cmd)
 	if err != nil {
 		return "", err

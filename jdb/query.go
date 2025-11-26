@@ -216,10 +216,11 @@ func GetAtribName(s string) string {
 * @return *sql.Rows, error
 **/
 func querytx(db *DB, tx *Tx, query string, arg ...any) (et.Items, error) {
+	query = SQLParse(query, arg...)
+
 	data := et.Json{
 		"db_name": db.Name,
-		"query":   query,
-		"args":    arg,
+		"sql":     query,
 	}
 
 	var err error
@@ -230,7 +231,7 @@ func querytx(db *DB, tx *Tx, query string, arg ...any) (et.Items, error) {
 			return et.Items{}, err
 		}
 
-		rows, err = tx.Tx.Query(query, arg...)
+		rows, err = tx.Tx.Query(query)
 		if err != nil {
 			err = fmt.Errorf(`%s: %w`, query, err)
 			data["error"] = err.Error()
@@ -243,7 +244,7 @@ func querytx(db *DB, tx *Tx, query string, arg ...any) (et.Items, error) {
 			return et.Items{}, err
 		}
 	} else {
-		rows, err = db.Db.Query(query, arg...)
+		rows, err = db.Db.Query(query)
 		if err != nil {
 			err = fmt.Errorf(`%s: %w`, query, err)
 			data["error"] = err.Error()
@@ -253,7 +254,8 @@ func querytx(db *DB, tx *Tx, query string, arg ...any) (et.Items, error) {
 	}
 
 	tp := tipoSQL(query)
-	event.Publish(fmt.Sprintf("sql:%s", tp), data)
+	channel := fmt.Sprintf("sql:%s", tp)
+	event.Publish(channel, data)
 	defer rows.Close()
 	result := RowsToItems(rows)
 	return result, nil

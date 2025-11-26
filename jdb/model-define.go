@@ -408,11 +408,11 @@ func (s *Model) DefineCalc(name string, fn DataContext) error {
 }
 
 /**
-* DefineDetailCascade
+* defineDetail
 * @param name string, fks []et.Json, version int, onCascade bool
 * @return (*Model, error)
 **/
-func (s *Model) DefineDetailCascade(name string, fks []et.Json, version int, onCascade bool) (*Model, error) {
+func (s *Model) defineDetail(name string, fks []et.Json, version int, onCascade bool) (*Model, error) {
 	colName := name
 	name = fmt.Sprintf("%s_%s", s.Name, name)
 	result, _ := GetModel(s.Database, name)
@@ -462,7 +462,7 @@ func (s *Model) DefineDetailCascade(name string, fks []et.Json, version int, onC
 * @return (*Model, error)
 **/
 func (s *Model) DefineDetail(name string, fks []et.Json, version int) (*Model, error) {
-	return s.DefineDetailCascade(name, fks, version, false)
+	return s.defineDetail(name, fks, version, true)
 }
 
 /**

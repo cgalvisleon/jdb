@@ -24,10 +24,8 @@ const (
 	TypeRollup     = jdb.TypeRollup
 	TypeRelation   = jdb.TypeRelation
 	DriverPostgres = jdb.DriverPostgres
-	DriverMysql    = jdb.DriverMysql
+	DriverJdb      = jdb.DriverJdb
 	DriverSqlite   = jdb.DriverSqlite
-	DriverMssql    = jdb.DriverMssql
-	DriverOracle   = jdb.DriverOracle
 )
 
 var (
@@ -179,4 +177,40 @@ func Delete(param et.Json) (*jdb.Cmd, error) {
 **/
 func Upsert(param et.Json) (*jdb.Cmd, error) {
 	return jdb.Upsert(param)
+}
+
+/**
+* GetSeries
+* @param kind, tag string
+* @return (et.Item, error)
+**/
+func GetSeries(kind, tag string) (et.Item, error) {
+	return jdb.GetSeries(kind, tag)
+}
+
+/**
+* GenSeries
+* @param kind, tag string
+* @return (string, error)
+**/
+func GenSeries(kind, tag string) (string, error) {
+	return jdb.GenSeries(kind, tag)
+}
+
+/**
+* SetSeries
+* @param kind, tag, format string
+* @return error
+**/
+func SetSeries(kind, tag, format string, lastValue int) error {
+	return jdb.SetSeries(kind, tag, format, lastValue)
+}
+
+/**
+* InitSeries
+* @param kind, tag, format string
+* @return error
+**/
+func InitSeries(kind, tag, format string) error {
+	return jdb.InitSeries(kind, tag, format)
 }

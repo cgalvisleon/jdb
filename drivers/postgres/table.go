@@ -7,11 +7,11 @@ import (
 )
 
 /**
-* existTable
+* ExistTable
 * @param db *sql.DB, schema, name string
 * @return bool, error
 **/
-func existTable(db *sql.DB, schema, name string) (bool, error) {
+func ExistTable(db *sql.DB, schema, name string) (bool, error) {
 	rows, err := db.Query(`
 	SELECT EXISTS(
 		SELECT 1

@@ -9,11 +9,11 @@ import (
 )
 
 /**
-* existSchema
+* ExistSchema
 * @param db *sql.DB, name string
 * @return bool, error
 **/
-func existSchema(db *sql.DB, name string) (bool, error) {
+func ExistSchema(db *sql.DB, name string) (bool, error) {
 	rows, err := db.Query(`
 	SELECT EXISTS(
 		SELECT 1
@@ -38,8 +38,8 @@ func existSchema(db *sql.DB, name string) (bool, error) {
 * @param db *sql.DB, name string
 * @return error
 **/
-func (s *Postgres) CreateSchema(db *sql.DB, name string) error {
-	exist, err := existSchema(db, name)
+func CreateSchema(db *sql.DB, name string) error {
+	exist, err := ExistSchema(db, name)
 	if err != nil {
 		return err
 	}
@@ -64,18 +64,9 @@ func (s *Postgres) CreateSchema(db *sql.DB, name string) error {
 * @param db *sql.DB, name string
 * @return error
 **/
-func (s *Postgres) DropSchema(db *sql.DB, name string) error {
-	exist, err := existSchema(db, name)
-	if err != nil {
-		return err
-	}
-
-	if !exist {
-		return nil
-	}
-
+func DropSchema(db *sql.DB, name string) error {
 	sql := fmt.Sprintf(`DROP SCHEMA %s;`, name)
-	_, err = db.Exec(sql)
+	_, err := db.Exec(sql)
 	if err != nil {
 		return err
 	}

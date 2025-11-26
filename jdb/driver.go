@@ -6,10 +6,8 @@ import (
 
 const (
 	DriverPostgres = "postgres"
-	DriverMysql    = "mysql"
 	DriverSqlite   = "sqlite"
-	DriverMssql    = "mssql"
-	DriverOracle   = "oracle"
+	DriverJdb      = "jdb"
 )
 
 type Driver interface {

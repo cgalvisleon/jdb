@@ -129,6 +129,7 @@ type Model struct {
 	Required      []string               `json:"required"`
 	IsLocked      bool                   `json:"is_locked"`
 	Version       int                    `json:"version"`
+	Current       int                    `json:"current"`
 	db            *DB                    `json:"-"`
 	details       map[string]*Model      `json:"-"`
 	isInit        bool                   `json:"-"`
@@ -168,21 +169,6 @@ func Define(definition et.Json) (*Model, error) {
 	}
 
 	return result, nil
-}
-
-/**
-* LoadModel
-* @param schema, name string
-* @return (*Model, error)
-**/
-func LoadModel(name string) (*Model, error) {
-	var result Model
-	err := loadModel(name, &result)
-	if err != nil {
-		return nil, err
-	}
-
-	return &result, nil
 }
 
 /**
@@ -298,11 +284,29 @@ func (s *Model) GetColumn(name string) (et.Json, bool) {
 }
 
 /**
-* SetInit
-* @return
+* Init
+* @return error
 **/
-func (s *Model) SetInit() {
-	s.isInit = true
+func (s *Model) Init() error {
+	if s.isInit {
+		return nil
+	}
+
+	s.Current = versionModel(s.Name, s.Version)
+	err := s.db.init(s)
+	if err != nil {
+		return err
+	}
+
+	for _, m := range s.details {
+		m.IsDebug = s.IsDebug
+		err := m.Init()
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 /**
@@ -330,31 +334,6 @@ func (s *Model) Unlock() {
 func (s *Model) Debug() *Model {
 	s.IsDebug = true
 	return s
-}
-
-/**
-* Init
-* @return error
-**/
-func (s *Model) Init() error {
-	if s.isInit {
-		return nil
-	}
-
-	err := s.db.init(s)
-	if err != nil {
-		return err
-	}
-
-	for _, m := range s.details {
-		m.IsDebug = s.IsDebug
-		err := m.Init()
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
 }
 
 /**

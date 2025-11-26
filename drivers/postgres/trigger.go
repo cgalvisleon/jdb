@@ -6,7 +6,7 @@ import (
 	"github.com/cgalvisleon/jdb/jdb"
 )
 
-func triggerRecords(db *sql.DB) error {
+func TriggerRecords(db *sql.DB) error {
 	sql := jdb.SQLUnQuote(`
 	CREATE SCHEMA IF NOT EXISTS core;
 
