@@ -47,7 +47,6 @@ func newQl(model *Model, as string) *Ql {
 	result := &Ql{
 		where:     newWhere(model, as),
 		Database:  model.Database,
-		Froms:     make(map[string]string),
 		Selects:   et.Json{},
 		Atribs:    et.Json{},
 		Hiddens:   []string{},
@@ -106,7 +105,7 @@ func (s *Ql) Debug() *Ql {
 * @return *Ql
 **/
 func (s *Ql) addFroms(model *Model, as string) *Ql {
-	s.Froms[model.Table] = as
+	s.Froms[as] = model
 
 	for _, v := range model.Hidden {
 		v = fmt.Sprintf("%s.%s", as, v)

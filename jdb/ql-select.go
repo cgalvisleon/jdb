@@ -1,9 +1,5 @@
 package jdb
 
-import (
-	"regexp"
-)
-
 /**
 * Select
 * @param fields interface{}
@@ -14,55 +10,33 @@ func (s *Ql) Select(fields ...string) *Ql {
 		return s
 	}
 
-	pattern1 := regexp.MustCompile(`^([A-Za-z0-9]+)\.([A-Za-z0-9]+):([A-Za-z0-9]+)$`)
-	pattern2 := regexp.MustCompile(`^([A-Za-z0-9]+)\.([A-Za-z0-9]+)$`)
-	pattern3 := regexp.MustCompile(`^([A-Za-z]+)\((.+)\):([A-Za-z0-9]+)$`)
-	pattern4 := regexp.MustCompile(`^([A-Za-z]+)\((.+)\)`)
 	for _, v := range fields {
-		if pattern1.MatchString(v) {
-			matches := pattern1.FindStringSubmatch(v)
-			if len(matches) == 4 {
-				s.Selects[matches[3]] = matches[1]
-			}
-		} else if pattern2.MatchString(v) {
-			matches := pattern2.FindStringSubmatch(v)
-			if len(matches) == 3 {
-				s.Selects[matches[2]] = matches[1]
-			}
-		} else if pattern3.MatchString(v) {
-			matches := pattern3.FindStringSubmatch(v)
-			if len(matches) == 4 {
-				s.Selects[matches[3]] = matches[1]
-			}
-		} else if pattern4.MatchString(v) {
-			matches := pattern4.FindStringSubmatch(v)
-			if len(matches) == 3 {
-				s.Selects[matches[2]] = matches[1]
-			}
-		} else {
-
+		fld := &Field{
+			Field: v,
 		}
-
-		col, ok := s.Froms.GetColumn(v)
-		tp := col.String("type")
-		if ok && TypeColumn[tp] {
-			s.Selects[v] = v
+		fld = s.getField(fld)
+		if !fld.IsDefined {
 			continue
 		}
 
-		if s.From.UseAtribs() || TypeAtrib[tp] {
-			s.Atribs[v] = v
+		if TypeColumn[fld.Type] {
+			s.Selects[fld.Field] = fld.As
 			continue
 		}
 
-		if tp == TypeCalc {
-			s.Calcs[v] = s.From.Calcs[v]
-		} else if tp == TypeDetail {
-			s.Details[v] = s.From.Details[v]
-		} else if tp == TypeRollup {
-			s.Rollups[v] = s.From.Rollups[v]
-		} else if tp == TypeRelation {
-			s.Relations[v] = s.From.Relations[v]
+		if TypeAtrib[fld.Type] {
+			s.Atribs[fld.Field] = fld.As
+			continue
+		}
+
+		if fld.Type == TypeCalc {
+			s.Calcs[v] = fld.Model.Calcs[fld.Name]
+		} else if fld.Type == TypeDetail {
+			s.Details[v] = fld.Model.Details[fld.Name]
+		} else if fld.Type == TypeRollup {
+			s.Rollups[v] = fld.Model.Rollups[fld.Name]
+		} else if fld.Type == TypeRelation {
+			s.Relations[v] = fld.Model.Relations[fld.Name]
 		}
 	}
 

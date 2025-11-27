@@ -7,14 +7,12 @@ package jdb
 **/
 func (s *Ql) Where(cond *Condition) *Ql {
 	s.where.Where(cond)
-	s.useJoin = false
 	return s
 }
 
 /**
 * whereJoin
-* @param cond Condition
-* @param conector string
+* @param cond Condition, conector string
 * @return *Cmd
 **/
 func (s *Ql) whereJoin(cond *Condition, conector string) *Ql {
