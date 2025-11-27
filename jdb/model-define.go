@@ -10,10 +10,10 @@ import (
 
 /**
 * defineColumn
-* @param name string, params et.Json
+* @param name string, typeData string, params et.Json
 * @return error
 **/
-func (s *Model) defineColumn(name string, params et.Json) error {
+func (s *Model) defineColumn(name, typeData string, hidden bool, defaultValue interface{}) error {
 	if !utility.ValidStr(name, 0, []string{}) {
 		return fmt.Errorf(MSG_NAME_REQUIRED)
 	}
@@ -23,30 +23,30 @@ func (s *Model) defineColumn(name string, params et.Json) error {
 		return nil
 	}
 
-	typeData := params.String("type")
 	if !TypeData[typeData] {
 		return fmt.Errorf(MSG_TYPE_REQUIRED)
 	}
 
-	hidden := params.Bool("hidden")
-	def := et.Json{
-		"name":    name,
-		"type":    typeData,
-		"default": params.String("default"),
-		"hidden":  hidden,
+	def := &Column{
+		Name:    name,
+		Type:    typeData,
+		Default: defaultValue,
+		Hidden:  hidden,
 	}
+
+	if def.Hidden {
+		s.Hidden = append(s.Hidden, name)
+	}
+
 	if s.RecordField != "" {
 		idx = s.getColumnIndex(s.RecordField)
 		if idx != -1 {
-			s.Columns = append(s.Columns[:idx], append([]et.Json{def}, s.Columns[idx:]...)...)
+			s.Columns = append(s.Columns[:idx], append([]*Column{def}, s.Columns[idx:]...)...)
 			return nil
 		}
 	}
 
 	s.Columns = append(s.Columns, def)
-	if hidden {
-		s.Hidden = append(s.Hidden, name)
-	}
 	return nil
 }
 
@@ -58,7 +58,10 @@ func (s *Model) defineColumn(name string, params et.Json) error {
 func (s *Model) defineColumns(params []et.Json) error {
 	for _, param := range params {
 		name := param.String("name")
-		err := s.defineColumn(name, param)
+		typeData := param.String("type")
+		hidden := param.Bool("hidden")
+		defaultValue := param["default"]
+		err := s.defineColumn(name, typeData, hidden, defaultValue)
 		if err != nil {
 			return err
 		}
@@ -68,61 +71,27 @@ func (s *Model) defineColumns(params []et.Json) error {
 }
 
 /**
-* defineRollup
-* @param params et.Json
-* @return error
-**/
-func (s *Model) defineRollup(params et.Json) error {
-	name := params.String("name")
-	if !utility.ValidStr(name, 0, []string{}) {
-		return fmt.Errorf(MSG_ATRIB_REQUIRED, "name")
-	}
-
-	from := params.String("from")
-	if !utility.ValidStr(from, 0, []string{}) {
-		return fmt.Errorf(MSG_ATRIB_REQUIRED, "from")
-	}
-
-	model, err := GetModel(s.Database, from)
-	if err != nil {
-		return err
-	}
-
-	as := "A"
-	selectsOrigin := params.Json("selects")
-	if selectsOrigin.IsEmpty() {
-		return fmt.Errorf(MSG_ATRIB_REQUIRED, "selects")
-	}
-
-	selects := et.Json{}
-	for k, v := range selectsOrigin {
-		selects[fmt.Sprintf("%s.%s", as, k)] = v
-	}
-
-	fks := params.Json("fks")
-	if fks.IsEmpty() {
-		return fmt.Errorf(MSG_ATRIB_REQUIRED, "fks")
-	}
-
-	s.Rollups[name] = et.Json{
-		"from": et.Json{
-			model.Table: as,
-		},
-		"selects": selects,
-		"fks":     fks,
-	}
-	return nil
-}
-
-/**
 * DefineColumn
 * @param name string, columnType string
 * @return error
 **/
 func (s *Model) DefineColumn(name string, columnType string) error {
-	return s.defineColumn(name, et.Json{
-		"type": columnType,
-	})
+	return s.defineColumn(name, columnType, false, "")
+}
+
+/**
+* DefineDefaulValue
+* @param name string, defaultValue interface{}
+* @return error
+**/
+func (s *Model) DefineDefaulValue(name string, defaultValue interface{}) error {
+	idx := s.getColumnIndex(name)
+	if idx == -1 {
+		return nil
+	}
+
+	s.Columns[idx].Default = defaultValue
+	return nil
 }
 
 /**
@@ -135,14 +104,12 @@ func (s *Model) DefineSourceField(name string) error {
 		return nil
 	}
 
-	s.SourceField = name
-	err := s.defineColumn(name, et.Json{
-		"type": TypeJson,
-	})
+	err := s.defineColumn(name, TypeJson, false, "")
 	if err != nil {
 		return err
 	}
 
+	s.SourceField = name
 	s.DefineIndexes(name)
 	return nil
 }
@@ -157,14 +124,12 @@ func (s *Model) DefineRecordField(name string) error {
 		return nil
 	}
 
-	s.RecordField = name
-	err := s.defineColumn(name, et.Json{
-		"type": TypeKey,
-	})
+	err := s.defineColumn(name, TypeKey, false, "")
 	if err != nil {
 		return err
 	}
 
+	s.RecordField = name
 	s.DefineIndexes(name)
 	return nil
 }
@@ -179,14 +144,12 @@ func (s *Model) DefineStatusField(name string) error {
 		return nil
 	}
 
-	s.StatusField = name
-	err := s.defineColumn(name, et.Json{
-		"type": TypeText,
-	})
+	err := s.defineColumn(name, TypeText, false, "")
 	if err != nil {
 		return err
 	}
 
+	s.StatusField = name
 	s.DefineIndexes(name)
 	return nil
 }
@@ -225,10 +188,7 @@ func (s *Model) DefineAtrib(name string, defaultValue interface{}) error {
 		s.DefineSourceField(SOURCE)
 	}
 
-	return s.defineColumn(name, et.Json{
-		"type":    TypeAtribute,
-		"default": defaultValue,
-	})
+	return s.defineColumn(name, TypeAtribute, false, defaultValue)
 }
 
 /**
@@ -351,40 +311,107 @@ func (s *Model) DefineHidden(names ...string) {
 			continue
 		}
 
-		s.Columns[idx].Set("hidden", true)
+		s.Columns[idx].Hidden = true
 		s.Hidden = append(s.Hidden, name)
 	}
 }
 
 /**
-* DefineRollups
-* @param params et.Json
-* @return error
+* DefineDetail
+* @param name string, fks et.Json, version int
+* @return (*Model, error)
 **/
-func (s *Model) DefineRollups(params []et.Json) error {
-	for _, param := range params {
-		err := s.defineRollup(param)
+func (s *Model) DefineDetail(name string, fks et.Json, version int) (*Model, error) {
+	detailName := fmt.Sprintf("%s_%s", s.Name, name)
+	result, _ := GetModel(s.Database, detailName)
+	if result != nil {
+		return result, nil
+	}
+
+	result, err := s.db.Define(et.Json{
+		"schema":  s.Schema,
+		"name":    detailName,
+		"version": version,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	for fk := range fks {
+		err := result.defineColumn(fk, TypeKey, false, "")
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
-	return nil
+
+	err = result.DefineForeignKey(s, []et.Json{fks}, "cascade", "cascade")
+	if err != nil {
+		return nil, err
+	}
+
+	err = s.defineColumn(name, TypeDetail, false, "")
+	if err != nil {
+		return nil, err
+	}
+
+	s.Details[name] = &Detail{
+		From:    result,
+		Fks:     fks,
+		Selects: []string{},
+	}
+
+	return result, nil
 }
 
 /**
 * DefineRollup
-* @param name string, from string, fks et.Json, selects et.Json
-* @return error
+* @param name string, from string, fks et.Json, selects []string
+* @return *Model
 **/
-func (s *Model) DefineRollup(name, from string, fks, selects et.Json) error {
-	err := s.defineRollup(et.Json{
-		"name":    name,
-		"from":    from,
-		"selects": selects,
-		"fks":     fks,
-	})
+func (s *Model) DefineRollup(name, from string, fks et.Json, selects []string) error {
+	model, err := GetModel(s.Database, from)
 	if err != nil {
 		return err
+	}
+
+	err = s.defineColumn(name, TypeRollup, false, "")
+	if err != nil {
+		return err
+	}
+
+	s.Rollups[name] = &Detail{
+		From:    model,
+		Fks:     fks,
+		Selects: selects,
+	}
+
+	return nil
+}
+
+/**
+* DefineRelation
+* @param name string, from string, fks et.Json, selects []string
+* @return error
+**/
+func (s *Model) DefineRelation(name, from string, fks et.Json, selects []string) error {
+	model, err := GetModel(s.Database, from)
+	if err != nil {
+		return err
+	}
+
+	err = s.defineColumn(name, TypeRelation, false, "")
+	if err != nil {
+		return err
+	}
+
+	for fk := range fks {
+		model.DefineIndexes(fk)
+	}
+
+	s.Relations[name] = &Detail{
+		From:    model,
+		Fks:     fks,
+		Selects: selects,
 	}
 
 	return nil
@@ -396,73 +423,13 @@ func (s *Model) DefineRollup(name, from string, fks, selects et.Json) error {
 * @return error
 **/
 func (s *Model) DefineCalc(name string, fn DataContext) error {
-	err := s.defineColumn(name, et.Json{
-		"type": TypeCalc,
-	})
+	err := s.defineColumn(name, TypeCalc, false, "")
 	if err != nil {
 		return err
 	}
 
 	s.Calcs[name] = fn
 	return nil
-}
-
-/**
-* defineDetail
-* @param name string, fks []et.Json, version int, onCascade bool
-* @return (*Model, error)
-**/
-func (s *Model) defineDetail(name string, fks []et.Json, version int, onCascade bool) (*Model, error) {
-	colName := name
-	name = fmt.Sprintf("%s_%s", s.Name, name)
-	result, _ := GetModel(s.Database, name)
-	if result != nil {
-		return result, nil
-	}
-
-	result, err := s.db.Define(et.Json{
-		"schema":  s.Schema,
-		"name":    name,
-		"version": version,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	for _, fk := range fks {
-		for f := range fk {
-			result.defineColumn(f, et.Json{
-				"type": TypeKey,
-			})
-			if !onCascade {
-				result.DefineIndexes(f)
-			}
-		}
-	}
-
-	if onCascade {
-		err = result.DefineForeignKey(s, fks, "cascade", "cascade")
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	s.defineColumn(colName, et.Json{
-		"type": TypeDetail,
-	})
-	s.details[colName] = result
-	s.Details[colName] = result.ToJson()
-	s.save()
-	return result, nil
-}
-
-/**
-* DefineDetail
-* @param name string, fks []et.Json, version int
-* @return (*Model, error)
-**/
-func (s *Model) DefineDetail(name string, fks []et.Json, version int) (*Model, error) {
-	return s.defineDetail(name, fks, version, true)
 }
 
 /**

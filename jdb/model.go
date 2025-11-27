@@ -112,16 +112,15 @@ type Model struct {
 	Schema        string                 `json:"schema"`
 	Name          string                 `json:"name"`
 	Table         string                 `json:"table"`
-	Columns       []et.Json              `json:"columns"`
+	Columns       []*Column              `json:"columns"`
 	Hidden        []string               `json:"hidden"`
 	SourceField   string                 `json:"source_field"`
 	RecordField   string                 `json:"record_field"`
 	StatusField   string                 `json:"status_field"`
-	Details       map[string]et.Json     `json:"details"`
-	Masters       map[string]et.Json     `json:"masters"`
+	Details       map[string]*Detail     `json:"details"`
+	Rollups       map[string]*Detail     `json:"rollups"`
+	Relations     map[string]*Detail     `json:"relations"`
 	Calcs         map[string]DataContext `json:"-"`
-	Rollups       map[string]et.Json     `json:"rollups"`
-	Relations     map[string]et.Json     `json:"relations"`
 	UniqueIndexes []string               `json:"unique_indexes"`
 	PrimaryKeys   []string               `json:"primary_keys"`
 	ForeignKeys   []et.Json              `json:"foreign_keys"`
@@ -130,11 +129,10 @@ type Model struct {
 	IsLocked      bool                   `json:"is_locked"`
 	Version       int                    `json:"version"`
 	Current       int                    `json:"current"`
+	IsDebug       bool                   `json:"-"`
 	db            *DB                    `json:"-"`
-	details       map[string]*Model      `json:"-"`
 	isInit        bool                   `json:"-"`
 	isCore        bool                   `json:"-"`
-	IsDebug       bool                   `json:"-"`
 	beforeInserts []DataFunctionTx       `json:"-"`
 	beforeUpdates []DataFunctionTx       `json:"-"`
 	beforeDeletes []DataFunctionTx       `json:"-"`
@@ -230,7 +228,7 @@ func (s *Model) prepare() error {
 * @return int
 **/
 func (s *Model) getColumnIndex(name string) int {
-	return slices.IndexFunc(s.Columns, func(item et.Json) bool { return item.String("name") == name })
+	return slices.IndexFunc(s.Columns, func(item *Column) bool { return item.Name == name })
 }
 
 /**
@@ -263,20 +261,20 @@ func (s *Model) ToJson() et.Json {
 /**
 * GetColumn
 * @param name string
-* @return (et.Json, bool)
+* @return (*Column, bool)
 **/
-func (s *Model) GetColumn(name string) (et.Json, bool) {
+func (s *Model) GetColumn(name string) (*Column, bool) {
 	spPeriod := strings.Split(name, ".")
 	if len(spPeriod) > 1 {
 		spColon := strings.Split(spPeriod[1], ":")
 		if len(spColon) > 1 {
-			return et.Json{}, false
+			return nil, false
 		}
 		name = spPeriod[1]
 	}
 	idx := s.getColumnIndex(name)
 	if idx == -1 {
-		return et.Json{}, false
+		return nil, false
 	}
 
 	result := s.Columns[idx]
@@ -298,9 +296,9 @@ func (s *Model) Init() error {
 		return err
 	}
 
-	for _, m := range s.details {
-		m.IsDebug = s.IsDebug
-		err := m.Init()
+	for _, m := range s.Details {
+		m.From.IsDebug = s.IsDebug
+		err := m.From.Init()
 		if err != nil {
 			return err
 		}

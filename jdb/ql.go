@@ -4,32 +4,39 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/cgalvisleon/et/envar"
 	"github.com/cgalvisleon/et/et"
 )
 
+var MaxRows int
+
+func init() {
+	MaxRows = envar.GetInt("MAX_ROWS", 1000)
+}
+
 type Ql struct {
 	*where
-	Database    string                 `json:"database"`
-	SourceField string                 `json:"source_field"`
-	Froms       et.Json                `json:"from"`
-	Selects     et.Json                `json:"selects"`
-	Atribs      et.Json                `json:"atribs"`
-	Hiddens     []string               `json:"hidden"`
-	Calcs       map[string]DataContext `json:"-"`
-	Rollups     et.Json                `json:"rollups"`
-	Relations   et.Json                `json:"relations"`
-	Joins       []et.Json              `json:"joins"`
-	GroupBy     []string               `json:"group_by"`
-	Havings     []et.Json              `json:"having"`
-	OrdersBy    et.Json                `json:"order_by"`
-	Limits      et.Json                `json:"limit"`
-	Exists      bool                   `json:"exists"`
-	Count       bool                   `json:"count"`
-	SQL         string                 `json:"sql"`
-	db          *DB                    `json:"-"`
-	tx          *Tx                    `json:"-"`
-	IsDebug     bool                   `json:"-"`
-	useJoin     bool                   `json:"-"`
+	Database  string                 `json:"database"`
+	Selects   et.Json                `json:"selects"`
+	Atribs    et.Json                `json:"atribs"`
+	Hiddens   []string               `json:"hidden"`
+	Details   map[string]*Detail     `json:"details"`
+	Rollups   map[string]*Detail     `json:"rollups"`
+	Relations map[string]*Detail     `json:"relations"`
+	Calcs     map[string]DataContext `json:"-"`
+	Joins     []et.Json              `json:"joins"`
+	Wheres    []et.Json              `json:"where"`
+	GroupBy   []string               `json:"group_by"`
+	Havings   []et.Json              `json:"having"`
+	OrdersBy  et.Json                `json:"order_by"`
+	Limits    et.Json                `json:"limit"`
+	Exists    bool                   `json:"exists"`
+	Count     bool                   `json:"count"`
+	SQL       string                 `json:"sql"`
+	MaxRows   int                    `json:"max_rows"`
+	IsDebug   bool                   `json:"-"`
+	db        *DB                    `json:"-"`
+	tx        *Tx                    `json:"-"`
 }
 
 /**
@@ -40,23 +47,26 @@ func newQl(model *Model, as string) *Ql {
 	result := &Ql{
 		where:     newWhere(model, as),
 		Database:  model.Database,
-		Froms:     et.Json{},
+		Froms:     make(map[string]string),
 		Selects:   et.Json{},
 		Atribs:    et.Json{},
 		Hiddens:   []string{},
-		Rollups:   et.Json{},
-		Relations: et.Json{},
+		Details:   make(map[string]*Detail),
+		Rollups:   make(map[string]*Detail),
+		Relations: make(map[string]*Detail),
 		Calcs:     make(map[string]DataContext),
 		Joins:     make([]et.Json, 0),
+		Wheres:    make([]et.Json, 0),
 		GroupBy:   []string{},
 		Havings:   make([]et.Json, 0),
 		OrdersBy:  et.Json{},
+		MaxRows:   MaxRows,
 		Limits:    et.Json{},
 		db:        model.db,
 	}
 
 	if model != nil {
-		result.addFrom(model, as)
+		result.addFroms(model, as)
 	}
 
 	return result
@@ -95,13 +105,8 @@ func (s *Ql) Debug() *Ql {
 * @param model *Model, as string
 * @return *Ql
 **/
-func (s *Ql) addFrom(model *Model, as string) *Ql {
-	s.From = model
-	s.As = as
+func (s *Ql) addFroms(model *Model, as string) *Ql {
 	s.Froms[model.Table] = as
-	if s.SourceField == "" {
-		s.SourceField = model.SourceField
-	}
 
 	for _, v := range model.Hidden {
 		v = fmt.Sprintf("%s.%s", as, v)
@@ -138,23 +143,4 @@ func (s *Ql) Page(page int) *Ql {
 func (s *Ql) Hidden(hiddens ...string) *Ql {
 	s.Hiddens = hiddens
 	return s
-}
-
-/**
-* QueryTx
-* @param tx *Tx, query et.Json
-* @return et.Items, error
-**/
-func (s *Ql) QueryTx(tx *Tx, query et.Json) (et.Items, error) {
-	s.setQuery(query)
-	return s.queryTx(tx)
-}
-
-/**
-* Query
-* @param query et.Json
-* @return et.Items, error
-**/
-func (s *Ql) Query(query et.Json) (et.Items, error) {
-	return s.QueryTx(nil, query)
 }

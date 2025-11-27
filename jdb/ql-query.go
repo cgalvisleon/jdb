@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/cgalvisleon/et/envar"
 	"github.com/cgalvisleon/et/et"
 )
 
@@ -14,7 +13,38 @@ import (
 * @return
 **/
 func (s *Ql) getRollupsTx(tx *Tx, data et.Json) {
+	for name, item := range s.Rollups {
+		from := item.Str("from")
+		selects := item.ArrayStr("select")
+		fks := item.Json("fks")
 
+		model, err := GetModel(s.Database, from)
+		if err != nil {
+			return
+		}
+
+		ql := From(model, "A").Select(selects...)
+		for pk, v := range fks {
+			fk := fmt.Sprintf("%v", v)
+			val := data.Str(pk)
+			ql.Where(Eq(fk, val))
+		}
+		item, err := ql.OneTx(tx)
+		if err != nil {
+			return
+		}
+
+		switch n := len(item.Result); n {
+		case 0:
+			return
+		case 1:
+			for _, v := range item.Result {
+				data[name] = v
+			}
+		default:
+			data[name] = item.Result
+		}
+	}
 }
 
 /**
@@ -36,10 +66,20 @@ func (s *Ql) getCallsTx(tx *Tx, data et.Json) {
 }
 
 /**
+* getDetailsTx
+* @param tx *Tx, data et.Json
+* @return
+**/
+func (s *Ql) getDetailsTx(tx *Tx, data et.Json) {
+
+}
+
+/**
 * queryTx
 * @param tx *Tx
 * @return (et.Items, error)
-**/
+*
+ */
 func (s *Ql) queryTx(tx *Tx) (et.Items, error) {
 	if s.db == nil {
 		return et.Items{}, fmt.Errorf(MSG_DATABASE_REQUIRED)
@@ -59,11 +99,31 @@ func (s *Ql) queryTx(tx *Tx) (et.Items, error) {
 			s.getRollupsTx(tx, data)
 			s.getRelationsTx(tx, data)
 			s.getCallsTx(tx, data)
+			s.getDetailsTx(tx, data)
 		}(data)
 	}
 	wg.Wait()
 
 	return result, nil
+}
+
+/**
+* QueryTx
+* @param tx *Tx, query et.Json
+* @return et.Items, error
+**/
+func (s *Ql) QueryTx(tx *Tx, query et.Json) (et.Items, error) {
+	s.setQuery(query)
+	return s.queryTx(tx)
+}
+
+/**
+* Query
+* @param query et.Json
+* @return et.Items, error
+**/
+func (s *Ql) Query(query et.Json) (et.Items, error) {
+	return s.QueryTx(nil, query)
 }
 
 /**
@@ -89,9 +149,8 @@ func (s *Ql) All() (et.Items, error) {
 * @return et.Items, error
 **/
 func (s *Ql) LimitTx(tx *Tx, page, rows int) (items et.Items, err error) {
-	maxRows := envar.GetInt("MAX_ROWS", 1000)
-	if rows > maxRows {
-		rows = maxRows
+	if rows > s.MaxRows {
+		rows = s.MaxRows
 	}
 	s.Limits["page"] = page
 	s.Limits["rows"] = rows

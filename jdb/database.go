@@ -120,21 +120,19 @@ func (s *DB) getOrCreateModel(schema, name string) (*Model, error) {
 			Schema:        schema,
 			Name:          name,
 			Table:         "",
-			Columns:       []et.Json{},
+			Columns:       make([]*Column, 0),
 			SourceField:   "",
 			RecordField:   "",
-			Details:       make(map[string]et.Json),
-			Masters:       make(map[string]et.Json),
+			Details:       make(map[string]*Detail),
+			Rollups:       make(map[string]*Detail),
+			Relations:     make(map[string]*Detail),
 			Calcs:         make(map[string]DataContext),
-			Rollups:       make(map[string]et.Json),
-			Relations:     make(map[string]et.Json),
 			UniqueIndexes: []string{},
 			PrimaryKeys:   []string{},
 			ForeignKeys:   []et.Json{},
 			Indexes:       []string{},
 			Required:      []string{},
 			db:            s,
-			details:       make(map[string]*Model),
 			beforeInserts: []DataFunctionTx{},
 			beforeUpdates: []DataFunctionTx{},
 			beforeDeletes: []DataFunctionTx{},
@@ -176,7 +174,6 @@ func (s *DB) getModel(name string) (*Model, error) {
 
 	result.Calcs = make(map[string]DataContext)
 	result.db = s
-	result.details = make(map[string]*Model)
 	result.beforeInserts = []DataFunctionTx{}
 	result.beforeUpdates = []DataFunctionTx{}
 	result.beforeDeletes = []DataFunctionTx{}
@@ -190,18 +187,14 @@ func (s *DB) getModel(name string) (*Model, error) {
 	result.AfterUpdate(result.afterUpdateDefault)
 	result.AfterDelete(result.afterDeleteDefault)
 
-	for _, defDetail := range result.Details {
-		detailName := defDetail.String("name")
-		detail, err := s.getModel(detailName)
+	for k, item := range result.Details {
+		detail, err := s.getModel(item.From.Name)
 		if err != nil {
 			continue
 		}
 
-		if detail == nil {
-			continue
-		}
-
-		result.details[name] = detail
+		item.From = detail
+		result.Details[k] = item
 	}
 	s.Models[name] = result
 
@@ -354,28 +347,55 @@ func (s *DB) Define(definition et.Json) (*Model, error) {
 		return nil, err
 	}
 
-	details := definition.ArrayJson("details")
-	for _, detail := range details {
-		detailName := detail.String("name")
-		if !utility.ValidStr(detailName, 0, []string{}) {
-			continue
-		}
+	required := definition.ArrayStr("required")
+	result.DefineRequired(required...)
 
-		fks := detail.ArrayJson("fks")
+	details := definition.Json("details")
+	for detailName := range details {
+		detail := details.Json(detailName)
+		fks := detail.Json("fks")
 		if len(fks) == 0 {
 			continue
 		}
 
 		version := detail.Int("version")
-		onCascade := detail.Bool("on_cascade")
-		_, err := result.defineDetail(detailName, fks, version, onCascade)
+		_, err := result.DefineDetail(detailName, fks, version)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	required := definition.ArrayStr("required")
-	result.DefineRequired(required...)
+	rollups := definition.Json("rollups")
+	for rollupName := range rollups {
+		rollup := rollups.Json(rollupName)
+		fks := rollup.Json("fks")
+		if len(fks) == 0 {
+			continue
+		}
+
+		from := rollup.String("from")
+		selects := rollup.ArrayStr("selects")
+		err := result.DefineRollup(rollupName, from, fks, selects)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	relations := definition.Json("relations")
+	for relationName := range relations {
+		relation := relations.Json(relationName)
+		fks := relation.Json("fks")
+		if len(fks) == 0 {
+			continue
+		}
+
+		from := relation.String("from")
+		selects := relation.ArrayStr("selects")
+		err := result.DefineRelation(relationName, from, fks, selects)
+		if err != nil {
+			return nil, err
+		}
+	}
 
 	debug := definition.Bool("debug")
 	result.IsDebug = debug
@@ -384,19 +404,12 @@ func (s *DB) Define(definition et.Json) (*Model, error) {
 }
 
 /**
-* Select
-* @param query et.Json
-* @return *Ql
+* GetModel
+* @param name string
+* @return (*Model, error)
 **/
-func (s *DB) Select(query et.Json) *Ql {
-	result := newQl(nil, "")
-	from := query.Json("from")
-	if from.IsEmpty() {
-		logs.Panicf(MSG_FROM_REQUIRED)
-	}
-	result.Froms = from
-
-	return result.setQuery(query)
+func (s *DB) GetModel(name string) (*Model, error) {
+	return s.getModel(name)
 }
 
 /**
@@ -411,10 +424,31 @@ func (s *DB) From(model *Model, as string) *Ql {
 }
 
 /**
-* GetModel
-* @param name string
-* @return (*Model, error)
+* Select
+* @param query et.Json
+* @return *Ql
 **/
-func (s *DB) GetModel(name string) (*Model, error) {
-	return s.getModel(name)
+func (s *DB) Select(query et.Json) (*Ql, error) {
+	from := query.Json("from")
+	if from.IsEmpty() {
+		return nil, fmt.Errorf(MSG_FROM_REQUIRED)
+	}
+	var result *Ql
+	for name := range from {
+		as := from.String(name)
+		model, err := s.getModel(name)
+		if err != nil {
+			return nil, err
+		}
+
+		if result == nil {
+			result = newQl(model, as)
+		} else {
+			result.addFroms(model, as)
+		}
+	}
+
+	result.setQuery(query)
+
+	return result, nil
 }

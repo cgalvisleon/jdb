@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/cgalvisleon/et/envar"
 	"github.com/cgalvisleon/et/et"
 	"github.com/cgalvisleon/et/strs"
 	"github.com/cgalvisleon/jdb/jdb"
@@ -143,6 +142,9 @@ func (s *Driver) buildSelect(query et.Json) (string, error) {
 			for k := range selects {
 				v := selects.String(k)
 				def := fmt.Sprintf("\n\t'%s',  %s", v, k)
+				if v == "" {
+					def = fmt.Sprintf("\n\t'%s',  %s", k, k)
+				}
 				sel = strs.Append(sel, def, ", ")
 			}
 
@@ -167,6 +169,8 @@ func (s *Driver) buildSelect(query et.Json) (string, error) {
 			v := selects.String(k)
 			def := fmt.Sprintf("\n\t%s AS %s", k, v)
 			if k == v {
+				def = fmt.Sprintf("\n\t%s", k)
+			} else if v == "" {
 				def = fmt.Sprintf("\n\t%s", k)
 			}
 
@@ -421,7 +425,7 @@ func (s *Driver) buildLimit(query et.Json) (string, error) {
 		return "", nil
 	}
 
-	limitRows := envar.GetInt("LIMIT_ROWS", 100)
+	limitRows := query.ValInt(1000, "max_rows")
 	page := limit.Int("page")
 	rows := limit.ValInt(limitRows, "rows")
 

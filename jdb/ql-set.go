@@ -10,9 +10,6 @@ import "github.com/cgalvisleon/et/et"
 func (s *Ql) setQuery(query et.Json) *Ql {
 	s.setDebug(query.Bool("debug")).
 		setSelect(query.Json("select")).
-		setAtribs(query.Json("atribs")).
-		setRollup(query.Json("rollups")).
-		setRelation(query.Json("relations")).
 		setJoin(query.ArrayJson("joins")).
 		setWhere(query.ArrayJson("where")).
 		setHiddens(query.ArrayStr("hidden")).
@@ -40,36 +37,6 @@ func (s *Ql) setDebug(debug bool) *Ql {
 **/
 func (s *Ql) setSelect(selects et.Json) *Ql {
 	s.Selects = selects
-	return s
-}
-
-/**
-* setAtribs
-* @param atribs et.Json
-* @return *Ql
-**/
-func (s *Ql) setAtribs(atribs et.Json) *Ql {
-	s.Atribs = atribs
-	return s
-}
-
-/**
-* setRollup
-* @param rollups et.Json
-* @return *Ql
-**/
-func (s *Ql) setRollup(rollups et.Json) *Ql {
-	s.Rollups = rollups
-	return s
-}
-
-/**
-* setRelation
-* @param relations et.Json
-* @return *Ql
-**/
-func (s *Ql) setRelation(relations et.Json) *Ql {
-	s.Relations = relations
 	return s
 }
 

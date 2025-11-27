@@ -1,8 +1,7 @@
 package jdb
 
 import (
-	"fmt"
-	"strings"
+	"regexp"
 )
 
 /**
@@ -11,29 +10,40 @@ import (
 * @return *Ql
 **/
 func (s *Ql) Select(fields ...string) *Ql {
-	if s.From == nil {
+	if len(s.Froms) == 0 {
 		return s
 	}
 
-	isDotInMiddle := func(s string) bool {
-		if s == "" {
-			return false
-		}
-		dot := strings.Index(s, ".")
-		if dot <= 0 || dot == len(s)-1 {
-			return false
-		}
-		return strings.LastIndex(s, ".") == dot // asegura que hay solo un punto
-	}
-
+	pattern1 := regexp.MustCompile(`^([A-Za-z0-9]+)\.([A-Za-z0-9]+):([A-Za-z0-9]+)$`)
+	pattern2 := regexp.MustCompile(`^([A-Za-z0-9]+)\.([A-Za-z0-9]+)$`)
+	pattern3 := regexp.MustCompile(`^([A-Za-z]+)\((.+)\):([A-Za-z0-9]+)$`)
+	pattern4 := regexp.MustCompile(`^([A-Za-z]+)\((.+)\)`)
 	for _, v := range fields {
-		if isDotInMiddle(v) {
-			as := strings.Split(v, ".")[1]
-			s.Selects[v] = as
-			continue
+		if pattern1.MatchString(v) {
+			matches := pattern1.FindStringSubmatch(v)
+			if len(matches) == 4 {
+				s.Selects[matches[3]] = matches[1]
+			}
+		} else if pattern2.MatchString(v) {
+			matches := pattern2.FindStringSubmatch(v)
+			if len(matches) == 3 {
+				s.Selects[matches[2]] = matches[1]
+			}
+		} else if pattern3.MatchString(v) {
+			matches := pattern3.FindStringSubmatch(v)
+			if len(matches) == 4 {
+				s.Selects[matches[3]] = matches[1]
+			}
+		} else if pattern4.MatchString(v) {
+			matches := pattern4.FindStringSubmatch(v)
+			if len(matches) == 3 {
+				s.Selects[matches[2]] = matches[1]
+			}
+		} else {
+
 		}
 
-		col, ok := s.From.GetColumn(v)
+		col, ok := s.Froms.GetColumn(v)
 		tp := col.String("type")
 		if ok && TypeColumn[tp] {
 			s.Selects[v] = v
@@ -47,31 +57,12 @@ func (s *Ql) Select(fields ...string) *Ql {
 
 		if tp == TypeCalc {
 			s.Calcs[v] = s.From.Calcs[v]
+		} else if tp == TypeDetail {
+			s.Details[v] = s.From.Details[v]
 		} else if tp == TypeRollup {
 			s.Rollups[v] = s.From.Rollups[v]
 		} else if tp == TypeRelation {
 			s.Relations[v] = s.From.Relations[v]
-		} else if tp == TypeDetail {
-			to, err := s.db.GetModel(v)
-			if err != nil {
-				continue
-			}
-
-			detail := s.From.Details[v]
-			references := detail.Json("references")
-			columns := references.ArrayJson("columns")
-			as := string(rune(len(s.Joins) + 66))
-			first := true
-			for _, fk := range columns {
-				for k, v := range fk {
-					if first {
-						s.Join(to, as, Eq(fmt.Sprintf("A.%s", k), fmt.Sprintf("%s.%s", as, v)))
-						first = false
-						continue
-					}
-					s.And(Eq(fmt.Sprintf("A.%s", k), fmt.Sprintf("%s.%s", as, v)))
-				}
-			}
 		}
 	}
 

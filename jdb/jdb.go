@@ -95,7 +95,7 @@ func Select(query et.Json) (*Ql, error) {
 		return nil, err
 	}
 
-	return db.Select(query), nil
+	return db.Select(query)
 }
 
 /**
