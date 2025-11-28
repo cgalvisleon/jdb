@@ -10,36 +10,33 @@ import (
 )
 
 type Field struct {
-	Model       *Model      `json:"model"`
-	Column      *Column     `json:"column"`
-	Field       string      `json:"field"`
-	Pattern     int         `json:"pattern"`
-	From        string      `json:"from"`
-	Name        string      `json:"name"`
-	As          string      `json:"as"`
-	Type        string      `json:"type"`
-	SourceField string      `json:"source_field"`
-	Aggregate   string      `json:"aggregate"`
-	Value       interface{} `json:"value"`
-	IsDefined   bool        `json:"is_defined"`
+	Model     *Model      `json:"model"`
+	Field     string      `json:"field"`
+	Pattern   int         `json:"pattern"`
+	From      string      `json:"from"`
+	Name      string      `json:"name"`
+	As        string      `json:"as"`
+	Type      string      `json:"type"`
+	Aggregate string      `json:"aggregate"`
+	Value     interface{} `json:"value"`
+	Existent  bool        `json:"existent"`
 }
 
 func (s *Field) ToJson() et.Json {
 	return et.Json{
-		"pattern":      s.Pattern,
-		"from":         s.From,
-		"name":         s.Name,
-		"as":           s.As,
-		"type":         s.Type,
-		"source_field": s.SourceField,
-		"aggregate":    s.Aggregate,
-		"value":        s.Value,
-		"is_defined":   s.IsDefined,
+		"pattern":   s.Pattern,
+		"from":      s.From,
+		"name":      s.Name,
+		"as":        s.As,
+		"type":      s.Type,
+		"aggregate": s.Aggregate,
+		"value":     s.Value,
+		"existent":  s.Existent,
 	}
 }
 
 type Condition struct {
-	Field *Field      `json:"field"`
+	Field string      `json:"field"`
 	Op    string      `json:"op"`
 	Value interface{} `json:"value"`
 }
@@ -50,7 +47,7 @@ type Condition struct {
 **/
 func (s *Condition) ToJson() et.Json {
 	return et.Json{
-		s.Field.Field: et.Json{
+		s.Field: et.Json{
 			s.Op: s.Value,
 		},
 	}
@@ -63,9 +60,7 @@ func (s *Condition) ToJson() et.Json {
 **/
 func condition(field string, value interface{}, op string) *Condition {
 	return &Condition{
-		Field: &Field{
-			Field: field,
-		},
+		Field: field,
 		Op:    op,
 		Value: value,
 	}
@@ -244,9 +239,9 @@ func newWhere(model *Model, as string) *where {
 * @param field string
 * @return (*Column, bool)
 **/
-func (s *where) validField(field *Field) (*Field, bool) {
+func (s *where) validField(field *Field) *Field {
 	if len(s.Froms) == 0 {
-		return field, false
+		return field
 	}
 
 	if field.From != "" {
@@ -254,11 +249,9 @@ func (s *where) validField(field *Field) (*Field, bool) {
 		col, ok := model.GetColumn(field.Name)
 		if ok {
 			field.Model = model
-			field.Column = col
 			field.Type = col.Type
-			field.IsDefined = true
-			field.SourceField = model.SourceField
-			return field, true
+			field.Existent = true
+			return field
 		}
 	}
 
@@ -270,12 +263,10 @@ func (s *where) validField(field *Field) (*Field, bool) {
 		col, ok := model.GetColumn(field.Name)
 		if ok {
 			field.Model = model
-			field.Column = col
 			field.From = as
 			field.Type = col.Type
-			field.IsDefined = true
-			field.SourceField = model.SourceField
-			return field, true
+			field.Existent = true
+			return field
 		}
 	}
 
@@ -287,12 +278,10 @@ func (s *where) validField(field *Field) (*Field, bool) {
 		col, ok := model.GetColumn(field.Name)
 		if ok {
 			field.Model = model
-			field.Column = col
 			field.From = as
 			field.Type = col.Type
-			field.IsDefined = true
-			field.SourceField = model.SourceField
-			return field, true
+			field.Existent = true
+			return field
 		}
 	}
 
@@ -301,14 +290,13 @@ func (s *where) validField(field *Field) (*Field, bool) {
 			field.Model = model
 			field.From = as
 			field.Type = TypeAtribute
-			field.IsDefined = true
-			field.SourceField = model.SourceField
-			return field, true
+			field.Existent = true
+			return field
 		}
 		break
 	}
 
-	return field, false
+	return field
 }
 
 /**
@@ -316,77 +304,76 @@ func (s *where) validField(field *Field) (*Field, bool) {
 * @param field string
 * @return *Field
 **/
-func (s *where) getField(field *Field) *Field {
+func (s *where) getField(field string) *Field {
+	result := &Field{
+		Field: field,
+	}
 	pattern1 := regexp.MustCompile(`^([A-Za-z0-9]+)\.([A-Za-z0-9]+):([A-Za-z0-9]+)$`) // from.name:as
 	pattern2 := regexp.MustCompile(`^([A-Za-z0-9]+)\.([A-Za-z0-9]+)$`)                // from.name
 	pattern3 := regexp.MustCompile(`^([A-Za-z]+)\((.+)\):([A-Za-z0-9]+)$`)            // func(args):as
 	pattern4 := regexp.MustCompile(`^([A-Za-z]+)\((.+)\)`)                            // func(args)
 	pattern5 := regexp.MustCompile(`^-?\d+(\.\d+)?$`)                                 // number
-	if pattern1.MatchString(field.Field) {
-		matches := pattern1.FindStringSubmatch(field.Field)
+	if pattern1.MatchString(result.Field) {
+		matches := pattern1.FindStringSubmatch(result.Field)
 		if len(matches) == 4 {
-			field.Pattern = 1
-			field.From = matches[1]
-			field.Name = matches[2]
-			field.As = matches[3]
-			field, _ = s.validField(field)
-			field.Field = fmt.Sprintf("%s.%s", field.From, field.Name)
+			result.Pattern = 1
+			result.From = matches[1]
+			result.Name = matches[2]
+			result.As = matches[3]
+			result = s.validField(result)
+			result.Field = fmt.Sprintf("%s.%s", result.From, result.Name)
 		}
-	} else if pattern2.MatchString(field.Field) {
-		matches := pattern2.FindStringSubmatch(field.Field)
+	} else if pattern2.MatchString(result.Field) {
+		matches := pattern2.FindStringSubmatch(result.Field)
 		if len(matches) == 3 {
-			field.Pattern = 2
-			field.From = matches[1]
-			field.Name = matches[2]
-			field.As = matches[2]
-			field, _ = s.validField(field)
-			field.Field = fmt.Sprintf("%s.%s", field.From, field.Name)
+			result.Pattern = 2
+			result.From = matches[1]
+			result.Name = matches[2]
+			result.As = matches[2]
+			result = s.validField(result)
+			result.Field = fmt.Sprintf("%s.%s", result.From, result.Name)
 		}
-	} else if pattern3.MatchString(field.Field) {
-		matches := pattern3.FindStringSubmatch(field.Field)
+	} else if pattern3.MatchString(result.Field) {
+		matches := pattern3.FindStringSubmatch(result.Field)
 		if len(matches) == 4 {
-			field.Pattern = 3
-			field.Aggregate = matches[1]
-			field.As = matches[3]
-			fld := &Field{
-				Field: matches[2],
-			}
-			fld = s.getField(fld)
-			field.From = fld.From
-			field.Name = fld.Name
-			field, _ = s.validField(field)
-			field.Field = fmt.Sprintf("%s(%s)", field.Aggregate, fld.Field)
+			result.Pattern = 3
+			result.Aggregate = matches[1]
+			result.Name = matches[2]
+			result.As = matches[3]
+			fld := s.getField(result.Name)
+			result.From = fld.From
+			result.Name = fld.Name
+			result = s.validField(result)
+			result.Field = fmt.Sprintf("%s(%s)", result.Aggregate, fld.Field)
 		}
-	} else if pattern4.MatchString(field.Field) {
-		matches := pattern4.FindStringSubmatch(field.Field)
+	} else if pattern4.MatchString(result.Field) {
+		matches := pattern4.FindStringSubmatch(result.Field)
 		if len(matches) == 3 {
-			field.Pattern = 4
-			field.Aggregate = matches[1]
-			field.As = matches[1]
-			fld := &Field{
-				Field: matches[2],
-			}
-			fld = s.getField(fld)
-			field.From = fld.From
-			field.Name = fld.Name
-			field, _ = s.validField(field)
-			field.Field = fmt.Sprintf("%s(%s)", field.Aggregate, fld.Field)
+			result.Pattern = 4
+			result.Aggregate = matches[1]
+			result.Name = matches[2]
+			result.As = matches[1]
+			fld := s.getField(result.Name)
+			result.From = fld.From
+			result.Name = fld.Name
+			result = s.validField(result)
+			result.Field = fmt.Sprintf("%s(%s)", result.Aggregate, fld.Field)
 		}
-	} else if pattern5.MatchString(field.Field) {
-		matches := pattern5.FindStringSubmatch(field.Field)
+	} else if pattern5.MatchString(result.Field) {
+		matches := pattern5.FindStringSubmatch(result.Field)
 		if len(matches) == 2 {
-			field.Pattern = 5
-			field.Value = matches[1]
+			result.Pattern = 5
+			result.Value = matches[1]
 		}
-		field, _ = s.validField(field)
-		field.Field = fmt.Sprintf("%s", Quote(field.Value))
+		result = s.validField(result)
+		result.Field = fmt.Sprintf("%s", Quote(result.Value))
 	} else {
-		field.Name = field.Field
-		field, _ = s.validField(field)
-		field.Field = strs.Append(field.From, field.Name, ".")
+		result.Name = result.Field
+		result = s.validField(result)
+		result.Field = strs.Append(result.From, result.Name, ".")
 	}
 
-	return field
+	return result
 }
 
 /**
@@ -395,7 +382,8 @@ func (s *where) getField(field *Field) *Field {
 * @return *where
 **/
 func (s *where) where(cond *Condition, conector string) *where {
-	cond.Field = s.getField(cond.Field)
+	field := s.getField(cond.Field)
+	cond.Field = field.Field
 	if len(s.Wheres) == 0 {
 		s.Wheres = append(s.Wheres, cond.ToJson())
 	} else {

@@ -10,12 +10,9 @@ func (s *Ql) Select(fields ...string) *Ql {
 		return s
 	}
 
-	for _, v := range fields {
-		fld := &Field{
-			Field: v,
-		}
-		fld = s.getField(fld)
-		if !fld.IsDefined {
+	for _, name := range fields {
+		fld := s.getField(name)
+		if !fld.Existent {
 			continue
 		}
 
@@ -30,13 +27,13 @@ func (s *Ql) Select(fields ...string) *Ql {
 		}
 
 		if fld.Type == TypeCalc {
-			s.Calcs[v] = fld.Model.Calcs[fld.Name]
+			s.Calcs[fld.Name] = fld.Model.Calcs[fld.Name]
 		} else if fld.Type == TypeDetail {
-			s.Details[v] = fld.Model.Details[fld.Name]
+			s.Details[fld.Name] = fld.Model.Details[fld.Name]
 		} else if fld.Type == TypeRollup {
-			s.Rollups[v] = fld.Model.Rollups[fld.Name]
+			s.Rollups[fld.Name] = fld.Model.Rollups[fld.Name]
 		} else if fld.Type == TypeRelation {
-			s.Relations[v] = fld.Model.Relations[fld.Name]
+			s.Relations[fld.Name] = fld.Model.Relations[fld.Name]
 		}
 	}
 
