@@ -13,38 +13,6 @@ import (
 * @return
 **/
 func (s *Ql) getRollupsTx(tx *Tx, data et.Json) {
-	for name, item := range s.Rollups {
-		from := item.Str("from")
-		selects := item.ArrayStr("select")
-		fks := item.Json("fks")
-
-		model, err := GetModel(s.Database, from)
-		if err != nil {
-			return
-		}
-
-		ql := From(model, "A").Select(selects...)
-		for pk, v := range fks {
-			fk := fmt.Sprintf("%v", v)
-			val := data.Str(pk)
-			ql.Where(Eq(fk, val))
-		}
-		item, err := ql.OneTx(tx)
-		if err != nil {
-			return
-		}
-
-		switch n := len(item.Result); n {
-		case 0:
-			return
-		case 1:
-			for _, v := range item.Result {
-				data[name] = v
-			}
-		default:
-			data[name] = item.Result
-		}
-	}
 }
 
 /**

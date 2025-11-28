@@ -7,9 +7,14 @@ import "github.com/cgalvisleon/et/et"
 * @return et.Items, error
 **/
 func (s *Cmd) upsert() (et.Items, error) {
+	if len(s.Froms) == 0 {
+		return et.Items{}, nil
+	}
+
+	from := s.Froms["from"]
 	data := s.Data[0]
 	keys := s.getKeys(data, "A")
-	exists, err := s.From.
+	exists, err := from.
 		Query(et.Json{
 			"where": keys,
 		}).

@@ -37,15 +37,16 @@ func (s *Driver) buildCommand(cmd *jdb.Cmd) (string, error) {
 * @return (string, error)
 **/
 func (s *Driver) buildInsert(cmd *jdb.Cmd) (string, error) {
-	table := cmd.From.Table
+	from := cmd.Froms["from"]
+	table := from.Table
 	data := cmd.Data[0]
 	into := ""
 	values := ""
 	atribs := et.Json{}
 	returning := fmt.Sprintf(`to_jsonb(%s.*) AS result`, table)
 	for k, v := range data {
-		col, ok := cmd.From.GetColumn(k)
-		tp := col.String("type")
+		col, ok := from.GetColumn(k)
+		tp := col.Type
 		if ok && jdb.TypeColumn[tp] {
 			val := fmt.Sprintf(`%v`, jdb.Quote(v))
 			into = strs.Append(into, k, ", ")
@@ -53,15 +54,15 @@ func (s *Driver) buildInsert(cmd *jdb.Cmd) (string, error) {
 			continue
 		}
 
-		if cmd.From.UseAtribs() || jdb.TypeAtrib[tp] {
+		if from.UseAtribs() || jdb.TypeAtrib[tp] {
 			atribs[k] = v
 		}
 	}
 
-	if cmd.From.UseAtribs() {
-		into = strs.Append(into, cmd.From.SourceField, ", ")
+	if from.UseAtribs() {
+		into = strs.Append(into, from.SourceField, ", ")
 		values = strs.Append(values, fmt.Sprintf(`'%v'::jsonb`, atribs.ToString()), ", ")
-		returning = fmt.Sprintf("to_jsonb(%s.*) - '%s' AS result", table, cmd.From.SourceField)
+		returning = fmt.Sprintf("to_jsonb(%s.*) - '%s' AS result", table, from.SourceField)
 	}
 
 	sql := fmt.Sprintf("INSERT INTO %s(%s)\nVALUES(%s)\nRETURNING %s;", table, into, values, returning)
@@ -74,7 +75,8 @@ func (s *Driver) buildInsert(cmd *jdb.Cmd) (string, error) {
 * @return (string, error)
 **/
 func (s *Driver) buildUpdate(cmd *jdb.Cmd) (string, error) {
-	table := cmd.From.Table
+	from := cmd.Froms["from"]
+	table := from.Table
 	data := cmd.Data[0]
 	sets := ""
 	atribs := ""
@@ -82,16 +84,16 @@ func (s *Driver) buildUpdate(cmd *jdb.Cmd) (string, error) {
 	returning := fmt.Sprintf(`to_jsonb(%s.*) AS result`, table)
 	for k, v := range data {
 		val := fmt.Sprintf(`%v`, jdb.Quote(v))
-		col, ok := cmd.From.GetColumn(k)
-		tp := col.String("type")
+		col, ok := from.GetColumn(k)
+		tp := col.Type
 		if ok && jdb.TypeColumn[tp] {
 			sets = strs.Append(sets, fmt.Sprintf(`%s = %s`, k, val), ", ")
 			continue
 		}
 
-		if cmd.From.UseAtribs() || jdb.TypeAtrib[tp] {
+		if from.UseAtribs() || jdb.TypeAtrib[tp] {
 			if len(atribs) == 0 {
-				atribs = fmt.Sprintf("COALESCE(%s, '{}')", cmd.From.SourceField)
+				atribs = fmt.Sprintf("COALESCE(%s, '{}')", from.SourceField)
 				atribs = strs.Format("jsonb_set(%s, '{%s}', %v::jsonb, true)", atribs, k, val)
 			} else {
 				atribs = strs.Format("jsonb_set(\n%s, \n'{%s}', %v::jsonb, true)", atribs, k, val)
@@ -99,9 +101,9 @@ func (s *Driver) buildUpdate(cmd *jdb.Cmd) (string, error) {
 		}
 	}
 
-	if cmd.From.UseAtribs() {
-		sets = strs.Append(sets, fmt.Sprintf(`%s = %s`, cmd.From.SourceField, atribs), ", ")
-		returning = fmt.Sprintf("to_jsonb(%s.*) - '%s' AS result", table, cmd.From.SourceField)
+	if from.UseAtribs() {
+		sets = strs.Append(sets, fmt.Sprintf(`%s = %s`, from.SourceField, atribs), ", ")
+		returning = fmt.Sprintf("to_jsonb(%s.*) - '%s' AS result", table, from.SourceField)
 	}
 
 	definition := cmd.ToJson()
@@ -127,10 +129,10 @@ func (s *Driver) buildUpdate(cmd *jdb.Cmd) (string, error) {
 * @return (string, error)
 **/
 func (s *Driver) buildDelete(cmd *jdb.Cmd) (string, error) {
-	table := cmd.From.Table
+	from := cmd.Froms["from"]
+	table := from.Table
 	where := ""
 	returning := fmt.Sprintf(`to_jsonb(%s.*) AS result`, table)
-
 	definition := cmd.ToJson()
 	wheres := definition.ArrayJson("where")
 	if len(wheres) > 0 {
@@ -142,8 +144,8 @@ func (s *Driver) buildDelete(cmd *jdb.Cmd) (string, error) {
 		where = def
 	}
 
-	if cmd.From.UseAtribs() {
-		returning = fmt.Sprintf("to_jsonb(%s.*) - '%s' AS result", table, cmd.From.SourceField)
+	if from.UseAtribs() {
+		returning = fmt.Sprintf("to_jsonb(%s.*) - '%s' AS result", table, from.SourceField)
 	}
 
 	sql := fmt.Sprintf(`DELETE FROM %s`, table)

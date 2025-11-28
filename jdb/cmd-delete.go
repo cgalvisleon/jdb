@@ -7,7 +7,12 @@ import "github.com/cgalvisleon/et/et"
 * @return (et.Items, error)
 **/
 func (s *Cmd) delete() (et.Items, error) {
-	current, err := s.From.
+	if len(s.Froms) == 0 {
+		return et.Items{}, nil
+	}
+
+	from := s.Froms["from"]
+	current, err := from.
 		Query(et.Json{
 			"where": s.Wheres,
 		}).

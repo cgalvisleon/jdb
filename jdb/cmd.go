@@ -62,7 +62,7 @@ func newCommand(model *Model, cmd string, data []et.Json) *Cmd {
 		afterUpdates:  model.afterUpdates,
 		afterDeletes:  model.afterDeletes,
 	}
-	result.From = model
+	result.Froms["from"] = model
 
 	return result
 }
@@ -145,15 +145,20 @@ func command(cmd string, param et.Json) (*Cmd, error) {
 * @return []et.Json
 **/
 func (s *Cmd) getKeys(data et.Json, as string) []et.Json {
+	if len(s.Froms) == 0 {
+		return []et.Json{}
+	}
+
+	from := s.Froms["from"]
 	result := []et.Json{}
 	for k, v := range data {
 		filed := strs.Append(as, k, ".")
-		_, ok := s.From.GetColumn(k)
+		_, ok := from.GetColumn(k)
 		if !ok {
 			continue
 		}
 
-		if slices.Contains(s.From.PrimaryKeys, k) {
+		if slices.Contains(from.PrimaryKeys, k) {
 			result = append(result, et.Json{
 				filed: et.Json{
 					"eq": Quote(v),

@@ -37,6 +37,7 @@ type Ql struct {
 	IsDebug   bool                   `json:"-"`
 	db        *DB                    `json:"-"`
 	tx        *Tx                    `json:"-"`
+	inJoin    bool                   `json:"-"`
 }
 
 /**
