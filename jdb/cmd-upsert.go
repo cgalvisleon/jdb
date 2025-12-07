@@ -13,11 +13,8 @@ func (s *Cmd) upsert() (et.Items, error) {
 
 	from := s.Froms["from"]
 	data := s.Data[0]
-	keys := s.getKeys(data, "A")
 	exists, err := from.
-		Query(et.Json{
-			"where": keys,
-		}).
+		WhereByKeys(data).
 		Debug().
 		ItExists()
 	if err != nil {

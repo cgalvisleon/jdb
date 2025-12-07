@@ -61,6 +61,7 @@ func defineSeries(db *DB) error {
 		return err
 	}
 
+	series.isCore = series.Schema == "core"
 	if err = series.Init(); err != nil {
 		return err
 	}

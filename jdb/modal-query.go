@@ -20,7 +20,19 @@ func (s *Model) Query(query et.Json) *Ql {
 **/
 func (s *Model) Select(fields ...string) *Ql {
 	result := s.db.From(s, "A")
+	result.IsDataSource = s.SourceField != ""
 	return result.Select(fields...)
+}
+
+/**
+* Data
+* @param fields ...string
+* @return *Ql
+**/
+func (s *Model) Data(fields ...string) *Ql {
+	result := s.Select(fields...)
+	result.IsDataSource = true
+	return result
 }
 
 /**
@@ -31,6 +43,19 @@ func (s *Model) Select(fields ...string) *Ql {
 func (s *Model) Where(cond *Condition) *Ql {
 	result := s.db.From(s, "A")
 	return result.Where(cond)
+}
+
+/**
+* WhereByKeys
+* @param data et.Json
+* @return *Ql
+**/
+func (s *Model) WhereByKeys(data et.Json) *Ql {
+	result := s.db.From(s, "A")
+	for _, col := range s.PrimaryKeys {
+		result.Where(Eq(col, data[col]))
+	}
+	return result
 }
 
 /**

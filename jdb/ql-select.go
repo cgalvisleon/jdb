@@ -17,25 +17,35 @@ func (s *Ql) Select(fields ...string) *Ql {
 		}
 
 		if TypeColumn[fld.Type] {
-			s.Selects[fld.Field] = fld.As
+			s.Selects[fld.As] = fld.Field
 			continue
 		}
 
 		if TypeAtrib[fld.Type] {
-			s.Atribs[fld.Field] = fld.As
+			s.Atribs[fld.As] = fld.Field
 			continue
 		}
 
 		if fld.Type == TypeCalc {
-			s.Calcs[fld.Name] = fld.Model.Calcs[fld.Name]
+			s.Calcs[fld.As] = fld.Model.Calcs[fld.Name]
 		} else if fld.Type == TypeDetail {
-			s.Details[fld.Name] = fld.Model.Details[fld.Name]
+			s.Details[fld.As] = fld.Model.Details[fld.Name]
 		} else if fld.Type == TypeRollup {
-			s.Rollups[fld.Name] = fld.Model.Rollups[fld.Name]
+			s.Rollups[fld.As] = fld.Model.Rollups[fld.Name]
 		} else if fld.Type == TypeRelation {
-			s.Relations[fld.Name] = fld.Model.Relations[fld.Name]
+			s.Relations[fld.As] = fld.Model.Relations[fld.Name]
 		}
 	}
 
 	return s
+}
+
+/**
+* Data
+* @param fields ...string
+* @return *Ql
+ */
+func (s *Ql) Data(fields ...string) *Ql {
+	s.IsDataSource = true
+	return s.Select(fields...)
 }

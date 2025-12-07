@@ -58,7 +58,7 @@ func defineModel(db *DB) error {
 		return err
 	}
 
-	models.isCore = true
+	models.isCore = models.Schema == "core"
 	if err = models.Init(); err != nil {
 		return err
 	}
@@ -164,6 +164,7 @@ func versionModel(name string, current int) int {
 	items, err := models.
 		Select("version").
 		Where(Eq("name", name)).
+		Debug().
 		One()
 	if err != nil {
 		return current

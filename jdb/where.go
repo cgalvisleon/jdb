@@ -62,7 +62,7 @@ func condition(field string, value interface{}, op string) *Condition {
 	return &Condition{
 		Field: field,
 		Op:    op,
-		Value: value,
+		Value: Quote(value),
 	}
 }
 
@@ -244,7 +244,18 @@ func (s *where) validField(field *Field) *Field {
 		return field
 	}
 
-	if field.From != "" {
+	if field.From == "" {
+		for as, model := range s.Froms {
+			col, ok := model.GetColumn(field.Name)
+			if ok {
+				field.Model = model
+				field.From = as
+				field.Type = col.Type
+				field.Existent = true
+				return field
+			}
+		}
+	} else {
 		model := s.Froms[field.From]
 		col, ok := model.GetColumn(field.Name)
 		if ok {
@@ -253,35 +264,35 @@ func (s *where) validField(field *Field) *Field {
 			field.Existent = true
 			return field
 		}
-	}
 
-	for as, model := range s.Froms {
-		if model.Name != field.From {
-			continue
+		for as, model := range s.Froms {
+			if model.Name != field.From {
+				continue
+			}
+
+			col, ok := model.GetColumn(field.Name)
+			if ok {
+				field.Model = model
+				field.From = as
+				field.Type = col.Type
+				field.Existent = true
+				return field
+			}
 		}
 
-		col, ok := model.GetColumn(field.Name)
-		if ok {
-			field.Model = model
-			field.From = as
-			field.Type = col.Type
-			field.Existent = true
-			return field
-		}
-	}
+		for as, model := range s.Froms {
+			if model.Table != field.From {
+				continue
+			}
 
-	for as, model := range s.Froms {
-		if model.Table != field.From {
-			continue
-		}
-
-		col, ok := model.GetColumn(field.Name)
-		if ok {
-			field.Model = model
-			field.From = as
-			field.Type = col.Type
-			field.Existent = true
-			return field
+			col, ok := model.GetColumn(field.Name)
+			if ok {
+				field.Model = model
+				field.From = as
+				field.Type = col.Type
+				field.Existent = true
+				return field
+			}
 		}
 	}
 
@@ -364,11 +375,14 @@ func (s *where) getField(field string) *Field {
 		if len(matches) == 2 {
 			result.Pattern = 5
 			result.Value = matches[1]
+			result.Name = fmt.Sprintf(`%v`, result.Value)
+			result.As = result.Name
+			result = s.validField(result)
+			result.Field = fmt.Sprintf(`%v`, result.Value)
 		}
-		result = s.validField(result)
-		result.Field = fmt.Sprintf("%s", Quote(result.Value))
 	} else {
 		result.Name = result.Field
+		result.As = result.Name
 		result = s.validField(result)
 		result.Field = strs.Append(result.From, result.Name, ".")
 	}

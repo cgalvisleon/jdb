@@ -16,28 +16,28 @@ func init() {
 
 type Ql struct {
 	*where
-	Database  string                 `json:"database"`
-	Selects   et.Json                `json:"selects"`
-	Atribs    et.Json                `json:"atribs"`
-	Hiddens   []string               `json:"hidden"`
-	Details   map[string]*Detail     `json:"details"`
-	Rollups   map[string]*Detail     `json:"rollups"`
-	Relations map[string]*Detail     `json:"relations"`
-	Calcs     map[string]DataContext `json:"-"`
-	Joins     []et.Json              `json:"joins"`
-	Wheres    []et.Json              `json:"where"`
-	GroupBy   []string               `json:"group_by"`
-	Havings   []et.Json              `json:"having"`
-	OrdersBy  et.Json                `json:"order_by"`
-	Limits    et.Json                `json:"limit"`
-	Exists    bool                   `json:"exists"`
-	Count     bool                   `json:"count"`
-	SQL       string                 `json:"sql"`
-	MaxRows   int                    `json:"max_rows"`
-	IsDebug   bool                   `json:"-"`
-	db        *DB                    `json:"-"`
-	tx        *Tx                    `json:"-"`
-	inJoin    bool                   `json:"-"`
+	Database     string                 `json:"database"`
+	Selects      et.Json                `json:"selects"`
+	Atribs       et.Json                `json:"atribs"`
+	Hiddens      []string               `json:"hidden"`
+	Details      map[string]*Detail     `json:"details"`
+	Rollups      map[string]*Detail     `json:"rollups"`
+	Relations    map[string]*Detail     `json:"relations"`
+	Calcs        map[string]DataContext `json:"-"`
+	Joins        []et.Json              `json:"joins"`
+	GroupBy      []string               `json:"group_by"`
+	Havings      []et.Json              `json:"having"`
+	OrdersBy     et.Json                `json:"order_by"`
+	Limits       et.Json                `json:"limit"`
+	Exists       bool                   `json:"exists"`
+	Count        bool                   `json:"count"`
+	SQL          string                 `json:"sql"`
+	MaxRows      int                    `json:"max_rows"`
+	IsDataSource bool                   `json:"is_data_source"`
+	IsDebug      bool                   `json:"-"`
+	db           *DB                    `json:"-"`
+	tx           *Tx                    `json:"-"`
+	inJoin       bool                   `json:"-"`
 }
 
 /**
@@ -56,7 +56,6 @@ func newQl(model *Model, as string) *Ql {
 		Relations: make(map[string]*Detail),
 		Calcs:     make(map[string]DataContext),
 		Joins:     make([]et.Json, 0),
-		Wheres:    make([]et.Json, 0),
 		GroupBy:   []string{},
 		Havings:   make([]et.Json, 0),
 		OrdersBy:  et.Json{},

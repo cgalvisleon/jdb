@@ -144,7 +144,7 @@ func command(cmd string, param et.Json) (*Cmd, error) {
 * @param data et.Json, as string
 * @return []et.Json
 **/
-func (s *Cmd) getKeys(data et.Json, as string) []et.Json {
+func (s *Cmd) GetKeys(data et.Json, as string) []et.Json {
 	if len(s.Froms) == 0 {
 		return []et.Json{}
 	}

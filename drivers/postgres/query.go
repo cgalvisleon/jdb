@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/cgalvisleon/et/et"
+	"github.com/cgalvisleon/et/logs"
 	"github.com/cgalvisleon/et/strs"
 	"github.com/cgalvisleon/jdb/jdb"
 )
@@ -16,6 +17,11 @@ import (
 **/
 func (s *Driver) buildQuery(ql *jdb.Ql) (string, error) {
 	query := ql.ToJson()
+
+	if ql.IsDebug {
+		logs.Debug("query:", query.ToString())
+	}
+
 	sql, err := s.buildSelect(query)
 	if err != nil {
 		return "", err
@@ -88,7 +94,6 @@ func (s *Driver) buildQuery(ql *jdb.Ql) (string, error) {
 	}
 
 	if def != "" {
-		def = fmt.Sprintf("LIMIT %s", def)
 		sql = strs.Append(sql, def, "\n")
 	}
 
@@ -113,43 +118,44 @@ func (s *Driver) buildSelect(query et.Json) (string, error) {
 
 	if query.Bool("count") {
 		return "COUNT(*) AS all", nil
+
 	}
 
-	sourceField := query.String("source_field")
-	if sourceField != "" {
+	isDataSource := query.Bool("is_data_source")
+	if isDataSource {
 		atribs := query.Json("atribs")
 		if atribs.IsEmpty() {
-			result = fmt.Sprintf("\n\t%s", sourceField)
+			result = fmt.Sprintf("\n%s", jdb.SOURCE)
 		} else {
 			for k, v := range atribs {
-				def := fmt.Sprintf("\n\t'%s', %s", v, k)
+				def := fmt.Sprintf("\n'%s', %s", k, v)
 				result = strs.Append(result, def, ", ")
 			}
 
 			if result != "" {
-				result = fmt.Sprintf("\n\tjsonb_build_object(%s\n\t)", result)
+				result = fmt.Sprintf("\n\tjsonb_build_object(%s\n)", result)
 			}
 		}
 
 		selects := query.Json("selects")
 		if selects.IsEmpty() {
 			hidden := query.ArrayStr("hidden")
-			hidden = append(hidden, sourceField)
+			hidden = append(hidden, jdb.SOURCE)
 			def := fmt.Sprintf("to_jsonb(A) - ARRAY[%s]", strings.Join(hidden, ", "))
 			result = strs.Append(result, def, "||")
 		} else {
 			sel := ""
 			for k := range selects {
 				v := selects.String(k)
-				def := fmt.Sprintf("\n\t'%s',  %s", v, k)
+				def := fmt.Sprintf("\n'%s',  %s", k, v)
 				if v == "" {
-					def = fmt.Sprintf("\n\t'%s',  %s", k, k)
+					def = fmt.Sprintf("\n'%s',  %s", k, k)
 				}
 				sel = strs.Append(sel, def, ", ")
 			}
 
 			if sel != "" {
-				result = fmt.Sprintf("%s||jsonb_build_object(%s\n\t)", result, sel)
+				result = fmt.Sprintf("%s||jsonb_build_object(%s\n)", result, sel)
 			}
 		}
 
@@ -167,11 +173,11 @@ func (s *Driver) buildSelect(query et.Json) (string, error) {
 	} else {
 		for k := range selects {
 			v := selects.String(k)
-			def := fmt.Sprintf("\n\t%s AS %s", k, v)
+			def := fmt.Sprintf("\n%s AS %s", v, k)
 			if k == v {
-				def = fmt.Sprintf("\n\t%s", k)
+				def = fmt.Sprintf("\n%s", v)
 			} else if v == "" {
-				def = fmt.Sprintf("\n\t%s", k)
+				def = fmt.Sprintf("\n%s", v)
 			}
 
 			result = strs.Append(result, def, ", ")
@@ -187,20 +193,23 @@ func (s *Driver) buildSelect(query et.Json) (string, error) {
 * @return (string, error)
 **/
 func (s *Driver) buildFrom(query et.Json) (string, error) {
+	result := ""
+
 	froms := query.Json("from")
 	if froms.IsEmpty() {
-		return "", fmt.Errorf(jdb.MSG_FROM_REQUIRED)
+		return result, fmt.Errorf(jdb.MSG_FROM_REQUIRED)
 	}
 
-	result := ""
 	for k := range froms {
-		v := froms.String(k)
-		def := fmt.Sprintf("%s AS %s", k, v)
-		if k == v {
-			def = fmt.Sprintf("%s", k)
+		v := froms.Json(k)
+		table := v.Str("table")
+		def := fmt.Sprintf("%s AS %s", table, k)
+		if k == table {
+			def = fmt.Sprintf("%s", table)
 		}
 
 		result = strs.Append(result, def, ", ")
+		break
 	}
 
 	return result, nil
@@ -212,12 +221,13 @@ func (s *Driver) buildFrom(query et.Json) (string, error) {
 * @return (string, error)
 **/
 func (s *Driver) buildJoins(query et.Json) (string, error) {
+	result := ""
+
 	joins := query.ArrayJson("joins")
 	if len(joins) == 0 {
-		return "", nil
+		return result, nil
 	}
 
-	result := ""
 	for _, v := range joins {
 		def, err := s.buildFrom(v)
 		if err != nil {
@@ -247,6 +257,8 @@ func (s *Driver) buildJoins(query et.Json) (string, error) {
 * @return (string, error)
 **/
 func (s *Driver) buildWhere(wheres []et.Json) (string, error) {
+	result := ""
+
 	condition := func(condition et.Json) string {
 		for k, v := range condition {
 			switch k {
@@ -306,15 +318,16 @@ func (s *Driver) buildWhere(wheres []et.Json) (string, error) {
 		return ""
 	}
 
-	result := ""
 	append := func(cond, connect string) string {
 		if result == "" {
 			return cond
 		} else {
-			connect = fmt.Sprintf("\n\t%s ", connect)
+			connect = fmt.Sprintf("\n%s ", connect)
 			return strs.Append(result, cond, connect)
 		}
 	}
+
+	logs.Log("WHERE clauses:", et.ArrayJsonToString(wheres))
 
 	for _, w := range wheres {
 		for k := range w {
@@ -346,12 +359,13 @@ func (s *Driver) buildWhere(wheres []et.Json) (string, error) {
 * @return (string, error)
 **/
 func (s *Driver) buildGroupBy(query et.Json) (string, error) {
+	result := ""
+
 	groupBy := query.ArrayStr("group_by")
 	if len(groupBy) == 0 {
-		return "", nil
+		return result, nil
 	}
 
-	result := ""
 	for _, v := range groupBy {
 		def := fmt.Sprintf("%s", v)
 		result = strs.Append(result, def, ", ")
@@ -366,9 +380,11 @@ func (s *Driver) buildGroupBy(query et.Json) (string, error) {
 * @return (string, error)
 **/
 func (s *Driver) buildHaving(query et.Json) (string, error) {
+	result := ""
+
 	having := query.ArrayJson("having")
 	if len(having) == 0 {
-		return "", nil
+		return result, nil
 	}
 
 	result, err := s.buildWhere(having)
@@ -385,9 +401,11 @@ func (s *Driver) buildHaving(query et.Json) (string, error) {
 * @return (string, error)
 **/
 func (s *Driver) buildOrderBy(query et.Json) (string, error) {
+	result := ""
+
 	orderBy := query.Json("order_by")
 	if orderBy.IsEmpty() {
-		return "", nil
+		return result, nil
 	}
 
 	asc := orderBy.ArrayStr("asc")
@@ -410,7 +428,7 @@ func (s *Driver) buildOrderBy(query et.Json) (string, error) {
 		descs = fmt.Sprintf(`%s DESC`, descs)
 	}
 
-	result := strs.Append(ascs, descs, ", ")
+	result = strs.Append(ascs, descs, ", ")
 	return result, nil
 }
 
@@ -420,9 +438,11 @@ func (s *Driver) buildOrderBy(query et.Json) (string, error) {
 * @return (string, error)
 **/
 func (s *Driver) buildLimit(query et.Json) (string, error) {
+	result := ""
+
 	limit := query.Json("limit")
 	if limit.IsEmpty() {
-		return "", nil
+		return result, nil
 	}
 
 	limitRows := query.ValInt(1000, "max_rows")
@@ -430,9 +450,11 @@ func (s *Driver) buildLimit(query et.Json) (string, error) {
 	rows := limit.ValInt(limitRows, "rows")
 
 	if page == 0 {
-		return fmt.Sprintf("%d", rows), nil
+		result = fmt.Sprintf("LIMIT %d", rows)
+		return result, nil
 	}
 
 	offset := (page - 1) * rows
-	return fmt.Sprintf("%d OFFSET %d", rows, offset), nil
+	result = fmt.Sprintf("%d OFFSET %d", rows, offset)
+	return result, nil
 }

@@ -53,7 +53,7 @@ func defineRecords(db *DB) error {
 		return err
 	}
 
-	records.isCore = true
+	records.isCore = records.Schema == "core"
 	if err = records.Init(); err != nil {
 		return err
 	}

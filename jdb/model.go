@@ -105,7 +105,7 @@ var (
 )
 
 type DataFunctionTx func(tx *Tx, old, new et.Json) error
-type DataContext func(data et.Json)
+type DataContext func(tx *Tx, data et.Json)
 
 type Model struct {
 	Database      string                 `json:"database"`
@@ -290,7 +290,11 @@ func (s *Model) Init() error {
 		return nil
 	}
 
-	s.Current = versionModel(s.Name, s.Version)
+	if s.isCore {
+		s.Current = s.Version
+	} else {
+		s.Current = versionModel(s.Name, s.Version)
+	}
 	err := s.db.init(s)
 	if err != nil {
 		return err
@@ -368,6 +372,20 @@ func (s *Model) GetRecordById(id string) (et.Item, error) {
 }
 
 /**
+* GetKeys
+* @param data et.Json
+* @return et.Json
+**/
+func (s *Model) GetKeys(data et.Json) et.Json {
+	result := et.Json{}
+	for _, col := range s.PrimaryKeys {
+		result.Set(col, data[col])
+	}
+
+	return result
+}
+
+/**
 * GetKey
 * @param data et.Json
 * @return string
@@ -375,9 +393,8 @@ func (s *Model) GetRecordById(id string) (et.Item, error) {
 func (s *Model) GetKey(data et.Json) string {
 	result := ""
 	for _, col := range s.PrimaryKeys {
-		value := data.Str(col)
-		result = strs.Append(result, value, ":")
+		val := fmt.Sprintf("%v", data[col])
+		result = strs.Append(result, val, ":")
 	}
-
 	return result
 }

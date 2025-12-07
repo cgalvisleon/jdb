@@ -452,3 +452,17 @@ func (s *DB) Select(query et.Json) (*Ql, error) {
 
 	return result, nil
 }
+
+/**
+* Data
+* @param query et.Json
+* @return *Ql
+**/
+func (s *DB) Data(query et.Json) (*Ql, error) {
+	result, err := s.Select(query)
+	if err != nil {
+		return nil, err
+	}
+	result.IsDataSource = true
+	return result, nil
+}

@@ -111,15 +111,25 @@ func (s *Driver) Load(model *jdb.Model) (string, error) {
 		return "", err
 	}
 
-	if exists {
-		if model.Current != model.Version {
-			return s.mutateModel(model)
+	result := ""
+	if !exists {
+		result, err = s.buildModel(model)
+		if err != nil {
+			return "", err
 		}
 
-		return "", nil
+		return result, nil
 	}
 
-	return s.buildModel(model)
+	if model.Current != model.Version {
+		result, err = s.mutateModel(model)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	logs.Logf(driver, "Load model:%s v:%d", model.Name, model.Version)
+	return result, nil
 }
 
 /**

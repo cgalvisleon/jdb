@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/cgalvisleon/et/et"
+	"github.com/cgalvisleon/et/logs"
 )
 
 /**
@@ -13,6 +14,21 @@ import (
 * @return
 **/
 func (s *Ql) getRollupsTx(tx *Tx, data et.Json) {
+	for name, rollup := range s.Rollups {
+		items, err := rollup.QueryTx(tx, data)
+		if err != nil {
+			logs.Error(err)
+		}
+
+		item := items.First().Result
+		if len(item) == 1 {
+			for _, v := range item {
+				data[name] = v
+			}
+		} else {
+			data[name] = item
+		}
+	}
 }
 
 /**
@@ -21,16 +37,14 @@ func (s *Ql) getRollupsTx(tx *Tx, data et.Json) {
 * @return
 **/
 func (s *Ql) getRelationsTx(tx *Tx, data et.Json) {
+	for name, relation := range s.Relations {
+		items, err := relation.QueryTx(tx, data)
+		if err != nil {
+			logs.Error(err)
+		}
 
-}
-
-/**
-* getCallsTx
-* @param tx *Tx, data et.Json
-* @return
-**/
-func (s *Ql) getCallsTx(tx *Tx, data et.Json) {
-
+		data[name] = items.Result
+	}
 }
 
 /**
@@ -39,7 +53,25 @@ func (s *Ql) getCallsTx(tx *Tx, data et.Json) {
 * @return
 **/
 func (s *Ql) getDetailsTx(tx *Tx, data et.Json) {
+	for name, relation := range s.Details {
+		items, err := relation.QueryTx(tx, data)
+		if err != nil {
+			logs.Error(err)
+		}
 
+		data[name] = items.Result
+	}
+}
+
+/**
+* getCallsTx
+* @param tx *Tx, data et.Json
+* @return
+**/
+func (s *Ql) getCallsTx(tx *Tx, data et.Json) {
+	for _, call := range s.Calcs {
+		call(tx, data)
+	}
 }
 
 /**
@@ -140,7 +172,7 @@ func (s *Ql) Limit(page, rows int) (items et.Items, err error) {
 * @return et.Items, error
 **/
 func (s *Ql) FirstTx(tx *Tx, n int) (et.Items, error) {
-	return s.LimitTx(tx, 1, n)
+	return s.LimitTx(tx, 0, n)
 }
 
 /**
@@ -176,7 +208,7 @@ func (s *Ql) Last(n int) (et.Items, error) {
 * @return et.Item, error
 **/
 func (s *Ql) OneTx(tx *Tx) (et.Item, error) {
-	result, err := s.LimitTx(tx, 1, 1)
+	result, err := s.LimitTx(tx, 0, 1)
 	if err != nil {
 		return et.Item{}, err
 	}
