@@ -8,7 +8,7 @@ import "github.com/cgalvisleon/et/et"
 * @return *Ql
 **/
 func (s *Ql) setQuery(query et.Json) *Ql {
-	s.setDebug(query.Bool("debug")).
+	s.SetDebug(query.Bool("debug")).
 		setSelect(query.Json("select")).
 		setJoin(query.ArrayJson("joins")).
 		setWhere(query.ArrayJson("where")).
@@ -25,7 +25,7 @@ func (s *Ql) setQuery(query et.Json) *Ql {
 * @param debug bool
 * @return *Ql
 **/
-func (s *Ql) setDebug(debug bool) *Ql {
+func (s *Ql) SetDebug(debug bool) *Ql {
 	s.IsDebug = debug
 	return s
 }

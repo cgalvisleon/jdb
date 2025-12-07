@@ -444,7 +444,7 @@ func (s *DB) Select(query et.Json) (*Ql, error) {
 		if result == nil {
 			result = newQl(model, as)
 		} else {
-			result.addFroms(model, as)
+			result.addFrom(model, as)
 		}
 	}
 

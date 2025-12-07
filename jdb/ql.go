@@ -65,7 +65,7 @@ func newQl(model *Model, as string) *Ql {
 	}
 
 	if model != nil {
-		result.addFroms(model, as)
+		result.addFrom(model, as)
 	}
 
 	return result
@@ -95,7 +95,7 @@ func (s *Ql) ToJson() et.Json {
 * @return *Ql
 **/
 func (s *Ql) Debug() *Ql {
-	s.setDebug(true)
+	s.SetDebug(true)
 	return s
 }
 
@@ -104,8 +104,8 @@ func (s *Ql) Debug() *Ql {
 * @param model *Model, as string
 * @return *Ql
 **/
-func (s *Ql) addFroms(model *Model, as string) *Ql {
-	s.Froms[as] = model
+func (s *Ql) addFrom(model *Model, as string) *Ql {
+	s.where.addFrom(model, as)
 
 	for _, v := range model.Hidden {
 		v = fmt.Sprintf("%s.%s", as, v)

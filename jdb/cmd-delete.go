@@ -11,7 +11,7 @@ func (s *Cmd) delete() (et.Items, error) {
 		return et.Items{}, nil
 	}
 
-	from := s.Froms["from"]
+	from := s.Froms[0].Model
 	current, err := from.
 		Query(et.Json{
 			"where": s.Wheres,

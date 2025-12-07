@@ -11,10 +11,11 @@ func (s *Cmd) upsert() (et.Items, error) {
 		return et.Items{}, nil
 	}
 
-	from := s.Froms["from"]
+	from := s.Froms[0].Model
 	data := s.Data[0]
 	exists, err := from.
-		WhereByKeys(data).
+		WhereByPrimaryKeys(data).
+		SetDebug(s.IsDebug).
 		Debug().
 		ItExists()
 	if err != nil {
@@ -23,6 +24,7 @@ func (s *Cmd) upsert() (et.Items, error) {
 
 	if exists {
 		s.Command = CmdUpdate
+		s.WhereByPrimaryKeys(data)
 		return s.update()
 	}
 

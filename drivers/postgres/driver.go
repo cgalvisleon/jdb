@@ -118,6 +118,7 @@ func (s *Driver) Load(model *jdb.Model) (string, error) {
 			return "", err
 		}
 
+		logs.Logf(driver, MSG_CREATE_MODEL, model.Name, model.Version)
 		return result, nil
 	}
 
@@ -126,9 +127,12 @@ func (s *Driver) Load(model *jdb.Model) (string, error) {
 		if err != nil {
 			return "", err
 		}
+
+		logs.Logf(driver, MSG_MUTATE_MODEL, model.Name, model.Version)
+		return result, nil
 	}
 
-	logs.Logf(driver, "Load model:%s v:%d", model.Name, model.Version)
+	logs.Logf(driver, MSG_LOAD_MODEL, model.Name, model.Version)
 	return result, nil
 }
 

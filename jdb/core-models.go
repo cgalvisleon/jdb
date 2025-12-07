@@ -93,6 +93,7 @@ func setModel(name string, version int, definition []byte) error {
 			data.Set("updated_at", now)
 			return nil
 		}).
+		Debug().
 		Exec()
 	if err != nil {
 		return err
@@ -156,6 +157,10 @@ func deleteModel(name string) error {
 	return nil
 }
 
+/**
+* @param name string, current int
+* @return int
+**/
 func versionModel(name string, current int) int {
 	if models == nil {
 		return current
@@ -164,7 +169,6 @@ func versionModel(name string, current int) int {
 	items, err := models.
 		Select("version").
 		Where(Eq("name", name)).
-		Debug().
 		One()
 	if err != nil {
 		return current

@@ -118,7 +118,6 @@ func (s *Driver) buildSelect(query et.Json) (string, error) {
 
 	if query.Bool("count") {
 		return "COUNT(*) AS all", nil
-
 	}
 
 	isDataSource := query.Bool("is_data_source")
@@ -195,16 +194,16 @@ func (s *Driver) buildSelect(query et.Json) (string, error) {
 func (s *Driver) buildFrom(query et.Json) (string, error) {
 	result := ""
 
-	froms := query.Json("from")
-	if froms.IsEmpty() {
+	froms := query.ArrayJson("from")
+	if len(froms) == 0 {
 		return result, fmt.Errorf(jdb.MSG_FROM_REQUIRED)
 	}
 
-	for k := range froms {
-		v := froms.Json(k)
+	for _, v := range froms {
+		as := v.Str("as")
 		table := v.Str("table")
-		def := fmt.Sprintf("%s AS %s", table, k)
-		if k == table {
+		def := fmt.Sprintf("%s AS %s", table, as)
+		if as == table {
 			def = fmt.Sprintf("%s", table)
 		}
 

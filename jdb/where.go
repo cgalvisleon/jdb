@@ -210,9 +210,16 @@ func NotBetween(field string, value []interface{}) *Condition {
 	return condition(field, value, "not_between")
 }
 
+type from struct {
+	Model *Model `json:"-"`
+	Table string `json:"table"`
+	As    string `json:"as"`
+}
+
 type where struct {
-	Froms  map[string]*Model `json:"from"`
-	Wheres []et.Json         `json:"where"`
+	Froms      []*from      `json:"from"`
+	Wheres     []et.Json    `json:"where"`
+	Conditions []*Condition `json:"conditions"`
 }
 
 /**
@@ -222,16 +229,73 @@ type where struct {
 **/
 func newWhere(model *Model, as string) *where {
 	result := &where{
-		Froms:  map[string]*Model{},
-		Wheres: []et.Json{},
+		Froms:      make([]*from, 0),
+		Wheres:     []et.Json{},
+		Conditions: make([]*Condition, 0),
 	}
 
-	if as == "" {
-		as = model.Table
-	}
-
-	result.Froms[as] = model
+	result.addFrom(model, as)
 	return result
+}
+
+/**
+* addFrom
+* @param model *Model, as string
+* @return *where
+**/
+func (s *where) addFrom(model *Model, as string) *where {
+	idx := slices.IndexFunc(s.Froms, func(item *from) bool { return item.As == as })
+	if idx == -1 {
+		s.Froms = append(s.Froms, &from{
+			Model: model,
+			Table: model.Table,
+			As:    as,
+		})
+	}
+
+	return s
+}
+
+/**
+* fromByName
+* @param value string
+* @return *Model
+**/
+func (s *where) fromByName(value string) *from {
+	idx := slices.IndexFunc(s.Froms, func(item *from) bool { return item.Model.Name == value })
+	if idx == -1 {
+		return nil
+	}
+
+	return s.Froms[idx]
+}
+
+/**
+* fromByTable
+* @param value string
+* @return *Model
+**/
+func (s *where) fromByTable(value string) *from {
+	idx := slices.IndexFunc(s.Froms, func(item *from) bool { return item.Model.Table == value })
+	if idx == -1 {
+		return nil
+	}
+
+	return s.Froms[idx]
+}
+
+/**
+* fromByAs
+* @param value string
+* @return *Model
+**/
+func (s *where) fromByAs(value string) *from {
+	idx := slices.IndexFunc(s.Froms, func(item *from) bool { return item.As == value })
+	if idx == -1 {
+		return nil
+	}
+
+	return s.Froms[idx]
 }
 
 /**
@@ -244,67 +308,59 @@ func (s *where) validField(field *Field) *Field {
 		return field
 	}
 
-	if field.From == "" {
-		for as, model := range s.Froms {
-			col, ok := model.GetColumn(field.Name)
-			if ok {
-				field.Model = model
-				field.From = as
-				field.Type = col.Type
-				field.Existent = true
-				return field
-			}
-		}
-	} else {
-		model := s.Froms[field.From]
-		col, ok := model.GetColumn(field.Name)
-		if ok {
-			field.Model = model
-			field.Type = col.Type
-			field.Existent = true
+	fieldAtribute := func() *Field {
+		model := s.Froms[0].Model
+		if model == nil {
 			return field
 		}
 
-		for as, model := range s.Froms {
-			if model.Name != field.From {
-				continue
-			}
-
-			col, ok := model.GetColumn(field.Name)
-			if ok {
-				field.Model = model
-				field.From = as
-				field.Type = col.Type
-				field.Existent = true
-				return field
-			}
-		}
-
-		for as, model := range s.Froms {
-			if model.Table != field.From {
-				continue
-			}
-
-			col, ok := model.GetColumn(field.Name)
-			if ok {
-				field.Model = model
-				field.From = as
-				field.Type = col.Type
-				field.Existent = true
-				return field
-			}
-		}
-	}
-
-	for as, model := range s.Froms {
 		if model.UseAtribs() {
+			as := s.Froms[0].As
 			field.Model = model
 			field.From = as
 			field.Type = TypeAtribute
 			field.Existent = true
 			return field
 		}
-		break
+
+		return field
+	}
+
+	if field.From == "" {
+		for _, _from := range s.Froms {
+			model := _from.Model
+			col, ok := model.GetColumn(field.Name)
+			if ok {
+				as := _from.As
+				field.Model = model
+				field.From = as
+				field.Type = col.Type
+				field.Existent = true
+				return field
+			}
+		}
+
+		return fieldAtribute()
+	} else {
+		_from := s.fromByAs(field.From)
+		if _from == nil {
+			_from = s.fromByName(field.From)
+		}
+		if _from == nil {
+			_from = s.fromByTable(field.From)
+		}
+		if _from == nil {
+			return fieldAtribute()
+		}
+
+		col, ok := _from.Model.GetColumn(field.Name)
+		if ok {
+			field.Model = _from.Model
+			field.From = _from.As
+			field.Type = col.Type
+			field.Existent = true
+			return field
+		}
 	}
 
 	return field
@@ -396,6 +452,7 @@ func (s *where) getField(field string) *Field {
 * @return *where
 **/
 func (s *where) where(cond *Condition, conector string) *where {
+	s.Conditions = append(s.Conditions, cond)
 	field := s.getField(cond.Field)
 	cond.Field = field.Field
 	if len(s.Wheres) == 0 {

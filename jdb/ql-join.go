@@ -15,7 +15,7 @@ func (s *Ql) Join(to *Model, as string, on *Condition) *Ql {
 	}
 
 	s.inJoin = true
-	s.addFroms(to, as)
+	s.addFrom(to, as)
 
 	n = len(s.Joins) + 1
 	s.Joins = append(s.Joins, et.Json{

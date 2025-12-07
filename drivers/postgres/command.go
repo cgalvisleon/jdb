@@ -37,7 +37,7 @@ func (s *Driver) buildCommand(cmd *jdb.Cmd) (string, error) {
 * @return (string, error)
 **/
 func (s *Driver) buildInsert(cmd *jdb.Cmd) (string, error) {
-	from := cmd.Froms["from"]
+	from := cmd.Froms[0].Model
 	table := from.Table
 	data := cmd.Data[0]
 	into := ""
@@ -75,7 +75,7 @@ func (s *Driver) buildInsert(cmd *jdb.Cmd) (string, error) {
 * @return (string, error)
 **/
 func (s *Driver) buildUpdate(cmd *jdb.Cmd) (string, error) {
-	from := cmd.Froms["from"]
+	from := cmd.Froms[0].Model
 	table := from.Table
 	data := cmd.Data[0]
 	sets := ""
@@ -129,7 +129,7 @@ func (s *Driver) buildUpdate(cmd *jdb.Cmd) (string, error) {
 * @return (string, error)
 **/
 func (s *Driver) buildDelete(cmd *jdb.Cmd) (string, error) {
-	from := cmd.Froms["from"]
+	from := cmd.Froms[0].Model
 	table := from.Table
 	where := ""
 	returning := fmt.Sprintf(`to_jsonb(%s.*) AS result`, table)

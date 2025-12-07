@@ -46,14 +46,27 @@ func (s *Model) Where(cond *Condition) *Ql {
 }
 
 /**
-* WhereByKeys
+* WhereByPrimaryKeys
 * @param data et.Json
 * @return *Ql
 **/
-func (s *Model) WhereByKeys(data et.Json) *Ql {
+func (s *Model) WhereByPrimaryKeys(data et.Json) *Ql {
 	result := s.db.From(s, "A")
 	for _, col := range s.PrimaryKeys {
 		result.Where(Eq(col, data[col]))
+	}
+	return result
+}
+
+/**
+* WhereByCMD
+* @param cmd *Cmd
+* @return *Ql
+**/
+func (s *Model) WhereByCMD(cmd *Cmd) *Ql {
+	result := s.db.From(s, "A")
+	for _, cond := range cmd.where.Conditions {
+		result.Where(cond)
 	}
 	return result
 }

@@ -3,10 +3,8 @@ package jdb
 import (
 	"encoding/json"
 	"fmt"
-	"slices"
 
 	"github.com/cgalvisleon/et/et"
-	"github.com/cgalvisleon/et/strs"
 	"github.com/cgalvisleon/et/utility"
 )
 
@@ -62,7 +60,6 @@ func newCommand(model *Model, cmd string, data []et.Json) *Cmd {
 		afterUpdates:  model.afterUpdates,
 		afterDeletes:  model.afterDeletes,
 	}
-	result.Froms["from"] = model
 
 	return result
 }
@@ -87,11 +84,21 @@ func (s *Cmd) ToJson() et.Json {
 }
 
 /**
+* SetDebug
+* @param debug bool
+* @return *Cmd
+**/
+func (s *Cmd) SetDebug(debug bool) *Cmd {
+	s.IsDebug = debug
+	return s
+}
+
+/**
 * Debug
 * @return *Cmd
 **/
 func (s *Cmd) Debug() *Cmd {
-	s.IsDebug = true
+	s.SetDebug(true)
 	return s
 }
 
@@ -137,37 +144,6 @@ func command(cmd string, param et.Json) (*Cmd, error) {
 	}
 
 	return newCommand(model, cmd, data), nil
-}
-
-/**
-* prepare
-* @param data et.Json, as string
-* @return []et.Json
-**/
-func (s *Cmd) GetKeys(data et.Json, as string) []et.Json {
-	if len(s.Froms) == 0 {
-		return []et.Json{}
-	}
-
-	from := s.Froms["from"]
-	result := []et.Json{}
-	for k, v := range data {
-		filed := strs.Append(as, k, ".")
-		_, ok := from.GetColumn(k)
-		if !ok {
-			continue
-		}
-
-		if slices.Contains(from.PrimaryKeys, k) {
-			result = append(result, et.Json{
-				filed: et.Json{
-					"eq": Quote(v),
-				},
-			})
-		}
-	}
-
-	return result
 }
 
 /**

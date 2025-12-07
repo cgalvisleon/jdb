@@ -11,11 +11,9 @@ func (s *Cmd) update() (et.Items, error) {
 		return et.Items{}, nil
 	}
 
-	from := s.Froms["from"]
+	from := s.Froms[0].Model
 	current, err := from.
-		Query(et.Json{
-			"where": s.Wheres,
-		}).
+		WhereByCMD(s).
 		All()
 	if err != nil {
 		return et.Items{}, err
